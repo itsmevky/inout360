@@ -1,0 +1,29 @@
+"scripts": {
+  "dev": "nodemon server.js",
+  "start": "node server.js"
+}
+{
+  "name": "inout360-backend",
+  "version": "1.0.0",
+  "description": "Backend for Contractor RFID Entry Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "author": "Ajiva Infotech",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
+
