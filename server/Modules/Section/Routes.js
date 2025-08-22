@@ -2,19 +2,24 @@ const express = require("express");
 const router = express.Router();
 const sectionController = require("./Controller");
 
-// Add new section
-router.post("/add", sectionController.addSection);
+// @route   POST /api/sections
+// @desc    Add new section
+router.post("/", sectionController.addSection);
 
-// Get all sections
-router.get("/all", sectionController.getAllSections);
+// @route   GET /api/sections
+// @desc    Get all sections
+router.get("/", sectionController.getAllSections);
 
-// Get section by ID
+// @route   GET /api/sections/:id
+// @desc    Get section by ID
 router.get("/:id", sectionController.getSectionById);
 
-// Update section
+// @route   PUT /api/sections/:id
+// @desc    Update section
 router.put("/:id", sectionController.updateSection);
 
-// Delete section
+// @route   DELETE /api/sections/:id
+// @desc    Delete section
 router.delete("/:id", sectionController.deleteSection);
 
 module.exports = router;

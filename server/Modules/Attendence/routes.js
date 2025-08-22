@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const attendanceController = require("./controller");
+const attendanceController = require("./Controller");
 
 // Add new attendance (initial punch)
 router.post("/add", attendanceController.addAttendance);

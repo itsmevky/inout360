@@ -1,35 +1,32 @@
 const mongoose = require("mongoose");
 
-const rfidSchema = new mongoose.Schema(
+const rfidCardSchema = new mongoose.Schema(
   {
-    tagId: {
+    uid: {
       type: String,
       required: true,
-      unique: true,
+      unique: true,   // The actual RFID card UID (from reader)
       trim: true,
     },
-    assignedTo: {
+    employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      refPath: "assignedModel", // dynamic reference
-      default: null,
+      ref: "Employee",
+      unique: true,   // one card → one employee
     },
-    assignedModel: {
-      type: String,
-      enum: ["Employee", "Contractor"],
-      default: null,
+    issuedAt: {
+      type: Date,
+      default: Date.now,
     },
     isActive: {
       type: Boolean,
       default: true,
     },
-    isAssigned: {
+    lostOrReplaced: {
       type: Boolean,
       default: false,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-module.exports = mongoose.model("RFID", rfidSchema);
+module.exports = mongoose.model("RFID", rfidCardSchema);

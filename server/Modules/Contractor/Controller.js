@@ -1,22 +1,19 @@
 const Contractor = require("./model");
 const Validator = require("../../Utils/Validator");
 
-// Create Contractor
-function generateRFID(prefix = "CNT") {
+// Utility: Generate Contractor Code (e.g., CONT-001)
+function generateContractorCode(prefix = "CONT") {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100)}`;
 }
 
+// ✅ Create Contractor
 exports.addContractor = async (req, res) => {
   const rules = {
-    firstName: ["required"],
-    lastName: ["required"],
-    section: ["required"],
-    phoneNumber: ["string", { min: 10 }],
-    email: ["string", { optional: true }],
-    fullAddress: ["string", { optional: true }],
-    city: ["string", { optional: true }],
-    state: ["string", { optional: true }],
-    middleName: ["string", { optional: true }],
+    name: ["required"],
+    contactPerson: ["string", { optional: true }],
+    contactPhone: ["string", { optional: true }],
+    gstNumber: ["string", { optional: true }],
+    status: ["string", { optional: true }],
   };
 
   const validator = new Validator(req.body, rules);
@@ -25,20 +22,15 @@ exports.addContractor = async (req, res) => {
   }
 
   try {
-    const rfid = generateRFID();
+    const code = generateContractorCode();
 
     const contractor = await Contractor.create({
-      firstName: req.body.firstName,
-      middleName: req.body.middleName || "",
-      lastName: req.body.lastName,
-      email: req.body.email || "",
-      phoneNumber: req.body.phoneNumber || "",
-      fullAddress: req.body.fullAddress || "",
-      city: req.body.city || "",
-      state: req.body.state || "",
-      rfid,
-      section: req.body.section,
-      onboardedAt: new Date(),
+      name: req.body.name,
+      code,
+      contactPerson: req.body.contactPerson || "",
+      contactPhone: req.body.contactPhone || "",
+      gstNumber: req.body.gstNumber || "",
+      status: req.body.status || "ACTIVE",
     });
 
     res.status(201).json({
@@ -53,52 +45,50 @@ exports.addContractor = async (req, res) => {
   }
 };
 
-// Get All Contractors
+// ✅ Get All Contractors
 exports.getAllContractors = async (req, res) => {
   try {
-    const contractors = await Contractor.find().populate("section");
+    const contractors = await Contractor.find();
     res.json(contractors);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching contractors", error: error.message });
+    res.status(500).json({ message: "Error fetching contractors", error: error.message });
   }
 };
 
-// Get Contractor by ID
+// ✅ Get Contractor by ID
 exports.getContractorById = async (req, res) => {
   try {
-    const contractor = await Contractor.findById(req.params.id).populate(
-      "section"
-    );
-    if (!contractor) return res.status(404).json({ message: "Not found" });
+    const contractor = await Contractor.findById(req.params.id);
+    if (!contractor) return res.status(404).json({ message: "Contractor not found" });
     res.json(contractor);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching contractor", error: error.message });
+    res.status(500).json({ message: "Error fetching contractor", error: error.message });
   }
 };
 
-// Update Contractor
+// ✅ Update Contractor
 exports.updateContractor = async (req, res) => {
   try {
     const contractor = await Contractor.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true }
+      { new: true, runValidators: true }
     );
+    if (!contractor) return res.status(404).json({ message: "Contractor not found" });
+
     res.json({ message: "Contractor updated", contractor });
   } catch (error) {
     res.status(500).json({ message: "Update failed", error: error.message });
   }
 };
 
-// Delete Contractor
+// ✅ Delete Contractor
 exports.deleteContractor = async (req, res) => {
   try {
-    await Contractor.findByIdAndDelete(req.params.id);
-    res.json({ message: "Contractor deleted" });
+    const contractor = await Contractor.findByIdAndDelete(req.params.id);
+    if (!contractor) return res.status(404).json({ message: "Contractor not found" });
+
+    res.json({ message: "Contractor deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Deletion failed", error: error.message });
   }

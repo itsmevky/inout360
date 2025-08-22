@@ -12,16 +12,36 @@ connectDB();
 // Initialize app
 const app = express();
 
-// Middlewares
-app.use(cors({ origin: process.env.CLIENT_URL || "*", credentials: true }));
+// -------------------
+// ✅ Proper CORS Setup
+// -------------------
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:3000", // main frontend
+  "http://localhost:3001", // extra dev port
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps / curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: Origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json()); // for parsing application/json
 
-// Health check route
+// -------------------
+// Routes
+// -------------------
 app.get("/", (req, res) => {
   res.send("Contractor RFID Backend is Running ✅");
 });
 
-// Import routes
 const authRoutes = require("./Modules/User/routes");
 const employeeRoutes = require("./Modules/Employee/routes");
 const contractorRoutes = require("./Modules/Contractor/routes");
@@ -29,27 +49,25 @@ const sectionRoutes = require("./Modules/Section/Routes");
 const attendanceRoutes = require("./Modules/Attendence/routes");
 const rfidRoutes = require("./Modules/Rfid/routes");
 
-// Use routes
 app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/contractors", contractorRoutes);
 app.use("/api/sections", sectionRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/rfid", rfidRoutes);
+app.use("/api/employee", employeeRoutes);
 
-// Future routes (uncomment when ready)
-
-// const attendanceRoutes = require("./routes/attendanceRoutes");
-
-// app.use("/api/attendance", attendanceRoutes);
-
+// -------------------
 // Global error handler
+// -------------------
 app.use((err, req, res, next) => {
-  console.error("🔥 Server Error:", err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
+  console.error("🔥 Server Error:", err.message);
+  res.status(500).json({ message: err.message || "Something went wrong!" });
 });
 
+// -------------------
 // Start server
+// -------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

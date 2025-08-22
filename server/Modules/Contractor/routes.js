@@ -1,11 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const contractorController = require("./controller");
+const contractorController = require("./Controller");
 
-router.post("/add", contractorController.addContractor);
-router.get("/all", contractorController.getAllContractors);
+// ✅ Create Contractor
+router.post("/", contractorController.addContractor);
+
+// ✅ Get All Contractors (with optional query params for search/pagination later)
+router.get("/", contractorController.getAllContractors);
+
+// ✅ Get Contractor by ID
 router.get("/:id", contractorController.getContractorById);
+
+// ✅ Update Contractor
 router.put("/:id", contractorController.updateContractor);
+
+// ✅ Delete Contractor
 router.delete("/:id", contractorController.deleteContractor);
 
 module.exports = router;

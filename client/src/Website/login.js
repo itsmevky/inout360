@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -78,110 +79,77 @@ const LoginComponent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("🔄 handleSubmit called");
-
     setLoading(true);
-    console.log("⏳ setLoading(true)");
-
     try {
-      console.log("📋 Validating form...");
       const validationErrors = await validateform(userData);
-      console.log("✅ Validation complete:", validationErrors);
-
       if (validationErrors) {
-        console.log("❌ Validation errors found, exiting submission.");
         setLoading(false);
         return;
       }
-
-      console.log("🚀 Sending data...");
       await sendData(userData);
     } catch (error) {
-      console.error("❗ Form submission error:", error);
+      console.error("Form submission error:", error);
       toast.error(error.message || "Something went wrong.");
     } finally {
       setLoading(false);
-      console.log("✅ setLoading(false)");
     }
   };
 
-  const sendData = async (data) => {
-    console.log("📤 Sending login data:", data);
+ const sendData = async (formData) => {
+  try {
+    const result = await API.login(formData); // Axios response
+    console.log("✅ Raw API result:", result);
 
-    try {
-      const result = await API.login(data); // full Axios response
-      console.log("✅ Raw API result:", result);
+    // Response is directly the user object
+    const user = result.data;
 
-      const status = result?.status ?? result?.data?.status;
-      const data = result?.data?.data ?? result?.data;
+    if (user?.accessToken && user?.refreshToken) {
+      const { accessToken, refreshToken, ...userInfo } = user;
 
-      // Check the actual backend status inside result.data
-      if (result.data?.status === true) {
-        const { accessToken, refreshToken, ...userInfo } = result.data.data;
+      // 🔐 Store tokens
+      localStorage.setItem("accesstoken", accessToken);
+      localStorage.setItem("refreshtoken", refreshToken);
+      Cookies.set("accesstoken", accessToken);
+      Cookies.set("refreshtoken", refreshToken);
 
-        if (!accessToken || !refreshToken) {
-          throw new Error("❌ Tokens are missing from the response");
-        }
-
-        console.log("🔐 Storing tokens...");
-        localStorage.setItem("accesstoken", accessToken);
-        localStorage.setItem("refreshtoken", refreshToken);
-        Cookies.set("accesstoken", accessToken);
-        Cookies.set("refreshtoken", refreshToken);
-
-        console.log("👤 Storing user info...");
-        if (userInfo?.fullname) {
-          localStorage.setItem("user_fullname", userInfo.fullname);
-        }
-
-        const encodedUserDetails = encodeData(userInfo);
-        Cookies.set("userdetail", encodedUserDetails);
-
-        if (data.rememberMe) {
-          console.log("💾 Remembering credentials...");
-          localStorage.setItem("email", data.email);
-          localStorage.setItem("password", data.password);
-        } else {
-          console.log("🧹 Clearing remembered credentials...");
-          localStorage.removeItem("email");
-          localStorage.removeItem("password");
-        }
-
-        console.log("🎉 Login successful");
-        toast.success("Login successful!");
-        setUser(userInfo);
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500);
-      } else {
-        // Backend returned status false
-        const message =
-          result.data?.message ||
-          "Login error. Please try again latersssssssss.";
-        console.warn("⚠️ Login failed:", message);
-
-        if (result.data?.errors) {
-          Object.keys(result.data.errors).forEach((field) => {
-            const errorMessage = result.data.errors[field].join(", ");
-            toast.error(
-              `${
-                field.charAt(0).toUpperCase() + field.slice(1)
-              }: ${errorMessage}`
-            );
-          });
-        } else {
-          toast.error(message);
-        }
+      // 👤 Store full name (combine first + last name)
+      const fullName = `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim();
+      if (fullName) {
+        localStorage.setItem("user_fullname", fullName);
+        userInfo.fullname = fullName; // add for later use
       }
-    } catch (error) {
-      console.error("❌ Login error:", error);
-      toast.error(error.message || "An error occurred. Please try again.");
+
+      // ✅ Store encoded user details
+      const encodedUserDetails = encodeData(userInfo);
+      Cookies.set("userdetail", encodedUserDetails);
+
+      // 💾 Handle "Remember Me"
+      if (formData.rememberMe) {
+        localStorage.setItem("email", formData.email);
+        localStorage.setItem("password", formData.password);
+      } else {
+        localStorage.removeItem("email");
+        localStorage.removeItem("password");
+      }
+
+      toast.success("Login successful!");
+      setUser(userInfo);
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+    } else {
+      // Tokens missing → treat as failed login
+      toast.error("Login failed: Tokens are missing in response.");
     }
-  };
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    toast.error(error.response?.data?.message || error.message || "An error occurred. Please try again.");
+  }
+};
+
 
   useEffect(() => {
-    sendData();
     const savedEmail = localStorage.getItem("email");
     const savedPassword = localStorage.getItem("password");
 
@@ -275,6 +243,17 @@ const LoginComponent = () => {
                         <span className="line"></span>
                         <span className="text">OR</span>
                         <span className="line"></span>
+                      </div>
+
+                      <div className="last-section">
+                        <div className="last-line">
+                          Don't have an account? &nbsp;
+                        </div>
+                        <div className="alphabet">
+                          <a href="register" className="forgot-password">
+                            Register
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>

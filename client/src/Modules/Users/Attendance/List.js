@@ -38,32 +38,26 @@ const Teachers = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-const fetchsection = async () => {
+const fetchattendance = async () => {
   setLoading(true);
   try {
-    // 👇 Call your getAll API
-    const response = await API.section.getAll({
+    const response = await API.attendance.getAll({
+      search: searchTerm,
       page: currentPage,
       limit: rowsPerPage,
-      search: searchTerm, // if your API supports search here
     });
 
-    console.log("response", response);
+    console.log("attendance response", response);
 
-    if (response && Array.isArray(response)) {
-      // If API just returns an array
-      setData(response);
-      setTotalRows(response.length);
-    } else if (response?.data && Array.isArray(response.data)) {
-      // If API returns { data: [], total: number }
-      setData(response.data);
-      setTotalRows(response.total || 0);
+    if (Array.isArray(response)) {
+      setData(response);                // ✅ Attendance data comes as array
+      setTotalRows(response.length);    // ✅ Just use array length
     } else {
-      setError("No section data found");
+      setError("No attendance data found");
     }
   } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Something went wrong while fetching sections.");
+    console.error("Error fetching attendance:", err);
+    setError("Something went wrong while fetching attendance.");
   } finally {
     setLoading(false);
   }
@@ -71,7 +65,7 @@ const fetchsection = async () => {
 
 
 useEffect(() => {
-  fetchsection();
+  fetchattendance();
 }, [currentPage, rowsPerPage, searchTerm]);
 
 
@@ -98,7 +92,7 @@ useEffect(() => {
       });
       if (res.status) {
         toast.success("Status updated");
-        fetchsection();
+        fetchattendance();
       } else {
         toast.error(res.message);
       }
@@ -117,7 +111,7 @@ useEffect(() => {
   //     });
   //     if (res.status) {
   //       toast.success("Status updated");
-  //       fetchsection();
+  //       fetchattendance();
   //       setSelectedStatus("");
   //       setSelectedTeachers([]);
   //     } else {
@@ -137,7 +131,7 @@ useEffect(() => {
       });
       if (res.success) {
         toast.success("Deleted successfully");
-        fetchsection();
+        fetchattendance();
       } else {
         toast.error(res.message);
       }
@@ -147,42 +141,42 @@ useEffect(() => {
   };
 
   const columns = [
-     {
-      name: (
-        <input
-          type="checkbox"
-          onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
-        />
-      ),
-      selector: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedTeachers.includes(row.id)}
-          onChange={() => handleCheckboxChange(row.id)}
-        />
-      ),
-      width: "5%",
-    },
+    //  {
+    //   name: (
+    //     <input
+    //       type="checkbox"
+    //       onChange={handleSelectAllChange}
+    //       checked={selectedTeachers.length === data.length && data.length > 0}
+    //     />
+    //   ),
+    //   selector: (row) => (
+    //     <input
+    //       type="checkbox"
+    //       checked={selectedTeachers.includes(row.id)}
+    //       onChange={() => handleCheckboxChange(row.id)}
+    //     />
+    //   ),
+    //   width: "5%",
+    // },
    
     {
-      name: "Name",
-      selector: (row) => row.name,
+      name: "RfidCardId",
+      selector: (row) => row.rfidCardId,
       width: "25%",
     },
     {
-      name: "Code",
-      selector: (row) => row.code,
+      name: "date",
+      selector: (row) => row.date,
       width: "25%",
     },
      {
-      name: "Description",
-      selector: (row) => row.description,
+      name: "Entry",
+      selector: (row) => row.entryGateIn,
       width: "25%",
     },
    {
-      name: "Status",
-      selector: (row) => row.status,
+      name: "Exit",
+      selector: (row) => row.workfloorOut,
       width: "25%",
     },
     
@@ -259,7 +253,7 @@ useEffect(() => {
       if (response.status === true) {
         setSelectedStatus("");
         setSelectedUsers("");
-        fetchsection(); // Refresh user list
+        fetchattendance(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
         toast.error(response.message || "Failed to create user.");
@@ -279,7 +273,7 @@ useEffect(() => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchsection(); // Trigger fetch with the updated search term
+    fetchattendance(); // Trigger fetch with the updated search term
   };
 
   const handleEdit = async (userId) => {
@@ -323,7 +317,7 @@ useEffect(() => {
       const response = await deleteData(url, payload); // Pass payload for deletion
 
       if (response.success) {
-        fetchsection();
+        fetchattendance();
         toast.success("Deleted  Successfully!");
       } else {
         toast.error(response.message || "Try again");
@@ -381,7 +375,7 @@ useEffect(() => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Section</h2>
+        <h2 className="text-xl font-bold sub-title">List of Attendance</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
@@ -496,7 +490,7 @@ useEffect(() => {
            >
              <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
            </svg>
-           Add Section
+           Add Attendance
          </button>
           </div>
         </div>

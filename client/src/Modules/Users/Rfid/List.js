@@ -38,40 +38,37 @@ const Teachers = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-const fetchsection = async () => {
+const fetchrfid = async () => {
   setLoading(true);
   try {
-    // 👇 Call your getAll API
-    const response = await API.section.getAll({
+    const response = await API.rfid.getAll({
+      search: searchTerm,
       page: currentPage,
       limit: rowsPerPage,
-      search: searchTerm, // if your API supports search here
     });
 
     console.log("response", response);
 
-    if (response && Array.isArray(response)) {
-      // If API just returns an array
-      setData(response);
-      setTotalRows(response.length);
-    } else if (response?.data && Array.isArray(response.data)) {
-      // If API returns { data: [], total: number }
+    if (response?.success && Array.isArray(response.data)) {
       setData(response.data);
-      setTotalRows(response.total || 0);
+      setTotalRows(response.data.length); // ✅ use array length since no total
     } else {
-      setError("No section data found");
+      setError("No RFID data found");
+      setData([]);
+      setTotalRows(0);
     }
   } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Something went wrong while fetching sections.");
+    console.error("Error fetching RFID:", err);
+    setError("Something went wrong while fetching RFID data.");
+    setData([]);
+    setTotalRows(0);
   } finally {
     setLoading(false);
   }
 };
 
-
 useEffect(() => {
-  fetchsection();
+  fetchrfid();
 }, [currentPage, rowsPerPage, searchTerm]);
 
 
@@ -98,7 +95,7 @@ useEffect(() => {
       });
       if (res.status) {
         toast.success("Status updated");
-        fetchsection();
+        fetchrfid();
       } else {
         toast.error(res.message);
       }
@@ -117,7 +114,7 @@ useEffect(() => {
   //     });
   //     if (res.status) {
   //       toast.success("Status updated");
-  //       fetchsection();
+  //       fetchrfid();
   //       setSelectedStatus("");
   //       setSelectedTeachers([]);
   //     } else {
@@ -137,7 +134,7 @@ useEffect(() => {
       });
       if (res.success) {
         toast.success("Deleted successfully");
-        fetchsection();
+        fetchrfid();
       } else {
         toast.error(res.message);
       }
@@ -166,23 +163,25 @@ useEffect(() => {
     },
    
     {
-      name: "Name",
-      selector: (row) => row.name,
+      name: "Rfid",
+      selector: (row) => row.uid,
       width: "25%",
     },
     {
-      name: "Code",
-      selector: (row) => row.code,
+      name: "employeeId",
+      selector: (row) => row.employeeId,
       width: "25%",
     },
-     {
-      name: "Description",
-      selector: (row) => row.description,
-      width: "25%",
-    },
+     
    {
-      name: "Status",
-      selector: (row) => row.status,
+      name: "IssuedAt",
+      selector: (row) => row.issuedAt,
+      width: "25%",
+    },
+
+    {
+      name: "IssuedAt",
+      selector: (row) => row.issuedAt,
       width: "25%",
     },
     
@@ -259,7 +258,7 @@ useEffect(() => {
       if (response.status === true) {
         setSelectedStatus("");
         setSelectedUsers("");
-        fetchsection(); // Refresh user list
+        fetchrfid(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
         toast.error(response.message || "Failed to create user.");
@@ -279,7 +278,7 @@ useEffect(() => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchsection(); // Trigger fetch with the updated search term
+    fetchrfid(); // Trigger fetch with the updated search term
   };
 
   const handleEdit = async (userId) => {
@@ -323,7 +322,7 @@ useEffect(() => {
       const response = await deleteData(url, payload); // Pass payload for deletion
 
       if (response.success) {
-        fetchsection();
+        fetchrfid();
         toast.success("Deleted  Successfully!");
       } else {
         toast.error(response.message || "Try again");
@@ -381,7 +380,7 @@ useEffect(() => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Section</h2>
+        <h2 className="text-xl font-bold sub-title">List of Rfid</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
@@ -496,7 +495,7 @@ useEffect(() => {
            >
              <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
            </svg>
-           Add Section
+           Add  Rfid
          </button>
           </div>
         </div>

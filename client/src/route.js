@@ -7,7 +7,7 @@ import Teacherlayout from "./layouts/Teacherlayout.js";
 import WebsiteLayout from "./layouts/WebsiteLayout.js";
 import Studentlayout from "./layouts/Studentlayout.js";
 import ParentLayout from "./layouts/ParentLayout.js";
-import SuperAdminLayout from "./layouts/SuperadminLayout.js";
+import SuperAdminLayout from "./Layouts/SuperadminLayout.js";
 import PermissionDenied from "./Website/PermissionDenied.js";
 import Registerpage from "./Website/registerform.js";
 import Getotp from "./Website/getotp.js";

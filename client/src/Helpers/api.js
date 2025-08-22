@@ -466,6 +466,7 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 // ---------------- Get Subdomain ---------------- //
 const getSubdomain = () => {
   const host = window.location.hostname;
@@ -613,25 +614,79 @@ const API = {
 
   updateStatus: (data) => putData("/employees/status", data),
 
-  login: (data) => postData(API.auth.login, data), // Login API
+  // ✅ Fixed Login API (NO double /api)
+  login: (data) => postData("/auth/login", data),
 
-  // ✅ Section-specific helpers (you can call API.section.getAll(), etc.)
-  section: {
-    getAll: (params) => getData("/section", params),
-    getById: (id) => getData(`/section/${id}`),
-    add: (data) => postData("/section", data),
-    update: (id, data) => putData(`/section/${id}`, data),
-    remove: (id) => deleteData(`/section/${id}`),
-    bulkRemove: (data) => postData("/section/delete", data),
+  // ✅ Section-specific helpers
+ section: {
+  getAll: (params) => getData("/sections", params),
+  getById: (id) => getData(`{{url}}/api/sections/${id}`),
+  add: (data) => postData("{{url}}/api/sections", data),
+  update: (id, data) => putData(`{{url}}/api/sections/${id}`, data),
+  remove: (id) => deleteData(`{{url}}/api/sections/${id}`),
+  bulkRemove: (data) => postData("{{url}}/api/sections/delete", data),
+  search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+    getData("{{url}}/api/sections/search", {
+      search: searchTerm,
+      page,
+      limit,
+      ...filters,
+    }),
+},
+
+rfid: {
+  getAll: (params) => getData("/rfid", params),
+  getById: (id) => getData(`{{url}}/api/rfid/${id}`),
+  add: (data) => postData("{{url}}/api/rfid", data),
+  update: (id, data) => putData(`{{url}}/api/rfid/${id}`, data),
+  remove: (id) => deleteData(`{{url}}/api/rfid/${id}`),
+  bulkRemove: (data) => postData("{{url}}/api/rfid/delete", data),
+  search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+    getData("{{url}}/api/rfid/search", {
+      search: searchTerm,
+      page,
+      limit,
+      ...filters,
+    }),
+},
+
+
+    // ✅ Attendance-specific helpers
+  attendance: {
+    getAll: (params) => getData("/attendance/all", params),
+    getById: (id) => getData(`/attendance/${id}`),
+    add: (data) => postData("/attendance", data),
+    update: (id, data) => putData(`/attendance/${id}`, data),
+    remove: (id) => deleteData(`/attendance/${id}`),
+    bulkRemove: (data) => postData("/attendance/delete", data),
     search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
-      getData("/section/search", {
+      getData("/attendance/search", {
         search: searchTerm,
         page,
         limit,
         ...filters,
       }),
   },
+
+ contractor: {
+  getAll: (params = {}) => getData("/contractors/", params),
+  getById: (id) => getData(`/contractors/${id}`),
+  add: (data) => postData("/contractors", data),
+  update: (id, data) => putData(`/contractors/${id}`, data),
+  remove: (id) => deleteData(`/contractors/${id}`),
+  bulkRemove: (data) => postData("/contractors/delete", data),
+  search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+    getData("/contractors/search", {
+      search: searchTerm,
+      page,
+      limit,
+      ...filters,
+    }),
+},
+
+
 };
+
 
 
 export {

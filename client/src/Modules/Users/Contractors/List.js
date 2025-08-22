@@ -38,40 +38,32 @@ const Teachers = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-const fetchsection = async () => {
+const fetchcontractors = async () => {
   setLoading(true);
   try {
-    // 👇 Call your getAll API
-    const response = await API.section.getAll({
+    const response = await API.contractor.getAll({
+      search: searchTerm,
       page: currentPage,
       limit: rowsPerPage,
-      search: searchTerm, // if your API supports search here
     });
 
     console.log("response", response);
 
-    if (response && Array.isArray(response)) {
-      // If API just returns an array
+    if (Array.isArray(response)) {
       setData(response);
-      setTotalRows(response.length);
-    } else if (response?.data && Array.isArray(response.data)) {
-      // If API returns { data: [], total: number }
-      setData(response.data);
-      setTotalRows(response.total || 0);
+      setTotalRows(response.length); // ✅ since no "total" key, use length
     } else {
-      setError("No section data found");
+      setError("No contractor data found");
     }
   } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Something went wrong while fetching sections.");
+    setError("Something went wrong while fetching contractors.");
   } finally {
     setLoading(false);
   }
 };
 
-
 useEffect(() => {
-  fetchsection();
+  fetchcontractors();
 }, [currentPage, rowsPerPage, searchTerm]);
 
 
@@ -98,7 +90,7 @@ useEffect(() => {
       });
       if (res.status) {
         toast.success("Status updated");
-        fetchsection();
+        fetchcontractors();
       } else {
         toast.error(res.message);
       }
@@ -117,7 +109,7 @@ useEffect(() => {
   //     });
   //     if (res.status) {
   //       toast.success("Status updated");
-  //       fetchsection();
+  //       fetchcontractors();
   //       setSelectedStatus("");
   //       setSelectedTeachers([]);
   //     } else {
@@ -137,7 +129,7 @@ useEffect(() => {
       });
       if (res.success) {
         toast.success("Deleted successfully");
-        fetchsection();
+        fetchcontractors();
       } else {
         toast.error(res.message);
       }
@@ -171,13 +163,13 @@ useEffect(() => {
       width: "25%",
     },
     {
-      name: "Code",
+      name: "Contractor Code",
       selector: (row) => row.code,
       width: "25%",
     },
      {
-      name: "Description",
-      selector: (row) => row.description,
+      name: "Contact Person",
+      selector: (row) => row.contactPerson,
       width: "25%",
     },
    {
@@ -259,7 +251,7 @@ useEffect(() => {
       if (response.status === true) {
         setSelectedStatus("");
         setSelectedUsers("");
-        fetchsection(); // Refresh user list
+        fetchcontractors(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
         toast.error(response.message || "Failed to create user.");
@@ -279,7 +271,7 @@ useEffect(() => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchsection(); // Trigger fetch with the updated search term
+    fetchcontractors(); // Trigger fetch with the updated search term
   };
 
   const handleEdit = async (userId) => {
@@ -323,7 +315,7 @@ useEffect(() => {
       const response = await deleteData(url, payload); // Pass payload for deletion
 
       if (response.success) {
-        fetchsection();
+        fetchcontractors();
         toast.success("Deleted  Successfully!");
       } else {
         toast.error(response.message || "Try again");
@@ -381,7 +373,7 @@ useEffect(() => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Section</h2>
+        <h2 className="text-xl font-bold sub-title">List of Contractor</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
@@ -496,7 +488,7 @@ useEffect(() => {
            >
              <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
            </svg>
-           Add Section
+           Add  Contractor
          </button>
           </div>
         </div>

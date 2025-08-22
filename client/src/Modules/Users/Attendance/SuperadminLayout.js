@@ -36,9 +36,6 @@ import Parents from "../Modules/Users/Parents/List.js";
 import Classes from "../Modules/Academics/Classes/List.js";
 import Editemployee from "../Modules/Users/Edit.js";
 import Section from "../Modules/Users/Section/List.js";
-import  Attendancelist from "../Modules/Users/Attendance/List.js" 
-import Contractorlist from "../Modules/Users/Contractors/List.js"
-import Rfidlist from "../Modules/Users/Rfid/List.js"
 
 // import ModuleGlobalfields from "../Modules/Module/GlobalFields/Globalfieldlist.js";
 // import Groups from "../Modules/Module/GlobalFields/Groups/list.js";
@@ -125,12 +122,7 @@ function SuperAdminLayout() {
               <Route path="/academic/subjects" element={<Subjects />} />
               <Route path="/academic/schedules" element={<Schedules />} />
               <Route path="/academic/classes" element={<Classes />} />
-              {/* <Route path="/users/module/Attendance" element={<Attendance />} /> */}
-             <Route path="/users/Attendance" element={<Attendancelist />} />
-              <Route path="/users/Contractor" element={<Contractorlist />} />
-              <Route path="/users/Rfid" element={<Rfidlist />} />
-
-
+              <Route path="/users/Attendance" element={<Attendance />} />
 
               {/* bussiness module routes*/}
               <Route path="/business" element={<Modules />} />
