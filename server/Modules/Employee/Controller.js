@@ -28,22 +28,23 @@ exports.createEmployee = async (req, res) => {
     section,
     shift,
     password,
+    role,
   } = req.body;
 
-  const role = "employee";
 
   // Validation rules
   const rules = {
     firstName: "required",
     lastName: "required",
     email: "required|email",
-    password: "required|min:6",
+    // password: "required|min:6",
     phone: "required",
     gender: "required",
     joiningDate: "required",
     designation: "required",
     section: "required",
     shift: "required",
+    role:"required"
   };
 
   // const validator = new Validator(req.body, rules);
@@ -58,14 +59,7 @@ exports.createEmployee = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Create User account (for login)
-    const newUser = await User.create({
-      firstName,
-      lastName,
-      email,
-      password,
-      role,
-    });
+ 
 
     // Generate Employee ID & RFID
     const employeeId = generateEmployeeId();
@@ -86,7 +80,8 @@ exports.createEmployee = async (req, res) => {
       section,
       shift,
       rfid,
-      userId: newUser._id,
+      role,
+      // userId: newUser._id,
     });
 
     return res.status(201).json({
@@ -183,5 +178,81 @@ exports.getEmployeeByRFID = async (req, res) => {
   } catch (error) {
     console.error("❌ [getEmployeeByRFID] Error:", error.message);
     res.status(500).json({ message: "Error", error: error.message });
+  }
+};
+
+
+exports.updateEmployee = async (req, res) => {
+  const param = req.params.id; 
+  const updates = req.body;
+
+  try {
+    let employee;
+
+    // If param looks like a Mongo ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(param)) {
+      employee = await Employee.findByIdAndUpdate(param, updates, {
+        new: true,
+        runValidators: true,
+      });
+    }
+
+    // If not found by ObjectId, try employeeId
+    if (!employee) {
+      employee = await Employee.findOneAndUpdate(
+        { employeeId: param },
+        updates,
+        { new: true, runValidators: true }
+      );
+    }
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json({
+      message: "Employee updated successfully",
+      employee,
+    });
+  } catch (error) {
+    console.error("❌ Employee Update Error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.deleteEmployee = async (req, res) => {
+  const param = req.params.id;
+
+  try {
+    let employee;
+
+    // If param looks like a Mongo ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(param)) {
+      employee = await Employee.findByIdAndDelete(param);
+    }
+
+    // If not found by ObjectId, try employeeId
+    if (!employee) {
+      employee = await Employee.findOneAndDelete({ employeeId: param });
+    }
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json({
+      message: "Employee deleted successfully",
+      employee,
+    });
+  } catch (error) {
+    console.error("❌ Employee Delete Error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };

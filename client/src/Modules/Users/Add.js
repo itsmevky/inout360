@@ -89,7 +89,7 @@ const AddUserForm = () => {
       // ✅ Use the employee add endpoint here
       const result = await API.add("employees/add", formData);
 
-      console.log("✅ API Response:", result);
+      console.log("✅ API Response------>:", result);
 
       if (result.status === true || result.success === true) {
         toast.success("✅ Employee created successfully!");
@@ -111,8 +111,9 @@ const AddUserForm = () => {
   return (
     <div className="adduser-outer-section">
       <div className="adduser-inner-section">
+
         <div className="adduser-form-section">
-               <form
+        <form
         onSubmit={handleSubmit}
         className="w-full max-w-5xl mx-auto mt-8 bg-white"
         noValidate
@@ -125,6 +126,34 @@ const AddUserForm = () => {
 
             {/* FORM GRID: 2 columns on medium+ screens */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+
+      {/* Passport Size Photogaph */}
+    <div className="flex items-center space-x-4">
+    <div className="w-[132px] h-[170px] border rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+      {/* Placeholder Image */}
+      <img
+        src="https://via.placeholder.com/132x170.png?text=Photo"
+        alt="Passport"
+        className="object-cover w-full h-full"
+      />
+    </div>
+    <div>
+      <label className="block mb-2 text-sm font-medium text-gray-700">
+        Upload Passport Size Photo
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
+                   file:rounded-lg file:border-0 
+                   file:text-sm file:font-semibold 
+                   file:bg-blue-50 file:text-blue-700 
+                   hover:file:bg-blue-100"
+      />
+    </div>
+  </div>
+
+
   {/* ================= PERSONAL INFO ================= */}
   <div className="col-span-2">
     <h2 className="text-lg font-semibold mb-4">Personal Information</h2>
@@ -216,11 +245,11 @@ const AddUserForm = () => {
   <div className="AJ-floating-label-wrapper mb-6">
     <input
       type="text"
-      name="address"
+      name="currentaddress"
       value={formData.currentaddress}
       onChange={handleChange}
       onBlur={handleBlur}
-      className={`${getFieldClassName("address")} AJ-floating-input`}
+      className={`${getFieldClassName("currentaddress")} AJ-floating-input`}
       placeholder=" "
     />
     <label className="AJ-floating-label">Curent Address</label>
@@ -360,11 +389,9 @@ const AddUserForm = () => {
     className={`${getFieldClassName("department")} AJ-floating-input`}
   >
     <option value="" disabled hidden></option>
-    <option value="HR">HR</option>
-    <option value="Finance">Finance</option>
-    <option value="IT">IT</option>
-    <option value="Operations">Operations</option>
-    <option value="Marketing">Marketing</option>
+    <option value="Plumber">Plumber</option>
+    <option value="Assembler">Assembler</option>
+    <option value="Welder">Welder</option>
   </select>
   <label className="AJ-floating-label">Department</label>
 </div>
@@ -494,6 +521,7 @@ const AddUserForm = () => {
             </div>
           </form>
         </div>
+        
       </div>
 
       <ToastContainer position="top-right" autoClose={3000} />

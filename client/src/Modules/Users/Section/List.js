@@ -3,7 +3,7 @@ import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "../Add.js";
-import EditUserForm from "../Edit.js";
+import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -128,23 +128,24 @@ useEffect(() => {
   //   }
   // };
 
-  const handleDelete = async (ids) => {
-    const confirm = window.confirm("Are you sure you want to delete?");
-    if (!confirm) return;
-    try {
-      const res = await deleteData("/teacher/delete", {
-        teachers: Array.isArray(ids) ? ids : [ids],
-      });
-      if (res.success) {
-        toast.success("Deleted successfully");
-        fetchsection();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("Failed to delete");
+const handleDelete = async (userId) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this section?");
+  if (!confirmDelete) return;
+
+  try {
+    const res = await deleteData(`/sections/${userId}`);
+
+    if (res.success || res.status) {
+      toast.success("✅ Section deleted successfully");
+      fetchsection(); // refresh list
+    } else {
+      toast.error(res.message || "❌ Failed to delete section");
     }
-  };
+  } catch (err) {
+    console.error("❌ Delete error:", err);
+    toast.error("Failed to delete section");
+  }
+};
 
   const columns = [
      {
@@ -194,7 +195,7 @@ useEffect(() => {
           <div className="flex space-x-2  ">
             <button
               className="text-blue-500"
-              onClick={() => navigate("/dashboard/users/editemployee")}
+              onClick={() => handleEdit(row._id)}
             >
               <svg
                 fill="#22374e"
@@ -282,17 +283,19 @@ useEffect(() => {
     fetchsection(); // Trigger fetch with the updated search term
   };
 
-  const handleEdit = async (userId) => {
+const handleEdit = async (userId) => {
   try {
-    const res = await getData(`/employees/${userId}`);
-    console.log("res",res);
-    if (res && res.employee) {
-      setSelectedUser(res.employee); // ✅ set full user object, not just ID
+    const res = await getData(`/sections/${userId}`);
+    console.log("res", res);
+
+    if (res) {
+      setSelectedUser(res); // ✅ use the whole object directly
       setIsEditUserFormVisible(true);
     } else {
-      toast.error("Failed to fetch user data.");
+      toast.error("Failed to fetch section data.");
     }
   } catch (err) {
+    console.error("❌ Error fetching section:", err);
     toast.error("Something went wrong.");
   }
 };
@@ -485,7 +488,7 @@ useEffect(() => {
           <div>
             <button
            className="crm-buttonsection"
-           onClick={() => navigate("/dashboard/users/employe")}
+           onClick={() => navigate("/dashboard/users/AddSection")}
          >
            <svg
              fill="white"

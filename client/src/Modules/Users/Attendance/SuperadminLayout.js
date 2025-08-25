@@ -122,7 +122,7 @@ function SuperAdminLayout() {
               <Route path="/academic/subjects" element={<Subjects />} />
               <Route path="/academic/schedules" element={<Schedules />} />
               <Route path="/academic/classes" element={<Classes />} />
-              <Route path="/users/Attendance" element={<Attendance />} />
+              {/* <Route path="/users/Attendance" element={<Attendance />} /> */}
 
               {/* bussiness module routes*/}
               <Route path="/business" element={<Modules />} />

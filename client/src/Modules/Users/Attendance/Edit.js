@@ -1,275 +1,264 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom"; // To extract the user ID from the URL
-import axios from "axios";
-import { toast } from "react-toastify";
-import Cookies from "js-cookie";
-import Validator from "../../helpers/validators.js";
-import { getData, putData } from "../../helpers/api.js";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
-import rules from "./Rules.js";
-import bcrypt from "bcryptjs"; // Import bcryptjs for hashing password
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Validator from "../../../Helpers/validators.js";
+import { putData } from "../../../Helpers/api.js";
+import rules from "../Rules.js";
 
-const EditUserForm = ({ user }) => {
-  let userId = user;
-  const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    // password: "",
-    role: "",
-    status: "", // Add status here
-  });
-
-  // Fetch user data based on userId when the Component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      try {
-        // Use your getData function to fetch user data
-        const userdata = await getData(`/user/${userId}`); // API endpoint to get user by ID
-        if (userdata) {
-          setFormData({
-            first_name: userdata.first_name || "",
-            last_name: userdata.last_name || "",
-            email: userdata.email || "",
-            phone: userdata.phone || "",
-            // password: "",
-            role: userdata.role || "",
-            status: userdata.status || "", // Populate status
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [userId]); // Re-run when userId changes
-  const validator = new Validator(rules);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (formData.password) {
-      const hashedPassword = bcrypt.hashSync(formData.password, 10); // Hashing password with a salt rounds of 10
-      setFormData({ ...formData, password: hashedPassword }); // Update formData with hashed password
-    }
-
-    try {
-      const response = await putData(`/user/${userId}`, formData); // Assuming PUT request to update
-      setSuccess(true);
-      toast.success("User updated successfully!");
-      navigate("/dashboard/getusers"); // Redirect to user list page after success
-    } catch (error) {
-      setSuccess(false);
-      toast.error("Error updating user.");
-    } finally {
-      setLoading(false);
-    }
-  };
-  const [formVisible, setFormVisible] = useState(true); // State to control form visibility
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({
-    first_name: false,
-    email: false,
-    phone: false,
-    // password: false,
-    role: false,
-    status: false,
-  });
+const EditAttendanceForm = ({ attendance }) => {
   const navigate = useNavigate();
-  const [success, setSuccess] = useState(false);
+  const validator = new Validator(rules);
+
+  const initialFormData = {
+    contractorId: "",
+    rfidCardId: "",
+    sectionAssigned: "",
+    date: "",
+    entryGateIn: "",
+    workfloorIn: "",
+    workfloorOut: "",
+    exitGateOut: "",
+    remarks: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
-  const handleBlur = async (e) => {
-    const { name, value } = e.target;
-    setTouched({ ...touched, [name]: true });
-    const fieldErrors = await validateFormField(name, value);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      [name]: fieldErrors[name],
-    }));
-  };
 
-  const validateFormField = async (name, value) => {
-    const fieldRule = { [name]: rules[name] };
-    const fieldData = { [name]: value };
-    const validationErrors = await validator.validate(fieldData, fieldRule);
-    return validationErrors;
-  };
-  const getFieldClassName = (fieldName) => {
-    return errors[fieldName] ? "field-error" : "field";
-  };
-
-  const encodeData = (data) => {
-    return btoa(JSON.stringify(data));
-  };
+  // ✅ Prefill attendance data
+  useEffect(() => {
+    if (attendance) {
+      setFormData({
+        contractorId: attendance.contractorId || "",
+        rfidCardId: attendance.rfidCardId || "",
+        sectionAssigned: attendance.sectionAssigned || "",
+        date: attendance.date ? attendance.date.split("T")[0] : "",
+        entryGateIn: attendance.entryGateIn || "",
+        workfloorIn: attendance.workfloorIn || "",
+        workfloorOut: attendance.workfloorOut || "",
+        exitGateOut: attendance.exitGateOut || "",
+        remarks: attendance.remarks || "",
+      });
+    }
+  }, [attendance]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleBlur = async (e) => {
+    const { name, value } = e.target;
+    const fieldErrors = await validator.validate({ [name]: value }, { [name]: rules[name] });
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldErrors[name] || "",
+    }));
+  };
+
+  const getFieldClassName = (fieldName) =>
+    errors[fieldName] ? "aj-field-error AJ-floating-input" : "AJ-floating-input";
+
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  console.log("🔹 handleSubmit triggered");
+  setLoading(true);
+
+  try {
+    console.log("🔹 Using userId:", selectedUserId);
+
+    if (!selectedUserId) {
+      toast.error("❌ Missing userId.");
+      console.error("❌ No userId found in state.");
+      return;
+    }
+
+    const endpoint = `/api/attendance/${selectedUserId}`;
+    console.log("🔹 API endpoint being called:", endpoint);
+    console.log("🔹 Form data being sent:", formData);
+
+    const response = await putData(endpoint, formData);
+
+    // If putData returns raw response.json(), "status" won’t exist
+    console.log("🔹 API parsed response:", response);
+
+    if (response?.success || response?.status === 200) {
+      toast.success("✅ Attendance updated successfully!");
+      // navigate("/dashboard/attendance");
+    } else {
+      toast.error(response?.message || "❌ Failed to update attendance.");
+    }
+  } catch (error) {
+    console.error("❌ Error updating attendance:", error);
+    toast.error("An error occurred. Please try again.");
+  } finally {
+    setLoading(false);
+    console.log("🔹 Loading set to false");
+  }
+};
+
+
+
+
   return (
-    <div>
-      {formVisible && (
-        <div className="adduser-outer-section">
-          <div className="adduser-inner-section">
-            <div className="adduser-form-section">
-              <form
-                className="aj-crm-adding w-full max-w-lg mx-auto mt-8"
-                onSubmit={handleSubmit}
-              >
-                <h2 className=" text-xl font-semibold mb-6 text-gray-800 ">
-                  Edit User
-                </h2>
+    <div className="edituser-outer-section">
+      <div className="edituser-inner-section">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-5xl mx-auto mt-8 bg-white"
+          noValidate
+        >
+          <h2 className="text-lg font-semibold mb-6 text-gray-800">
+            Edit Attendance
+          </h2>
 
-                {/* First Name */}
-                <div className="first-left form-item">
-                  <input
-                    type="text"
-                    placeholder=""
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("first_name")}
-                  />
-                  <label className="text-sm text-#000-200">
-                    First Name<span className="text-red-500">*</span>
-                  </label>
-                </div>
+          {/* FORM GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
-                {/* Last Name */}
-                <div className="first-left form-item">
-                  <input
-                    type="text"
-                    placeholder=""
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("last_name")}
-                  />
-                  <label className="text-sm text-#000-500">Last Name</label>
-                </div>
+            {/* Contractor ID */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="contractorId"
+                value={formData.contractorId}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("contractorId")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Contractor ID</label>
+            </div>
 
-                {/* Email */}
-                <div className="first-left form-item">
-                  <input
-                    type="text"
-                    placeholder=""
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("email")}
-                  />
-                  <label className="block text-sm text-#000-500">
-                    Email<span className="text-red-500">*</span>
-                  </label>
-                </div>
+            {/* RFID Card */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="rfidCardId"
+                value={formData.rfidCardId}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("rfidCardId")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">RFID Card</label>
+            </div>
 
-                {/* Phone */}
-                <div className="first-left form-item">
-                  <input
-                    type="number"
-                    placeholder=""
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("phone")}
-                  />
-                  <label className="block text-sm text-#000-500">
-                    Phone Number<span className="text-red-500">*</span>
-                  </label>
-                </div>
+            {/* Section Assigned */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="sectionAssigned"
+                value={formData.sectionAssigned}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("sectionAssigned")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Section Assigned</label>
+            </div>
 
-                {/* Password */}
-                {/* <div className="first-left form-item">
-                <input
-                  type="password"
-                  placeholder=""
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                
-                  className={getFieldClassName("password")}
-                />
-                <label className="block text-sm text-#000-500">
-                  Password<span className="text-red-500">*</span>
-                </label>
-              </div> */}
+            {/* Date */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("date")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Date</label>
+            </div>
 
-                {/* Role */}
-                <div className="select-option-dropdown first-left form-item">
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("role")}
-                  >
-                    <option value="">select an option</option>
-                    <option value="admin">Admin</option>
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="parent">Parent</option>
-                  </select>
-                  <span className="dropdown-icon">▼</span>
-                  <label className={formData.role ? "selected" : ""}>
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                {/* Status Dropdown */}
-                <div className="select-option-dropdown first-left form-item">
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("status")}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
-                  <span className="dropdown-icon">▼</span>
-                  <label className={formData.status ? "selected" : ""}>
-                    Status <span className="text-red-500">*</span>
-                  </label>
-                </div>
+            {/* Entry Gate In */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="datetime-local"
+                name="entryGateIn"
+                value={formData.entryGateIn}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("entryGateIn")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Entry Gate In</label>
+            </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-between">
-                  <button
-                    type="rsesetpassword"
-                    className="upclick px-4 mt-5 py-2 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Reset Password
-                  </button>
-                  <button
-                    type="submit"
-                    className="upclick px-4 mt-5 py-2 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Update
-                  </button>
-                </div>
-              </form>
+            {/* Workfloor In */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="datetime-local"
+                name="workfloorIn"
+                value={formData.workfloorIn}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("workfloorIn")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Workfloor In</label>
+            </div>
+
+            {/* Workfloor Out */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="datetime-local"
+                name="workfloorOut"
+                value={formData.workfloorOut}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("workfloorOut")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Workfloor Out</label>
+            </div>
+
+            {/* Exit Gate Out */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="datetime-local"
+                name="exitGateOut"
+                value={formData.exitGateOut}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("exitGateOut")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Exit Gate Out</label>
+            </div>
+
+            {/* Remarks */}
+            <div className="AJ-floating-label-wrapper mb-6 col-span-2">
+              <textarea
+                name="remarks"
+                value={formData.remarks}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("remarks")}
+                placeholder=" "
+                rows="3"
+              />
+              <label className="AJ-floating-label">Remarks</label>
             </div>
           </div>
-        </div>
-      )}
+
+          {/* Submit Button */}
+          <div className="AJ-crm-save w-full md:col-span-2 mt-6">
+            <button
+              type="submit"
+              className="button-section w-full md:w-auto rounded"
+              disabled={loading}
+            >
+              {loading ? "Updating..." : "Update"}
+            </button>
+          </div>
+        </form>
+      </div>
+
       <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">
@@ -280,4 +269,4 @@ const EditUserForm = ({ user }) => {
   );
 };
 
-export default EditUserForm;
+export default EditAttendanceForm;

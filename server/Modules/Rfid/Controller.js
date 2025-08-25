@@ -29,12 +29,14 @@ exports.addRFID = async (req, res) => {
 // 📥 Get all RFID cards
 exports.getAllRFID = async (req, res) => {
   try {
-    const cards = await RFID.find().populate("employeeId");
+    const cards = await RFID.find().populate("employeeId", "firstName lastName email"); 
+    // 👆 only bring needed fields from Employee model
+
     res.json({ success: true, data: cards });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
-};
+}
 
 // 📥 Get single RFID card by UID
 exports.getRFID = async (req, res) => {

@@ -3,7 +3,7 @@ import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "../Add.js";
-import EditUserForm from "../Edit.js";
+import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -119,23 +119,30 @@ useEffect(() => {
   //   }
   // };
 
-  const handleDelete = async (ids) => {
-    const confirm = window.confirm("Are you sure you want to delete?");
-    if (!confirm) return;
-    try {
-      const res = await deleteData("/teacher/delete", {
-        teachers: Array.isArray(ids) ? ids : [ids],
-      });
-      if (res.success) {
-        toast.success("Deleted successfully");
-        fetchemployees();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("Failed to delete");
+ const handleDelete = async (id) => {
+  console.log("🗑️ Deleting employee with id:", id);
+
+  const confirmDelete = window.confirm("Are you sure you want to delete this employee?");
+  if (!confirmDelete) {
+    console.log("❌ Delete cancelled by user");
+    return;
+  }
+
+  try {
+    const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
+    console.log("🔹 Delete API response:", res);
+
+    if (res.status === 200 || res.success === true) {
+      toast.success("✅ Employee deleted successfully!");
+      fetchemployees(); // refresh the list after delete
+    } else {
+      toast.error(res.message || "❌ Failed to delete employee.");
     }
-  };
+  } catch (err) {
+    console.error("❌ Error while deleting employee:", err);
+    toast.error("Failed to delete. Please try again.");
+  }
+};
 
   const columns = [
      {
@@ -149,8 +156,8 @@ useEffect(() => {
       selector: (row) => (
         <input
           type="checkbox"
-          checked={selectedTeachers.includes(row.id)}
-          onChange={() => handleCheckboxChange(row.id)}
+          checked={selectedTeachers.includes(row._id)}
+          onChange={() => handleCheckboxChange(row._id)}
         />
       ),
       width: "5%",
@@ -177,46 +184,46 @@ useEffect(() => {
       width: "25%",
     },
     
- {
-      name: "Actions",
-      width: "2%",
-      selector: (row) => (
-        <div className="flex space-x-2 justify-center ">
-          <div className="flex space-x-2  ">
-            <button
-              className="text-blue-500"
-              onClick={() => navigate("/dashboard/users/editemployee")}
-            >
-              <svg
-                fill="#22374e"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex space-x-2 ">
-            <button
-              className="text-red-500"
-              onClick={() => handleDelete(row._id)}
-            >
-              <svg
-                fill="red"
-                width={16}
-                height={16}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-              >
-                <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      ),
-    }
+{
+  name: "Actions",
+  width: "2%",
+  selector: (row) => (
+    <div className="flex space-x-2 justify-center">
+      <div className="flex space-x-2  ">
+        <button
+          className="text-blue-500"
+          onClick={() => handleEdit(row._id)}   // ✅ updated
+        >
+          <svg
+            fill="#22374e"
+            width={20}
+            height={20}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 640 512"
+          >
+            <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+          </svg>
+        </button>
+      </div>
+      <div className="flex space-x-2 ">
+        <button
+          className="text-red-500"
+          onClick={() => handleDelete(row._id)}
+        >
+          <svg
+            fill="red"
+            width={16}
+            height={16}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+          >
+            <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  ),
+}
 
 
   ];
@@ -273,13 +280,13 @@ useEffect(() => {
     fetchemployees(); // Trigger fetch with the updated search term
   };
 
-  const handleEdit = async (userId) => {
+const handleEdit = async (userId) => {
   try {
     const res = await getData(`/employees/${userId}`);
-    console.log("res",res);
+    console.log("res", res);
     if (res && res.employee) {
-      setSelectedUser(res.employee); // ✅ set full user object, not just ID
-      setIsEditUserFormVisible(true);
+      setSelectedUser(res.employee); // ✅ Save full employee object
+      setIsEditUserFormVisible(true); // ✅ Open side panel
     } else {
       toast.error("Failed to fetch user data.");
     }
@@ -288,41 +295,41 @@ useEffect(() => {
   }
 };
 
-
   // selected userlist delete
-  const handleDeleteUser = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("Select Row");
-      return;
+const handleDeleteUser = async () => {
+  if (selectedUsers.length === 0) {
+    toast.error("Select at least one row");
+    return;
+  }
+
+  const validUsers = selectedUsers.filter((id) =>
+    /^[0-9a-fA-F]{24}$/.test(id) // Validate MongoDB ObjectId
+  );
+
+  if (validUsers.length === 0) {
+    alert("Invalid user IDs provided.");
+    return;
+  }
+
+  const confirmDelete = window.confirm(
+    `Are you sure you want to delete ${validUsers.length} employee(s)?`
+  );
+  if (!confirmDelete) return;
+
+  try {
+    // Delete each selected employee one by one
+    for (const id of validUsers) {
+      await deleteData(`/employee/${id}`);
     }
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
 
-    if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
-      return;
-    }
-    setIsModalOpen(true);
+    toast.success("✅ Employees deleted successfully!");
+    fetchemployees(); // Refresh the list
+  } catch (error) {
+    console.error("❌ Error deleting employees:", error);
+    toast.error("Failed to delete employees. Please try again.");
+  }
+};
 
-    try {
-      const url = "/user/delete"; // Use the correct delete API endpoint
-      const payload = {
-        users: Array.isArray(validUsers) ? validUsers : [validUsers],
-      };
-
-      const response = await deleteData(url, payload); // Pass payload for deletion
-
-      if (response.success) {
-        fetchemployees();
-        toast.success("Deleted  Successfully!");
-      } else {
-        toast.error(response.message || "Try again");
-      }
-    } catch (error) {
-      toast.error(error || "Try again");
-    }
-  };
 
   const toggleAddUserForm = () => {
     setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility

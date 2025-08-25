@@ -55,14 +55,18 @@ exports.addAttendance = async (req, res) => {
 // Get All Attendance Records
 exports.getAllAttendance = async (req, res) => {
   try {
-    const attendance = await Attendance.find().populate("contractorId");
-    res.json(attendance);
+    // 🚀 Fetch attendance without populate
+    const attendance = await Attendance.find();
+
+    res.status(200).json(attendance);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching attendance", error: error.message });
+    res.status(500).json({
+      message: "Error fetching attendance",
+      error: error.message,
+    });
   }
 };
+
 
 // Get Attendance by ID
 exports.getAttendanceById = async (req, res) => {

@@ -7,6 +7,8 @@ const {
   getEmployeeById,
   getEmployeeByRFID,
   getEmployeeByEmployeeId,
+  updateEmployee,
+  deleteEmployee
 } = require("./Controller");
 
 
@@ -24,5 +26,11 @@ router.get("/by-employee-id/:employeeId", getEmployeeByEmployeeId); // 👈 Must
 
 // Get employee by MongoDB ObjectId or employeeId
 router.get("/:id", getEmployeeById);
+
+router.put("/:id", updateEmployee);
+
+router.delete("/:id", deleteEmployee);
+
+
 
 module.exports = router;

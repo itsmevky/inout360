@@ -12,10 +12,10 @@ router.get("/all", attendanceController.getAllAttendance);
 router.get("/:id", attendanceController.getAttendanceById);
 
 // Update attendance (punches or details)
-router.put("/update/:id", attendanceController.updateAttendance);
+router.put("/:id", attendanceController.updateAttendance);
 
 // Delete attendance
-router.delete("/delete/:id", attendanceController.deleteAttendance);
+router.delete("/:id", attendanceController.deleteAttendance);
 
 // HR approval
 router.put("/hr-approve/:id", attendanceController.hrApprove);

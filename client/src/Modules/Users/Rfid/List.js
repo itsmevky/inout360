@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
-import AddUserForm from "../Add.js";
+import AddUserForm from "./Add.js";
 import EditUserForm from "../Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
@@ -169,7 +169,7 @@ useEffect(() => {
     },
     {
       name: "employeeId",
-      selector: (row) => row.employeeId,
+      selector: (row) => row.employeeId?.firstName || "N/A",
       width: "25%",
     },
      
@@ -179,12 +179,7 @@ useEffect(() => {
       width: "25%",
     },
 
-    {
-      name: "IssuedAt",
-      selector: (row) => row.issuedAt,
-      width: "25%",
-    },
-    
+      
  {
       name: "Actions",
       width: "2%",
@@ -484,7 +479,7 @@ useEffect(() => {
           <div>
             <button
            className="crm-buttonsection"
-           onClick={() => navigate("/dashboard/users/employe")}
+           onClick={() => navigate("/dashboard/users/AddRfid")}
          >
            <svg
              fill="white"
