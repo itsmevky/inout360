@@ -1,275 +1,213 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom"; // To extract the user ID from the URL
-import axios from "axios";
-import { toast } from "react-toastify";
-import Cookies from "js-cookie";
-import Validator from "../../helpers/validators.js";
-import { getData, putData } from "../../helpers/api.js";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
-import rules from "./Rules.js";
-import bcrypt from "bcryptjs"; // Import bcryptjs for hashing password
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Validator from "../../../Helpers/validators.js";
+import { getData, putData } from "../../../Helpers/api.js";
+import rules from "../Rules.js";
 
 const EditUserForm = ({ user }) => {
-  let userId = user;
+  const userId = user;
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    // password: "",
-    role: "",
-    status: "", // Add status here
+    uid: "",
+    employeeId: "",
+    issuedAt: "",
+    isActive: "",
+    lostOrReplaced: "",
   });
 
-  // Fetch user data based on userId when the Component mounts
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const validator = new Validator(rules);
+  const navigate = useNavigate();
+
+  // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        // Use your getData function to fetch user data
-        const userdata = await getData(`/user/${userId}`); // API endpoint to get user by ID
+        const userdata = await getData(`/rfid/${userId}`);
         if (userdata) {
           setFormData({
-            first_name: userdata.first_name || "",
-            last_name: userdata.last_name || "",
-            email: userdata.email || "",
-            phone: userdata.phone || "",
-            // password: "",
-            role: userdata.role || "",
-            status: userdata.status || "", // Populate status
+            uid: userdata.uid || "",
+            employeeId: userdata.employeeId || "",
+            issuedAt: userdata.issuedAt || "",
+            isActive: userdata.isActive?.toString() || "",
+            lostOrReplaced: userdata.lostOrReplaced?.toString() || "",
           });
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("❌ Error fetching user data:", error);
+        toast.error("Failed to fetch RFID data.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserData();
-  }, [userId]); // Re-run when userId changes
-  const validator = new Validator(rules);
+  }, [userId]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBlur = async (e) => {
+    const { name, value } = e.target;
+    const fieldErrors = await validator.validate(
+      { [name]: value },
+      { [name]: rules[name] }
+    );
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldErrors[name] || "",
+    }));
+  };
+
+  const validateForm = async () => {
+    const validationErrors = await validator.validate(formData, rules);
+    setErrors(validationErrors);
+    return Object.keys(validationErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (formData.password) {
-      const hashedPassword = bcrypt.hashSync(formData.password, 10); // Hashing password with a salt rounds of 10
-      setFormData({ ...formData, password: hashedPassword }); // Update formData with hashed password
+    const isValid = await validateForm();
+    if (!isValid) {
+      setLoading(false);
+      return;
     }
 
     try {
-      const response = await putData(`/user/${userId}`, formData); // Assuming PUT request to update
-      setSuccess(true);
-      toast.success("User updated successfully!");
-      navigate("/dashboard/getusers"); // Redirect to user list page after success
+      const payload = {
+        ...formData,
+        isActive: formData.isActive === "true",
+        lostOrReplaced: formData.lostOrReplaced === "true",
+      };
+
+      const response = await putData(`/rfid/${userId}`, payload);
+      toast.success("✅ RFID updated successfully!");
+      navigate("/dashboard/rfid");
     } catch (error) {
-      setSuccess(false);
-      toast.error("Error updating user.");
+      console.error("❌ Error updating RFID:", error);
+      toast.error("Error updating RFID.");
     } finally {
       setLoading(false);
     }
   };
-  const [formVisible, setFormVisible] = useState(true); // State to control form visibility
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({
-    first_name: false,
-    email: false,
-    phone: false,
-    // password: false,
-    role: false,
-    status: false,
-  });
-  const navigate = useNavigate();
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const handleBlur = async (e) => {
-    const { name, value } = e.target;
-    setTouched({ ...touched, [name]: true });
-    const fieldErrors = await validateFormField(name, value);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      [name]: fieldErrors[name],
-    }));
-  };
-
-  const validateFormField = async (name, value) => {
-    const fieldRule = { [name]: rules[name] };
-    const fieldData = { [name]: value };
-    const validationErrors = await validator.validate(fieldData, fieldRule);
-    return validationErrors;
-  };
-  const getFieldClassName = (fieldName) => {
-    return errors[fieldName] ? "field-error" : "field";
-  };
-
-  const encodeData = (data) => {
-    return btoa(JSON.stringify(data));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
+  const getFieldClassName = (fieldName) =>
+    errors[fieldName] ? "field-error" : "field";
 
   return (
-    <div>
-      {formVisible && (
-        <div className="adduser-outer-section">
-          <div className="adduser-inner-section">
-            <div className="adduser-form-section">
-              <form
-                className="aj-crm-adding w-full max-w-lg mx-auto mt-8"
-                onSubmit={handleSubmit}
-              >
-                <h2 className=" text-xl font-semibold mb-6 text-gray-800 ">
-                  Edit User
-                </h2>
+    <div className="adduser-outer-section">
+      <div className="adduser-inner-section">
+        <div className="adduser-form-section">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full max-w-5xl mx-auto mt-8 bg-white"
+            noValidate
+          >
+            <div>
+              <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                Edit RFID
+              </h2>
+            </div>
 
-                {/* First Name */}
-                <div className="first-left form-item">
-                  <input
-                    type="text"
-                    placeholder=""
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("first_name")}
-                  />
-                  <label className="text-sm text-#000-200">
-                    First Name<span className="text-red-500">*</span>
-                  </label>
-                </div>
-
-                {/* Last Name */}
-                <div className="first-left form-item">
-                  <input
-                    type="text"
-                    placeholder=""
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("last_name")}
-                  />
-                  <label className="text-sm text-#000-500">Last Name</label>
-                </div>
-
-                {/* Email */}
-                <div className="first-left form-item">
-                  <input
-                    type="text"
-                    placeholder=""
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("email")}
-                  />
-                  <label className="block text-sm text-#000-500">
-                    Email<span className="text-red-500">*</span>
-                  </label>
-                </div>
-
-                {/* Phone */}
-                <div className="first-left form-item">
-                  <input
-                    type="number"
-                    placeholder=""
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("phone")}
-                  />
-                  <label className="block text-sm text-#000-500">
-                    Phone Number<span className="text-red-500">*</span>
-                  </label>
-                </div>
-
-                {/* Password */}
-                {/* <div className="first-left form-item">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              {/* UID */}
+              <div className="AJ-floating-label-wrapper mb-6">
                 <input
-                  type="password"
-                  placeholder=""
-                  name="password"
-                  value={formData.password}
+                  type="text"
+                  name="uid"
+                  value={formData.uid}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                
-                  className={getFieldClassName("password")}
+                  className={`${getFieldClassName("uid")} AJ-floating-input`}
+                  placeholder=" "
                 />
-                <label className="block text-sm text-#000-500">
-                  Password<span className="text-red-500">*</span>
+                <label className="AJ-floating-label">
+                  UID <span className="text-red-500">*</span>
                 </label>
-              </div> */}
+              </div>
 
-                {/* Role */}
-                <div className="select-option-dropdown first-left form-item">
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("role")}
-                  >
-                    <option value="">select an option</option>
-                    <option value="admin">Admin</option>
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="parent">Parent</option>
-                  </select>
-                  <span className="dropdown-icon">▼</span>
-                  <label className={formData.role ? "selected" : ""}>
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                {/* Status Dropdown */}
-                <div className="select-option-dropdown first-left form-item">
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName("status")}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
-                  <span className="dropdown-icon">▼</span>
-                  <label className={formData.status ? "selected" : ""}>
-                    Status <span className="text-red-500">*</span>
-                  </label>
-                </div>
+              {/* Employee ID */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="employeeId"
+                  value={formData.employeeId}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${getFieldClassName("employeeId")} AJ-floating-input`}
+                  placeholder=" "
+                />
+                <label className="AJ-floating-label">Employee ID</label>
+              </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-between">
-                  <button
-                    type="rsesetpassword"
-                    className="upclick px-4 mt-5 py-2 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Reset Password
-                  </button>
-                  <button
-                    type="submit"
-                    className="upclick px-4 mt-5 py-2 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Update
-                  </button>
-                </div>
-              </form>
+              {/* Issued At */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="date"
+                  name="issuedAt"
+                  value={formData.issuedAt}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${getFieldClassName("issuedAt")} AJ-floating-input`}
+                  placeholder=" "
+                />
+                <label className="AJ-floating-label">Issued At</label>
+              </div>
+
+              {/* Active Status */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <select
+                  name="isActive"
+                  value={formData.isActive}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${getFieldClassName("isActive")} AJ-floating-input`}
+                >
+                  <option value="" disabled hidden></option>
+                  <option value="true">true</option>
+                  <option value="false">false</option>
+                </select>
+                <label className="AJ-floating-label">Active Status</label>
+              </div>
+
+              {/* Lost or Replaced */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <select
+                  name="lostOrReplaced"
+                  value={formData.lostOrReplaced}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${getFieldClassName("lostOrReplaced")} AJ-floating-input`}
+                >
+                  <option value="" disabled hidden></option>
+                  <option value="true">true</option>
+                  <option value="false">false</option>
+                </select>
+                <label className="AJ-floating-label">Lost / Replaced</label>
+              </div>
             </div>
-          </div>
+
+            {/* Submit Button */}
+            <div className="AJ-crm-save w-full md:col-span-2 mt-6">
+              <button
+                type="submit"
+                className="button-section w-full md:w-auto rounded"
+                disabled={loading}
+              >
+                {loading ? "Updating..." : "Update"}
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </div>
+
       <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">

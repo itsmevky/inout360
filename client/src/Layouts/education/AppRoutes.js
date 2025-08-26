@@ -9,7 +9,6 @@ import EducationTeacherLayout from "./Layouts/education/Teacherlayout.js";
 import EducationStudentLayout from "./Layouts/education/Studentlayout.js";
 import EducationParentLayout from "./Layouts/education/ParentLayout.js";
 import ContractorLayout from "./Layouts/education/ContractorLayout.js";
-import SupervisorLayout from "./Layouts/education/SupervisorLayout.js";
 
 // Public Pages
 import Homepage from "./Website/Home.js";
@@ -32,7 +31,6 @@ const AppRoutes = () => {
     student: EducationStudentLayout,
     parent: EducationParentLayout,
     contractor:ContractorLayout,
-    supervisor:SupervisorLayout,
   };
 
   const LayoutComponent = roleLayoutMap[userRole];

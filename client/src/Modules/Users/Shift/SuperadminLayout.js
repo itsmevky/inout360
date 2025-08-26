@@ -36,17 +36,6 @@ import Parents from "../Modules/Users/Parents/List.js";
 import Classes from "../Modules/Academics/Classes/List.js";
 import Editemployee from "../Modules/Users/Edit.js";
 import Section from "../Modules/Users/Section/List.js";
-import AddSection from "../Modules/Users/Section/Add.js";
-import  Attendancelist from "../Modules/Users/Attendance/List.js"; 
-import EditAttendance from "../Modules/Users/Attendance/Edit.js";
-import Addattendance from "../Modules/Users/Attendance/Add.js";
-import Contractorlist from "../Modules/Users/Contractors/List.js"
-import Addcontractor from "../Modules/Users/Contractors/Add.js";
-import Editcontractor from "../Modules/Users/Contractors/Edit.js";
-import Rfidlist from "../Modules/Users/Rfid/List.js"
-import Rfidadd from "../Modules/Users/Rfid/Add.js";
-import Editrfid from "../Modules/Users/Rfid/Edit.js";
-
 
 // import ModuleGlobalfields from "../Modules/Module/GlobalFields/Globalfieldlist.js";
 // import Groups from "../Modules/Module/GlobalFields/Groups/list.js";
@@ -122,7 +111,6 @@ function SuperAdminLayout() {
               <Route path="/users/vendors" element={<Vendors />} />
               <Route path="/users/permissions" element={<PermissionsTable />} />
               <Route path="/users/Section" element={<Section />} />
-              <Route path="/users/AddSection" element={<AddSection />} />
               {/* <Route path="/users/parents" element={<StudentUser />} /> */}
               <Route path="/users" element={<GetUsers />} />
               {/* <Route path="/teachers" element={<GetTeachers />} /> */}
@@ -135,19 +123,6 @@ function SuperAdminLayout() {
               <Route path="/academic/schedules" element={<Schedules />} />
               <Route path="/academic/classes" element={<Classes />} />
               {/* <Route path="/users/module/Attendance" element={<Attendance />} /> */}
-             <Route path="/users/Attendance" element={<Attendancelist />} />
-              <Route path="/users/Addattendance" element={<Addattendance />} />
-              <Route path="/users/EditAttendance" element={<EditAttendance />} />
-              <Route path="/users/Contractor" element={<Contractorlist />} />
-              <Route path="/users/AddContractor" element={<Addcontractor />} />
-              <Route path="/users/Editcontractor" element={<Editcontractor />} />
-              <Route path="/users/Rfid" element={<Rfidlist />} />
-              <Route path="/users/AddRfid" element={<Rfidadd />} />
-              <Route path="/users/Editrfid" element={<Editrfid />} />
-
-
-
-
 
               {/* bussiness module routes*/}
               <Route path="/business" element={<Modules />} />

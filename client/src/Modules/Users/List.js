@@ -533,7 +533,7 @@ const GetUsers = () => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Emplyeesss</h2>
+        <h2 className="text-xl font-bold sub-title">List of Shift</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">

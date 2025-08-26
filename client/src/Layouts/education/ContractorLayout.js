@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import Dashboard from "../..//Dashboard/Education/Admin/Dasboard";
+import Dashboard from "../../Dashboard/Education/Contractor/Dasboard.js";
 import StudentUser from "../../Modules/Users/Students/User.js";
 import AddUserForm from "../../Modules/Users/Add.js";
 import AddTeacher from "../../Modules/Users/Teachers/addteacher.js";
@@ -10,8 +10,8 @@ import Departments from "../../Modules/Academics/Department/List.js";
 import Subjects from "../../Modules/Academics/Subjects/List.js";
 import Schedules from "../../Modules/Academics/Schedules/List.js";
 import Courses from "../../Modules/Academics/Courses/List.js";
-import EditUser from "../../Modules/Users/Edit";
-import Sidebar from "../../Dashboard/Education/Admin/sidebar";
+import EditUser from "../../Modules/Users/Edit.js";
+import Sidebar from "../../Dashboard/Education/Admin/sidebar.js";
 import Header from "../../Dashboard/Education/header.js";
 import Footer from "../../Dashboard/Education/footer.js";
 import PermissionsTable from "../../Modules/Users/Permissions/permission.js";
@@ -43,6 +43,9 @@ import AddSection from "../../Modules/Users/Section/Add.js";
 import Rfidlist from "../../Modules/Users/Rfid/List.js"
 import Rfidadd from "../../Modules/Users/Rfid/Add.js";
 import Editrfid from "../../Modules/Users/Rfid/Edit.js";
+import Employee from "../../Modules/Users/Add.js";
+
+
 
 function AdminLayout() {
   const getCookie = (name) => {
@@ -119,6 +122,7 @@ function AdminLayout() {
               <Route path="/users/freelancers" element={<Freelancers />} />
               <Route path="/users/roles" element={<Roles />} />
               <Route path="/users/employees" element={<Employees />} />
+              <Route path="/users/employe" element={<Employee />} />
               <Route path="/users/vendors" element={<Vendors />} />
               <Route path="/users/permissions" element={<PermissionsTable />} />
               <Route path="/users" element={<GetUsers />} />
@@ -141,6 +145,7 @@ function AdminLayout() {
               <Route path="/users/Rfid" element={<Rfidlist />} />
               <Route path="/users/AddRfid" element={<Rfidadd />} />
               <Route path="/users/Editrfid" element={<Editrfid />} />
+
 
               <Route path="*" element={<PermissionDenied />} />
             </Routes>

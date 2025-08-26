@@ -463,6 +463,7 @@
 // };
 // //================================================= Api Request Method Ends ====================================
 // *****************************************************new dynamic api starts here****************************************//
+
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -586,8 +587,24 @@ const API = {
     login: "/auth/login",
   },
 
+    shift: {
+      getAll: (params = {}) => getData("/shift", params),
+    getById: (id) => getData(`/shift/${id}`),
+    add: (data) => postData("/shift", data),
+    update: (id, data) => putData(`/shift/${id}`, data),
+    remove: (id) => deleteData(`/shift/${id}`),
+    bulkRemove: (data) => postData("/shift/delete", data),
+    search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+      getData("/shift/search", {
+        search: searchTerm,
+        page,
+        limit,
+        ...filters,
+      }),
+  },
+
   // Generic CRUD methods
-  getAll: (params) => getData("/sections/all", params),
+  // getAll: (params) => getData("/sections/all", params),
   getById: (module, id) => getData(`/${module}/${id}`),
   add: (module, data) => postData(`/${module}`, data),
   update: (module, id, data) => putData(`/${module}/${id}`, data),
@@ -618,21 +635,21 @@ const API = {
   login: (data) => postData("/auth/login", data),
 
   // ✅ Section-specific helpers
- section: {
-  getAll: (params) => getData("/sections", params),
-  getById: (id) => getData(`{{url}}/api/sections/${id}`),
-  add: (data) => postData("{{url}}/api/sections", data),
-  update: (id, data) => putData(`{{url}}/api/sections/${id}`, data),
-  remove: (id) => deleteData(`{{url}}/api/sections/${id}`),
-  bulkRemove: (data) => postData("{{url}}/api/sections/delete", data),
-  search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
-    getData("{{url}}/api/sections/search", {
-      search: searchTerm,
-      page,
-      limit,
-      ...filters,
-    }),
-},
+
+    
+  section: {
+      getAll: (params) => getData("/sections/all", params),
+      getAll: (params = {}) => getData("/sections", params),
+    getById: (id) => getData(`/sections/${id}`),
+    add: (data) => postData("/sections", data),
+    update: (id, data) => putData(`/sections/${id}`, data),
+    remove: (id) => deleteData(`/sections/${id}`),
+    bulkRemove: (data) => postData("/sections/delete", data),
+    search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+      getData("/sections/search", { search: searchTerm, page, limit, ...filters }),
+  },
+
+
 
 rfid: {
   getAll: (params) => getData("/rfid", params),

@@ -11,6 +11,7 @@ import SuperAdminLayout from "./Layouts/SuperadminLayout.js";
 import PermissionDenied from "./Website/PermissionDenied.js";
 import Registerpage from "./Website/registerform.js";
 import Getotp from "./Website/getotp.js";
+
 import Homepage from "./Website/Home.js";
 import NotFound from "./Website/NotFound.js";
 import Loginpage from "../src/Website/login.js";
@@ -18,10 +19,8 @@ import SuperadminDashboard from "./SuperAdmin/Dasboard.js";
 import AdminDashboard from "./Admin/admindashboard.js";
 import Forgotpassword from "../src/Website/forgotpassword.js";
 import TeacherDashboard from "./Teacher/teacherdashboard.js";
-import ParentDashboard from "./SuperAdmin/Dasboard.js";
-import ContractorDashboard from "./Dashboard/Education/Contractor/Dasboard.js";
-import SupervisorDashboard from "./Dashboard/Education/Supervisor/Dasboard.js";
 
+import ParentDashboard from "./SuperAdmin/Dasboard.js";
 
 const App = () => {
   const userRole = "super_admin"; //getUserRole(); // Fetch the user role from token/cookie
@@ -65,10 +64,6 @@ const App = () => {
         <Route path="/dashboard/admin" element={<AdminDashboard />} />
         <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
         <Route path="/dashboard/parent" element={<ParentDashboard />} />
-         <Route path="/dashboard/contractor" element={<ContractorDashboard />} />
-          <Route path="/dashboard/Supervisor" element={<SupervisorDashboard />} />
-
-
       </Routes>
     </Router>
   );

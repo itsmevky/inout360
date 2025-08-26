@@ -62,6 +62,7 @@ const handleSubmit = async (e) => {
     if (result.status === true || result.success === true) {
       toast.success("✅ RFID created successfully!");
       setFormData(initialFormData);
+      
     } else {
       toast.error(result.message || "❌ Failed to create RFID.");
     }

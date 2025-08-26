@@ -15,7 +15,7 @@ exports.registerUser = async (req, res) => {
     lastName: ["required"],
     email: ["required", "email"],
     password: ["required", "min:6"],
-    role: ["required", "enum:admin,hr,supervisor,employee,manager,superadmin"],
+    role: ["required", "enum:admin,hr,supervisor,employee,manager,superadmin,contractor"],
   };
 
   const validator = new Validator(req.body, rules);

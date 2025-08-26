@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
-import AddUserForm from "./Add.js";
+import AddUserForm from "../Add.js";
 import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
+import Attendance from "./Add.js"
 const Teachers = () => {
   const [data, setData] = useState([]);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
@@ -38,40 +39,24 @@ const Teachers = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-const fetchrfid = async () => {
-  setLoading(true);
+
+const fetchshift = async () => {
   try {
-    const response = await API.rfid.getAll({
-      search: searchTerm,
-      page: currentPage,
-      limit: rowsPerPage,
-    });
-
-    console.log("response", response);
-
-    if (response?.success && Array.isArray(response.data)) {
-      setData(response.data);
-      setTotalRows(response.data.length); // ✅ use array length since no total
-    } else {
-      setError("No RFID data found");
-      setData([]);
-      setTotalRows(0);
-    }
+    const response = await API.shift.getAll(); // calls /shift correctly
+    setData(response); 
+    setTotalRows(response.length);
   } catch (err) {
-    console.error("Error fetching RFID:", err);
-    setError("Something went wrong while fetching RFID data.");
-    setData([]);
-    setTotalRows(0);
+    console.error("Error fetching shifts:", err);
+    setError("Failed to fetch shift data.");
   } finally {
     setLoading(false);
   }
 };
 
 useEffect(() => {
-  fetchrfid();
-}, [currentPage, rowsPerPage, searchTerm]);
-
-
+  fetchshift();
+}, 
+ [currentPage, rowsPerPage, searchTerm]);
 
   const handleCheckboxChange = (id) => {
     setSelectedTeachers((prev) =>
@@ -95,7 +80,7 @@ useEffect(() => {
       });
       if (res.status) {
         toast.success("Status updated");
-        fetchrfid();
+        fetchshift();
       } else {
         toast.error(res.message);
       }
@@ -114,7 +99,7 @@ useEffect(() => {
   //     });
   //     if (res.status) {
   //       toast.success("Status updated");
-  //       fetchrfid();
+  //       fetchshift();
   //       setSelectedStatus("");
   //       setSelectedTeachers([]);
   //     } else {
@@ -125,116 +110,115 @@ useEffect(() => {
   //   }
   // };
 
-const handleDelete = async (uid) => {
+ 
+ const handleDelete = async (ids) => {
   const confirmDelete = window.confirm("Are you sure you want to delete?");
   if (!confirmDelete) return;
 
   try {
-    console.log("➡️ Deleting UID:", uid);
+    // If multiple IDs are allowed, you can loop or batch
+    const targetIds = Array.isArray(ids) ? ids : [ids];
 
-    const res = await deleteData(`/rfid/${uid}`);  // ✅ call correct endpoint
+    for (const id of targetIds) {
+      const res = await deleteData(`/attendance/${id}`);
 
-    if (res.success) {
-      toast.success("RFID deleted successfully");
-      fetchrfid(); // refresh list
-    } else {
-      toast.error(res.message || "Failed to delete RFID");
+      console.log("🔹 Delete response:", res);
+
+      if (res?.success || res?.status === 200) {
+        toast.success("✅ Attendance deleted successfully");
+      } else {
+        toast.error(res?.message || "❌ Failed to delete attendance");
+      }
     }
+
+    // Refresh the list after deletion
+    fetchshift();
+
   } catch (err) {
-    console.error("❌ Delete error:", err);
-    toast.error("Something went wrong while deleting RFID");
+    console.error("❌ Error deleting attendance:", err);
+    toast.error("Failed to delete attendance");
   }
 };
 
-
   const columns = [
-     {
-      name: (
-        <input
-          type="checkbox"
-          onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
-        />
-      ),
-      selector: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedTeachers.includes(row.id)}
-          onChange={() => handleCheckboxChange(row.id)}
-        />
-      ),
-      width: "5%",
-    },
+    //  {
+    //   name: (
+    //     <input
+    //       type="checkbox"
+    //       onChange={handleSelectAllChange}
+    //       checked={selectedTeachers.length === data.length && data.length > 0}
+    //     />
+    //   ),
+    //   selector: (row) => (
+    //     <input
+    //       type="checkbox"
+    //       checked={selectedTeachers.includes(row.id)}
+    //       onChange={() => handleCheckboxChange(row.id)}
+    //     />
+    //   ),
+    //   width: "5%",
+    // },
    
     {
-      name: "Rfid",
-      selector: (row) => row.uid,
+      name: "RfidCardId",
+      selector: (row) => row.rfidCardId,
       width: "25%",
     },
     {
-      name: "employeeId",
-      selector: (row) => row.employeeId?.firstName || "N/A",
+      name: "date",
+      selector: (row) => row.date,
       width: "25%",
     },
-     
+     {
+      name: "Entry",
+      selector: (row) => row.entryGateIn,
+      width: "25%",
+    },
    {
-      name: "IssuedAt",
-      selector: (row) => row.issuedAt,
+      name: "Exit",
+      selector: (row) => row.workfloorOut,
       width: "25%",
     },
-
-      
- {
+    
+{
   name: "Actions",
   width: "2%",
   selector: (row) => (
-    <div className="flex space-x-2 justify-center ">
-      <div className="flex space-x-2">
-        <button
-          className="text-blue-500"
-          onClick={() => {
-            console.log("👉 Edit clicked, row.uid:", row.uid);
-            handleEdit(row.uid);
-          }}
+    <div className="flex space-x-2 justify-center">
+      {/* ✅ Edit Button */}
+      <button
+        className="text-blue-500"
+        onClick={() => handleEdit(row._id)}  
+      >
+        <svg
+          fill="#22374e"
+          width={20}
+          height={20}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 640 512"
         >
-          {/* ✏️ Edit Icon */}
-          <svg
-            fill="#22374e"
-            width={20}
-            height={20}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 640 512"
-          >
-            <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-          </svg>
-        </button>
-      </div>
-      <div className="flex space-x-2 ">
-        <button
-          className="text-red-500"
-          onClick={() => {
-            console.log("🗑️ Delete clicked, row.uid:", row.uid);
-            handleDelete(row.uid);
-          }}
+          <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+        </svg>
+      </button>
+
+      {/* ✅ Delete Button */}
+      <button
+        className="text-red-500"
+        onClick={() => handleDelete(row._id)}
+      >
+        <svg
+          fill="red"
+          width={16}
+          height={16}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 448 512"
         >
-          {/* 🗑️ Delete Icon */}
-          <svg
-            fill="red"
-            width={16}
-            height={16}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 448 512"
-          >
-            <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-          </svg>
-        </button>
-      </div>
+          <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+        </svg>
+      </button>
     </div>
   ),
 }
-
-
-
   ];
 
   const handlePageChange = (page) => {
@@ -266,7 +250,7 @@ const handleDelete = async (uid) => {
       if (response.status === true) {
         setSelectedStatus("");
         setSelectedUsers("");
-        fetchrfid(); // Refresh user list
+        fetchshift(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
         toast.error(response.message || "Failed to create user.");
@@ -286,63 +270,79 @@ const handleDelete = async (uid) => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchrfid(); // Trigger fetch with the updated search term
+    fetchshift(); // Trigger fetch with the updated search term
   };
 
-const handleEdit = async (uid) => {
+// ✅ Handle Edit (fetch full attendance/user details)
+const handleEdit = async (userId) => {
   try {
-    console.log("➡️ Calling API with UID:", uid); // should show RFID12345678
-    const res = await getData(`/rfid/${uid}`);   // ✅ correct
-    console.log("📦 RFID Response:", res);
+    const res = await getData(`/attendance/${userId}`);
+    console.log("res", res);
 
-    if (res && res.data) {
-      setSelectedUser(res.data);
-      setIsEditUserFormVisible(true);
+    if (res) {
+      // If API returns { employee: {...} }
+      if (res.employee) {
+        setSelectedUser(res.employee); // ✅ Set full employee object
+      } else {
+        setSelectedUser(res); // ✅ If API directly returns user data
+      }
+
+      setIsEditUserFormVisible(true); // ✅ Open side panel
     } else {
-      toast.error("❌ Failed to fetch RFID data.");
+      toast.error("Failed to fetch user data.");
     }
   } catch (err) {
-    console.error("❌ Error fetching RFID:", err);
-    toast.error("Something went wrong while fetching RFID.");
+    console.error(err);
+    toast.error("Something went wrong while fetching user.");
   }
 };
 
 
 
+
   // selected userlist delete
-  const handleDeleteUser = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("Select Row");
-      return;
-    }
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
+const handleDeleteUser = async () => {
+  if (selectedUsers.length === 0) {
+    toast.error("❌ Please select at least one row");
+    return;
+  }
 
-    if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
-      return;
-    }
-    setIsModalOpen(true);
+  // Ensure only valid MongoDB ObjectIds are processed
+  const validUsers = selectedUsers.filter((id) =>
+    /^[0-9a-fA-F]{24}$/.test(id)
+  );
 
-    try {
-      const url = "/user/delete"; // Use the correct delete API endpoint
-      const payload = {
-        users: Array.isArray(validUsers) ? validUsers : [validUsers],
-      };
+  if (validUsers.length === 0) {
+    toast.error("❌ Invalid user IDs provided.");
+    return;
+  }
 
-      const response = await deleteData(url, payload); // Pass payload for deletion
+  const confirmDelete = window.confirm(
+    `Are you sure you want to delete ${validUsers.length} attendance record(s)?`
+  );
+  if (!confirmDelete) return;
 
-      if (response.success) {
-        fetchrfid();
-        toast.success("Deleted  Successfully!");
+  try {
+    for (const id of validUsers) {
+      const res = await deleteData(`/api/attendance/${id}`);
+
+      console.log("🔹 Delete response:", res);
+
+      if (res?.success || res?.status === 200) {
+        toast.success(`✅ Attendance record deleted: ${id}`);
       } else {
-        toast.error(response.message || "Try again");
+        toast.error(res?.message || `❌ Failed to delete record: ${id}`);
       }
-    } catch (error) {
-      toast.error(error || "Try again");
     }
-  };
+
+    // Refresh table
+    fetchshift();
+  } catch (error) {
+    console.error("❌ Error deleting user(s):", error);
+    toast.error("An error occurred while deleting. Please try again.");
+  }
+};
+
 
   const toggleAddUserForm = () => {
     setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility
@@ -392,7 +392,7 @@ const handleEdit = async (uid) => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Rfid</h2>
+        <h2 className="text-xl font-bold sub-title">List of Attendance</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
@@ -496,7 +496,7 @@ const handleEdit = async (uid) => {
           <div>
             <button
            className="crm-buttonsection"
-           onClick={() => navigate("/dashboard/users/AddRfid")}
+           onClick={() => navigate("/dashboard/users/Addattendance")}
          >
            <svg
              fill="white"
@@ -507,7 +507,7 @@ const handleEdit = async (uid) => {
            >
              <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
            </svg>
-           Add  Rfid
+           Add Attendance
          </button>
           </div>
         </div>

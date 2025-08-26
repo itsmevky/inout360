@@ -48,6 +48,7 @@ const contractorRoutes = require("./Modules/Contractor/routes");
 const sectionRoutes = require("./Modules/Section/Routes");
 const attendanceRoutes = require("./Modules/Attendence/routes");
 const rfidRoutes = require("./Modules/Rfid/routes");
+const shiftRoutes = require("./Modules/Shift/routes")
 
 app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
@@ -56,6 +57,7 @@ app.use("/api/sections", sectionRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/rfid", rfidRoutes);
 app.use("/api/employee", employeeRoutes);
+app.use("/api/shift", shiftRoutes);
 
 // -------------------
 // Global error handler
