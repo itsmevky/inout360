@@ -36,17 +36,8 @@ import Parents from "../Modules/Users/Parents/List.js";
 import Classes from "../Modules/Academics/Classes/List.js";
 import Editemployee from "../Modules/Users/Edit.js";
 import Section from "../Modules/Users/Section/List.js";
-import AddSection from "../Modules/Users/Section/Add.js";
-import  Attendancelist from "../Modules/Users/Attendance/List.js"; 
-import EditAttendance from "../Modules/Users/Attendance/Edit.js";
-import Addattendance from "../Modules/Users/Attendance/Add.js";
-import Contractorlist from "../Modules/Users/Contractors/List.js"
-import Addcontractor from "../Modules/Users/Contractors/Add.js";
-import Editcontractor from "../Modules/Users/Contractors/Edit.js";
-import Rfidlist from "../Modules/Users/Rfid/List.js"
-import Rfidadd from "../Modules/Users/Rfid/Add.js";
-import Editrfid from "../Modules/Users/Rfid/Edit.js";
-import Device from "../Modules/Users/Device/List.js";
+import Addcontractor from "./Add.js";
+import Editcontractor from "./Edit.js";
 
 
 // import ModuleGlobalfields from "../Modules/Module/GlobalFields/Globalfieldlist.js";
@@ -107,8 +98,10 @@ function SuperAdminLayout() {
             <Routes>
               <Route path="" element={<Dashboard />} />
               <Route path="/student" element={<StudentUser />} />
+              {/* <Route path="/add-user" element={<AddUserForm />} /> */}
               <Route path="/users/teacher/add" element={<AddTeacher />} />
               <Route path="Settings/fields" element={<Fields />} />
+              {/* <Route path="/module/groups" element={<Groups />} /> */}
               <Route path="/users/student/add" element={<AddStudent />} />
               <Route path="/users/teachers" element={<Teachers />} />
               <Route path="/users/students" element={<Students />} />
@@ -121,25 +114,22 @@ function SuperAdminLayout() {
               <Route path="/users/vendors" element={<Vendors />} />
               <Route path="/users/permissions" element={<PermissionsTable />} />
               <Route path="/users/Section" element={<Section />} />
-              <Route path="/users/AddSection" element={<AddSection />} />
+              {/* <Route path="/users/parents" element={<StudentUser />} /> */}
               <Route path="/users" element={<GetUsers />} />
+              {/* <Route path="/teachers" element={<GetTeachers />} /> */}
               <Route path="/edit-user/:id" element={<EditUserForm />} />
+              {/* <Route path="/permissions" element={<PermissionsTable />} /> */}
               <Route path="/academic/rooms" element={<Rooms />} />
               <Route path="/academic/departments" element={<Departments />} />
               <Route path="/academic/courses" element={<Courses />} />
               <Route path="/academic/subjects" element={<Subjects />} />
               <Route path="/academic/schedules" element={<Schedules />} />
               <Route path="/academic/classes" element={<Classes />} />
-             <Route path="/users/Attendance" element={<Attendancelist />} />
-              <Route path="/users/Addattendance" element={<Addattendance />} />
-              <Route path="/users/EditAttendance" element={<EditAttendance />} />
-              <Route path="/users/Contractor" element={<Contractorlist />} />
               <Route path="/users/AddContractor" element={<Addcontractor />} />
-              <Route path="/users/Editcontractor" element={<Editcontractor />} />
-              <Route path="/users/Rfid" element={<Rfidlist />} />
-              <Route path="/users/AddRfid" element={<Rfidadd />} />
-              <Route path="/users/Editrfid" element={<Editrfid />} />
-              <Route path="/users/device" element={<Device />} />
+               <Route path="/users/Editcontractor" element={<Editcontractor />} />
+
+
+              {/* <Route path="/users/module/Attendance" element={<Attendance />} /> */}
 
               {/* bussiness module routes*/}
               <Route path="/business" element={<Modules />} />
@@ -155,7 +145,29 @@ function SuperAdminLayout() {
                 path="/business/businesstypes/Add"
                 element={<AddBusinesstypes />}
               />
-             
+              {/* <Route path="/modules/globalfields" element={<Globalfields />} /> */}
+              {/* <Route
+                path="/modules/globalfields/edit"
+                element={<GlobalfieldsEdit />}
+              /> */}
+
+              {/* <Route
+                path="/modules/global-fields-groups"
+                element={<FieldsGroups />}
+              /> */}
+
+              {/* <Route
+                path="/module/business/add"
+                element={<AddGlobalfields />}
+              /> */}
+              {/* <Route
+                path="/module/business/edit"
+                element={<EditGlobalfields />}
+              /> */}
+              {/* <Route
+                path="/GlobalFields/list"
+                element={<ModuleGlobalfields />}
+              /> */}
             </Routes>
           </div>
         </main>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import Dashboard from "../SuperAdmin/Dasboard";
+import Dashboard from "../SuperAdmin/Dasboard.js";
 import StudentUser from "../Modules/Users/Students/User.js";
 import Employee from "../Modules/Users/Add.js";
 // import AddUserForm from "../Modules/Users/Add.js";
@@ -11,8 +11,8 @@ import Departments from "../Modules/Academics/Department/List.js";
 import Subjects from "../Modules/Academics/Subjects/List.js";
 import Schedules from "../Modules/Academics/Schedules/List.js";
 import Courses from "../Modules/Academics/Courses/List.js";
-import EditUserForm from "../Modules/Users/Edit";
-import Sidebar from "../SuperAdmin/sidebar";
+import EditUserForm from "../Modules/Users/Edit.js";
+import Sidebar from "../SuperAdmin/sidebar.js";
 import Header from "../SuperAdmin/header.js";
 import Footer from "../SuperAdmin/footer.js";
 import Modules from "../Modules/Business Module/Business/List.js";
@@ -46,7 +46,6 @@ import Editcontractor from "../Modules/Users/Contractors/Edit.js";
 import Rfidlist from "../Modules/Users/Rfid/List.js"
 import Rfidadd from "../Modules/Users/Rfid/Add.js";
 import Editrfid from "../Modules/Users/Rfid/Edit.js";
-import Device from "../Modules/Users/Device/List.js";
 
 
 // import ModuleGlobalfields from "../Modules/Module/GlobalFields/Globalfieldlist.js";
@@ -107,8 +106,10 @@ function SuperAdminLayout() {
             <Routes>
               <Route path="" element={<Dashboard />} />
               <Route path="/student" element={<StudentUser />} />
+              {/* <Route path="/add-user" element={<AddUserForm />} /> */}
               <Route path="/users/teacher/add" element={<AddTeacher />} />
               <Route path="Settings/fields" element={<Fields />} />
+              {/* <Route path="/module/groups" element={<Groups />} /> */}
               <Route path="/users/student/add" element={<AddStudent />} />
               <Route path="/users/teachers" element={<Teachers />} />
               <Route path="/users/students" element={<Students />} />
@@ -122,14 +123,18 @@ function SuperAdminLayout() {
               <Route path="/users/permissions" element={<PermissionsTable />} />
               <Route path="/users/Section" element={<Section />} />
               <Route path="/users/AddSection" element={<AddSection />} />
+              {/* <Route path="/users/parents" element={<StudentUser />} /> */}
               <Route path="/users" element={<GetUsers />} />
+              {/* <Route path="/teachers" element={<GetTeachers />} /> */}
               <Route path="/edit-user/:id" element={<EditUserForm />} />
+              {/* <Route path="/permissions" element={<PermissionsTable />} /> */}
               <Route path="/academic/rooms" element={<Rooms />} />
               <Route path="/academic/departments" element={<Departments />} />
               <Route path="/academic/courses" element={<Courses />} />
               <Route path="/academic/subjects" element={<Subjects />} />
               <Route path="/academic/schedules" element={<Schedules />} />
               <Route path="/academic/classes" element={<Classes />} />
+              {/* <Route path="/users/module/Attendance" element={<Attendance />} /> */}
              <Route path="/users/Attendance" element={<Attendancelist />} />
               <Route path="/users/Addattendance" element={<Addattendance />} />
               <Route path="/users/EditAttendance" element={<EditAttendance />} />
@@ -139,7 +144,10 @@ function SuperAdminLayout() {
               <Route path="/users/Rfid" element={<Rfidlist />} />
               <Route path="/users/AddRfid" element={<Rfidadd />} />
               <Route path="/users/Editrfid" element={<Editrfid />} />
-              <Route path="/users/device" element={<Device />} />
+
+
+
+
 
               {/* bussiness module routes*/}
               <Route path="/business" element={<Modules />} />
@@ -155,7 +163,29 @@ function SuperAdminLayout() {
                 path="/business/businesstypes/Add"
                 element={<AddBusinesstypes />}
               />
-             
+              {/* <Route path="/modules/globalfields" element={<Globalfields />} /> */}
+              {/* <Route
+                path="/modules/globalfields/edit"
+                element={<GlobalfieldsEdit />}
+              /> */}
+
+              {/* <Route
+                path="/modules/global-fields-groups"
+                element={<FieldsGroups />}
+              /> */}
+
+              {/* <Route
+                path="/module/business/add"
+                element={<AddGlobalfields />}
+              /> */}
+              {/* <Route
+                path="/module/business/edit"
+                element={<EditGlobalfields />}
+              /> */}
+              {/* <Route
+                path="/GlobalFields/list"
+                element={<ModuleGlobalfields />}
+              /> */}
             </Routes>
           </div>
         </main>

@@ -44,7 +44,7 @@
 
 .left-section {
   width: 50%;
-  background: #22374e;
+  margin: auto;
 }
 
 .right-section {
@@ -316,10 +316,7 @@
 
 /* login-section */
 
-.left-section {
-  width: 50%;
-  background: #22374e;
-}
+
 
 .login-section {
   width: 75%;
@@ -1447,10 +1444,7 @@ tbody tr:nth-child(even) {
   height: 100vh !important;
 }
 
-.left-section {
-  width: 50%;
-  background: #22374e;
-}
+
 
 .right-section {
   width: 50%;
@@ -1713,10 +1707,6 @@ tbody tr:nth-child(even) {
 
 /* login-section */
 
-.left-section {
-  width: 50%;
-  background: #22374e;
-}
 
 .right-section {
   width: 50%;
@@ -3573,11 +3563,11 @@ body {
 }
 
 .sidebar-header .header-logo img {
-  width: 46px;
-  height: 46px;
+  /* width: 46px;
+  height: 46px; */
   display: block;
   object-fit: contain;
-  border-radius: 50%;
+  /* border-radius: 50%; */
 }
 
 .sidebar-header .sidebar-toggler,

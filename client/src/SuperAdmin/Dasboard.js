@@ -111,30 +111,6 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
             </div>
-
-            {/* <!-- Right Section (Today’s Attendance & Recent Events) --> */}
-            <div className="space-y-4">
-              {/* <!-- Today's Attendance Card --> */}
-              {/* <div
-                style={{ background: "#22374e" }}
-                className="bg-blue-600 text-white dashboard-crm-box-shadow p-6 text-center rounded-lg"
-              >
-                <p className=" text-base font-semibold ">TODAY'S ATTENDANCE</p>
-                <h2 className="text-base  mt-2">0</h2>
-                <p className="text-base mt-1">0 STUDENTS ARE ATTENDING TODAY</p>
-                <a
-                  style={{ color: "#22374e" }}
-                  href="#"
-                  className="mt-4 inline-block bg-white  px-4 py-2 rounded-lg font-semibold shadow-md"
-                >
-                  Go to attendance →
-                </a>
-              </div> */}
-              {/* <!-- Recent Events Card --> */}
-              {/* <div className="bg-white p-6  rounded-lg dashboard-crm-box-shadow">
-                <p className="text-gray-500 font-semibold">RECENT EVENTS</p>
-              </div> */}
-            </div>
           </div>
         </div>
       </div>

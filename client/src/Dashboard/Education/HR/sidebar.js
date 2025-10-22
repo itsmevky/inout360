@@ -46,7 +46,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     settings: false,
   });
 
-  const navItems = [
+   const navItems = [
     {
       label: "Dashboard",
       icon: "dashboard",
@@ -72,7 +72,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     },
     //********************************Attendance***********************************/
 
-    {
+      {
       label: "Attendance",
       icon: (
         <svg
@@ -86,11 +86,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       ),
       links: [
         { label: "Employees", path: "/dashboard/users/Attendance" },
+        // { label: "Roles", path: "/dashboard/users/roles" },
+          // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     //********************************Contractors***********************************/
-    {
+      {
       label: "Contractors",
       icon: (
         <svg
@@ -104,12 +106,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       ),
       links: [
         { label: "Employees", path: "/dashboard/users/Contractor" },
+        // { label: "Roles", path: "/dashboard/users/roles" },
+          // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     //********************************Section***********************************/
-
-    {
+   
+       {
       label: "Section",
       icon: (
         <svg
@@ -123,12 +127,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       ),
       links: [
         { label: "Employees", path: "/dashboard/users/Section" },
+        // { label: "Roles", path: "/dashboard/users/roles" },
+          // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
-    //********************************Rfid***********************************/
+        //********************************Rfid***********************************/
 
-    {
+       {
       label: "Rfid",
       icon: (
         <svg
@@ -145,7 +151,16 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       ],
     },
 
-    //********************************Settings***********************************/
+
+      {
+         label: "Reports",
+         icon: "report",
+         links: [
+           { label: "Attendance Report", path: "/dashboard/reports/attendance" },
+           { label: "Contractor Report", path: "/dashboard/reports/contractors" },
+         ]
+       },
+
 
     {
       label: "Settings",
@@ -177,35 +192,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
         { label: "Smtp Settings", path: "/dashboard/Settings/Smtpsettings" },
         { label: "About", path: "/dashboard/Settings/About" },
-      ],
-    },
-
-    //********************************Device***********************************/
-
-
-    {
-      label: "Device",
-      icon: (
-        <svg
-          width="20"
-          fill="white"
-          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M208 64C172.7 64 144 92.7 144 128L144 512C144 547.3 172.7 576 208 576L432 576C467.3 576 496 547.3 496 512L496 128C496 92.7 467.3 64 432 64L208 64zM280 480L360 480C373.3 480 384 490.7 384 504C384 517.3 373.3 528 360 528L280 528C266.7 528 256 517.3 256 504C256 490.7 266.7 480 280 480z" /></svg>
-      ),
-      links: [
-        { label: "Device", path: "/dashboard/users/device" },
-      ],
-    },
-    //********************************Zoons***********************************/
-    {
-      label: "Zoons",
-      icon: (
-        <svg
-          width="20"
-          fill="white"
-          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M96 96C113.7 96 128 110.3 128 128L128 464C128 472.8 135.2 480 144 480L544 480C561.7 480 576 494.3 576 512C576 529.7 561.7 544 544 544L144 544C99.8 544 64 508.2 64 464L64 128C64 110.3 78.3 96 96 96zM304 160C310.7 160 317.1 162.8 321.7 167.8L392.8 245.3L439 199C448.4 189.6 463.6 189.6 472.9 199L536.9 263C541.4 267.5 543.9 273.6 543.9 280L543.9 392C543.9 405.3 533.2 416 519.9 416L215.9 416C202.6 416 191.9 405.3 191.9 392L191.9 280C191.9 274 194.2 268.2 198.2 263.8L286.2 167.8C290.7 162.8 297.2 160 303.9 160z" /></svg>
-      ),
-      links: [
-        { label: "Zoons", path: "/dashboard/users/zoons" },
       ],
     },
   ];
@@ -246,8 +232,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     return (
                       <li
                         key={item.label}
-                        className={`nav-item dropdown-container ${openDropdown === item.label ? "open" : ""
-                          } ${isActive ? "open active" : ""}`} // active for main item
+                        className={`nav-item dropdown-container ${
+                          openDropdown === item.label ? "open" : ""
+                        } ${isActive ? "open active" : ""}`} // active for main item
                       >
                         <div
                           className="nav-link dropdown-toggle"
@@ -295,12 +282,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                               return (
                                 <li
                                   key={i}
-                                  className={`nav-item ${isSubActive ? "open active" : ""
-                                    }`}
+                                  className={`nav-item ${
+                                    isSubActive ? "open active" : ""
+                                  }`}
                                 >
                                   <div
-                                    className={`nav-link dropdown-link ${isSubActive ? "open active" : ""
-                                      }`}
+                                    className={`nav-link dropdown-link ${
+                                      isSubActive ? "open active" : ""
+                                    }`}
                                     onClick={() => navigate(link.path)}
                                     role="button"
                                     tabIndex={0}
@@ -314,10 +303,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                         ) : (
                           <ul className="dropdown-menu single-hover">
                             <li
-                              className={`nav-item ${location.pathname === item.links[0].path
-                                ? "open active"
-                                : ""
-                                }`}
+                              className={`nav-item ${
+                                location.pathname === item.links[0].path
+                                  ? "open active"
+                                  : ""
+                              }`}
                               onClick={() => navigate(item.links[0].path)}
                             >
                               <div className="nav-link dropdown-title">
