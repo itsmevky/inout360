@@ -97,7 +97,7 @@ const LoginComponent = () => {
   };
   const sendData = async (userData) => {
   try {
-    // ✅ STATIC ADMIN LOGIN (Bypass backend)
+
     if (
       userData.email === "admin@site.com" &&
       userData.password === "admin123"
@@ -119,7 +119,7 @@ const LoginComponent = () => {
       // Handle Remember Me
       if (userData.rememberMe) {
         localStorage.setItem("email", userData.email);
-        localStorage.setItem("password", userData.password); // ⚠️ Avoid in production
+        localStorage.setItem("password", userData.password); 
       } else {
         localStorage.removeItem("email");
         localStorage.removeItem("password");
