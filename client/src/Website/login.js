@@ -18,6 +18,7 @@ const LoginComponent = () => {
     rememberMe: false,
   });
 
+  console.log(userData, "userDatauserDatauserDatauserDatauserData");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -77,6 +78,7 @@ const LoginComponent = () => {
   const sendData = async (formData) => {
     try {
       const result = await API.login(formData); // expects { data: {...userData} }
+      console.log(result, "resultresultresultresultresult");
       const user = result?.data;
 
       if (user?.accessToken && user?.refreshToken) {
@@ -89,7 +91,9 @@ const LoginComponent = () => {
         Cookies.set("refreshtoken", refreshToken);
 
         // 🧍 Combine first + last name
-        const fullName = `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim();
+        const fullName = `${userInfo.firstName || ""} ${
+          userInfo.lastName || ""
+        }`.trim();
         if (fullName) {
           localStorage.setItem("user_fullname", fullName);
           userInfo.fullname = fullName;
@@ -106,7 +110,7 @@ const LoginComponent = () => {
           localStorage.removeItem("email");
         }
 
-        toast.success("Login successful!");
+        // toast.success("Login successful!");
         setUser(userInfo);
 
         setTimeout(() => navigate("/dashboard"), 1500);

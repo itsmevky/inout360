@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { encryptData } from "../../Helpers/encryptionHelper";
+// import { encryptData } from "../../Helpers/encryptionHelper";
 import { API, postData } from "../../Helpers/api";
 import Validator from "../../Helpers/validators.js";
 import { ToastContainer, toast } from "react-toastify"; // Import Toastify
@@ -96,81 +96,79 @@ const LoginComponent = () => {
     }
   };
   const sendData = async (userData) => {
-  try {
+    try {
+      if (
+        userData.email === "admin@site.com" &&
+        userData.password === "admin123"
+      ) {
+        const staticAdmin = {
+          name: "Static Admin",
+          email: userData.email,
+          role: "admin",
+          accessToken: "static_admin_token_123",
+        };
 
-    if (
-      userData.email === "admin@site.com" &&
-      userData.password === "admin123"
-    ) {
-      const staticAdmin = {
-        name: "Static Admin",
-        email: userData.email,
-        role: "admin",
-        accessToken: "static_admin_token_123",
-      };
+        // Save tokens and data
+        localStorage.setItem("accesstoken", staticAdmin.accessToken);
+        Cookies.set("accesstoken", staticAdmin.accessToken);
 
-      // Save tokens and data
-      localStorage.setItem("accesstoken", staticAdmin.accessToken);
-      Cookies.set("accesstoken", staticAdmin.accessToken);
+        const encodedUserDetails = encodeData(staticAdmin);
+        Cookies.set("userdetail", encodedUserDetails);
 
-      const encodedUserDetails = encodeData(staticAdmin);
-      Cookies.set("userdetail", encodedUserDetails);
+        // Handle Remember Me
+        if (userData.rememberMe) {
+          localStorage.setItem("email", userData.email);
+          localStorage.setItem("password", userData.password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
 
-      // Handle Remember Me
-      if (userData.rememberMe) {
-        localStorage.setItem("email", userData.email);
-        localStorage.setItem("password", userData.password); 
-      } else {
-        localStorage.removeItem("email");
-        localStorage.removeItem("password");
+        // toast.success("Static Admin Login Successful!");
+        setUser(staticAdmin);
+
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
+
+        return; // ✅ Skip API call
       }
 
-      // toast.success("Static Admin Login Successful!");
-      setUser(staticAdmin);
+      // ✅ BACKEND LOGIN (Normal users)
+      const response = await postData(API.auth.login, userData);
+      console.log("response", response);
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+      if (response?.accessToken) {
+        const accessToken = response.accessToken;
 
-      return; // ✅ Skip API call
-    }
+        localStorage.setItem("accesstoken", accessToken);
+        Cookies.set("accesstoken", accessToken);
 
-    // ✅ BACKEND LOGIN (Normal users)
-    const response = await postData(API.auth.login, userData);
-    console.log("response", response);
+        const encodedUserDetails = encodeData(response);
+        Cookies.set("userdetail", encodedUserDetails);
 
-    if (response?.accessToken) {
-      const accessToken = response.accessToken;
+        if (userData.rememberMe) {
+          localStorage.setItem("email", userData.email);
+          localStorage.setItem("password", userData.password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
 
-      localStorage.setItem("accesstoken", accessToken);
-      Cookies.set("accesstoken", accessToken);
+        // toast.success("Login successful!");
+        setUser(response);
 
-      const encodedUserDetails = encodeData(response);
-      Cookies.set("userdetail", encodedUserDetails);
-
-      if (userData.rememberMe) {
-        localStorage.setItem("email", userData.email);
-        localStorage.setItem("password", userData.password);
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
       } else {
-        localStorage.removeItem("email");
-        localStorage.removeItem("password");
+        toast.error(response.message || "Login error. Please try again.");
       }
-
-      toast.success("Login successful!");
-      setUser(response);
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
-    } else {
-      toast.error(response.message || "Login error. Please try again.");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("An error occurred. Please try again.");
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    toast.error("An error occurred. Please try again.");
-  }
-};
-
+  };
 
   // On Component load, check if credentials are saved in localStorage
   useEffect(() => {

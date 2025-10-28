@@ -59,7 +59,6 @@ const Header = () => {
             <a href="#" className="header-logo">
               <img height="" width="" src={logo} alt="CodingNepal" />
             </a>
-           
           </div>
         </div>
 

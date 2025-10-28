@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useHistory } from "react-router-dom";
-import logo from "../../../Images/pidilite-logo-11.png"; // Adjust path as needed
+import logo from "../../../Images/pidilite-logo-11.png"; 
 import { useNavigate } from "react-router-dom";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 
@@ -66,9 +66,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           <path d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
         </svg>
       ),
-      links: [
-        { label: "Employees", path: "/dashboard/users/Employees" },
-      ],
+      links: [{ label: "Employees", path: "/dashboard/users/Employees" }],
     },
     //********************************Attendance***********************************/
 
@@ -84,9 +82,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           <path d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
         </svg>
       ),
-      links: [
-        { label: "Employees", path: "/dashboard/users/Attendance" },
-      ],
+      links: [{ label: "Employees", path: "/dashboard/users/Attendance" }],
     },
 
     //********************************Contractors***********************************/
@@ -102,9 +98,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           <path d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
         </svg>
       ),
-      links: [
-        { label: "Employees", path: "/dashboard/users/Contractor" },
-      ],
+      links: [{ label: "Employees", path: "/dashboard/users/Contractor" }],
     },
 
     //********************************Section***********************************/
@@ -121,9 +115,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           <path d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
         </svg>
       ),
-      links: [
-        { label: "Employees", path: "/dashboard/users/Section" },
-      ],
+      links: [{ label: "Employees", path: "/dashboard/users/Section" }],
     },
 
     //********************************Rfid***********************************/
@@ -140,9 +132,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           <path d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
         </svg>
       ),
-      links: [
-        { label: "Employees", path: "/dashboard/users/Rfid" },
-      ],
+      links: [{ label: "Employees", path: "/dashboard/users/Rfid" }],
     },
 
     //********************************Settings***********************************/
@@ -182,18 +172,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
     //********************************Device***********************************/
 
-
     {
       label: "Device",
       icon: (
         <svg
           width="20"
           fill="white"
-          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M208 64C172.7 64 144 92.7 144 128L144 512C144 547.3 172.7 576 208 576L432 576C467.3 576 496 547.3 496 512L496 128C496 92.7 467.3 64 432 64L208 64zM280 480L360 480C373.3 480 384 490.7 384 504C384 517.3 373.3 528 360 528L280 528C266.7 528 256 517.3 256 504C256 490.7 266.7 480 280 480z" /></svg>
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 640 640"
+        >
+          <path d="M208 64C172.7 64 144 92.7 144 128L144 512C144 547.3 172.7 576 208 576L432 576C467.3 576 496 547.3 496 512L496 128C496 92.7 467.3 64 432 64L208 64zM280 480L360 480C373.3 480 384 490.7 384 504C384 517.3 373.3 528 360 528L280 528C266.7 528 256 517.3 256 504C256 490.7 266.7 480 280 480z" />
+        </svg>
       ),
-      links: [
-        { label: "Device", path: "/dashboard/users/device" },
-      ],
+      links: [{ label: "Device", path: "/dashboard/users/device" }],
     },
     //********************************Zoons***********************************/
     {
@@ -202,11 +193,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         <svg
           width="20"
           fill="white"
-          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M96 96C113.7 96 128 110.3 128 128L128 464C128 472.8 135.2 480 144 480L544 480C561.7 480 576 494.3 576 512C576 529.7 561.7 544 544 544L144 544C99.8 544 64 508.2 64 464L64 128C64 110.3 78.3 96 96 96zM304 160C310.7 160 317.1 162.8 321.7 167.8L392.8 245.3L439 199C448.4 189.6 463.6 189.6 472.9 199L536.9 263C541.4 267.5 543.9 273.6 543.9 280L543.9 392C543.9 405.3 533.2 416 519.9 416L215.9 416C202.6 416 191.9 405.3 191.9 392L191.9 280C191.9 274 194.2 268.2 198.2 263.8L286.2 167.8C290.7 162.8 297.2 160 303.9 160z" /></svg>
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 640 640"
+        >
+          <path d="M96 96C113.7 96 128 110.3 128 128L128 464C128 472.8 135.2 480 144 480L544 480C561.7 480 576 494.3 576 512C576 529.7 561.7 544 544 544L144 544C99.8 544 64 508.2 64 464L64 128C64 110.3 78.3 96 96 96zM304 160C310.7 160 317.1 162.8 321.7 167.8L392.8 245.3L439 199C448.4 189.6 463.6 189.6 472.9 199L536.9 263C541.4 267.5 543.9 273.6 543.9 280L543.9 392C543.9 405.3 533.2 416 519.9 416L215.9 416C202.6 416 191.9 405.3 191.9 392L191.9 280C191.9 274 194.2 268.2 198.2 263.8L286.2 167.8C290.7 162.8 297.2 160 303.9 160z" />
+        </svg>
       ),
-      links: [
-        { label: "Zones", path: "/dashboard/users/zones" },
-      ],
+      links: [{ label: "Zones", path: "/dashboard/zones" }],
     },
   ];
 
@@ -246,8 +239,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     return (
                       <li
                         key={item.label}
-                        className={`nav-item dropdown-container ${openDropdown === item.label ? "open" : ""
-                          } ${isActive ? "open active" : ""}`} // active for main item
+                        className={`nav-item dropdown-container ${
+                          openDropdown === item.label ? "open" : ""
+                        } ${isActive ? "open active" : ""}`} // active for main item
                       >
                         <div
                           className="nav-link dropdown-toggle"
@@ -295,12 +289,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                               return (
                                 <li
                                   key={i}
-                                  className={`nav-item ${isSubActive ? "open active" : ""
-                                    }`}
+                                  className={`nav-item ${
+                                    isSubActive ? "open active" : ""
+                                  }`}
                                 >
                                   <div
-                                    className={`nav-link dropdown-link ${isSubActive ? "open active" : ""
-                                      }`}
+                                    className={`nav-link dropdown-link ${
+                                      isSubActive ? "open active" : ""
+                                    }`}
                                     onClick={() => navigate(link.path)}
                                     role="button"
                                     tabIndex={0}
@@ -314,10 +310,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                         ) : (
                           <ul className="dropdown-menu single-hover">
                             <li
-                              className={`nav-item ${location.pathname === item.links[0].path
-                                ? "open active"
-                                : ""
-                                }`}
+                              className={`nav-item ${
+                                location.pathname === item.links[0].path
+                                  ? "open active"
+                                  : ""
+                              }`}
                               onClick={() => navigate(item.links[0].path)}
                             >
                               <div className="nav-link dropdown-title">

@@ -22,9 +22,8 @@ import Getotp from "./Website/getotp.js";
 import NotFound from "./Website/NotFound.js";
 
 const AppRoutes = () => {
-  const { user } = useUser();
-  const userRole = user?.role;
-  console.log("userRole", userRole);
+  const { user, loading } = useUser();
+  const userRole = user?.role?.toLowerCase().replace("_", "");
 
   const roleLayoutMap = {
     superadmin: SuperAdminLayout,
@@ -32,16 +31,19 @@ const AppRoutes = () => {
     teacher: EducationTeacherLayout,
     student: EducationStudentLayout,
     parent: EducationParentLayout,
-    contractor:ContractorLayout,
-    supervisor:SupervisorLayout,
-    hr:HRlayout,
+    contractor: ContractorLayout,
+    supervisor: SupervisorLayout,
+    hr: HRlayout,
   };
 
-  const LayoutComponent = roleLayoutMap[userRole];
+  if (loading) {
+    return <div className="loading">Loading user...</div>;
+  }
 
+  const LayoutComponent = roleLayoutMap[userRole];
+  console.log(userRole, "userRole kkkkkkkkkkkkk");
   return (
     <Routes>
-      {/* Protected Dashboard Route */}
       <Route
         path="/dashboard/*"
         element={

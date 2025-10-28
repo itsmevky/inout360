@@ -19,6 +19,7 @@ import SuperadminDashboard from "./SuperAdmin/Dasboard.js";
 import AdminDashboard from "./Admin/admindashboard.js";
 import Forgotpassword from "../src/Website/forgotpassword.js";
 import TeacherDashboard from "./Teacher/teacherdashboard.js";
+import Zones from "../Zones/Dasboard.js";
 
 import ParentDashboard from "./SuperAdmin/Dasboard.js";
 
@@ -44,26 +45,23 @@ const App = () => {
             return <PermissionDenied />;
           }}
         />
-
         {/* Website Layout for Other Routes */}
         <Route path="/*" element={<WebsiteLayout />} />
         <Route path="/login" element={<Loginpage />} />
         <Route path="/" element={<Homepage />} />
-
         <Route path="/register" element={<Registerpage />} />
         <Route path="/forgotpassword" element={<Forgotpassword />} />
         <Route path="/getotp" element={<Getotp />} />
-        {/* Permission Denied Page */}  
+        {/* Permission Denied Page */}
         <Route path="/permission-denied" element={<PermissionDenied />} />
-
         {/* 404 Page */}
         <Route path="*" element={<NotFound />} />
-
         {/* <Route path="/" element={<RoleButtons />} /> */}
         <Route path="/dashboard/superadmin" element={<SuperadminDashboard />} />
         <Route path="/dashboard/admin" element={<AdminDashboard />} />
         <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
         <Route path="/dashboard/parent" element={<ParentDashboard />} />
+        <Route path="/dashboard/zones" element={<Zones />} />
       </Routes>
     </Router>
   );

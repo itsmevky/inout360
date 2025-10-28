@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useHistory } from "react-router-dom";
-import logo from "../Images/logo.png"; // Adjust path as needed
+import logo from "../Images/pidilite-logo-11.png"; // Adjust path as needed
 import { useNavigate } from "react-router-dom";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 // import SuperAdminLayout from "../Layouts/SuperadminLayout.js";
@@ -49,7 +49,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     backOffice: false,
     settings: false,
   });
-  
+
   const navItems = [
     {
       label: "Dashboard",
@@ -73,12 +73,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Employees" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
     //********************************Attendance***********************************/
 
-      {
+    {
       label: "Attendance",
       icon: (
         <svg
@@ -93,12 +93,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Attendance" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     //********************************Contractors***********************************/
-      {
+    {
       label: "Contractors",
       icon: (
         <svg
@@ -113,13 +113,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Contractor" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     //********************************Section***********************************/
-   
-       {
+
+    {
       label: "Section",
       icon: (
         <svg
@@ -134,13 +134,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Section" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
-        //********************************Rfid***********************************/
+    //********************************Rfid***********************************/
 
-       {
+    {
       label: "Rfid",
       icon: (
         <svg
@@ -155,15 +155,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Rfid" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     // {
-    
+
     //   links: [
-       
-      
+
     //     {
     //       label: "Rfid",
     //       path: "/dashboard/modules/Rfid",
@@ -222,9 +221,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       ],
     },
   ];
-
-
-
 
   const navigate = useNavigate();
   const userType = "superadmin";
@@ -364,9 +360,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           </aside>
         </div>
       </div>
-
-      {/* Render the appropriate layout */}
-      {/* {renderActiveSection()} */}
     </div>
   );
 };

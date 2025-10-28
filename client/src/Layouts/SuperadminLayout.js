@@ -46,7 +46,7 @@ import Editcontractor from "../Modules/Users/Contractors/Edit.js";
 import Rfidlist from "../Modules/Users/Rfid/List.js"
 import Rfidadd from "../Modules/Users/Rfid/Add.js";
 import Editrfid from "../Modules/Users/Rfid/Edit.js";
-import Device from "../Modules/Users/Device/List.js";
+
 
 
 // import ModuleGlobalfields from "../Modules/Module/GlobalFields/Globalfieldlist.js";
@@ -139,7 +139,7 @@ function SuperAdminLayout() {
               <Route path="/users/Rfid" element={<Rfidlist />} />
               <Route path="/users/AddRfid" element={<Rfidadd />} />
               <Route path="/users/Editrfid" element={<Editrfid />} />
-              <Route path="/users/device" element={<Device />} />
+              
 
               {/* bussiness module routes*/}
               <Route path="/business" element={<Modules />} />
