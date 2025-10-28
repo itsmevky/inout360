@@ -2,11 +2,10 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import { getUserRole } from "./helpers/utils.js";
-import AdminLayout from "./layouts/AdminLayout.js";
-import Teacherlayout from "./layouts/Teacherlayout.js";
-import WebsiteLayout from "./layouts/WebsiteLayout.js";
-import Studentlayout from "./layouts/Studentlayout.js";
-import ParentLayout from "./layouts/ParentLayout.js";
+import Teacherlayout from "./Layouts/Teacherlayout.js";
+import WebsiteLayout from "./Layouts/WebsiteLayout.js";
+import Studentlayout from "./Layouts/Studentlayout.js";
+import ParentLayout from "./Layouts/ParentLayout.js";
 import SuperAdminLayout from "./Layouts/SuperadminLayout.js";
 import PermissionDenied from "./Website/PermissionDenied.js";
 import Registerpage from "./Website/registerform.js";
@@ -21,7 +20,6 @@ import TeacherDashboard from "./Teacher/teacherdashboard.js";
 import ParentDashboard from "./SuperAdmin/Dasboard.js";
 import ContractorDashboard from "./Dashboard/Education/Contractor/Dasboard.js";
 import SupervisorDashboard from "./Dashboard/Education/Supervisor/Dasboard.js";
-
 
 const App = () => {
   const userRole = "super_admin"; //getUserRole(); // Fetch the user role from token/cookie
@@ -54,7 +52,7 @@ const App = () => {
         <Route path="/register" element={<Registerpage />} />
         <Route path="/forgotpassword" element={<Forgotpassword />} />
         <Route path="/getotp" element={<Getotp />} />
-        {/* Permission Denied Page */}  
+        {/* Permission Denied Page */}
         <Route path="/permission-denied" element={<PermissionDenied />} />
 
         {/* 404 Page */}
@@ -65,10 +63,8 @@ const App = () => {
         <Route path="/dashboard/admin" element={<AdminDashboard />} />
         <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
         <Route path="/dashboard/parent" element={<ParentDashboard />} />
-         <Route path="/dashboard/contractor" element={<ContractorDashboard />} />
-          <Route path="/dashboard/Supervisor" element={<SupervisorDashboard />} />
-
-
+        <Route path="/dashboard/contractor" element={<ContractorDashboard />} />
+        <Route path="/dashboard/Supervisor" element={<SupervisorDashboard />} />
       </Routes>
     </Router>
   );

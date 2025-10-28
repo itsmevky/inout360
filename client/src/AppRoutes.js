@@ -2,16 +2,11 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useUser } from "./Helpers/Context/UserContext.js";
 
-// Layouts
+// ✅ Layouts
 import SuperAdminLayout from "./Layouts/SuperadminLayout.js";
-import EducationAdminLayout from "./Layouts/education/AdminLayout.js";
-import EducationTeacherLayout from "./Layouts/education/Teacherlayout.js";
-import EducationStudentLayout from "./Layouts/education/Studentlayout.js";
-import EducationParentLayout from "./Layouts/education/ParentLayout.js";
-import ContractorLayout from "./Layouts/education/ContractorLayout.js";
-import SupervisorLayout from "./Layouts/education/SupervisorLayout.js";
+import AdminLayout from "./Layouts/AdminLayout.js";
 
-// Public Pages
+// ✅ Public Pages
 import Homepage from "./Website/Home.js";
 import Loginpage from "./Website/login.js";
 import EducationLoginpage from "./Dashboard/Education/login.js";
@@ -23,23 +18,19 @@ import NotFound from "./Website/NotFound.js";
 const AppRoutes = () => {
   const { user } = useUser();
   const userRole = user?.role;
-  console.log("userRole", userRole);
+  console.log("userRole:", userRole);
 
+  // ✅ Role-based layout mapping
   const roleLayoutMap = {
     superadmin: SuperAdminLayout,
-    admin: EducationAdminLayout,
-    teacher: EducationTeacherLayout,
-    student: EducationStudentLayout,
-    parent: EducationParentLayout,
-    contractor:ContractorLayout,
-    supervisor:SupervisorLayout,
+    admin: AdminLayout,
   };
 
   const LayoutComponent = roleLayoutMap[userRole];
 
   return (
     <Routes>
-      {/* Protected Dashboard Route */}
+      {/* ✅ Protected Dashboard Route */}
       <Route
         path="/dashboard/*"
         element={
@@ -51,7 +42,7 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Public Routes */}
+      {/* ✅ Public Routes */}
       <Route path="/" element={<Homepage />} />
       <Route path="/login" element={<EducationLoginpage />} />
       <Route path="/platform" element={<Loginpage />} />

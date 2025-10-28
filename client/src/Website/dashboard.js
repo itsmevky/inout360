@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import Log from "../../../images/log.png";
 
-import SuperAdminLayout from "../../layouts/super_adminlayout";
-import AdminLayout from "../../layouts/adminlayout.js";
-import TeacherLayout from "../../layouts/teacherlayout.js";
-import StudentLayout from "../../layouts/studentlayout.js";
-import ParentLayout from "../../layouts/parentlayout.js";
+import SuperAdminLayout from "../../Layouts/super_adminlayout";
+import AdminLayout from "../../Layouts/adminlayout.js";
+import TeacherLayout from "../../Layouts/teacherlayout.js";
+import StudentLayout from "../../Layouts/studentlayout.js";
+import ParentLayout from "../../Layouts/parentlayout.js";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("personal", "superadmin");
