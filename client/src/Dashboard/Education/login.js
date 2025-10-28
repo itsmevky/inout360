@@ -120,7 +120,7 @@ const LoginComponent = () => {
           localStorage.removeItem("password");
         }
 
-        toast.success("Login successful!");
+        // toast.success("Login successful!");
 
         setUser(response);
 

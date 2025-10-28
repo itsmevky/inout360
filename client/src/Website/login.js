@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -95,59 +94,64 @@ const LoginComponent = () => {
     }
   };
 
- const sendData = async (formData) => {
-  try {
-    const result = await API.login(formData); // Axios response
-    console.log("✅ Raw API result:", result);
+  const sendData = async (formData) => {
+    try {
+      const result = await API.login(formData); // Axios response
+      console.log("✅ Raw API result:", result);
 
-    // Response is directly the user object
-    const user = result.data;
+      // Response is directly the user object
+      const user = result.data;
 
-    if (user?.accessToken && user?.refreshToken) {
-      const { accessToken, refreshToken, ...userInfo } = user;
+      if (user?.accessToken && user?.refreshToken) {
+        const { accessToken, refreshToken, ...userInfo } = user;
 
-      // 🔐 Store tokens
-      localStorage.setItem("accesstoken", accessToken);
-      localStorage.setItem("refreshtoken", refreshToken);
-      Cookies.set("accesstoken", accessToken);
-      Cookies.set("refreshtoken", refreshToken);
+        // 🔐 Store tokens
+        localStorage.setItem("accesstoken", accessToken);
+        localStorage.setItem("refreshtoken", refreshToken);
+        Cookies.set("accesstoken", accessToken);
+        Cookies.set("refreshtoken", refreshToken);
 
-      // 👤 Store full name (combine first + last name)
-      const fullName = `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim();
-      if (fullName) {
-        localStorage.setItem("user_fullname", fullName);
-        userInfo.fullname = fullName; // add for later use
-      }
+        // 👤 Store full name (combine first + last name)
+        const fullName = `${userInfo.firstName || ""} ${
+          userInfo.lastName || ""
+        }`.trim();
+        if (fullName) {
+          localStorage.setItem("user_fullname", fullName);
+          userInfo.fullname = fullName; // add for later use
+        }
 
-      // ✅ Store encoded user details
-      const encodedUserDetails = encodeData(userInfo);
-      Cookies.set("userdetail", encodedUserDetails);
+        // ✅ Store encoded user details
+        const encodedUserDetails = encodeData(userInfo);
+        Cookies.set("userdetail", encodedUserDetails);
 
-      // 💾 Handle "Remember Me"
-      if (formData.rememberMe) {
-        localStorage.setItem("email", formData.email);
-        localStorage.setItem("password", formData.password);
+        // 💾 Handle "Remember Me"
+        if (formData.rememberMe) {
+          localStorage.setItem("email", formData.email);
+          localStorage.setItem("password", formData.password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
+
+        // toast.success("Login successful!");
+        setUser(userInfo);
+
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
       } else {
-        localStorage.removeItem("email");
-        localStorage.removeItem("password");
+        // Tokens missing → treat as failed login
+        toast.error("Login failed: Tokens are missing in response.");
       }
-
-      toast.success("Login successful!");
-      setUser(userInfo);
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
-    } else {
-      // Tokens missing → treat as failed login
-      toast.error("Login failed: Tokens are missing in response.");
+    } catch (error) {
+      console.error("❌ Login error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "An error occurred. Please try again."
+      );
     }
-  } catch (error) {
-    console.error("❌ Login error:", error);
-    toast.error(error.response?.data?.message || error.message || "An error occurred. Please try again.");
-  }
-};
-
+  };
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("email");

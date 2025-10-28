@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useHistory } from "react-router-dom";
-import logo from "../../../Images/logo.png"; // Adjust path as needed
+import logo from "../../../Images/pidilite-logo-11.png"; // Adjust path as needed
 import { useNavigate } from "react-router-dom";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 
@@ -46,7 +46,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     settings: false,
   });
 
-   const navItems = [
+  const navItems = [
     {
       label: "Dashboard",
       icon: "dashboard",
@@ -69,12 +69,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Employees" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
     //********************************Attendance***********************************/
 
-      {
+    {
       label: "Attendance",
       icon: (
         <svg
@@ -89,12 +89,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Attendance" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     //********************************Contractors***********************************/
-      {
+    {
       label: "Contractors",
       icon: (
         <svg
@@ -109,13 +109,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Contractor" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     //********************************Section***********************************/
-   
-       {
+
+    {
       label: "Section",
       icon: (
         <svg
@@ -130,13 +130,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Section" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
-        //********************************Rfid***********************************/
+    //********************************Rfid***********************************/
 
-       {
+    {
       label: "Rfid",
       icon: (
         <svg
@@ -151,15 +151,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       links: [
         { label: "Employees", path: "/dashboard/users/Rfid" },
         // { label: "Roles", path: "/dashboard/users/roles" },
-          // { label: "Permissions", path: "/dashboard/users/permissions" },
+        // { label: "Permissions", path: "/dashboard/users/permissions" },
       ],
     },
 
     // {
-    
+
     //   links: [
-       
-      
+
     //     {
     //       label: "Rfid",
     //       path: "/dashboard/modules/Rfid",

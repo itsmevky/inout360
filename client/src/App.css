@@ -92,9 +92,11 @@
   border: none;
   font-size: 23px;
 }
+
 .aj-button-section {
   margin-top: 6px;
 }
+
 .aj-button-section button {
   color: white;
   background: #22374e;
@@ -102,6 +104,7 @@
   font-size: 1rem;
   padding: 0.5rem;
 }
+
 .inside-form {
   width: 70%;
 }
@@ -657,18 +660,22 @@ button.active {
   display: flex;
   align-items: center;
 }
+
 .existing-user {
   font-size: 14px;
 }
+
 .remember-me-container {
   display: flex;
   gap: 5px;
   align-items: center;
   justify-content: center;
 }
+
 .existing {
   font-size: 20px;
 }
+
 .laps-entry-point {
   width: 40%;
 }
@@ -1063,6 +1070,7 @@ tbody tr:nth-child(even) {
   color: #22374e;
   transition: all 0.3s ease;
 }
+
 /* 
 .form-item input:focus + label,
 .form-item input:valid + label {
@@ -1106,6 +1114,7 @@ tbody tr:nth-child(even) {
 .logout-section button:hover {
   cursor: pointer;
 }
+
 /* .dropdown-menu {
   margin-top: 4%;
   z-index: 1000;
@@ -1116,9 +1125,11 @@ tbody tr:nth-child(even) {
   letter-spacing: 1px;
   font-weight: 600;
 }
+
 .aj-default-padding {
   padding: 1rem;
 }
+
 .li a {
   display: block;
   color: #272b41;
@@ -1195,9 +1206,11 @@ tbody tr:nth-child(even) {
 .card-section {
   box-shadow: rgba(0, 0, 0, 0.56) 0px 22px 70px 4px;
 }
+
 .sub-title {
   color: #22374e;
 }
+
 .card {
   background: white;
   padding: 20px;
@@ -1205,12 +1218,15 @@ tbody tr:nth-child(even) {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
+
 .performing-action:hover {
   cursor: pointer;
 }
+
 .performing-action button:hover {
   cursor: pointer;
 }
+
 .card h3 {
   margin: 0;
   font-size: 1.2rem;
@@ -1248,6 +1264,7 @@ tbody tr:nth-child(even) {
   text-decoration: none;
   font-size: 0.9rem;
 }
+
 .border {
   border-width: 1px;
 }
@@ -1263,6 +1280,7 @@ tbody tr:nth-child(even) {
 .list-user-title {
   display: flex;
 }
+
 .table-container th {
   background-color: #22374e;
   color: white;
@@ -1298,6 +1316,7 @@ tbody tr:nth-child(even) {
   display: flex;
   justify-content: center;
 }
+
 .crm-buttonsection:hover {
   cursor: pointer;
 }
@@ -1307,6 +1326,7 @@ tbody tr:nth-child(even) {
   color: white;
   cursor: pointer;
 }
+
 .crm-buttonsection button:hover {
   cursor: pointer;
 }
@@ -1397,17 +1417,20 @@ tbody tr:nth-child(even) {
 .pagination-button-previous:focus {
   transform: translateY(-5px);
 }
+
 /* add user form css */
 
 .anim {
   display: flex;
   justify-content: center;
 }
+
 .sideform {
   width: 81%;
   padding: 30px;
   padding-right: 15px;
 }
+
 .heading-section {
   text-align: center;
   height: 100vh;
@@ -2452,18 +2475,20 @@ tbody tr:nth-child(even) {
 .form-item input:valid + label {
   font-size: 11px;
   /* top: -5px; */
-.form-item input:focus + label,
-.form-item input:not(:placeholder-shown) + label,
-.form-item select:focus + label,
-.form-item select:not([value=""]) + label .form-item input:focus + label {
+.form-item input:focus+label,
+.form-item input:not(:placeholder-shown)+label,
+.form-item select:focus+label,
+.form-item select:not([value=""])+label .form-item input:focus+label {
   top: -4px;
   left: 16px;
   font-size: 13px;
   margin: 0px;
 }
+
 .main-inner.login-page .form-item {
   display: flex;
 }
+
 .main-inner.login-page .form-item .select-option-dropdown {
   width: 100%;
 }
@@ -2537,6 +2562,7 @@ tbody tr:nth-child(even) {
 .layout-section {
   width: 100%;
 }
+
 .sidebar-section {
   width: 15%;
 }
@@ -2669,26 +2695,32 @@ th {
   background-color: #fff;
   border-radius: 50px;
 }
+
 .input-search-bar input,
 .AJ-page-limit {
   background-color: #fff;
 }
+
 .AJ-crm-profile-section img {
   margin-right: 1rem;
 }
+
 .button-crm button {
   padding: 4px 14px !important;
 }
+
 .pagination-buttons button {
   padding: 4px 14px !important;
   background-color: #fff;
   color: #036;
 }
+
 .pagination-button.active {
   background-color: #036;
   color: white;
   border: 1px solid #036;
 }
+
 .pagination-button[disabled] {
   cursor: not-allowed;
 }
@@ -2697,11 +2729,13 @@ th {
   background-color: white;
   color: #036;
 }
+
 .rows-per-page,
 .pagination-info,
 .pagination-controls {
   margin: 0 10px;
 }
+
 .pagination-container {
   display: flex;
   align-items: center;
@@ -2709,6 +2743,7 @@ th {
   gap: 8px;
   margin-top: 16px;
 }
+
 .crm-buttonsection button:hover {
   cursor: pointer;
 }
@@ -2895,25 +2930,31 @@ label {
 
   color: #555;
 }
+
 .input-search-bar {
   position: relative;
   margin-bottom: 4px;
 }
+
 .input-search-bar input {
   padding: 6px 20px;
   padding-right: 40px;
 }
+
 .searching-log {
   position: absolute;
   right: 12px;
   top: 12px;
 }
+
 .input-search-bar input ::placeholder {
   color: black;
 }
+
 .aj-crm-adding {
   padding: 10px;
 }
+
 /* input,
 select {
   width: 100%;
@@ -2926,13 +2967,16 @@ select {
 .update-single-status select {
   border-radius: 5px;
 }
+
 .upclick {
   background-color: #22374e;
 }
+
 .upclick:hover {
   background-color: #4f6c8c;
   cursor: pointer;
 }
+
 .upclick-cut {
   position: absolute;
   top: -8px;
@@ -2944,17 +2988,20 @@ select {
   color: #fff;
   right: -12px;
 }
+
 .sidebar-inner {
   border-radius: 5px;
   padding-right: 15px;
   padding-left: 15px;
   padding-top: 5px;
 }
+
 .upclick-cut:hover {
   color: white;
   cursor: pointer;
   background-color: #22374e;
 }
+
 input:focus,
 select:focus {
   outline: none;
@@ -2969,6 +3016,7 @@ select:focus {
   border-radius: 5px;
   width: 100%;
 }
+
 /* Label Styling */
 .select-option-dropdown label {
   position: absolute;
@@ -2987,16 +3035,18 @@ select:focus {
 }
 
 /* Move label up when select is focused OR has a value */
-.select-option-dropdown select:focus + label,
+.select-option-dropdown select:focus+label,
 .select-option-dropdown.has-value label {
   font-size: 13px;
   color: #22374e;
   margin: 0px;
   /* Blue */
 }
+
 .form-item textarea {
   border: 1px solid #ccc;
 }
+
 /* Select Styling */
 .select-option-dropdown select {
   width: 100%;
@@ -3008,21 +3058,26 @@ select:focus {
 
   transition: border 0.3s ease-in-out;
 }
+
 .status-select-option-dropdown .form-item select {
   padding: 10px 20px;
 }
+
 .status-dropdown-section {
   width: 50%;
 }
+
 .status-select-option-dropdown select:hover {
   cursor: pointer;
 }
+
 /* Focus Effect */
 .select-option-dropdown select:focus {
   outline: none;
   border-color: #22374e;
   box-shadow: 0 0 5px rgba(37, 99, 235, 0.5);
 }
+
 .apply-section {
   margin: auto;
   background-color: #22374e;
@@ -3031,66 +3086,84 @@ select:focus {
   border-radius: 25px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 .left-sidebar-content li {
   background-color: #22374e;
   color: #fff;
   width: 100%;
 }
+
 .left-sidebar-content li:hover {
   background-color: #fff;
   color: #22374e;
 }
+
 .outer-delete-section {
   margin: auto;
 }
+
 .outer-delete-section:hover svg {
   fill: red;
 }
+
 .outer-delete-section button {
   background-color: red;
 }
+
 .outer-delete-section button:hover {
   color: red;
 }
+
 .outer-aply-section:hover svg {
   fill: #22374e;
 }
+
 .outer-aply-section {
   margin: auto;
 }
+
 .apply-section:hover {
   background-color: #fff;
   color: #22374e;
   cursor: pointer;
 }
+
 .export-section:hover svg path {
   fill: #fff;
 }
+
 .crm-buttonsection:hover {
   background-color: #fff;
   color: #22374e;
 }
+
 .crm-buttonsection svg {
   margin-right: 8px;
 }
+
 .crm-buttonsection:hover svg path {
   fill: #22374e;
 }
+
 .crm-buttonsection:hover .outer-aply-section {
   margin: auto;
 }
+
 .pagination-container .rows-per-page select {
   border-radius: 0px;
   padding: 5px;
 }
+
 .pagination-container .rows-per-page {
   gap: 5px;
 }
+
 .adduser-outer-section .form-item label {
   margin: 0px;
   top: 22px;
   padding: 2px 3px;
 }
+
 .form-item select {
   display: block;
   width: 100%;
@@ -3099,55 +3172,50 @@ select:focus {
 
   transition: all 0.3s ease;
 }
-.adduser-outer-section .form-item input:focus + label,
-.adduser-outer-section .form-item input:not(:placeholder-shown) + label,
-.adduser-outer-section .form-item select:focus + label,
-.adduser-outer-section
-  .form-item
-  select:not([value=""])
-  + label
-  .form-item
-  input:focus
-  + label {
+
+.adduser-outer-section .form-item input:focus+label,
+.adduser-outer-section .form-item input:not(:placeholder-shown)+label,
+.adduser-outer-section .form-item select:focus+label,
+.adduser-outer-section .form-item select:not([value=""])+label .form-item input:focus+label {
   font-size: 12px;
   top: 0px;
 }
+
 .adduser-outer-section .form-item input,
 .adduser-outer-section .form-item select {
   height: 47px;
   border-radius: 5px;
 }
 
-.login-section .form-item input:focus + label,
-.login-section .form-item input:not(:placeholder-shown) + label,
-.login-section .form-item select:focus + label,
-.login-section
-  .form-item
-  select:not([value=""])
-  + label
-  .form-item
-  input:focus
-  + label {
+.login-section .form-item input:focus+label,
+.login-section .form-item input:not(:placeholder-shown)+label,
+.login-section .form-item select:focus+label,
+.login-section .form-item select:not([value=""])+label .form-item input:focus+label {
   font-size: 12px;
   top: -11px;
 }
+
 .login-section .form-item input,
 .login-section .form-item select {
   height: 47px;
   border-radius: 5px;
 }
+
 .login-section .form-item label {
   margin: 0px;
 
   padding: 2px 3px;
 }
+
 @keyframes border-flash {
   0% {
     border-color: red;
   }
+
   50% {
     border-color: transparent;
   }
+
   100% {
     border-color: red;
   }
@@ -3162,40 +3230,39 @@ input.field-error {
 select.field-error {
   border-bottom: 2px solid red !important;
 }
+
 .button-section {
   color: #fff;
 }
 
 /* forgot form */
-.form-justification.form-item input:focus + label,
-.form-justification.form-item input:not(:placeholder-shown) + label,
-.form-justification .form-item select:focus + label,
-.form-justification
-  .form-item
-  select:not([value=""])
-  + label
-  .form-item
-  input:focus
-  + label {
+.form-justification.form-item input:focus+label,
+.form-justification.form-item input:not(:placeholder-shown)+label,
+.form-justification .form-item select:focus+label,
+.form-justification .form-item select:not([value=""])+label .form-item input:focus+label {
   font-size: 12px;
   top: -12px;
 }
+
 .form-justification .form-item input,
 .form-justification .form-item select {
   height: 47px;
   border-radius: 5px;
 }
+
 .form-justification .form-item label {
   margin: 0px;
 
   padding: 2px 3px;
 }
-.form-item input:focus + label,
+
+.form-item input:focus+label,
 /* .form-item input:not(:placeholder-shown) + label, */
-.form-item select:focus + label,
-.form-item select:not([value=""]) + label .form-item input:focus + label {
+.form-item select:focus+label,
+.form-item select:not([value=""])+label .form-item input:focus+label {
   top: -12px;
 }
+
 .select-wrapper {
   position: relative;
   display: flex;
@@ -3207,7 +3274,8 @@ select.field-error {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  padding-right: 30px; /* Space for the icon */
+  padding-right: 30px;
+  /* Space for the icon */
 }
 
 .dropdown-icon {
@@ -3233,6 +3301,7 @@ select.field-error {
 .upclick-cut {
   cursor: pointer;
 }
+
 .upclick-cut:hover {
   color: red;
 }
@@ -3240,8 +3309,10 @@ select.field-error {
 /* Initial state for the label */
 .select-option-dropdown label:not(.selected) {
   /* top: 35%; */
-  transform: translateY(-50%); /* Centering adjustment */
-  font-size: 13px; /* Base font size */
+  transform: translateY(-50%);
+  /* Centering adjustment */
+  font-size: 13px;
+  /* Base font size */
 }
 
 .select-option-dropdown .selected {
@@ -3258,6 +3329,7 @@ select.field-error {
   gap: 20px;
   align-items: center;
 }
+
 .action-button button,
 .export-section button {
   display: flex;
@@ -3266,6 +3338,7 @@ select.field-error {
   border-radius: 25px;
   padding: 6px 19px;
 }
+
 /* action-button-css */
 .action-button {
   position: relative;
@@ -3286,6 +3359,7 @@ select.field-error {
 .dropdown-item:hover {
   background-color: #f0f0f0;
 }
+
 /* export-section-css */
 
 button {
@@ -3295,24 +3369,22 @@ button {
   justify-content: center;
   transition: all 0.3s ease-in-out;
 }
+
 /* .combine-export-section button {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 } */
 .combine-export-section .export-section button svg:hover {
   color: #fff;
 }
+
 .combine-export-section .export-section button:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
   background-color: #22374e;
   color: #fff;
 }
-.combine-export-section
-  .export-section
-  button
-  svg:hover
-  .crm-buttonsection
-  button {
+
+.combine-export-section .export-section button svg:hover .crm-buttonsection button {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -3332,27 +3404,20 @@ button:hover svg {
 
 /* add teacher form */
 
-.AJ-crm-addteacherform .first-left input:focus + label,
-.AJ-crm-addteacherform
-  .first-left
-  .form-item
-  input:not(:placeholder-shown)
-  + label,
-.AJ-crm-addteacherform .first-left select:focus + label,
-.AJ-crm-addteacherform
-  .first-left
-  select:not([value=""])
-  + label
-  input:focus
-  + label {
+.AJ-crm-addteacherform .first-left input:focus+label,
+.AJ-crm-addteacherform .first-left .form-item input:not(:placeholder-shown)+label,
+.AJ-crm-addteacherform .first-left select:focus+label,
+.AJ-crm-addteacherform .first-left select:not([value=""])+label input:focus+label {
   font-size: 12px;
   top: 0px;
 }
+
 .AJ-crm-addteacherform .first-left input,
 .AJ-crm-addteacherform .first-left select {
   height: 47px;
   border-radius: 25px;
 }
+
 .AJ-crm-addteacherform .first-left label,
 .AJ-crm-addteacherform .first-right label {
   position: absolute;
@@ -3366,6 +3431,7 @@ button:hover svg {
   transition: all 0.3s ease-in-out;
   pointer-events: none;
 }
+
 .AJ-crm-radio {
   width: 50%;
   justify-content: space-around;
@@ -3374,6 +3440,7 @@ button:hover svg {
 .AJ-Form-block .form-input input {
   height: 35px;
 }
+
 /* // value={formData.qualifications}
                 // onChange={handleChange}
                 // onBlur={handleBlur}
@@ -3382,34 +3449,44 @@ button:hover svg {
 .AJ-crm-combinition select label {
   font-size: 10px;
 }
+
 .AJ-Form-block h3 {
   color: #22374e;
 }
+
 .AJ-crm-professional h3 {
   color: #22374e;
 }
+
 .AJ-crm-qualification {
   margin-top: 1%;
 }
+
 .AJ-crm-remove-button button {
   background-color: red;
 }
+
 .AJ-crm-remove-button {
   margin: auto;
 }
+
 .AJ-crm-opt-qualification {
   font-size: 15px;
 }
+
 .file-upload {
   display: flex;
   justify-content: space-between;
 }
+
 .AJ-crm-adhar-label {
   width: 40%;
 }
+
 .AJ-crm-upload-point {
   width: 50%;
 }
+
 .AJ-crm-upload-point-qualification label {
   height: 40px;
   width: 100%;
@@ -3430,13 +3507,14 @@ button:hover svg {
 /* ---------------------------------------------------------------------- */
 
 /* Float label on focus or when input has value */
-.AJ-crm-baniking input:focus + label,
-.AJ-crm-baniking input:not(:placeholder-shown) + label {
+.AJ-crm-baniking input:focus+label,
+.AJ-crm-baniking input:not(:placeholder-shown)+label {
   top: -8px;
   font-size: 0.75rem;
   /* color: #2563eb; */
   transform: translateY(0%);
 }
+
 .AJ-floating-label-wrapper {
   position: relative;
   width: 100%;
@@ -3469,12 +3547,12 @@ button:hover svg {
   font-size: 0.75rem;
   color: #22374e;
 } */
-.AJ-floating-input:focus + .AJ-floating-label,
-.AJ-floating-input:not(:placeholder-shown) + .AJ-floating-label,
-.AJ-floating-textarea:focus + .AJ-floating-label,
-.AJ-floating-textarea:not(:placeholder-shown) + .AJ-floating-label,
-.AJ-floating-select:focus + .AJ-floating-label,
-.AJ-floating-select:not([value=""]) + .AJ-floating-label {
+.AJ-floating-input:focus+.AJ-floating-label,
+.AJ-floating-input:not(:placeholder-shown)+.AJ-floating-label,
+.AJ-floating-textarea:focus+.AJ-floating-label,
+.AJ-floating-textarea:not(:placeholder-shown)+.AJ-floating-label,
+.AJ-floating-select:focus+.AJ-floating-label,
+.AJ-floating-select:not([value=""])+.AJ-floating-label {
   top: -4px;
   font-size: 0.75rem;
   color: #22374e;
@@ -3489,13 +3567,16 @@ button:hover svg {
   margin: auto;
   height: 300px;
 }
+
 .AJ-crm-submiting-section button {
   background-color: #22374e;
 }
+
 .AJ-crm-submiting-section button:hover {
   background-color: #46607c;
   cursor: pointer;
 }
+
 .AJ-floating-input {
   width: 100%;
   padding: 1.25rem 0.75rem 0.5rem 0.75rem;
@@ -3503,9 +3584,11 @@ button:hover svg {
   margin-bottom: 0.5rem;
   border-radius: 0.375rem;
   outline: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* subtle shadow */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  /* subtle shadow */
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
+
 .AJ-Form-submit-button {
   padding: 1rem;
   width: 100%;
@@ -3513,23 +3596,28 @@ button:hover svg {
   background: #151a2d;
   box-shadow: 0 2px 6px rgba(34, 55, 78, 0.2);
 }
+
 .AJ-Form-submit-button:hover {
   cursor: pointer;
   background: #041324;
   box-shadow: 0 2px 6px rgba(34, 55, 78, 0.2);
 }
+
 .AJ-floating-input:focus {
   border-color: #22374e;
   box-shadow: 0 2px 6px rgba(34, 55, 78, 0.2);
 }
+
 .AJ-Form-block {
   background: white;
   border-radius: 0.5rem;
   /* padding: 2.25rem 0.95rem 0.5rem 0.95rem; */
   margin-top: 10px;
   /* background-color: rgb(230, 232, 235); */
-  box-shadow: 0 2px 6px rgba(55, 101, 151, 0.2); /* enhanced shadow on focus */
+  box-shadow: 0 2px 6px rgba(55, 101, 151, 0.2);
+  /* enhanced shadow on focus */
 }
+
 .AJ-left-section {
   width: 94%;
 }
@@ -3573,11 +3661,11 @@ body {
 }
 
 .sidebar-header .header-logo img {
-  width: 46px;
-  height: 46px;
+  width: 80px;
+  height: 80px;
   display: block;
   object-fit: contain;
-  border-radius: 50%;
+  /* border-radius: 50%; */
 }
 
 .sidebar-header .sidebar-toggler,
@@ -3654,21 +3742,25 @@ body {
   border: 1px solid #151a2d;
   transition: 0.4s ease;
 }
+
 li.nav-item.dropdown-container.open.open.active svg,
 li.nav-item.dropdown-container.open svg {
   fill: #151a2d;
 }
 
-.sidebar-nav .nav-item:is(:hover, .open) > .nav-link:not(.dropdown-title) {
+.sidebar-nav .nav-item:is(:hover, .open)>.nav-link:not(.dropdown-title) {
   color: #151a2d;
   background: #eef2ff;
 }
-.sidebar-nav .nav-item span:is(:hover, .open) > .nav-link:not(.dropdown-title) {
+
+.sidebar-nav .nav-item span:is(:hover, .open)>.nav-link:not(.dropdown-title) {
   fill: #151a2d;
 }
+
 li.dropdown-container:hover svg {
   fill: #151a2d;
 }
+
 .sidebar .nav-link .nav-label {
   transition: opacity 0.3s ease;
 }
@@ -3729,16 +3821,14 @@ li.dropdown-container:hover svg {
   padding: 7px 10px 7px 24px;
 }
 
-.sidebar.sidebar.collapsed .nav-item:hover > .dropdown-menu {
+.sidebar.sidebar.collapsed .nav-item:hover>.dropdown-menu {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(12px);
   transition: all 0.4s ease;
 }
 
-.sidebar.sidebar.collapsed
-  .nav-item:hover
-  > .dropdown-menu:has(.dropdown-link) {
+.sidebar.sidebar.collapsed .nav-item:hover>.dropdown-menu:has(.dropdown-link) {
   transform: translateY(10px);
 }
 
@@ -3796,39 +3886,47 @@ li.dropdown-container:hover svg {
     transform: translateY(15px);
   }
 }
+
 .AJ-dasboard main div,
 .AJ-dasboard header {
   padding: 0.5rem;
   /* transition: all 0.3s ease; */
 }
+
 .AJ-dasboard main div a,
 .AJ-dasboard main div button {
   cursor: pointer;
   padding: 0.4rem;
   /* transition: all 0.2s ease; */
 }
+
 a:hover,
 button:hover {
   cursor: pointer;
 }
+
 .AJ-dasboard main div p {
   padding: 0.2rem;
   /* transition: all 0.1s ease; */
 }
+
 .AJ-login-Form-block,
 .AJ-login-Form-block input {
   padding: 2.25rem 0.95rem 0.5rem 0.95rem;
   /* transition: all 0.4s ease; */
 }
+
 .layout-section-dashboard div {
   padding: 1rem !important;
   /* transition: all 0.4s ease; */
 }
+
 .layout-section-dashboard p,
 .layout-section-dashboard h2 {
   padding: 0.4rem !important;
   transition: all 0.4s ease;
 }
+
 li .nav-link:hover {
   cursor: pointer;
 }
@@ -3836,29 +3934,37 @@ li .nav-link:hover {
 .AJ-crm-adding-title-section {
   margin-top: 0.01rem;
 }
+
 .AJ-crm-profile-section {
   padding: 4px;
 }
+
 .AJ-crm-droping-profile {
   padding: 6%;
 }
+
 .AJ-crm-right-profile-section {
   gap: 16px;
 }
+
 .AJ-crm-right-profile-section:hover {
   cursor: pointer;
 }
+
 .AJ-crm-notification-section img {
   width: 62px;
   height: 50px;
 }
+
 .AJ-crm-heirarchy-role-section {
   width: 50%;
 }
+
 .AJ-crm-main-heirarchy-role-section {
   display: flex;
   justify-content: flex-start;
 }
+
 /* dynamic feilds */
 
 .AJ-crm-field-row {
@@ -3883,7 +3989,7 @@ li .nav-link:hover {
   min-height: 60px;
 }
 
-.AJ-crm-field-row > div {
+.AJ-crm-field-row>div {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -3908,26 +4014,32 @@ li .nav-link:hover {
 button {
   margin-right: 10px;
 }
+
 .AJ-crm-dynamic-form-felds {
   font-size: 20px;
   font-weight: 600;
 }
+
 .AJ-crm-remove-dynamically-section button {
   background-color: rgb(173, 171, 171);
 }
+
 .AJ-crm-adding-fields-section button {
   width: 100%;
   color: white;
   background-color: #111b27;
 }
+
 .AJ-crm-adding-fields-section button:hover {
   background-color: #192f4d;
 }
+
 /* add global fields */
 .AJ-floating-label-global-wrapper {
   position: relative;
   width: 100%;
 }
+
 /* for radio and checkbox design */
 /* .AJ-floating-label-wrapper {
     position: relative;
@@ -3942,10 +4054,12 @@ button {
   box-shadow: 0 4px 8px 0 rgba(184, 179, 179, 0.795),
     0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
+
 .AJ-crm-add-feild-heading-section {
   font-weight: 600;
   text-align: center;
 }
+
 .AJ-popup-content {
   padding: 1rem;
 }
@@ -3955,21 +4069,26 @@ button {
   opacity: 40;
   padding: 1rem;
 }
+
 form input {
   padding: 1rem;
 }
+
 .AJ-crm-save {
   margin: auto;
   width: 100%;
 }
+
 .AJ-crm-save button:hover {
   background-color: #263d5c;
 }
+
 .AJ-floating-label-group {
   color: #22374e;
   font-size: 0.875rem;
   padding-left: 11px;
 }
+
 .AJ-section-group {
   color: #22374e;
   font-size: 0.875rem;
@@ -4028,6 +4147,7 @@ form input {
   width: 212%;
   background: white;
 }
+
 .inner-exam {
   border: 1px solid;
   color: black;
@@ -4069,6 +4189,7 @@ form input {
   width: 49%;
   margin-top: 12px;
 }
+
 .AJ-button-section {
   margin-left: 5px;
   width: 30%;
@@ -4079,7 +4200,8 @@ form input {
 /* Grid container: auto-fit columns  (2–4 wide) */
 .assignment-grid {
   display: grid;
-  gap: 1rem; /* space between cards */
+  gap: 1rem;
+  /* space between cards */
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   /* Auto-fit columns: each at least 200px, otherwise shrinks to 1fr */
   margin: 0;
@@ -4096,8 +4218,10 @@ form input {
 /* Card styling */
 .card {
   background: #fff;
-  border-radius: 8px; /* rounded corners */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* subtle drop shadow */
+  border-radius: 8px;
+  /* rounded corners */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* subtle drop shadow */
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -4109,6 +4233,7 @@ form input {
   margin-bottom: 0.5rem;
   color: #222;
 }
+
 .card p {
   margin: 0.5rem 0;
   color: #555;
@@ -4117,7 +4242,8 @@ form input {
 
 /* Deadline highlight (warning text) */
 .text-warning {
-  color: #e67e22; /* warm orange for emphasis */
+  color: #e67e22;
+  /* warm orange for emphasis */
 }
 
 /* Teacher info (image + name + subject) */
@@ -4126,13 +4252,16 @@ form input {
   align-items: center;
   margin-top: 1rem;
 }
+
 .teacher-info img {
-  border-radius: 50%; /* circular image */
+  border-radius: 50%;
+  /* circular image */
   width: 30px;
   height: 30px;
   object-fit: cover;
   margin-right: 0.5rem;
 }
+
 .teacher-info p {
   margin: 0;
   font-size: 0.9rem;
@@ -4164,24 +4293,29 @@ form input {
 .progress-track {
   flex: 1;
   height: 8px;
-  background-color: #f1f5f9; /* light gray */
+  background-color: #f1f5f9;
+  /* light gray */
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  background-color: #4f46e5; /* indigo-600 */
+  background-color: #4f46e5;
+  /* indigo-600 */
   border-radius: 4px 0 0 4px;
   transition: width 0.3s ease;
 }
 
 .progress-text {
   font-size: 14px;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
+  /* slate-500 */
 }
+
 .open-assignment-btn {
-  background-color: #22c55e; /* green-500 */
+  background-color: #22c55e;
+  /* green-500 */
   color: white;
   border: none;
   padding: 8px 16px;
@@ -4192,7 +4326,8 @@ form input {
 }
 
 .open-assignment-btn:hover {
-  background-color: #16a34a; /* green-600 */
+  background-color: #16a34a;
+  /* green-600 */
 }
 
 .cardddssssss {
@@ -4242,6 +4377,7 @@ form input {
   background-color: #6c757d;
   border-color: #6c757d;
 }
+
 .AJ-form-submit-button {
   padding: 0.5rem;
   background: #151a2d;
@@ -4249,9 +4385,11 @@ form input {
   width: 9rem;
   color: #fff;
 }
+
 .AJ-home-main-section {
   height: auto;
 }
+
 .Designation-section {
   padding: 10px;
 }

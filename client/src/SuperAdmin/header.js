@@ -55,7 +55,7 @@ const Header = () => {
       <header className="flex justify-between items-center px-7 py-1 bg-white">
         {/* Left Section: Logo and Title */}
         <div className="flex items-center space-x-2">
-          <div className="sidebar-header">
+          <div className="dash-header">
             <a href="#" className="header-logo">
               <img height="" width="" src={logo} alt="CodingNepal" />
             </a>
