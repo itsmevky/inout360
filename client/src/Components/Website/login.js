@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-// import { encryptData } from "../../Helpers/encryptionHelper.js";
+import { encryptData } from "../../Helpers/encryptionHelper";
 
 const domainpath = "http://localhost:5000";
 
@@ -76,7 +76,7 @@ const LoginForm = () => {
         localStorage.setItem("accesstoken", staticAdmin.accessToken);
         localStorage.setItem("userdetail", encryptData(staticAdmin));
 
-        // alert("Static Admin Login Successful!");
+        alert("Static Admin Login Successful!");
         navigate("/dashboard");
         return; // ✅ skip API call
       }

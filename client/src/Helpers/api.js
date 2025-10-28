@@ -467,6 +467,7 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 // ---------------- Get Subdomain ---------------- //
 const getSubdomain = () => {
   const host = window.location.hostname;
@@ -479,8 +480,8 @@ const getSubdomain = () => {
 const subdomain = getSubdomain();
 
 const domainpath = subdomain
-  ? `http://${subdomain}.localhost:5001/api`
-  : `http://localhost:5001/api`;
+  ? `http://${subdomain}.localhost:5000/api`
+  : `http://localhost:5000/api`;
 
 // ---------------- Token Expiry Handler ---------------- //
 const handleTokenExpiry = () => {
@@ -586,8 +587,8 @@ const API = {
     login: "/auth/login",
   },
 
-  shift: {
-    getAll: (params = {}) => getData("/shift", params),
+    shift: {
+      getAll: (params = {}) => getData("/shift", params),
     getById: (id) => getData(`/shift/${id}`),
     add: (data) => postData("/shift", data),
     update: (id, data) => putData(`/shift/${id}`, data),
@@ -635,40 +636,39 @@ const API = {
 
   // ✅ Section-specific helpers
 
+    
   section: {
-    getAll: (params) => getData("/sections/all", params),
-    getAll: (params = {}) => getData("/sections", params),
+      getAll: (params) => getData("/sections/all", params),
+      getAll: (params = {}) => getData("/sections", params),
     getById: (id) => getData(`/sections/${id}`),
     add: (data) => postData("/sections", data),
     update: (id, data) => putData(`/sections/${id}`, data),
     remove: (id) => deleteData(`/sections/${id}`),
     bulkRemove: (data) => postData("/sections/delete", data),
     search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
-      getData("/sections/search", {
-        search: searchTerm,
-        page,
-        limit,
-        ...filters,
-      }),
+      getData("/sections/search", { search: searchTerm, page, limit, ...filters }),
   },
 
-  rfid: {
-    getAll: (params) => getData("/rfid", params),
-    getById: (id) => getData(`{{url}}/api/rfid/${id}`),
-    add: (data) => postData("{{url}}/api/rfid", data),
-    update: (id, data) => putData(`{{url}}/api/rfid/${id}`, data),
-    remove: (id) => deleteData(`{{url}}/api/rfid/${id}`),
-    bulkRemove: (data) => postData("{{url}}/api/rfid/delete", data),
-    search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
-      getData("{{url}}/api/rfid/search", {
-        search: searchTerm,
-        page,
-        limit,
-        ...filters,
-      }),
-  },
 
-  // ✅ Attendance-specific helpers
+
+rfid: {
+  getAll: (params) => getData("/rfid", params),
+  getById: (id) => getData(`{{url}}/api/rfid/${id}`),
+  add: (data) => postData("{{url}}/api/rfid", data),
+  update: (id, data) => putData(`{{url}}/api/rfid/${id}`, data),
+  remove: (id) => deleteData(`{{url}}/api/rfid/${id}`),
+  bulkRemove: (data) => postData("{{url}}/api/rfid/delete", data),
+  search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+    getData("{{url}}/api/rfid/search", {
+      search: searchTerm,
+      page,
+      limit,
+      ...filters,
+    }),
+},
+
+
+    // ✅ Attendance-specific helpers
   attendance: {
     getAll: (params) => getData("/attendance/all", params),
     getById: (id) => getData(`/attendance/${id}`),
@@ -685,22 +685,26 @@ const API = {
       }),
   },
 
-  contractor: {
-    getAll: (params = {}) => getData("/contractors/", params),
-    getById: (id) => getData(`/contractors/${id}`),
-    add: (data) => postData("/contractors", data),
-    update: (id, data) => putData(`/contractors/${id}`, data),
-    remove: (id) => deleteData(`/contractors/${id}`),
-    bulkRemove: (data) => postData("/contractors/delete", data),
-    search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
-      getData("/contractors/search", {
-        search: searchTerm,
-        page,
-        limit,
-        ...filters,
-      }),
-  },
+ contractor: {
+  getAll: (params = {}) => getData("/contractors/", params),
+  getById: (id) => getData(`/contractors/${id}`),
+  add: (data) => postData("/contractors", data),
+  update: (id, data) => putData(`/contractors/${id}`, data),
+  remove: (id) => deleteData(`/contractors/${id}`),
+  bulkRemove: (data) => postData("/contractors/delete", data),
+  search: (searchTerm = "", page = 0, limit = 10, filters = {}) =>
+    getData("/contractors/search", {
+      search: searchTerm,
+      page,
+      limit,
+      ...filters,
+    }),
+},
+
+
 };
+
+
 
 export {
   API,

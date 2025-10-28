@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useHistory } from "react-router-dom";
-import logo from "../../../Images/pidilite-logo-11.png"; 
+import logo from "../../../Images/logo.png"; // Adjust path as needed
 import { useNavigate } from "react-router-dom";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 
