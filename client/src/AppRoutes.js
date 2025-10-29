@@ -2,14 +2,9 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useUser } from "./Helpers/Context/UserContext.js";
 import ProtectedRoute from "./Layouts/ProtectedRoute.js";
+import DashboardLayout from "./Dashboardlayout/Dashboardlayout.js";
 
-// ✅ Layouts
-import SuperAdminLayout from "./Layouts/SuperadminLayout.js";
-import AdminLayout from "./Layouts/AdminLayout.js";
-import HRLayout from "./Layouts/HRLayout.js";
-import EmployeeLayout from "./Layouts/EmployeeLayout.js";
-
-// ✅ Public Pages
+// Public pages
 import Homepage from "./Website/Home.js";
 import Loginpage from "./Website/login.js";
 import EducationLoginpage from "./Dashboard/Education/login.js";
@@ -21,42 +16,30 @@ import Unauthorized from "./Website/Unauthorized.js";
 
 const AppRoutes = () => {
   const { user } = useUser();
-
-  if (user === undefined) {
-    return <div>Loading...</div>;
-  }
+  if (user === undefined) return <div>Loading...</div>;
 
   const userRole = user?.role?.toLowerCase().replace("_", "") || "";
   console.log("Detected role:", user?.role, "→ normalized:", userRole);
 
-  const roleLayoutMap = {
-    superadmin: SuperAdminLayout,
-    admin: AdminLayout,
-    hr: HRLayout,
-    employee: EmployeeLayout,
-  };
-
-  const LayoutComponent = roleLayoutMap[userRole];
+  const allowedRoles = ["superadmin", "admin", "hr", "employee"];
 
   return (
     <Routes>
+      {/* Protected Dashboard Route */}
       <Route
         path="/dashboard/*"
         element={
-          user ? (
-            LayoutComponent ? (
-              <ProtectedRoute allowedRoles={[userRole]}>
-                <LayoutComponent />
-              </ProtectedRoute>
-            ) : (
-              <Navigate to="/unauthorized" replace />
-            )
+          user && allowedRoles.includes(userRole) ? (
+            <ProtectedRoute allowedRoles={[userRole]}>
+              <DashboardLayout userRole={userRole} />
+            </ProtectedRoute>
           ) : (
             <Navigate to="/login" replace />
           )
         }
       />
 
+      {/* Public Routes */}
       <Route path="/" element={<Homepage />} />
       <Route path="/login" element={<EducationLoginpage />} />
       <Route path="/platform" element={<Loginpage />} />
