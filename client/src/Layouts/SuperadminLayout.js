@@ -21,7 +21,7 @@ import Roles from "../Modules/Users/Roles/List.js";
 import PermissionsTable from "../Modules/Users/Permissions/permission.js";
 
 // Contractors / RFID
-import Contractorlist from "../Modules/Users/Contractors/List.js";
+import Contractor from "../Modules/SuperAdminDashboard/Contractors/List.js";
 import Addcontractor from "../Modules/Users/Contractors/Add.js";
 import Editcontractor from "../Modules/Users/Contractors/Edit.js";
 import Rfidlist from "../Modules/Users/Rfid/List.js";
@@ -32,7 +32,8 @@ import Editrfid from "../Modules/Users/Rfid/Edit.js";
 import Attendancelist from "../Modules/Users/Attendance/List.js";
 import Addattendance from "../Modules/Users/Attendance/Add.js";
 import EditAttendance from "../Modules/Users/Attendance/Edit.js";
-
+import Device from "../Modules/SuperAdminDashboard/Device/List.js";
+import Zones from "../Modules/SuperAdminDashboard/Zones/List.js";
 // Settings
 import Fields from "../Modules/Settings/Fields/Fieldlist.js";
 
@@ -100,25 +101,27 @@ function SuperAdminLayout() {
               <Route path="/permissions" element={<PermissionsTable />} />
 
               {/* Attendance */}
-              <Route path="/attendance" element={<Attendancelist />} />
+              <Route path="users/Attendance" element={<Attendancelist />} />
               <Route path="/attendance/add" element={<Addattendance />} />
               <Route path="/attendance/edit/:id" element={<EditAttendance />} />
 
               {/* Contractors */}
-              <Route path="/contractors" element={<Contractorlist />} />
-              <Route path="/contractors/add" element={<Addcontractor />} />
+              <Route path="users/Contractor" element={<Contractor />} />
+              <Route path="users/contractors/add" element={<Addcontractor />} />
               <Route
                 path="/contractors/edit/:id"
                 element={<Editcontractor />}
               />
 
               {/* RFID */}
-              <Route path="/rfid" element={<Rfidlist />} />
+              <Route path="users/Rfid" element={<Rfidlist />} />
               <Route path="/rfid/add" element={<Rfidadd />} />
               <Route path="/rfid/edit/:id" element={<Editrfid />} />
 
               {/* Settings */}
               <Route path="/settings/fields" element={<Fields />} />
+              <Route path="users/device" element={<Device />} />
+              <Route path="users/zones" element={<Zones />} />
 
               {/* Fallback */}
               <Route path="*" element={<Dashboard />} />

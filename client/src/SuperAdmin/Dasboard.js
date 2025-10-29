@@ -5,7 +5,7 @@ import Footer from "./footer.js";
 // import "../../src/App.css ";
 const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
 const SuperAdminDashboard = () => {
-  console.log("SuperAdminDashboard");
+  // console.log("SuperAdminDashboard");
   return (
     <>
       <div className="layout-section-dashboard">
@@ -107,7 +107,9 @@ const SuperAdminDashboard = () => {
                     <span className="font-semibold">Manager</span>
                   </p>
                   <h2 className="text-2xl font-bold mt-2">6</h2>
-                  <p className="text-gray-400 text-sm">Total number of Manager</p>
+                  <p className="text-gray-400 text-sm">
+                    Total number of Manager
+                  </p>
                 </div>
               </div>
             </div>

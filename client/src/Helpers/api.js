@@ -16,8 +16,8 @@ const getSubdomain = () => {
 const subdomain = getSubdomain();
 
 const domainpath = subdomain
-  ? `http://${subdomain}.localhost:5001/api`
-  : `http://localhost:5001/api`;
+  ? `http://${subdomain}.localhost:5000/api`
+  : `http://localhost:5000/api`;
 
 // ---------------- Token Expiry Handler ---------------- //
 const handleTokenExpiry = () => {

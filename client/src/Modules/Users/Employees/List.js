@@ -9,7 +9,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
-const Teachers = () => {
+const Employeepage = () => {
   const [data, setData] = useState([]);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,35 +37,33 @@ const Teachers = () => {
   const statusValues = ["Active", "Disabled", "Blocked"];
 
   const [searchTerm, setSearchTerm] = useState("");
- const fetchemployees = async () => {
-  setLoading(true);
-  try {
-    const response = await API.getEmployees(
-      searchTerm,
-      currentPage,
-      rowsPerPage
-    );
+  const fetchemployees = async () => {
+    setLoading(true);
+    try {
+      const response = await API.getEmployees(
+        searchTerm,
+        currentPage,
+        rowsPerPage
+      );
 
-    console.log("response", response);
+      console.log("response", response);
 
-    if (response.employees && Array.isArray(response.employees)) {
-      setData(response.employees);         // ✅ Correct key
-      setTotalRows(response.total || 0);   // ✅ Use 'total' instead of 'pagination.totalRecords'
-    } else {
-      setError("No employee data found");  // ✅ Corrected message
+      if (response.employees && Array.isArray(response.employees)) {
+        setData(response.employees); // ✅ Correct key
+        setTotalRows(response.total || 0); // ✅ Use 'total' instead of 'pagination.totalRecords'
+      } else {
+        setError("No employee data found"); // ✅ Corrected message
+      }
+    } catch (err) {
+      setError("Something went wrong while fetching employees.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError("Something went wrong while fetching employees.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  fetchemployees();
-}, [currentPage, rowsPerPage, searchTerm]);
-
-
+  useEffect(() => {
+    fetchemployees();
+  }, [currentPage, rowsPerPage, searchTerm]);
 
   const handleCheckboxChange = (id) => {
     setSelectedTeachers((prev) =>
@@ -98,54 +96,35 @@ useEffect(() => {
     }
   };
 
-  // const handleBulkStatusUpdate = async () => {
-  //   if (selectedTeachers.length === 0)
-  //     return toast.error("Select at least one teacher");
-  //   try {
-  //     const res = await putData("/teacher/status", {
-  //       teachers: selectedTeachers,
-  //       status: selectedStatus,
-  //     });
-  //     if (res.status) {
-  //       toast.success("Status updated");
-  //       fetchemployees();
-  //       setSelectedStatus("");
-  //       setSelectedTeachers([]);
-  //     } else {
-  //       toast.error(res.message);
-  //     }
-  //   } catch (err) {
-  //     toast.error("Failed to update status");
-  //   }
-  // };
+  const handleDelete = async (id) => {
+    console.log("🗑️ Deleting employee with id:", id);
 
- const handleDelete = async (id) => {
-  console.log("🗑️ Deleting employee with id:", id);
-
-  const confirmDelete = window.confirm("Are you sure you want to delete this employee?");
-  if (!confirmDelete) {
-    console.log("❌ Delete cancelled by user");
-    return;
-  }
-
-  try {
-    const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
-    console.log("🔹 Delete API response:", res);
-
-    if (res.status === 200 || res.success === true) {
-      toast.success("✅ Employee deleted successfully!");
-      fetchemployees(); // refresh the list after delete
-    } else {
-      toast.error(res.message || "❌ Failed to delete employee.");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this employee?"
+    );
+    if (!confirmDelete) {
+      console.log("❌ Delete cancelled by user");
+      return;
     }
-  } catch (err) {
-    console.error("❌ Error while deleting employee:", err);
-    toast.error("Failed to delete. Please try again.");
-  }
-};
+
+    try {
+      const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
+      console.log("🔹 Delete API response:", res);
+
+      if (res.status === 200 || res.success === true) {
+        toast.success("✅ Employee deleted successfully!");
+        fetchemployees(); // refresh the list after delete
+      } else {
+        toast.error(res.message || "❌ Failed to delete employee.");
+      }
+    } catch (err) {
+      console.error("❌ Error while deleting employee:", err);
+      toast.error("Failed to delete. Please try again.");
+    }
+  };
 
   const columns = [
-     {
+    {
       name: (
         <input
           type="checkbox"
@@ -162,7 +141,7 @@ useEffect(() => {
       ),
       width: "5%",
     },
-   
+
     {
       name: "Name",
       selector: (row) => row.firstName,
@@ -173,59 +152,57 @@ useEffect(() => {
       selector: (row) => row.email,
       width: "25%",
     },
-     {
+    {
       name: "Gender",
       selector: (row) => row.gender,
       width: "25%",
     },
-   {
+    {
       name: "Designation",
       selector: (row) => row.designation,
       width: "25%",
     },
-    
-{
-  name: "Actions",
-  width: "2%",
-  selector: (row) => (
-    <div className="flex space-x-2 justify-center">
-      <div className="flex space-x-2  ">
-        <button
-          className="text-blue-500"
-          onClick={() => handleEdit(row._id)}   // ✅ updated
-        >
-          <svg
-            fill="#22374e"
-            width={20}
-            height={20}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 640 512"
-          >
-            <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-          </svg>
-        </button>
-      </div>
-      <div className="flex space-x-2 ">
-        <button
-          className="text-red-500"
-          onClick={() => handleDelete(row._id)}
-        >
-          <svg
-            fill="red"
-            width={16}
-            height={16}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 448 512"
-          >
-            <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  ),
-}
 
-
+    {
+      name: "Actions",
+      width: "2%",
+      selector: (row) => (
+        <div className="flex space-x-2 justify-center">
+          <div className="flex space-x-2  ">
+            <button
+              className="text-blue-500"
+              onClick={() => handleEdit(row._id)} // ✅ updated
+            >
+              <svg
+                fill="#22374e"
+                width={20}
+                height={20}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 640 512"
+              >
+                <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex space-x-2 ">
+            <button
+              className="text-red-500"
+              onClick={() => handleDelete(row._id)}
+            >
+              <svg
+                fill="red"
+                width={16}
+                height={16}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 448 512"
+              >
+                <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ),
+    },
   ];
 
   const handlePageChange = (page) => {
@@ -280,56 +257,55 @@ useEffect(() => {
     fetchemployees(); // Trigger fetch with the updated search term
   };
 
-const handleEdit = async (userId) => {
-  try {
-    const res = await getData(`/employees/${userId}`);
-    console.log("res", res);
-    if (res && res.employee) {
-      setSelectedUser(res.employee); // ✅ Save full employee object
-      setIsEditUserFormVisible(true); // ✅ Open side panel
-    } else {
-      toast.error("Failed to fetch user data.");
+  const handleEdit = async (userId) => {
+    try {
+      const res = await getData(`/employees/${userId}`);
+      console.log("res", res);
+      if (res && res.employee) {
+        setSelectedUser(res.employee); // ✅ Save full employee object
+        setIsEditUserFormVisible(true); // ✅ Open side panel
+      } else {
+        toast.error("Failed to fetch user data.");
+      }
+    } catch (err) {
+      toast.error("Something went wrong.");
     }
-  } catch (err) {
-    toast.error("Something went wrong.");
-  }
-};
+  };
 
   // selected userlist delete
-const handleDeleteUser = async () => {
-  if (selectedUsers.length === 0) {
-    toast.error("Select at least one row");
-    return;
-  }
-
-  const validUsers = selectedUsers.filter((id) =>
-    /^[0-9a-fA-F]{24}$/.test(id) // Validate MongoDB ObjectId
-  );
-
-  if (validUsers.length === 0) {
-    alert("Invalid user IDs provided.");
-    return;
-  }
-
-  const confirmDelete = window.confirm(
-    `Are you sure you want to delete ${validUsers.length} employee(s)?`
-  );
-  if (!confirmDelete) return;
-
-  try {
-    // Delete each selected employee one by one
-    for (const id of validUsers) {
-      await deleteData(`/employee/${id}`);
+  const handleDeleteUser = async () => {
+    if (selectedUsers.length === 0) {
+      toast.error("Select at least one row");
+      return;
     }
 
-    toast.success("✅ Employees deleted successfully!");
-    fetchemployees(); // Refresh the list
-  } catch (error) {
-    console.error("❌ Error deleting employees:", error);
-    toast.error("Failed to delete employees. Please try again.");
-  }
-};
+    const validUsers = selectedUsers.filter(
+      (id) => /^[0-9a-fA-F]{24}$/.test(id) // Validate MongoDB ObjectId
+    );
 
+    if (validUsers.length === 0) {
+      alert("Invalid user IDs provided.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${validUsers.length} employee(s)?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      // Delete each selected employee one by one
+      for (const id of validUsers) {
+        await deleteData(`/employee/${id}`);
+      }
+
+      toast.success("✅ Employees deleted successfully!");
+      fetchemployees(); // Refresh the list
+    } catch (error) {
+      console.error("❌ Error deleting employees:", error);
+      toast.error("Failed to delete employees. Please try again.");
+    }
+  };
 
   const toggleAddUserForm = () => {
     setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility
@@ -482,20 +458,20 @@ const handleDeleteUser = async () => {
           </div>
           <div>
             <button
-           className="crm-buttonsection"
-           onClick={() => navigate("/dashboard/users/employe")}
-         >
-           <svg
-             fill="white"
-             width={20}
-             height={20}
-             xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 640 512"
-           >
-             <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
-           </svg>
-           Add Employees
-         </button>
+              className="crm-buttonsection"
+              onClick={() => navigate("/dashboard/users/add")}
+            >
+              <svg
+                fill="white"
+                width={20}
+                height={20}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 640 512"
+              >
+                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+              </svg>
+              Add Employees
+            </button>
           </div>
         </div>
       </div>
@@ -537,18 +513,19 @@ const handleDeleteUser = async () => {
 
       {/* Edit User Form Sliding Panel */}
       {isEditUserFormVisible && selectedUser && (
-  <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
-    <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
-      <button
-        className="upclick-cut text-red-500 float-left rounded-sm"
-        onClick={toggleEditUserForm}
-      >
-        X
-      </button>
-      <EditUserForm user={selectedUser} /> {/* ✅ Now contains full data */}
-    </div>
-  </div>
-)}
+        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
+          <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
+            <button
+              className="upclick-cut text-red-500 float-left rounded-sm"
+              onClick={toggleEditUserForm}
+            >
+              X
+            </button>
+            <EditUserForm user={selectedUser} />{" "}
+            {/* ✅ Now contains full data */}
+          </div>
+        </div>
+      )}
       {/* Background overlay when Add or Edit User form is visible */}
       {(isAddUserFormVisible || isEditUserFormVisible) && (
         <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
@@ -557,4 +534,4 @@ const handleDeleteUser = async () => {
   );
 };
 
-export default Teachers;
+export default Employeepage;
