@@ -16,18 +16,16 @@ const EditUserForm = ({ user }) => {
     gender: "",
     dob: "",
     email: "",
+    phone: "",
     currentaddress: "",
     permanentaddress: "",
     state: "",
     city: "",
     pincode: "",
-    phone: "",
     joiningDate: "",
     designation: "",
-    shift: "",
-    department: "",
     section: "",
-    rfid: "",
+    shift: "",
     role: "",
     aadharcardnumber: "",
     pancard: "",
@@ -38,8 +36,9 @@ const EditUserForm = ({ user }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
-  // ✅ Prefill user data
+  // ✅ Prefill user data when editing
   useEffect(() => {
     if (user) {
       setFormData({
@@ -48,18 +47,16 @@ const EditUserForm = ({ user }) => {
         gender: user.gender || "",
         dob: user.dob ? user.dob.split("T")[0] : "",
         email: user.email || "",
+        phone: user.phone || "",
         currentaddress: user.currentaddress || "",
         permanentaddress: user.permanentaddress || "",
         state: user.state || "",
         city: user.city || "",
         pincode: user.pincode || "",
-        phone: user.phone || "",
         joiningDate: user.joiningDate ? user.joiningDate.split("T")[0] : "",
         designation: user.designation || "",
-        shift: user.shift || "",
-        department: user.department || "",
         section: user.section || "",
-        rfid: user.rfid || "",
+        shift: user.shift || "",
         role: user.role || "",
         aadharcardnumber: user.aadharcardnumber || "",
         pancard: user.pancard || "",
@@ -69,14 +66,19 @@ const EditUserForm = ({ user }) => {
     }
   }, [user]);
 
+  // ✅ Handle change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ Handle blur (for inline validation)
   const handleBlur = async (e) => {
     const { name, value } = e.target;
-    const fieldErrors = await validator.validate({ [name]: value }, { [name]: rules[name] });
+    const fieldErrors = await validator.validate(
+      { [name]: value },
+      { [name]: rules[name] }
+    );
     setErrors((prev) => ({
       ...prev,
       [name]: fieldErrors[name] || "",
@@ -84,24 +86,39 @@ const EditUserForm = ({ user }) => {
   };
 
   const getFieldClassName = (fieldName) =>
-    errors[fieldName] ? "aj-field-error AJ-floating-input" : "AJ-floating-input";
+    errors[fieldName]
+      ? "aj-field-error AJ-floating-input"
+      : "AJ-floating-input";
 
+  // ✅ Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
 
     try {
-      const response = await putData(`/employees/${user.id}`, formData);
+      const formDataObj = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataObj.append(key, value);
+      });
+
+      if (selectedPhoto) {
+        formDataObj.append("photo", selectedPhoto);
+      }
+
+      const response = await putData(`/employees/${user._id}`, formDataObj, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       if (response.status === true || response.success === true) {
         toast.success("✅ Employee updated successfully!");
-        navigate("/dashboard/users");
+        setTimeout(() => navigate("/dashboard/users/employees"), 1500);
       } else {
         toast.error(response.message || "❌ Failed to update employee.");
       }
     } catch (error) {
       console.error("❌ Error updating employee:", error);
-      toast.error("An error occurred. Please try again.");
+      toast.error(error?.response?.data?.message || "Server error occurred.");
     } finally {
       setLoading(false);
     }
@@ -112,7 +129,7 @@ const EditUserForm = ({ user }) => {
       <div className="edituser-inner-section">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-5xl mx-auto mt-8 bg-white"
+          className="w-full max-w-5xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-md"
           noValidate
         >
           <h2 className="text-lg font-semibold mb-6 text-gray-800">
@@ -120,22 +137,28 @@ const EditUserForm = ({ user }) => {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            {/* Passport Photo Upload */}
-            <div className="flex items-center space-x-4 col-span-2">
+            {/* ================= PHOTO ================= */}
+            <div className="flex items-center space-x-4 col-span-2 mb-4">
               <div className="w-[132px] h-[170px] border rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
                 <img
-                  src={user?.photo || "https://via.placeholder.com/132x170.png?text=Photo"}
+                  src={
+                    selectedPhoto
+                      ? URL.createObjectURL(selectedPhoto)
+                      : user?.photo ||
+                        "https://via.placeholder.com/132x170.png?text=Photo"
+                  }
                   alt="Passport"
                   className="object-cover w-full h-full"
                 />
               </div>
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Update Passport Size Photo
+                  Update Passport Photo
                 </label>
                 <input
                   type="file"
                   accept="image/*"
+                  onChange={(e) => setSelectedPhoto(e.target.files[0])}
                   className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
                              file:rounded-lg file:border-0 
                              file:text-sm file:font-semibold 
@@ -147,7 +170,9 @@ const EditUserForm = ({ user }) => {
 
             {/* ================= PERSONAL INFO ================= */}
             <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Personal Information</h2>
+              <h2 className="text-lg font-semibold mb-2">
+                Personal Information
+              </h2>
             </div>
 
             {/* First Name */}
@@ -161,9 +186,7 @@ const EditUserForm = ({ user }) => {
                 className={getFieldClassName("firstName")}
                 placeholder=" "
               />
-              <label className="AJ-floating-label">
-                First Name <span className="text-red-500">*</span>
-              </label>
+              <label className="AJ-floating-label">First Name *</label>
             </div>
 
             {/* Last Name */}
@@ -177,21 +200,23 @@ const EditUserForm = ({ user }) => {
                 className={getFieldClassName("lastName")}
                 placeholder=" "
               />
-              <label className="AJ-floating-label">Last Name</label>
+              <label className="AJ-floating-label">Last Name *</label>
             </div>
 
             {/* Gender */}
             <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
+              <select
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("gender")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Gender</label>
+                className="AJ-floating-input"
+              >
+                <option value="" disabled hidden></option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+              <label className="AJ-floating-label">Gender *</label>
             </div>
 
             {/* DOB */}
@@ -205,7 +230,7 @@ const EditUserForm = ({ user }) => {
                 className={getFieldClassName("dob")}
                 placeholder=" "
               />
-              <label className="AJ-floating-label">Date of Birth</label>
+              <label className="AJ-floating-label">Date of Birth *</label>
             </div>
 
             {/* Email */}
@@ -219,84 +244,7 @@ const EditUserForm = ({ user }) => {
                 className={getFieldClassName("email")}
                 placeholder=" "
               />
-              <label className="AJ-floating-label">
-                Email <span className="text-red-500">*</span>
-              </label>
-            </div>
-
-            {/* ================= CONTACT INFO ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Contact Information</h2>
-            </div>
-
-            {/* Current Address */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="currentaddress"
-                value={formData.currentaddress}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("currentaddress")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Current Address</label>
-            </div>
-
-            {/* Permanent Address */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="permanentaddress"
-                value={formData.permanentaddress}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("permanentaddress")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Permanent Address</label>
-            </div>
-
-            {/* State */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("state")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">State</label>
-            </div>
-
-            {/* City */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("city")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">City</label>
-            </div>
-
-            {/* Pincode */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="number"
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("pincode")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Pincode</label>
+              <label className="AJ-floating-label">Email *</label>
             </div>
 
             {/* Phone */}
@@ -310,12 +258,91 @@ const EditUserForm = ({ user }) => {
                 className={getFieldClassName("phone")}
                 placeholder=" "
               />
-              <label className="AJ-floating-label">Phone</label>
+              <label className="AJ-floating-label">Phone *</label>
+            </div>
+
+            {/* ================= ADDRESS ================= */}
+            <div className="col-span-2">
+              <h2 className="text-lg font-semibold mb-2">
+                Address Information
+              </h2>
+            </div>
+
+            {/* Current Address */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="currentaddress"
+                value={formData.currentaddress}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("currentaddress")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Current Address *</label>
+            </div>
+
+            {/* Permanent Address */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="permanentaddress"
+                value={formData.permanentaddress}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("permanentaddress")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Permanent Address *</label>
+            </div>
+
+            {/* State */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("state")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">State *</label>
+            </div>
+
+            {/* City */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("city")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">City *</label>
+            </div>
+
+            {/* Pincode */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="number"
+                name="pincode"
+                value={formData.pincode}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClassName("pincode")}
+                placeholder=" "
+              />
+              <label className="AJ-floating-label">Pincode *</label>
             </div>
 
             {/* ================= PROFESSIONAL INFO ================= */}
             <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Professional Information</h2>
+              <h2 className="text-lg font-semibold mb-2">
+                Professional Information
+              </h2>
             </div>
 
             {/* Joining Date */}
@@ -325,11 +352,9 @@ const EditUserForm = ({ user }) => {
                 name="joiningDate"
                 value={formData.joiningDate}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("joiningDate")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">Joining Date</label>
+              <label className="AJ-floating-label">Joining Date *</label>
             </div>
 
             {/* Designation */}
@@ -339,11 +364,21 @@ const EditUserForm = ({ user }) => {
                 name="designation"
                 value={formData.designation}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("designation")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">Designation</label>
+              <label className="AJ-floating-label">Designation *</label>
+            </div>
+
+            {/* Section */}
+            <div className="AJ-floating-label-wrapper mb-6">
+              <input
+                type="text"
+                name="section"
+                value={formData.section}
+                onChange={handleChange}
+                className="AJ-floating-input"
+              />
+              <label className="AJ-floating-label">Section *</label>
             </div>
 
             {/* Shift */}
@@ -353,59 +388,9 @@ const EditUserForm = ({ user }) => {
                 name="shift"
                 value={formData.shift}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("shift")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">Shift</label>
-            </div>
-
-            {/* Department */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("department")}
-              >
-                <option value="" disabled hidden></option>
-                <option value="Plumber">Plumber</option>
-                <option value="Assembler">Assembler</option>
-                <option value="Welder">Welder</option>
-              </select>
-              <label className="AJ-floating-label">Department</label>
-            </div>
-
-            {/* Section */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select
-                name="section"
-                value={formData.section}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("section")}
-              >
-                <option value="" disabled hidden></option>
-                <option value="Welding">Welding</option>
-                <option value="Electrical">Electrical</option>
-                <option value="Assembly">Assembly</option>
-              </select>
-              <label className="AJ-floating-label">Section</label>
-            </div>
-
-            {/* RFID */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="number"
-                name="rfid"
-                value={formData.rfid}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("rfid")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">RFID</label>
+              <label className="AJ-floating-label">Shift *</label>
             </div>
 
             {/* Role */}
@@ -414,20 +399,20 @@ const EditUserForm = ({ user }) => {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("role")}
+                className="AJ-floating-input"
               >
                 <option value="" disabled hidden></option>
-                <option value="SuperAdmin">SuperAdmin</option>
-                <option value="Admin">Admin</option>
-                <option value="Employee">Employee</option>
+                <option value="superadmin">Super Admin</option>
+                <option value="admin">Admin</option>
+                <option value="hr">HR</option>
+                <option value="employee">Employee</option>
               </select>
-              <label className="AJ-floating-label">Role</label>
+              <label className="AJ-floating-label">Role *</label>
             </div>
 
             {/* ================= BANKING DETAILS ================= */}
             <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Banking Details</h2>
+              <h2 className="text-lg font-semibold mb-2">Banking Details</h2>
             </div>
 
             {/* Aadhar */}
@@ -437,11 +422,9 @@ const EditUserForm = ({ user }) => {
                 name="aadharcardnumber"
                 value={formData.aadharcardnumber}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("aadharcardnumber")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">Aadhar Card</label>
+              <label className="AJ-floating-label">Aadhar Number *</label>
             </div>
 
             {/* PAN */}
@@ -451,11 +434,9 @@ const EditUserForm = ({ user }) => {
                 name="pancard"
                 value={formData.pancard}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("pancard")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">PAN Card</label>
+              <label className="AJ-floating-label">PAN Card *</label>
             </div>
 
             {/* Account Number */}
@@ -465,11 +446,9 @@ const EditUserForm = ({ user }) => {
                 name="accountNumber"
                 value={formData.accountNumber}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("accountNumber")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">Account Number</label>
+              <label className="AJ-floating-label">Account Number *</label>
             </div>
 
             {/* IFSC */}
@@ -479,15 +458,13 @@ const EditUserForm = ({ user }) => {
                 name="ifscCode"
                 value={formData.ifscCode}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("ifscCode")}
-                placeholder=" "
+                className="AJ-floating-input"
               />
-              <label className="AJ-floating-label">IFSC Code</label>
+              <label className="AJ-floating-label">IFSC Code *</label>
             </div>
           </div>
 
-          {/* Submit */}
+          {/* ================= SUBMIT ================= */}
           <div className="AJ-crm-save w-full md:col-span-2 mt-6">
             <button
               type="submit"

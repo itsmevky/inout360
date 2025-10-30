@@ -108,7 +108,7 @@ const Header = () => {
             {/* Dropdown Menu */}
             {isDropdownOpen && (
               <div className="AJ-crm-main-profile-section  dropdown-menu absolute w-37 bg-white shadow-md rounded-md text-gray-700">
-                <ul className=" p-6">
+                <ul className=" ">
                   <li>
                     <button className="AJ-crm-droping-profile flex block w-full text-center px-4 py-5 hover:bg-gray-100">
                       <div className="flex gap-2">

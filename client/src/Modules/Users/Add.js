@@ -1,56 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API } from "../../Helpers/api.js";
 import Validator from "../../Helpers/validators.js";
 import rules from "./Rules.js";
+import { useNavigate } from "react-router-dom";
 
 const AddUserForm = () => {
   const initialFormData = {
     firstName: "",
     lastName: "",
     gender: "",
-    dob:"",
+    dob: "",
     email: "",
-    currentaddress:"",
-    permanentaddress:"",
-    state:"",
-    city:"",
-    pincode:"",
-    phone:"",
+    phone: "",
+    currentaddress: "",
+    permanentaddress: "",
+    state: "",
+    city: "",
+    pincode: "",
     joiningDate: "",
     designation: "",
-    shift: "",
-    department:"",
     section: "",
-    rfid:"",
-    role:"",
-    aadharcardnumber:"",
-    pancard:"",
-    accountNumber:"",
-    ifscCode:"", 
+    shift: "",
+    role: "",
+    aadharcardnumber: "",
+    pancard: "",
+    accountNumber: "",
+    ifscCode: "",
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [businesses, setBusinesses] = useState([]); // New state for businesses
   const validator = new Validator(rules);
+    const navigate = useNavigate();
 
+  // ------------------ HANDLERS ------------------ //
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "business") {
-      const selectedBusiness = businesses.find((b) => b.name === value);
-      setFormData((prev) => ({
-        ...prev,
-        business: value,
-        business_types: selectedBusiness?.business_type || "", // Change to business type name
-        tenant_id: selectedBusiness?.id || "",
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleBlur = async (e) => {
@@ -73,33 +62,37 @@ const AddUserForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    console.log("📨 Form Submit Clicked");
 
     const isValid = await validateForm();
-    // if (!isValid) {
-    //   console.warn("❌ Validation Failed");
-    //   setLoading(false);
-    //   return;
-    // }
+    if (!isValid) {
+      toast.error("Please fill all required fields correctly!");
+      return;
+    }
+
+    setLoading(true);
     try {
       console.log("📦 Submitting employee data:", formData);
-
-      // ✅ Use the employee add endpoint here
       const result = await API.add("employees/add", formData);
+      console.log("✅ API Response:", result);
 
-      console.log("✅ API Response------>:", result);
-
-      if (result.status === true || result.success === true) {
+      if (
+        result.status === true ||
+        result.success === true ||
+        result.message === "Employee created successfully"
+      ) {
         toast.success("✅ Employee created successfully!");
         setFormData(initialFormData);
+
+        // ✅ Redirect after a short delay
+        setTimeout(() => {
+          navigate("/dashboard/users/employees");
+        }, 1500);
       } else {
         toast.error(result.message || "❌ Failed to create employee.");
       }
     } catch (error) {
       console.error("❌ Error creating employee:", error);
-      toast.error("An error occurred. Please try again.");
+      toast.error(error?.response?.data?.message || "Server error");
     } finally {
       setLoading(false);
     }
@@ -108,406 +101,259 @@ const AddUserForm = () => {
   const getFieldClassName = (fieldName) =>
     errors[fieldName] ? "field-error" : "field";
 
+  // ------------------ RENDER ------------------ //
   return (
     <div className="adduser-outer-section">
       <div className="adduser-inner-section">
+        <div className="adduser-form-section flex justify-center">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full max-w-5xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-md"
+            noValidate
+          >
+            <h2 className="text-lg font-semibold mb-6 text-gray-800">
+              Add New Employee
+            </h2>
 
-        <div className="adduser-form-section">
-        <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-5xl mx-auto mt-8 bg-white"
-        noValidate
-          >      
-            <div>
-              <h2 className="text-lg font-semibold mb-6 text-gray-800">
-                Add New Employee
-              </h2>
-            </div>
-
-            {/* FORM GRID: 2 columns on medium+ screens */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              {/* PERSONAL DETAILS */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                  placeholder=" "
+                />
+                <label className="AJ-floating-label">First Name *</label>
+              </div>
 
-      {/* Passport Size Photogaph */}
-    <div className="flex items-center space-x-4">
-    <div className="w-[132px] h-[170px] border rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
-      {/* Placeholder Image */}
-      <img
-        src="https://via.placeholder.com/132x170.png?text=Photo"
-        alt="Passport"
-        className="object-cover w-full h-full"
-      />
-    </div>
-    <div>
-      <label className="block mb-2 text-sm font-medium text-gray-700">
-        Upload Passport Size Photo
-      </label>
-      <input
-        type="file"
-        accept="image/*"
-        className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
-                   file:rounded-lg file:border-0 
-                   file:text-sm file:font-semibold 
-                   file:bg-blue-50 file:text-blue-700 
-                   hover:file:bg-blue-100"
-      />
-    </div>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                  placeholder=" "
+                />
+                <label className="AJ-floating-label">Last Name *</label>
+              </div>
 
+              <div className="AJ-floating-label-wrapper mb-6">
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                >
+                  <option value="" disabled hidden></option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+                <label className="AJ-floating-label">Gender *</label>
+              </div>
 
-  {/* ================= PERSONAL INFO ================= */}
-  <div className="col-span-2">
-    <h2 className="text-lg font-semibold mb-4">Personal Information</h2>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="date"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Date of Birth *</label>
+              </div>
 
-  {/* First Name */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="firstName"
-      value={formData.firstName}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("first_name")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">
-      First Name <span className="text-red-500">*</span>
-    </label>
-  </div>
+              {/* CONTACT */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                  placeholder=" "
+                />
+                <label className="AJ-floating-label">Email *</label>
+              </div>
 
-  {/* Last Name */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="lastName"
-      value={formData.lastName}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("lastName")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Last Name</label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="number"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                  placeholder=" "
+                />
+                <label className="AJ-floating-label">Phone *</label>
+              </div>
 
-  {/* Gender */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="gender"
-      value={formData.gender}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("gender")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Gender</label>
-  </div>
+              {/* ADDRESS */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="currentaddress"
+                  value={formData.currentaddress}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Current Address *</label>
+              </div>
 
-  {/* Date of Birth */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="date"
-      name="dob"
-      value={formData.dob}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("dob")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Date of Birth</label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="permanentaddress"
+                  value={formData.permanentaddress}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Permanent Address *</label>
+              </div>
 
-   {/* Email */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="email"
-      name="email"
-      value={formData.email}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("email")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">
-      Email <span className="text-red-500">*</span>
-    </label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">State *</label>
+              </div>
 
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">City *</label>
+              </div>
 
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="number"
+                  name="pincode"
+                  value={formData.pincode}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Pincode *</label>
+              </div>
 
-  {/* ================= CONTACT INFO ================= */}
-  <div className="col-span-2">
-    <h2 className="text-lg font-semibold mb-4">Contact Information</h2>
-  </div>
+              {/* PROFESSIONAL INFO */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="date"
+                  name="joiningDate"
+                  value={formData.joiningDate}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Joining Date *</label>
+              </div>
 
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="designation"
+                  value={formData.designation}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Designation *</label>
+              </div>
 
-    {/* Address */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="currentaddress"
-      value={formData.currentaddress}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("currentaddress")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Curent Address</label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="section"
+                  value={formData.section}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Section *</label>
+              </div>
 
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="shift"
+                  value={formData.shift}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Shift *</label>
+              </div>
 
-     {/* Address */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="permanentaddress"
-      value={formData.permanentaddress}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("address")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Permanent Address</label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                >
+                  <option value="" disabled hidden></option>
+                  <option value="superadmin">Super Admin</option>
+                  <option value="admin">Admin</option>
+                  <option value="hr">HR</option>
+                  <option value="employee">Employee</option>
+                </select>
+                <label className="AJ-floating-label">Role *</label>
+              </div>
 
-    <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="state"
-      value={formData.state}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("address")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">State</label>
-  </div>
-   
+              {/* BANKING DETAILS */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="aadharcardnumber"
+                  value={formData.aadharcardnumber}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Aadhar Number *</label>
+              </div>
 
-    <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="city"
-      value={formData.city}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("city")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">City</label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="pancard"
+                  value={formData.pancard}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">PAN Card *</label>
+              </div>
 
-   <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="number"
-      name="pincode"
-      value={formData.pincode}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("pincode")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Pincode</label>
-  </div>
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">Account Number *</label>
+              </div>
 
-
-
-
-  {/* Phone Number */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="number"
-      name="phone"
-      value={formData.phone}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("phone")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">
-      Phone Number <span className="text-red-500">*</span>
-    </label>
-  </div>
-
-  {/* ================= PROFESSIONAL INFO ================= */}
-  <div className="col-span-2">
-    <h2 className="text-lg font-semibold mb-4">Professional Information</h2>
-  </div>
-
-  {/* Joining Date */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="date"
-      name="joiningDate"
-      value={formData.joiningDate}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("joiningDate")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Joining Date</label>
-  </div>
-
-  {/* Designation */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="designation"
-      value={formData.designation}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("designation")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Designation</label>
-  </div>
-
-
-
-  {/* Shift */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="shift"
-      value={formData.shift}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("shift")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Shift</label>
-  </div>
-
-
-  {/* Department */}
-<div className="AJ-floating-label-wrapper mb-6">
-  <select
-    name="department"
-    value={formData.department}
-    onChange={handleChange}
-    onBlur={handleBlur}
-    className={`${getFieldClassName("department")} AJ-floating-input`}
-  >
-    <option value="" disabled hidden></option>
-    <option value="Plumber">Plumber</option>
-    <option value="Assembler">Assembler</option>
-    <option value="Welder">Welder</option>
-  </select>
-  <label className="AJ-floating-label">Department</label>
-</div>
-
-{/* Section */}
-<div className="AJ-floating-label-wrapper mb-6">
-  <select
-    name="section"
-    value={formData.section}
-    onChange={handleChange}
-    onBlur={handleBlur}
-    className={`${getFieldClassName("section")} AJ-floating-input`}
-  >
-    <option value="" disabled hidden></option>
-    <option value="A">Welding</option>
-    <option value="B">Electrical</option>
-    <option value="C">Assembly</option>
-    <option value="D"></option>
-  </select>
-  <label className="AJ-floating-label">Section</label>
-</div>
-
- <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="number"
-      name="rfid"
-      value={formData.rfid}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("shirfidft")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Rfid</label>
-  </div>
-
-
-  <div className="AJ-floating-label-wrapper mb-6">
-  <select
-    name="role"
-    value={formData.role}
-    onChange={handleChange}
-    onBlur={handleBlur}
-    className={`${getFieldClassName("section")} AJ-floating-input`}
-  >
-    <option value="" disabled hidden></option>
-    <option value="A">SuperAdmin</option>
-    <option value="B">admin</option>
-    <option value="C">employee</option>
-  </select>
-  <label className="AJ-floating-label">Role</label>
-</div>
-
-
-  {/* ================= BANKING DETAILS ================= */}
-  <div className="col-span-2">
-    <h2 className="text-lg font-semibold mb-4">Banking Details</h2>
-  </div>
-
-   <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="aadharcardnumber"
-      value={formData.aadharcardnumber}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("aadharcardnumber")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Aaadhar Card</label>
-  </div>
-
-
-   <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="pancard"
-      value={formData.pancard}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("pancard")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Pancard</label>
-  </div>
-
-  
-
-  {/* Example: Account Number */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="accountNumber"
-      value={formData.accountNumber}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("accountNumber")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">Account Number</label>
-  </div>
-
-  {/* Example: IFSC Code */}
-  <div className="AJ-floating-label-wrapper mb-6">
-    <input
-      type="text"
-      name="ifscCode"
-      value={formData.ifscCode}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={`${getFieldClassName("ifscCode")} AJ-floating-input`}
-      placeholder=" "
-    />
-    <label className="AJ-floating-label">IFSC Code</label>
-  </div>
-</div>
-
+              <div className="AJ-floating-label-wrapper mb-6">
+                <input
+                  type="text"
+                  name="ifscCode"
+                  value={formData.ifscCode}
+                  onChange={handleChange}
+                  className="AJ-floating-input"
+                />
+                <label className="AJ-floating-label">IFSC Code *</label>
+              </div>
+            </div>
 
             {/* Submit Button */}
             <div className="AJ-crm-save w-full md:col-span-2 mt-6">
@@ -521,7 +367,6 @@ const AddUserForm = () => {
             </div>
           </form>
         </div>
-        
       </div>
 
       <ToastContainer position="top-right" autoClose={3000} />

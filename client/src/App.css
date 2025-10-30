@@ -3627,7 +3627,7 @@ button:hover svg {
 
 * {
   margin: 0;
-  padding: 0;
+  /* padding: 0; */
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
 }
@@ -4393,3 +4393,12 @@ form input {
 .Designation-section {
   padding: 10px;
 }
+
+div, p {
+  /* padding: 5px; */
+  margin: 5px;
+}
+
+/* h1, h2, h3 {
+  padding: 5px;
+} */
