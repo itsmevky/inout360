@@ -44,25 +44,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Contractors", icon: "badge", path: `${basePath}/contractor` },
     { label: "Rfid", icon: "qr_code", path: `${basePath}/rfid` },
     { label: "Zones", icon: "map", path: `${basePath}/zones` },
+    { label: "Location", icon: "my_location", path: `${basePath}/location` },
+
     {
       label: "Settings",
       icon: "settings",
-      sublinks: [
-        {
-          label: "System Settings",
-          path: "/dashboard/settings/systemsettings",
-        },
-        {
-          label: "Website Settings",
-          path: "/dashboard/settings/websitesettings",
-        },
-        {
-          label: "Language Settings",
-          path: "/dashboard/settings/languagesettings",
-        },
-        { label: "SMTP Settings", path: "/dashboard/settings/smtpsettings" },
-        { label: "About", path: "/dashboard/settings/about" },
-      ],
+      // sublinks: [
+      //   {
+      //     label: "System Settings",
+      //     path: "/dashboard/settings/systemsettings",
+      //   },
+      // ],
     },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
   ];
@@ -78,6 +70,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Zones",
       "Device",
       "Settings",
+      "Location",
     ],
     admin: [
       "Dashboard",
@@ -86,6 +79,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Contractors",
       "Rfid",
       "Device",
+      "Location",
     ],
     hr: ["Dashboard", "Employees", "Attendance"],
     employee: ["Dashboard", "Attendance"],

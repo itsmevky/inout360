@@ -42,10 +42,7 @@
   height: 100vh !important;
 }
 
-.left-section {
-  width: 50%;
-  background: #22374e;
-}
+
 
 .right-section {
   width: 50%;
@@ -319,10 +316,7 @@
 
 /* login-section */
 
-.left-section {
-  width: 50%;
-  background: #22374e;
-}
+
 
 .login-section {
   width: 75%;
@@ -1317,9 +1311,7 @@ tbody tr:nth-child(even) {
   justify-content: center;
 }
 
-.crm-buttonsection:hover {
-  cursor: pointer;
-}
+
 
 .pagination-controls button:hover {
   background-color: #22374e;
@@ -1470,10 +1462,7 @@ tbody tr:nth-child(even) {
   height: 100vh !important;
 }
 
-.left-section {
-  width: 50%;
-  background: #22374e;
-}
+
 
 .right-section {
   width: 50%;
@@ -1738,7 +1727,6 @@ tbody tr:nth-child(even) {
 
 .left-section {
   width: 50%;
-  background: #22374e;
 }
 
 .right-section {
@@ -1795,10 +1783,6 @@ tbody tr:nth-child(even) {
   color: red;
 }
 
-/* .input-field {
-  padding: 8px;
-  border-radius: 4px;
-} */
 
 .error-message {
   color: red;
@@ -1809,10 +1793,7 @@ tbody tr:nth-child(even) {
   border: 2px solid red;
 }
 
-/* .error-message {
-  color: red;
-  font-size: 0.9em;
-} */
+
 
 .button-section button {
   color: white;
@@ -2678,7 +2659,7 @@ th {
   padding: 20px;
 }
 
-.crm-buttonsection:hover {
+button {
   cursor: pointer;
 }
 
@@ -3132,10 +3113,7 @@ select:focus {
   fill: #fff;
 }
 
-.crm-buttonsection:hover {
-  background-color: #fff;
-  color: #22374e;
-}
+
 
 .crm-buttonsection svg {
   margin-right: 8px;
@@ -3644,8 +3622,10 @@ body {
   z-index: 10;
   width: 270px;
   height: 100vh;
-  background: #151a2d;
+  background: linear-gradient(90deg, #018DD4 0%, #0B4EA1 100%);
+
   transition: all 0.4s ease;
+
 }
 
 .sidebar.collapsed {
@@ -3739,8 +3719,13 @@ body {
   padding: 11px 15px;
   align-items: center;
   text-decoration: none;
-  border: 1px solid #151a2d;
+  /* border: 1px solid #151a2d; */
   transition: 0.4s ease;
+}
+
+li.nav-item.active {
+  background: #22374e;
+  border-radius: 10px;
 }
 
 li.nav-item.dropdown-container.open.open.active svg,
@@ -3748,10 +3733,10 @@ li.nav-item.dropdown-container.open svg {
   fill: #151a2d;
 }
 
-.sidebar-nav .nav-item:is(:hover, .open)>.nav-link:not(.dropdown-title) {
+/* .sidebar-nav .nav-item:is(:hover, .open)>.nav-link:not(.dropdown-title) {
   color: #151a2d;
   background: #eef2ff;
-}
+} */
 
 .sidebar-nav .nav-item span:is(:hover, .open)>.nav-link:not(.dropdown-title) {
   fill: #151a2d;
@@ -3925,6 +3910,7 @@ button:hover {
 .layout-section-dashboard h2 {
   padding: 0.4rem !important;
   transition: all 0.4s ease;
+  margin: 0px;
 }
 
 li .nav-link:hover {

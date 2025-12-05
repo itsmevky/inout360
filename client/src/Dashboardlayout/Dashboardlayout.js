@@ -18,6 +18,9 @@ import Rfid from "../Modules/Users/Rfid/List";
 import Device from "../Modules/Users/Device/List";
 import Zones from "../Modules/Users/Zones/List";
 import Fields from "../Modules/Settings/Fields/Fieldlist";
+import LocationList from "../Modules/Employee/Location/List.js";
+import LocationAdd from "../Modules/Employee/Location/Add.js";
+import LocationEdit from "../Modules/Employee/Location/Edit.js";
 
 function DashboardLayout({ userRole }) {
   const location = useLocation();
@@ -71,6 +74,12 @@ function DashboardLayout({ userRole }) {
               <Route path="users/rfid" element={<Rfid />} />
               <Route path="users/device" element={<Device />} />
               <Route path="users/zones" element={<Zones />} />
+              <Route path="users/location" element={<LocationList />} />
+              <Route path="users/location/add" element={<LocationAdd />} />
+              <Route
+                path="users/location/edit/:id"
+                element={<LocationEdit />}
+              />
 
               {/* ✅ Settings */}
               <Route path="settings/fields" element={<Fields />} />
