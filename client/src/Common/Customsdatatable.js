@@ -58,11 +58,10 @@ const CustomDataTable = ({
         <button
           key={1}
           onClick={() => handlePageClick(1)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${
-            1 === currentPage
-              ? "bg-yellow-400 text-white font-semibold"
-              : "bg-gray-200 text-gray-700"
-          }`}
+          className={`mx-1 px-3 py-1 rounded-full shadow ${1 === currentPage
+            ? "bg-yellow-400 text-white font-semibold"
+            : "bg-gray-200 text-gray-700"
+            }`}
         >
           1
         </button>
@@ -82,9 +81,8 @@ const CustomDataTable = ({
         <button
           key={i}
           onClick={() => handlePageClick(i)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${
-            i === currentPage ? "text-white font-semibold" : "text-gray-700"
-          }`}
+          className={`mx-1 px-3 py-1 rounded-full shadow ${i === currentPage ? "text-white font-semibold" : "text-gray-700"
+            }`}
         >
           {i}
         </button>
@@ -102,11 +100,10 @@ const CustomDataTable = ({
         <button
           key={totalPages}
           onClick={() => handlePageClick(totalPages)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${
-            totalPages === currentPage
-              ? "bg-yellow-400 text-white font-semibold"
-              : "bg-gray-200 text-gray-700"
-          }`}
+          className={`mx-1 px-3 py-1 rounded-full shadow ${totalPages === currentPage
+            ? "bg-yellow-400 text-white font-semibold"
+            : "bg-gray-200 text-gray-700"
+            }`}
         >
           {totalPages}
         </button>
@@ -135,10 +132,10 @@ const CustomDataTable = ({
             ))}
           </tr>
 
-               
+
         </thead>
 
-       
+
         <tbody>
           {data.map((row, rowIndex) => (
             <tr
@@ -148,7 +145,7 @@ const CustomDataTable = ({
               {columns.map((col, colIndex) => (
                 <td
                   key={colIndex}
-                  className=" update-single-status text-gray-700"
+                  className=" update-single-status text-gray-700 p-0"
                 >
                   {col.selector ? col.selector(row) : row[col.selectorKey]}
                 </td>
@@ -187,9 +184,8 @@ const CustomDataTable = ({
           <button
             onClick={() => handlePageClick(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
-            className={`pagination-button mx-1 px-3 py-1 rounded-full shadow ${
-              currentPage === 1 ? "bg-gray-300" : "bg-white text-gray-700"
-            }`}
+            className={`pagination-button mx-1 px-3 py-1 rounded-full shadow ${currentPage === 1 ? "bg-gray-300" : "bg-white text-gray-700"
+              }`}
           >
             Previous
           </button>
@@ -203,11 +199,10 @@ const CustomDataTable = ({
               handlePageClick(Math.min(currentPage + 1, totalPages))
             }
             disabled={currentPage === totalPages}
-            className={`pagination-button mx-1 px-3 py-1 rounded-full shadow ${
-              currentPage === totalPages
-                ? "bg-gray-300"
-                : "bg-white text-gray-700"
-            }`}
+            className={`pagination-button mx-1 px-3 py-1 rounded-full shadow ${currentPage === totalPages
+              ? "bg-gray-300"
+              : "bg-white text-gray-700"
+              }`}
           >
             Next
           </button>

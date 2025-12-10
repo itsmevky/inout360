@@ -423,7 +423,7 @@ const Employee = () => {
           <div className="outer-delete-section">
             <button
               className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
+            // onClick={() => handleDeleteClick(user)}
             >
               <svg
                 fill="#fff"

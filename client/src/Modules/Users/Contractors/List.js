@@ -154,35 +154,50 @@ const Contractors = () => {
           onChange={() => handleCheckboxChange(row.id)}
         />
       ),
-      width: "5%",
+      width: "2%",
     },
 
     {
       name: "Name",
       selector: (row) => row.name,
-      width: "25%",
+      width: "20%",
     },
     {
       name: "Contractor Code",
       selector: (row) => row.code,
-      width: "25%",
+      width: "20%",
     },
     {
       name: "Contact Person",
       selector: (row) => row.contactPerson,
-      width: "25%",
+      width: "15%",
     },
     {
+      name: "Contact",
+      selector: (row) => row.contact,
+      width: "18%",
+    },
+
+    {
       name: "Status",
-      selector: (row) => row.status,
-      width: "25%",
+      width: "14%",
+      selector: (row) => (
+        <span
+          className={`px-3 py-0.5 rounded-lg font-medium text-sm ${row.status?.toLowerCase() === "active"
+            ? "bg-green-100 text-green-800 border border-green-300"
+            : "bg-red-100 text-red-600 border border-red-300"
+            }`}
+        >
+          {row.status?.charAt(0).toUpperCase() + row.status?.slice(1)}
+        </span>
+      ),
     },
 
     {
       name: "Actions",
-      width: "2%",
+      width: "20%",
       selector: (row) => (
-        <div className="flex space-x-2 justify-center ">
+        <div className="flex space-x-2 justify-Start ">
           <div className="flex space-x-2">
             <button
               className="text-blue-500"
@@ -219,6 +234,54 @@ const Contractors = () => {
       ),
     },
   ];
+  const contractordatatable = [
+    {
+      id: "CNT001",
+      _id: "CNT001",
+      name: "Aman Construction Pvt Ltd",
+      code: "CON-1001",
+      contactPerson: "Aman Verma",
+      contact: "88569-47628",
+      status: "Active",
+    },
+    {
+      id: "CNT002",
+      _id: "CNT002",
+      name: "Shree Engineers & Co.",
+      code: "CON-1002",
+      contactPerson: "Ravi Sharma",
+      contact: "88569-47628",
+      status: "Inactive",
+    },
+    {
+      id: "CNT003",
+      _id: "CNT003",
+      name: "National Infra Works",
+      code: "CON-1003",
+      contactPerson: "Pooja Mehta",
+      contact: "88569-47628",
+      status: "Active",
+    },
+    {
+      id: "CNT004",
+      _id: "CNT004",
+      name: "Future Buildtech",
+      code: "CON-1004",
+      contactPerson: "Harish Singh",
+      contact: "88569-47628",
+      status: "Blocked",
+    },
+    {
+      id: "CNT005",
+      _id: "CNT005",
+      name: "Prime Workforce Solutions",
+      code: "CON-1005",
+      contactPerson: "Kiran Patel",
+      contact: "88569-47628",
+      status: "Active",
+    },
+  ];
+
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -381,66 +444,7 @@ const Contractors = () => {
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
-          <div className="status-select-option-dropdown first-left form-item">
-            <select
-              name="status"
-              placeholder="Select Status"
-              value={SelectedStatus}
-              onChange={handleListStatusChange}
-            >
-              <option>Select Status</option>
-
-              <option value="Active">Active</option>
-              <option value="Disabled">Disable</option>
-              <option value="Blocked">Block</option>
-              <option value="Trash">Trash</option>
-            </select>
-          </div>
-          <div className="outer-aply-section">
-            <button
-              type="submit"
-              className="apply-section"
-              onClick={handleApplyClick}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-              >
-                <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-              </svg>
-              <div>Apply</div>
-            </button>
-          </div>
-          <PopupModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          >
-            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
-            <ConfirmDelete />
-          </PopupModal>
-          <div className="outer-delete-section">
-            <button
-              className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM472 200l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
-              </svg>
-              <div onClick={handleDeleteUser}>Delete</div>
-            </button>
-          </div>
-        </div>
-
-        <div className="combine-export-section">
+          {/* -----Search-bar----- */}
           <div className="input-search-bar flex ">
             <input
               type="text"
@@ -464,6 +468,31 @@ const Contractors = () => {
             </div>
           </div>
 
+          <div className="status-select-option-dropdown first-left form-item">
+            <select
+              name="status"
+              placeholder="Select Status"
+              value={SelectedStatus}
+              onChange={handleListStatusChange}
+            >
+              <option>Select Status</option>
+
+              <option value="Active">Active</option>
+              <option value="Disabled">Disable</option>
+              <option value="Blocked">Block</option>
+              <option value="Trash">Trash</option>
+            </select>
+          </div>
+          <PopupModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          >
+            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
+            <ConfirmDelete />
+          </PopupModal>
+        </div>
+
+        <div className="combine-export-section">
           <div className="export-section">
             <button>
               <svg
@@ -508,7 +537,7 @@ const Contractors = () => {
       ) : (
         <CustomDataTable
           columns={columns}
-          data={data}
+          data={contractordatatable}
           totalRows={totalRows}
           rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
           defaultRowsPerPage={rowsPerPage}

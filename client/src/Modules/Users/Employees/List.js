@@ -139,13 +139,17 @@ const Employeepage = () => {
           onChange={() => handleCheckboxChange(row._id)}
         />
       ),
-      width: "5%",
+      width: "3%",
     },
-
+    {
+      name: "ID",
+      selector: (row) => row._id,
+      width: "10%",
+    },
     {
       name: "Name",
       selector: (row) => row.firstName,
-      width: "25%",
+      width: "15%",
     },
     {
       name: "Email",
@@ -153,14 +157,30 @@ const Employeepage = () => {
       width: "25%",
     },
     {
-      name: "Gender",
-      selector: (row) => row.gender,
-      width: "25%",
+      name: "Status",
+      width: "10%",
+      selector: (row) => (
+        <span
+          className={`px-3 py-0.5 rounded-lg font-meduim text-sm ${row.status?.toLowerCase() === "active"
+            ? "bg-green-100 text-green-800 border border-green-300"
+            : "bg-red-100 text-red-600 border border-red-300"
+            }`}
+        >
+          {row.status
+            ? row.status.charAt(0).toUpperCase() + row.status.slice(1)
+            : "N/A"}
+        </span>
+      ),
     },
     {
-      name: "Designation",
-      selector: (row) => row.designation,
-      width: "25%",
+      name: "Gender",
+      selector: (row) => row.gender,
+      width: "10%",
+    },
+    {
+      name: "Department",
+      selector: (row) => row.departmen,
+      width: "20%",
     },
 
     {
@@ -203,6 +223,88 @@ const Employeepage = () => {
         </div>
       ),
     },
+  ];
+  const datatable = [
+    {
+      _id: "852694",
+      firstName: "Amit Sharma",
+      email: "amit.sharma@example.com",
+      status: "Active",
+      gender: "Male",
+      departmen: "Sales"
+    },
+    {
+      _id: "528466",
+      firstName: "Neha Verma",
+      email: "neha.verma@example.com",
+      status: "Active",
+      gender: "Female",
+      departmen: "Sales"
+    },
+    {
+      _id: "753951",
+      firstName: "Rohit Mehta",
+      email: "rohit.mehta@example.com",
+      status: "Active",
+      gender: "Male",
+      departmen: "Marketing"
+    },
+    {
+      _id: "862248",
+      firstName: "Suman Kaur",
+      email: "suman.kaur@example.com",
+      status: "Active",
+      gender: "Female",
+      departmen: "Finance"
+    },
+    {
+      _id: "569763",
+      firstName: "Vikram Singh",
+      email: "vikram.singh@example.com",
+      status: "Inactive",
+      gender: "Male",
+      departmen: "Sports Instructor"
+    },
+    {
+      _id: "763987",
+      firstName: "Pooja Mishra",
+      email: "pooja.mishra@example.com",
+      status: "Inactive",
+      gender: "Female",
+      departmen: "HR"
+    },
+    {
+      _id: "321568",
+      firstName: "Karan Patel",
+      email: "karan.patel@example.com",
+      status: "Inactive",
+      gender: "Male",
+      departmen: "Operations"
+    },
+    {
+      _id: "486597",
+      firstName: "Divya Saini",
+      email: "divya.saini@example.com",
+      status: "Active",
+      gender: "Female",
+      departmen: "Construction"
+    },
+    {
+      _id: "759482",
+      firstName: "Harish Yadav",
+      email: "harish.yadav@example.com",
+      status: "Active",
+      gender: "Male",
+      departmen: "Construction"
+    },
+    {
+      _id: "926571",
+      firstName: "Ritu Chauhan",
+      email: "ritu.chauhan@example.com",
+      status: "Inactive",
+      gender: "Female",
+      departmen: "Art&Craft"
+    }
   ];
 
   const handlePageChange = (page) => {
@@ -353,28 +455,62 @@ const Employeepage = () => {
     show && <StatusApply />;
   }
   return (
-    <div className="relative p-4">
-      <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Employees</h2>
-      </div>
-      <div className="button-crm">
-        <div className="status-dropdown-section flex gap-4">
-          <div className="status-select-option-dropdown first-left form-item">
-            <select
-              name="status"
-              placeholder="Select Status"
-              value={SelectedStatus}
-              onChange={handleListStatusChange}
-            >
-              <option>Select Status</option>
+    <div>
+      {/* <!-- Employee list Departments  Card --> */}
+      <div className="relative p-2">
+        <div className="list-user-title ">
+          <h2 className="text-xl font-bold sub-title">List of Employees</h2>
+        </div>
+        <div className="button-crm">
+          <div className="status-dropdown-section flex gap-4">
 
-              <option value="Active">Active</option>
-              <option value="Disabled">Disable</option>
-              <option value="Blocked">Block</option>
-              <option value="Trash">Trash</option>
-            </select>
-          </div>
-          <div className="outer-aply-section">
+            {/* -----Search bar---  */}
+
+            <div className="input-search-bar flex ">
+              <input
+                type="text"
+                id="search"
+                name="search"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Search"
+                className="border rounded p-2 "
+              />
+              <div className="searching-log flex items-center">
+                <svg
+                  fill="#blue"
+                  width={16}
+                  height={16}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                >
+                  <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* -----Status select bar---  */}
+            <div className="status-select-option-dropdown first-left form-item">
+              <select
+                name="Departments"
+                placeholder="Select Status"
+                value={SelectedStatus}
+                onChange={handleListStatusChange}
+              >
+                <option>Select Departments</option>
+
+                <option value="Active">Sales</option>
+                <option value="Disabled">Marketing</option>
+                <option value="Blocked">Finance</option>
+                <option value="Trash">HR</option>
+                <option value="Trash">IT</option>
+                <option value="Trash">Operations</option>
+                <option value="Trash">Construction Chemicals</option>
+                <option value="Trash">Manufacturing</option>
+              </select>
+            </div>
+
+            {/* <div className="outer-aply-section">
             <button
               type="submit"
               className="apply-section"
@@ -391,18 +527,18 @@ const Employeepage = () => {
               </svg>
               <div>Apply</div>
             </button>
-          </div>
-          <PopupModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          >
-            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
-            <ConfirmDelete />
-          </PopupModal>
-          <div className="outer-delete-section">
+          </div> */}
+            <PopupModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            >
+              <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
+              <ConfirmDelete />
+            </PopupModal>
+            {/* <div className="outer-delete-section">
             <button
               className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
+            // onClick={() => handleDeleteClick(user)}
             >
               <svg
                 fill="#fff"
@@ -415,122 +551,103 @@ const Employeepage = () => {
               </svg>
               <div onClick={handleDeleteUser}>Delete</div>
             </button>
+          </div> */}
           </div>
-        </div>
 
-        <div className="combine-export-section">
-          <div className="input-search-bar flex ">
-            <input
-              type="text"
-              id="search"
-              name="search"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Search"
-              className="border rounded p-2 "
-            />
-            <div className="searching-log flex items-center">
-              <svg
-                fill="#blue"
-                width={16}
-                height={16}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
+          <div className="combine-export-section">
+
+
+            <div className="export-section">
+              <button>
+                <svg
+                  fill="#22374e"
+                  width={20}
+                  height={20}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                >
+                  <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z" />
+                </svg>
+                <div>Export</div>
+              </button>
+            </div>
+            <div>
+              <button
+                className="crm-buttonsection"
+                onClick={() => navigate("/dashboard/users/add")}
               >
-                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
-              </svg>
+                <svg
+                  fill="white"
+                  width={20}
+                  height={20}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 640 512"
+                >
+                  <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+                </svg>
+                Add Employees
+              </button>
             </div>
           </div>
-
-          <div className="export-section">
-            <button>
-              <svg
-                fill="#22374e"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-              >
-                <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z" />
-              </svg>
-              <div>Export</div>
-            </button>
-          </div>
-          <div>
-            <button
-              className="crm-buttonsection"
-              onClick={() => navigate("/dashboard/users/add")}
-            >
-              <svg
-                fill="white"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
-              </svg>
-              Add Employees
-            </button>
-          </div>
         </div>
+        {/* Toast Notifications */}
+        <ToastContainer />
+        {/* Error message */}
+        {error && <div className="text-red-500">{error}</div>}
+
+        {/* Loading state */}
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          <CustomDataTable
+            columns={columns}
+            data={datatable}
+            totalRows={totalRows}
+            rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
+            defaultRowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            currentPage={currentPage}
+          />
+        )}
+
+        {/* Add User Form Sliding Panel */}
+        {isAddUserFormVisible && (
+          <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">
+            <div className="sidebar-inner bg-white  transition-transform transform translate-x-0">
+              <button
+                className="upclick-cut text-red-500 float-left rounded-sm"
+                onClick={toggleAddUserForm}
+              >
+                X
+              </button>
+              <AddUserForm />
+            </div>
+          </div>
+        )}
+
+        {/* Edit User Form Sliding Panel */}
+        {isEditUserFormVisible && selectedUser && (
+          <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
+            <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
+              <button
+                className="upclick-cut text-red-500 float-left rounded-sm"
+                onClick={toggleEditUserForm}
+              >
+                X
+              </button>
+              <EditUserForm user={selectedUser} />{" "}
+              {/* ✅ Now contains full data */}
+            </div>
+          </div>
+        )}
+        {/* Background overlay when Add or Edit User form is visible */}
+        {(isAddUserFormVisible || isEditUserFormVisible) && (
+          <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
+        )}
       </div>
-      {/* Toast Notifications */}
-      <ToastContainer />
-      {/* Error message */}
-      {error && <div className="text-red-500">{error}</div>}
-
-      {/* Loading state */}
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <CustomDataTable
-          columns={columns}
-          data={data}
-          totalRows={totalRows}
-          rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
-          defaultRowsPerPage={rowsPerPage}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          currentPage={currentPage}
-        />
-      )}
-
-      {/* Add User Form Sliding Panel */}
-      {isAddUserFormVisible && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">
-          <div className="sidebar-inner bg-white  transition-transform transform translate-x-0">
-            <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
-              onClick={toggleAddUserForm}
-            >
-              X
-            </button>
-            <AddUserForm />
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Form Sliding Panel */}
-      {isEditUserFormVisible && selectedUser && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
-          <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
-            <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
-              onClick={toggleEditUserForm}
-            >
-              X
-            </button>
-            <EditUserForm user={selectedUser} />{" "}
-            {/* ✅ Now contains full data */}
-          </div>
-        </div>
-      )}
-      {/* Background overlay when Add or Edit User form is visible */}
-      {(isAddUserFormVisible || isEditUserFormVisible) && (
-        <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
-      )}
     </div>
+
   );
 };
 

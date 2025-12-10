@@ -95,7 +95,7 @@ const FormList = () => {
       } else {
         toast.error(result.message || "Failed to create user.");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
   const handleSelectAllChange = () => {
     if (selectedrecords.length === data.length) {
@@ -475,7 +475,7 @@ const FormList = () => {
         validUsers.map(async (id) => {
           try {
             await API.Deleteforms(id);
-          } catch (err) {}
+          } catch (err) { }
         })
       );
 
@@ -600,8 +600,8 @@ const FormList = () => {
             <div className="searching-log flex items-center">
               <svg
                 fill="#blue"
-                width={16}
-                height={16}
+                width={18}
+                height={18}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 512 512"
               >

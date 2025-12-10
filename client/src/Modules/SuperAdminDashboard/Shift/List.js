@@ -40,23 +40,23 @@ const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
 
-const fetchshift = async () => {
-  try {
-    const response = await API.shift.getAll(); // calls /shift correctly
-    setData(response); 
-    setTotalRows(response.length);
-  } catch (err) {
-    console.error("Error fetching shifts:", err);
-    setError("Failed to fetch shift data.");
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchshift = async () => {
+    try {
+      const response = await API.shift.getAll(); // calls /shift correctly
+      setData(response);
+      setTotalRows(response.length);
+    } catch (err) {
+      console.error("Error fetching shifts:", err);
+      setError("Failed to fetch shift data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  fetchshift();
-}, 
- [currentPage, rowsPerPage, searchTerm]);
+  useEffect(() => {
+    fetchshift();
+  },
+    [currentPage, rowsPerPage, searchTerm]);
 
   const handleCheckboxChange = (id) => {
     setSelectedTeachers((prev) =>
@@ -110,35 +110,35 @@ useEffect(() => {
   //   }
   // };
 
- 
- const handleDelete = async (ids) => {
-  const confirmDelete = window.confirm("Are you sure you want to delete?");
-  if (!confirmDelete) return;
 
-  try {
-    // If multiple IDs are allowed, you can loop or batch
-    const targetIds = Array.isArray(ids) ? ids : [ids];
+  const handleDelete = async (ids) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete?");
+    if (!confirmDelete) return;
 
-    for (const id of targetIds) {
-      const res = await deleteData(`/attendance/${id}`);
+    try {
+      // If multiple IDs are allowed, you can loop or batch
+      const targetIds = Array.isArray(ids) ? ids : [ids];
 
-      console.log("🔹 Delete response:", res);
+      for (const id of targetIds) {
+        const res = await deleteData(`/attendance/${id}`);
 
-      if (res?.success || res?.status === 200) {
-        toast.success("✅ Attendance deleted successfully");
-      } else {
-        toast.error(res?.message || "❌ Failed to delete attendance");
+        console.log("🔹 Delete response:", res);
+
+        if (res?.success || res?.status === 200) {
+          toast.success("✅ Attendance deleted successfully");
+        } else {
+          toast.error(res?.message || "❌ Failed to delete attendance");
+        }
       }
+
+      // Refresh the list after deletion
+      fetchshift();
+
+    } catch (err) {
+      console.error("❌ Error deleting attendance:", err);
+      toast.error("Failed to delete attendance");
     }
-
-    // Refresh the list after deletion
-    fetchshift();
-
-  } catch (err) {
-    console.error("❌ Error deleting attendance:", err);
-    toast.error("Failed to delete attendance");
-  }
-};
+  };
 
   const columns = [
     //  {
@@ -158,7 +158,7 @@ useEffect(() => {
     //   ),
     //   width: "5%",
     // },
-   
+
     {
       name: "RfidCardId",
       selector: (row) => row.rfidCardId,
@@ -169,56 +169,56 @@ useEffect(() => {
       selector: (row) => row.date,
       width: "25%",
     },
-     {
+    {
       name: "Entry",
       selector: (row) => row.entryGateIn,
       width: "25%",
     },
-   {
+    {
       name: "Exit",
       selector: (row) => row.workfloorOut,
       width: "25%",
     },
-    
-{
-  name: "Actions",
-  width: "2%",
-  selector: (row) => (
-    <div className="flex space-x-2 justify-center">
-      {/* ✅ Edit Button */}
-      <button
-        className="text-blue-500"
-        onClick={() => handleEdit(row._id)}  
-      >
-        <svg
-          fill="#22374e"
-          width={20}
-          height={20}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 640 512"
-        >
-          <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-        </svg>
-      </button>
 
-      {/* ✅ Delete Button */}
-      <button
-        className="text-red-500"
-        onClick={() => handleDelete(row._id)}
-      >
-        <svg
-          fill="red"
-          width={16}
-          height={16}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 448 512"
-        >
-          <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-        </svg>
-      </button>
-    </div>
-  ),
-}
+    {
+      name: "Actions",
+      width: "2%",
+      selector: (row) => (
+        <div className="flex space-x-2 justify-center">
+          {/* ✅ Edit Button */}
+          <button
+            className="text-blue-500"
+            onClick={() => handleEdit(row._id)}
+          >
+            <svg
+              fill="#22374e"
+              width={20}
+              height={20}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 640 512"
+            >
+              <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+            </svg>
+          </button>
+
+          {/* ✅ Delete Button */}
+          <button
+            className="text-red-500"
+            onClick={() => handleDelete(row._id)}
+          >
+            <svg
+              fill="red"
+              width={16}
+              height={16}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 448 512"
+            >
+              <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+            </svg>
+          </button>
+        </div>
+      ),
+    }
   ];
 
   const handlePageChange = (page) => {
@@ -273,75 +273,75 @@ useEffect(() => {
     fetchshift(); // Trigger fetch with the updated search term
   };
 
-// ✅ Handle Edit (fetch full attendance/user details)
-const handleEdit = async (userId) => {
-  try {
-    const res = await getData(`/attendance/${userId}`);
-    console.log("res", res);
+  // ✅ Handle Edit (fetch full attendance/user details)
+  const handleEdit = async (userId) => {
+    try {
+      const res = await getData(`/attendance/${userId}`);
+      console.log("res", res);
 
-    if (res) {
-      // If API returns { employee: {...} }
-      if (res.employee) {
-        setSelectedUser(res.employee); // ✅ Set full employee object
+      if (res) {
+        // If API returns { employee: {...} }
+        if (res.employee) {
+          setSelectedUser(res.employee); // ✅ Set full employee object
+        } else {
+          setSelectedUser(res); // ✅ If API directly returns user data
+        }
+
+        setIsEditUserFormVisible(true); // ✅ Open side panel
       } else {
-        setSelectedUser(res); // ✅ If API directly returns user data
+        toast.error("Failed to fetch user data.");
       }
-
-      setIsEditUserFormVisible(true); // ✅ Open side panel
-    } else {
-      toast.error("Failed to fetch user data.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong while fetching user.");
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong while fetching user.");
-  }
-};
+  };
 
 
 
 
   // selected userlist delete
-const handleDeleteUser = async () => {
-  if (selectedUsers.length === 0) {
-    toast.error("❌ Please select at least one row");
-    return;
-  }
-
-  // Ensure only valid MongoDB ObjectIds are processed
-  const validUsers = selectedUsers.filter((id) =>
-    /^[0-9a-fA-F]{24}$/.test(id)
-  );
-
-  if (validUsers.length === 0) {
-    toast.error("❌ Invalid user IDs provided.");
-    return;
-  }
-
-  const confirmDelete = window.confirm(
-    `Are you sure you want to delete ${validUsers.length} attendance record(s)?`
-  );
-  if (!confirmDelete) return;
-
-  try {
-    for (const id of validUsers) {
-      const res = await deleteData(`/api/attendance/${id}`);
-
-      console.log("🔹 Delete response:", res);
-
-      if (res?.success || res?.status === 200) {
-        toast.success(`✅ Attendance record deleted: ${id}`);
-      } else {
-        toast.error(res?.message || `❌ Failed to delete record: ${id}`);
-      }
+  const handleDeleteUser = async () => {
+    if (selectedUsers.length === 0) {
+      toast.error("❌ Please select at least one row");
+      return;
     }
 
-    // Refresh table
-    fetchshift();
-  } catch (error) {
-    console.error("❌ Error deleting user(s):", error);
-    toast.error("An error occurred while deleting. Please try again.");
-  }
-};
+    // Ensure only valid MongoDB ObjectIds are processed
+    const validUsers = selectedUsers.filter((id) =>
+      /^[0-9a-fA-F]{24}$/.test(id)
+    );
+
+    if (validUsers.length === 0) {
+      toast.error("❌ Invalid user IDs provided.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${validUsers.length} attendance record(s)?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      for (const id of validUsers) {
+        const res = await deleteData(`/api/attendance/${id}`);
+
+        console.log("🔹 Delete response:", res);
+
+        if (res?.success || res?.status === 200) {
+          toast.success(`✅ Attendance record deleted: ${id}`);
+        } else {
+          toast.error(res?.message || `❌ Failed to delete record: ${id}`);
+        }
+      }
+
+      // Refresh table
+      fetchshift();
+    } catch (error) {
+      console.error("❌ Error deleting user(s):", error);
+      toast.error("An error occurred while deleting. Please try again.");
+    }
+  };
 
 
   const toggleAddUserForm = () => {
@@ -439,7 +439,7 @@ const handleDeleteUser = async () => {
           <div className="outer-delete-section">
             <button
               className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
+            // onClick={() => handleDeleteClick(user)}
             >
               <svg
                 fill="#fff"
@@ -495,20 +495,20 @@ const handleDeleteUser = async () => {
           </div>
           <div>
             <button
-           className="crm-buttonsection"
-           onClick={() => navigate("/dashboard/users/Addattendance")}
-         >
-           <svg
-             fill="white"
-             width={20}
-             height={20}
-             xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 640 512"
-           >
-             <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
-           </svg>
-           Add Attendance
-         </button>
+              className="crm-buttonsection"
+              onClick={() => navigate("/dashboard/users/Addattendance")}
+            >
+              <svg
+                fill="white"
+                width={20}
+                height={20}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 640 512"
+              >
+                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+              </svg>
+              Add Attendance
+            </button>
           </div>
         </div>
       </div>
@@ -550,18 +550,18 @@ const handleDeleteUser = async () => {
 
       {/* Edit User Form Sliding Panel */}
       {isEditUserFormVisible && selectedUser && (
-  <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
-    <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
-      <button
-        className="upclick-cut text-red-500 float-left rounded-sm"
-        onClick={toggleEditUserForm}
-      >
-        X
-      </button>
-      <EditUserForm user={selectedUser} /> {/* ✅ Now contains full data */}
-    </div>
-  </div>
-)}
+        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
+          <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
+            <button
+              className="upclick-cut text-red-500 float-left rounded-sm"
+              onClick={toggleEditUserForm}
+            >
+              X
+            </button>
+            <EditUserForm user={selectedUser} /> {/* ✅ Now contains full data */}
+          </div>
+        </div>
+      )}
       {/* Background overlay when Add or Edit User form is visible */}
       {(isAddUserFormVisible || isEditUserFormVisible) && (
         <div className="fixed inset-0 bg-black opacity-50 z-40"></div>

@@ -2,16 +2,27 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
-import AddUserForm from "../Add.js";
+import AddUserForm from "./Add.js";
 import EditUserForm from "./Edit.js";
-import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
+
+import { usePopup } from "../../../Helpers/PopupContext.js";
+import {
+  API,
+  getData,
+  deleteData,
+  putData,
+  postData,
+} from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
+import debounce from "lodash.debounce";
+
 import ConfirmDelete from "../../../popup/conformationdelet.js";
-const Teachers = () => {
+const GetUsers = () => {
   const [data, setData] = useState([]);
-  const [selectedTeachers, setSelectedTeachers] = useState([]);
+
+  const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -24,10 +35,11 @@ const Teachers = () => {
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
+  const module = "user";
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
-
+  const { openPopup } = usePopup();
   const [showPopup, setShowPopup] = useState(false);
   // const { openPopup } = usePopup();
   const [SelectedStatus, setSelectedStatus] = useState("");
@@ -37,112 +49,163 @@ const Teachers = () => {
   const statusValues = ["Active", "Disabled", "Blocked"];
 
   const [searchTerm, setSearchTerm] = useState("");
-  const fetchemployees = async () => {
-    setLoading(true);
+  // Handle checkbox selection
+  const handleCheckboxChange = (userId) => {
+    setSelectedUsers((prevSelected) =>
+      prevSelected.includes(userId)
+        ? prevSelected.filter((id) => id !== userId)
+        : [...prevSelected, userId]
+    );
+  };
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      fetchUsers();
+    }, 500); // Adjust delay as needed
+
+    return () => clearTimeout(delaySearch);
+  }, [searchTerm]);
+
+  // signle user status change
+  const handleStatusChange = async (userId, newStatus, module = "user") => {
     try {
-      const response = await API.getEmployees(
-        searchTerm,
-        currentPage,
-        rowsPerPage
-      );
-
-      console.log("response", response);
-
-      if (response.employees && Array.isArray(response.employees)) {
-        setData(response.employees);         // ✅ Correct key
-        setTotalRows(response.total || 0);   // ✅ Use 'total' instead of 'pagination.totalRecords'
-      } else {
-        setError("No employee data found");  // ✅ Corrected message
+      if (!userId || typeof userId !== "string") {
+        toast.error("Invalid user ID");
+        return;
       }
-    } catch (err) {
-      setError("Something went wrong while fetching employees.");
+
+      const payload = {
+        ids: [userId],
+        status: newStatus,
+      };
+
+      console.log("🟡 Sending status update:", payload, "Module:", module);
+
+      const res = await API.postData(`/${module}/update-status`, payload);
+
+      if (res.status) {
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user.id === userId ? { ...user, status: newStatus } : user
+          )
+        );
+        toast.success(res.message || "Status updated successfully!");
+        fetchUsers(); // Refresh user list
+      } else {
+        toast.error(res.message || "Failed to update status.");
+      }
+    } catch (error) {
+      console.error("❌ Error updating status:", error);
+      toast.error("Server error while updating status.");
+    }
+  };
+
+  // useEffect(() => {
+  //   if (!module) {
+  //     console.warn("Module param missing from route.");
+  //   } else {
+  //     console.log("Current module from route:", module);
+  //   }
+  // }, [module]);
+
+  const fetchSearchResults = async (term) => {
+    if (!module) {
+      console.warn("Module is undefined. Cannot perform search.");
+      return;
+    }
+
+    console.log("Performing search for term:", term);
+    console.log(" Using module:", module);
+    console.log(" Rows per page:", rowsPerPage);
+
+    setLoading(true);
+
+    try {
+      const response = await API.search(module, term, 0, rowsPerPage);
+
+      console.log(" Search response:", response);
+
+      if (response?.data?.length > 0) {
+        console.log(" Found records:", response.data.length);
+        setDataList(response.data);
+        setTotalRows(response.total || 0);
+      } else {
+        console.warn(" No records found for search term:", term);
+        setDataList([]);
+        setTotalRows(0);
+      }
+    } catch (error) {
+      console.error(" Search fetch failed:", error);
+      setDataList([]);
+    } finally {
+      setLoading(false);
+      console.log(" Search loading complete");
+    }
+  };
+
+  const debouncedSearch = debounce(fetchSearchResults, 300);
+
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    debouncedSearch(term.trim());
+  };
+
+  const handleSelectAllChange = () => {
+    if (selectedUsers.length === data.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(data.map((user) => user.id));
+    }
+  };
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let reqPage =
+        typeof currentPage === "number"
+          ? currentPage - 1
+          : parseInt(currentPage) - 1;
+
+      reqPage = isNaN(reqPage) || reqPage < 0 ? 0 : reqPage;
+      const params = {
+        page: reqPage,
+        limit: rowsPerPage,
+      };
+      // let responseData = await API.Getteacher(reqPage, rowsPerPage);
+      const responseData = await API.getAll("user", params);
+
+      if (!responseData || responseData.success === false) {
+        throw new Error(
+          `HTTP error! status: ${responseData?.status || "Unknown"}`
+        );
+      }
+
+      if (responseData.data) {
+        const updatedteachers = responseData.data.map((teacher) => {
+          const name = teacher.fullname || "";
+          const capitalizedFullName =
+            name.length > 0 ? name.charAt(0).toUpperCase() + name.slice(1) : "";
+
+          return { ...teacher, fullname: capitalizedFullName };
+        });
+
+        setData(updatedteachers);
+        setTotalRows(responseData.pagination.totalRecords);
+      } else {
+        setError("No data found");
+      }
+    } catch (error) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchemployees();
-  }, [currentPage, rowsPerPage, searchTerm]);
-
-
-
-  const handleCheckboxChange = (id) => {
-    setSelectedTeachers((prev) =>
-      prev.includes(id) ? prev.filter((tid) => tid !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAllChange = () => {
-    if (selectedTeachers.length === data.length) {
-      setSelectedTeachers([]);
-    } else {
-      setSelectedTeachers(data.map((t) => t.id));
-    }
-  };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      const res = await putData("/employees/${id}`, data", {
-        teachers: [id],
-        status,
-      });
-      if (res.status) {
-        toast.success("Status updated");
-        fetchemployees();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("Failed to update status");
-    }
-  };
-
-  // const handleBulkStatusUpdate = async () => {
-  //   if (selectedTeachers.length === 0)
-  //     return toast.error("Select at least one teacher");
-  //   try {
-  //     const res = await putData("/teacher/status", {
-  //       teachers: selectedTeachers,
-  //       status: selectedStatus,
-  //     });
-  //     if (res.status) {
-  //       toast.success("Status updated");
-  //       fetchemployees();
-  //       setSelectedStatus("");
-  //       setSelectedTeachers([]);
-  //     } else {
-  //       toast.error(res.message);
-  //     }
-  //   } catch (err) {
-  //     toast.error("Failed to update status");
-  //   }
-  // };
-
-  const handleDelete = async (id) => {
-    console.log("🗑️ Deleting employee with id:", id);
-
-    const confirmDelete = window.confirm("Are you sure you want to delete this employee?");
-    if (!confirmDelete) {
-      console.log("❌ Delete cancelled by user");
-      return;
-    }
-
-    try {
-      const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
-      console.log("🔹 Delete API response:", res);
-
-      if (res.status === 200 || res.success === true) {
-        toast.success("✅ Employee deleted successfully!");
-        fetchemployees(); // refresh the list after delete
-      } else {
-        toast.error(res.message || "❌ Failed to delete employee.");
-      }
-    } catch (err) {
-      console.error("❌ Error while deleting employee:", err);
-      toast.error("Failed to delete. Please try again.");
-    }
-  };
+  // useEffect(() => {
+  //   fetchUsers();
+  // }, [currentPage, rowsPerPage, searchTerm]);
 
   const columns = [
     {
@@ -150,49 +213,66 @@ const Teachers = () => {
         <input
           type="checkbox"
           onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
+          checked={selectedUsers.length === data.length && data.length > 0}
         />
       ),
       selector: (row) => (
         <input
           type="checkbox"
-          checked={selectedTeachers.includes(row._id)}
-          onChange={() => handleCheckboxChange(row._id)}
+          onChange={() => handleCheckboxChange(row.id)}
+          checked={selectedUsers.includes(row.id)}
         />
-      ),
-      width: "5%",
+      ), // Checkbox for each user
+      width: "1%",
     },
-
     {
       name: "Name",
-      selector: (row) => row.firstName,
-      width: "25%",
+      selector: (row) => <span>{row.fullname}</span>,
+      width: "20%",
     },
     {
       name: "Email",
-      selector: (row) => row.email,
-      width: "25%",
+      selector: (row) => {
+        const email = row?.email?.toLowerCase();
+        return email.charAt(0).toUpperCase() + email.slice(1);
+      }, // Capitalize first letter of email
+      width: "10%",
     },
     {
-      name: "Gender",
-      selector: (row) => row.gender,
-      width: "25%",
+      name: "Role",
+      selector: (row) => {
+        const role = row.role.toLowerCase();
+        return role.charAt(0).toUpperCase() + role.slice(1);
+      }, // Capitalize first letter of role
+      width: "8%",
     },
     {
-      name: "Designation",
-      selector: (row) => row.designation,
-      width: "25%",
+      name: "Status",
+      selector: (row) => (
+        <select
+          value={row.status}
+          onChange={(e) => handleStatusChange(row.id, e.target.value)}
+        >
+          {statusValues.map((status) => (
+            <option key={status} value={status}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </option>
+          ))}
+        </select>
+      ),
+      width: "5%",
     },
 
     {
       name: "Actions",
       width: "2%",
       selector: (row) => (
-        <div className="flex space-x-2 justify-center">
+        <div className="flex space-x-2 justify-center ">
           <div className="flex space-x-2  ">
             <button
               className="text-blue-500"
-              onClick={() => handleEdit(row._id)}   // ✅ updated
+              onClick={() =>
+                handleEdit(row)}
             >
               <svg
                 fill="#22374e"
@@ -205,6 +285,7 @@ const Teachers = () => {
               </svg>
             </button>
           </div>
+
           <div className="flex space-x-2 ">
             <button
               className="text-red-500"
@@ -223,9 +304,7 @@ const Teachers = () => {
           </div>
         </div>
       ),
-    }
-
-
+    },
   ];
 
   const handlePageChange = (page) => {
@@ -237,33 +316,49 @@ const Teachers = () => {
     setCurrentPage(1);
   };
   // selected user status update
-  const handleApplyClick = async () => {
+  const handleApplyClick = async (module = "user") => {
+    console.log("🔁 handleApplyClick triggered for module:", module);
+
     if (selectedUsers.length === 0) {
-      toast.error("Select Row");
+      toast.error("Please select at least one record.");
+      console.warn("⚠️ No users selected");
       return;
     }
 
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
+    console.log("✅ Selected user IDs:", selectedUsers);
 
-    if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
+    const validIds = selectedUsers.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
+
+    if (validIds.length === 0) {
+      toast.error("Invalid IDs selected.");
+      console.error("❌ No valid ObjectIDs found in selectedUsers");
       return;
     }
+
+    console.log("✅ Valid ObjectIDs to update:", validIds);
+    console.log("🔧 Selected status to update:", SelectedStatus);
 
     try {
-      const response = await updateUserStatus(validUsers, SelectedStatus);
-      if (response.status === true) {
+      const res = await API.postData(`/${module}/update-status`, {
+        ids: validIds,
+        status: SelectedStatus,
+      });
+
+      console.log("📬 API response:", res);
+
+      if (res.status) {
+        toast.success("Status updated successfully!");
+        setSelectedUsers([]);
         setSelectedStatus("");
-        setSelectedUsers("");
-        fetchemployees(); // Refresh user list
-        toast.success("Updated Successfully!");
+        console.log("🔄 Refreshing data...");
+        fetchUsers(); // Replace with fetchData() for other modules if needed
       } else {
-        toast.error(response.message || "Failed to create user.");
+        console.error("❌ Update failed:", res.message);
+        toast.error(res.message || "Update failed.");
       }
-    } catch (error) {
-      toast.error("Failed to update user status:", error);
+    } catch (err) {
+      console.error("❌ Server error:", err);
+      toast.error("Server error while updating status.");
     }
   };
 
@@ -275,68 +370,127 @@ const Teachers = () => {
     }
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value); // Update the search term
-    fetchemployees(); // Trigger fetch with the updated search term
+  const handleEdit = (userid) => {
+    console.log(userid, "userid");
+    setSelectedUser(userid); // Store the selected user for editing
+    setIsEditUserFormVisible(true); // Show the edit form
   };
 
-  const handleEdit = async (userId) => {
-    try {
-      const res = await getData(`/employees/${userId}`);
-      console.log("res", res);
-      if (res && res.employee) {
-        setSelectedUser(res.employee); // ✅ Save full employee object
-        setIsEditUserFormVisible(true); // ✅ Open side panel
-      } else {
-        toast.error("Failed to fetch user data.");
-      }
-    } catch (err) {
-      toast.error("Something went wrong.");
-    }
-  };
-
-  // selected userlist delete
-  const handleDeleteUser = async () => {
+  const handleDeleteMultipleUser = () => {
     if (selectedUsers.length === 0) {
-      toast.error("Select at least one row");
+      toast.error("No users selected for deletion.");
       return;
     }
 
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id) // Validate MongoDB ObjectId
+    toast.info(
+      ({ closeToast }) => (
+        <div>
+          <p>
+            Are you sure you want to delete {selectedUsers.length} selected
+            user(s)?
+          </p>
+          <div className="flex justify-end gap-2 mt-3">
+            <button
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+              onClick={async () => {
+                closeToast();
+
+                try {
+                  const results = await Promise.allSettled(
+                    selectedUsers.map((id) => API.remove("user", id))
+                  );
+
+                  const successCount = results.filter(
+                    (r) => r.status === "fulfilled" && r.value?.status
+                  ).length;
+
+                  if (successCount > 0) {
+                    toast.success(
+                      `${successCount} users deleted successfully.`
+                    );
+                    setSelectedUsers([]);
+                    // fetchUsers();
+                  } else {
+                    toast.error("No users were deleted.");
+                  }
+                } catch (error) {
+                  console.error("Bulk delete failed:", error);
+                  toast.error("Something went wrong.");
+                }
+              }}
+            >
+              Yes, Delete
+            </button>
+            <button
+              className="bg-gray-300 text-black px-3 py-1 rounded text-sm"
+              onClick={closeToast}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { autoClose: false }
     );
-
-    if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
-      return;
-    }
-
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${validUsers.length} employee(s)?`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      // Delete each selected employee one by one
-      for (const id of validUsers) {
-        await deleteData(`/employee/${id}`);
-      }
-
-      toast.success("✅ Employees deleted successfully!");
-      fetchemployees(); // Refresh the list
-    } catch (error) {
-      console.error("❌ Error deleting employees:", error);
-      toast.error("Failed to delete employees. Please try again.");
-    }
   };
 
+  const handleDelete = async (userId) => {
+    if (!userId) {
+      toast.error("User ID is missing.");
+      return;
+    }
+
+    toast.info(
+      ({ closeToast }) => (
+        <div>
+          <p className="text-black">
+            Are you sure you want to delete this user?
+          </p>
+          <div className="flex justify-end gap-2 mt-3">
+            <button
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+              onClick={async () => {
+                closeToast();
+
+                try {
+                  console.log("🗑️ Sending DELETE for user ID:", userId);
+                  const response = await API.remove("user", userId); // ✅ uses api.js
+
+                  console.log("✅ Delete response:", response);
+
+                  if (response?.status) {
+                    toast.success("User deleted successfully.");
+                    // optionally refresh the list here
+                  } else {
+                    toast.error(response?.message || "Failed to delete user.");
+                  }
+                } catch (error) {
+                  console.error("❌ Error deleting user:", error);
+                  toast.error("Something went wrong.");
+                }
+              }}
+            >
+              Yes, Delete
+            </button>
+            <button
+              className="bg-gray-300 text-black px-3 py-1 rounded text-sm"
+              onClick={closeToast}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { autoClose: false }
+    );
+  };
 
   const toggleAddUserForm = () => {
-    setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility
+    setIsAddUserFormVisible((prev) => !prev);
   };
 
   const toggleEditUserForm = () => {
-    setIsEditUserFormVisible((prev) => !prev); // Toggle form visibility
+    setIsEditUserFormVisible((prev) => !prev);
   };
   const handleListStatusChange = (event) => {
     setSelectedStatus(event.target.value);
@@ -379,7 +533,7 @@ const Teachers = () => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Employees</h2>
+        <h2 className="text-xl font-bold sub-title">List of Shift</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
@@ -402,7 +556,7 @@ const Teachers = () => {
             <button
               type="submit"
               className="apply-section"
-              onClick={handleApplyClick}
+              onClick={() => handleApplyClick(module)}
             >
               <svg
                 fill="#fff"
@@ -420,14 +574,10 @@ const Teachers = () => {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
           >
-            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
             <ConfirmDelete />
           </PopupModal>
           <div className="outer-delete-section">
-            <button
-              className="apply-section"
-            // onClick={() => handleDeleteClick(user)}
-            >
+            <button className="apply-section">
               <svg
                 fill="#fff"
                 width={20}
@@ -437,7 +587,7 @@ const Teachers = () => {
               >
                 <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM472 200l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
               </svg>
-              <div onClick={handleDeleteUser}>Delete</div>
+              <div onClick={handleDeleteMultipleUser}>Delete</div>
             </button>
           </div>
         </div>
@@ -480,11 +630,25 @@ const Teachers = () => {
               <div>Export</div>
             </button>
           </div>
-          <div>
+          <div className="crm-buttonsection ">
             <button
-              className="crm-buttonsection"
-              onClick={() => navigate("/dashboard/users/employe")}
+              onClick={() =>
+                openPopup(
+                  <AddUserForm
+                    selectedModule="User"
+                    selectedBusinessType="Admin"
+                  />,
+                  {
+                    width: "sm",
+                    transparent: true,
+                    padding: "p-8",
+                    position: "right",
+                    height: "full",
+                  }
+                )
+              }
             >
+              {" "}
               <svg
                 fill="white"
                 width={20}
@@ -494,7 +658,7 @@ const Teachers = () => {
               >
                 <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
               </svg>
-              Add Employees
+              Add
             </button>
           </div>
         </div>
@@ -504,13 +668,12 @@ const Teachers = () => {
       {/* Error message */}
       {error && <div className="text-red-500">{error}</div>}
 
-      {/* Loading state */}
       {loading ? (
         <div>Loading...</div>
-      ) : (
+      ) : (searchTerm ? dataList.length : data.length) > 0 ? (
         <CustomDataTable
           columns={columns}
-          data={data}
+          data={searchTerm ? dataList : data}
           totalRows={totalRows}
           rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
           defaultRowsPerPage={rowsPerPage}
@@ -518,6 +681,12 @@ const Teachers = () => {
           onRowsPerPageChange={handleRowsPerPageChange}
           currentPage={currentPage}
         />
+      ) : (
+        <div className="text-center text-gray-500 mt-4">
+          {searchTerm
+            ? `No user found with the name "${searchTerm}"`
+            : "No data available."}
+        </div>
       )}
 
       {/* Add User Form Sliding Panel */}
@@ -537,18 +706,20 @@ const Teachers = () => {
 
       {/* Edit User Form Sliding Panel */}
       {isEditUserFormVisible && selectedUser && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
+        <div className=" sideform fixed top-0 right-0 w-1/3 h-full  shadow-lg p-4 z-50 ">
           <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
             <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
+              className="upclick-cut text-red-500 float-left rounded-sm "
               onClick={toggleEditUserForm}
             >
               X
             </button>
-            <EditUserForm user={selectedUser} /> {/* ✅ Now contains full data */}
+            {console.log(selectedUser)}
+            <EditUserForm user={selectedUser} />{" "}
           </div>
         </div>
       )}
+
       {/* Background overlay when Add or Edit User form is visible */}
       {(isAddUserFormVisible || isEditUserFormVisible) && (
         <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
@@ -557,4 +728,4 @@ const Teachers = () => {
   );
 };
 
-export default Teachers;
+export default GetUsers;

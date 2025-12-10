@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
-import AddUserForm from "../Add.js";
+import AddUserForm from "./Add.js";
 import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
-const Teachers = () => {
+const Device = () => {
   const [data, setData] = useState([]);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,35 +37,34 @@ const Teachers = () => {
   const statusValues = ["Active", "Disabled", "Blocked"];
 
   const [searchTerm, setSearchTerm] = useState("");
-  const fetchemployees = async () => {
+
+  const fetchcontractors = async () => {
     setLoading(true);
     try {
-      const response = await API.getEmployees(
-        searchTerm,
-        currentPage,
-        rowsPerPage
-      );
+      const response = await API.contractor.getAll({
+        search: searchTerm,
+        page: currentPage,
+        limit: rowsPerPage,
+      });
 
       console.log("response", response);
 
-      if (response.employees && Array.isArray(response.employees)) {
-        setData(response.employees);         // ✅ Correct key
-        setTotalRows(response.total || 0);   // ✅ Use 'total' instead of 'pagination.totalRecords'
+      if (Array.isArray(response)) {
+        setData(response);
+        setTotalRows(response.length); // ✅ since no "total" key, use length
       } else {
-        setError("No employee data found");  // ✅ Corrected message
+        setError("No contractor data found");
       }
     } catch (err) {
-      setError("Something went wrong while fetching employees.");
+      setError("Something went wrong while fetching contractors.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchemployees();
+    fetchcontractors();
   }, [currentPage, rowsPerPage, searchTerm]);
-
-
 
   const handleCheckboxChange = (id) => {
     setSelectedTeachers((prev) =>
@@ -89,7 +88,7 @@ const Teachers = () => {
       });
       if (res.status) {
         toast.success("Status updated");
-        fetchemployees();
+        fetchcontractors();
       } else {
         toast.error(res.message);
       }
@@ -98,49 +97,22 @@ const Teachers = () => {
     }
   };
 
-  // const handleBulkStatusUpdate = async () => {
-  //   if (selectedTeachers.length === 0)
-  //     return toast.error("Select at least one teacher");
-  //   try {
-  //     const res = await putData("/teacher/status", {
-  //       teachers: selectedTeachers,
-  //       status: selectedStatus,
-  //     });
-  //     if (res.status) {
-  //       toast.success("Status updated");
-  //       fetchemployees();
-  //       setSelectedStatus("");
-  //       setSelectedTeachers([]);
-  //     } else {
-  //       toast.error(res.message);
-  //     }
-  //   } catch (err) {
-  //     toast.error("Failed to update status");
-  //   }
-  // };
-
   const handleDelete = async (id) => {
-    console.log("🗑️ Deleting employee with id:", id);
-
-    const confirmDelete = window.confirm("Are you sure you want to delete this employee?");
-    if (!confirmDelete) {
-      console.log("❌ Delete cancelled by user");
-      return;
-    }
+    const confirmDelete = window.confirm("Are you sure you want to delete?");
+    if (!confirmDelete) return;
 
     try {
-      const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
-      console.log("🔹 Delete API response:", res);
+      const res = await deleteData(`/contractors/${id}`);
 
-      if (res.status === 200 || res.success === true) {
-        toast.success("✅ Employee deleted successfully!");
-        fetchemployees(); // refresh the list after delete
+      if (res && (res.success || res._id)) {
+        toast.success("Deleted successfully");
+        fetchcontractors(); // refresh list
       } else {
-        toast.error(res.message || "❌ Failed to delete employee.");
+        toast.error(res.message || "Failed to delete contractor.");
       }
     } catch (err) {
-      console.error("❌ Error while deleting employee:", err);
-      toast.error("Failed to delete. Please try again.");
+      console.error("❌ Delete contractor error:", err);
+      toast.error("Failed to delete contractor.");
     }
   };
 
@@ -156,8 +128,8 @@ const Teachers = () => {
       selector: (row) => (
         <input
           type="checkbox"
-          checked={selectedTeachers.includes(row._id)}
-          onChange={() => handleCheckboxChange(row._id)}
+          checked={selectedTeachers.includes(row.id)}
+          onChange={() => handleCheckboxChange(row.id)}
         />
       ),
       width: "5%",
@@ -165,22 +137,22 @@ const Teachers = () => {
 
     {
       name: "Name",
-      selector: (row) => row.firstName,
+      selector: (row) => row.name,
       width: "25%",
     },
     {
-      name: "Email",
-      selector: (row) => row.email,
+      name: "Device Id",
+      selector: (row) => row.code,
       width: "25%",
     },
     {
-      name: "Gender",
-      selector: (row) => row.gender,
+      name: "Contact Person",
+      selector: (row) => row.contactPerson,
       width: "25%",
     },
     {
-      name: "Designation",
-      selector: (row) => row.designation,
+      name: "Status",
+      selector: (row) => row.status,
       width: "25%",
     },
 
@@ -188,11 +160,11 @@ const Teachers = () => {
       name: "Actions",
       width: "2%",
       selector: (row) => (
-        <div className="flex space-x-2 justify-center">
-          <div className="flex space-x-2  ">
+        <div className="flex space-x-2 justify-center ">
+          <div className="flex space-x-2">
             <button
               className="text-blue-500"
-              onClick={() => handleEdit(row._id)}   // ✅ updated
+              onClick={() => handleEdit(row._id)}
             >
               <svg
                 fill="#22374e"
@@ -223,9 +195,7 @@ const Teachers = () => {
           </div>
         </div>
       ),
-    }
-
-
+    },
   ];
 
   const handlePageChange = (page) => {
@@ -236,7 +206,6 @@ const Teachers = () => {
     setRowsPerPage(newRowsPerPage);
     setCurrentPage(1);
   };
-  // selected user status update
   const handleApplyClick = async () => {
     if (selectedUsers.length === 0) {
       toast.error("Select Row");
@@ -257,7 +226,7 @@ const Teachers = () => {
       if (response.status === true) {
         setSelectedStatus("");
         setSelectedUsers("");
-        fetchemployees(); // Refresh user list
+        fetchcontractors(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
         toast.error(response.message || "Failed to create user.");
@@ -277,20 +246,23 @@ const Teachers = () => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchemployees(); // Trigger fetch with the updated search term
+    fetchcontractors(); // Trigger fetch with the updated search term
   };
 
   const handleEdit = async (userId) => {
     try {
-      const res = await getData(`/employees/${userId}`);
+      const res = await getData(`/contractors/${userId}`);
       console.log("res", res);
-      if (res && res.employee) {
-        setSelectedUser(res.employee); // ✅ Save full employee object
-        setIsEditUserFormVisible(true); // ✅ Open side panel
+
+      if (res && res._id) {
+        // 👈 check directly on res
+        setSelectedUser(res); // ✅ set full contractor object
+        setIsEditUserFormVisible(true);
       } else {
-        toast.error("Failed to fetch user data.");
+        toast.error("Failed to fetch contractor data.");
       }
     } catch (err) {
+      console.error("❌ Error fetching contractor:", err);
       toast.error("Something went wrong.");
     }
   };
@@ -298,38 +270,38 @@ const Teachers = () => {
   // selected userlist delete
   const handleDeleteUser = async () => {
     if (selectedUsers.length === 0) {
-      toast.error("Select at least one row");
+      toast.error("Select Row");
       return;
     }
 
+    // validate MongoDB ObjectIds (24 hex characters)
     const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id) // Validate MongoDB ObjectId
+      /^[0-9a-fA-F]{24}$/.test(id)
     );
 
     if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
+      alert("Invalid contractor IDs provided.");
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${validUsers.length} employee(s)?`
+      `Are you sure you want to delete ${validUsers.length} contractor(s)?`
     );
     if (!confirmDelete) return;
 
     try {
-      // Delete each selected employee one by one
-      for (const id of validUsers) {
-        await deleteData(`/employee/${id}`);
-      }
+      // run delete calls in parallel
+      await Promise.all(
+        validUsers.map((id) => deleteData(`/contractors/${id}`))
+      );
 
-      toast.success("✅ Employees deleted successfully!");
-      fetchemployees(); // Refresh the list
+      toast.success("Deleted successfully!");
+      fetchcontractors(); // refresh list
     } catch (error) {
-      console.error("❌ Error deleting employees:", error);
-      toast.error("Failed to delete employees. Please try again.");
+      console.error("❌ Error deleting contractors:", error);
+      toast.error("Failed to delete contractor(s). Try again.");
     }
   };
-
 
   const toggleAddUserForm = () => {
     setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility
@@ -379,7 +351,7 @@ const Teachers = () => {
   return (
     <div className="relative p-4">
       <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Employees</h2>
+        <h2 className="text-xl font-bold sub-title">List of Device</h2>
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
@@ -426,7 +398,7 @@ const Teachers = () => {
           <div className="outer-delete-section">
             <button
               className="apply-section"
-            // onClick={() => handleDeleteClick(user)}
+              // onClick={() => handleDeleteClick(user)}
             >
               <svg
                 fill="#fff"
@@ -483,7 +455,7 @@ const Teachers = () => {
           <div>
             <button
               className="crm-buttonsection"
-              onClick={() => navigate("/dashboard/users/employe")}
+              onClick={() => navigate("/dashboard/users/AddContractor")}
             >
               <svg
                 fill="white"
@@ -494,7 +466,7 @@ const Teachers = () => {
               >
                 <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
               </svg>
-              Add Employees
+              Add Contractor
             </button>
           </div>
         </div>
@@ -545,7 +517,8 @@ const Teachers = () => {
             >
               X
             </button>
-            <EditUserForm user={selectedUser} /> {/* ✅ Now contains full data */}
+            <EditUserForm user={selectedUser} />{" "}
+            {/* ✅ Now contains full data */}
           </div>
         </div>
       )}
@@ -557,4 +530,4 @@ const Teachers = () => {
   );
 };
 
-export default Teachers;
+export default Device;

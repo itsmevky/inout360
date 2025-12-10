@@ -51,7 +51,7 @@ const LocationList = () => {
       <table className="w-full ">
         <thead className="bg-gray-200">
           <tr>
-            <th className="p-2 ">Name</th>
+            <th className="p-2 bg-[#22374e] text-#fff">Name</th>
             <th className="p-2 ">Lat</th>
             <th className="p-2 ">Long</th>
             <th className="p-2 ">Radius (m)</th>
@@ -68,7 +68,7 @@ const LocationList = () => {
             </tr>
           ) : (
             locations.map((loc) => (
-              <tr key={loc.id} className="hover:bg-gray-100">
+              <tr key={loc.id} className="bg-white">
                 <td className="p-2 ">{loc.name}</td>
                 <td className="p-2 ">{loc.lat}</td>
                 <td className="p-2 ">{loc.long}</td>

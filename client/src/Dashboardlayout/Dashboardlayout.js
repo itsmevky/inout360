@@ -17,10 +17,14 @@ import Contractors from "../Modules/Users/Contractors/List";
 import Rfid from "../Modules/Users/Rfid/List";
 import Device from "../Modules/Users/Device/List";
 import Zones from "../Modules/Users/Zones/List";
+import ActivityPgae from "../Modules/Users/ActivityPgae.js";
 import Fields from "../Modules/Settings/Fields/Fieldlist";
 import LocationList from "../Modules/Employee/Location/List.js";
 import LocationAdd from "../Modules/Employee/Location/Add.js";
 import LocationEdit from "../Modules/Employee/Location/Edit.js";
+import Settings from "../Modules/Users/Settings.js";
+
+
 
 function DashboardLayout({ userRole }) {
   const location = useLocation();
@@ -75,6 +79,9 @@ function DashboardLayout({ userRole }) {
               <Route path="users/device" element={<Device />} />
               <Route path="users/zones" element={<Zones />} />
               <Route path="users/location" element={<LocationList />} />
+              <Route path="users/activity" element={<ActivityPgae />} />
+              <Route path="users/settings" element={<Settings />} />
+
               <Route path="users/location/add" element={<LocationAdd />} />
               <Route
                 path="users/location/edit/:id"

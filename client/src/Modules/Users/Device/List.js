@@ -1,531 +1,232 @@
-import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import CustomDataTable from "../../../Common/Customsdatatable.js";
-import { useNavigate, useParams } from "react-router-dom";
-import AddUserForm from "./Add.js";
-import EditUserForm from "./Edit.js";
-import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import PopupModal from "../../../popup/Popup.js";
-import ConfirmDelete from "../../../popup/conformationdelet.js";
+import React, { useState } from "react";
+
 const Device = () => {
-  const [data, setData] = useState([]);
-  const [selectedTeachers, setSelectedTeachers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalRows, setTotalRows] = useState(0);
-  const [isAddUserFormVisible, setIsAddUserFormVisible] = useState(false);
-  const [isEditUserFormVisible, setIsEditUserFormVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [isDropdownVisible, setDropdownVisible] = useState(false);
-  const dropdownRef = useRef(null);
-  const buttonRef = useRef(null);
-  const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
-  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [selectedDevice, setSelectedDevice] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const [showPopup, setShowPopup] = useState(false);
-  // const { openPopup } = usePopup();
-  const [SelectedStatus, setSelectedStatus] = useState("");
-  const toggleDropdown = () => {
-    setDropdownVisible(!isDropdownVisible);
-  };
-  const statusValues = ["Active", "Disabled", "Blocked"];
-
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const fetchcontractors = async () => {
-    setLoading(true);
-    try {
-      const response = await API.contractor.getAll({
-        search: searchTerm,
-        page: currentPage,
-        limit: rowsPerPage,
-      });
-
-      console.log("response", response);
-
-      if (Array.isArray(response)) {
-        setData(response);
-        setTotalRows(response.length); // ✅ since no "total" key, use length
-      } else {
-        setError("No contractor data found");
-      }
-    } catch (err) {
-      setError("Something went wrong while fetching contractors.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchcontractors();
-  }, [currentPage, rowsPerPage, searchTerm]);
-
-  const handleCheckboxChange = (id) => {
-    setSelectedTeachers((prev) =>
-      prev.includes(id) ? prev.filter((tid) => tid !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAllChange = () => {
-    if (selectedTeachers.length === data.length) {
-      setSelectedTeachers([]);
-    } else {
-      setSelectedTeachers(data.map((t) => t.id));
-    }
-  };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      const res = await putData("/employees/${id}`, data", {
-        teachers: [id],
-        status,
-      });
-      if (res.status) {
-        toast.success("Status updated");
-        fetchcontractors();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("Failed to update status");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete?");
-    if (!confirmDelete) return;
-
-    try {
-      const res = await deleteData(`/contractors/${id}`);
-
-      if (res && (res.success || res._id)) {
-        toast.success("Deleted successfully");
-        fetchcontractors(); // refresh list
-      } else {
-        toast.error(res.message || "Failed to delete contractor.");
-      }
-    } catch (err) {
-      console.error("❌ Delete contractor error:", err);
-      toast.error("Failed to delete contractor.");
-    }
-  };
-
-  const columns = [
+  // ========================= SAMPLE DEVICE LIST ========================= //
+  const deviceList = [
     {
-      name: (
-        <input
-          type="checkbox"
-          onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
-        />
-      ),
-      selector: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedTeachers.includes(row.id)}
-          onChange={() => handleCheckboxChange(row.id)}
-        />
-      ),
-      width: "5%",
-    },
-
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      width: "25%",
+      id: "DEV-1001",
+      deviceName: "Samsung A52",
+      userName: "Rahul Sharma",
+      employeeId: "EMP-501",
+      androidId: "fjs73hshs883",
+      fcmStatus: "Active",
+      ownerMode: "Device Owner",
+      lastOnline: "2025-01-12 10:15 AM",
+      enrolled: "2025-01-01",
+      appVersion: "3.2.1",
+      androidVersion: "13",
+      online: true,
+      battery: 822586,
+      cameraBlocked: false,
+      locationEnabled: true,
+      lastScreenshot: "2025-01-12 09:45 AM",
     },
     {
-      name: "Device Id",
-      selector: (row) => row.code,
-      width: "25%",
-    },
-    {
-      name: "Contact Person",
-      selector: (row) => row.contactPerson,
-      width: "25%",
-    },
-    {
-      name: "Status",
-      selector: (row) => row.status,
-      width: "25%",
-    },
-
-    {
-      name: "Actions",
-      width: "2%",
-      selector: (row) => (
-        <div className="flex space-x-2 justify-center ">
-          <div className="flex space-x-2">
-            <button
-              className="text-blue-500"
-              onClick={() => handleEdit(row._id)}
-            >
-              <svg
-                fill="#22374e"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex space-x-2 ">
-            <button
-              className="text-red-500"
-              onClick={() => handleDelete(row._id)}
-            >
-              <svg
-                fill="red"
-                width={16}
-                height={16}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-              >
-                <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      ),
+      id: "DEV-2001",
+      deviceName: "Vivo Y20",
+      userName: "Amit Kumar",
+      employeeId: "EMP-503",
+      androidId: "8dhwi88sjsn2",
+      fcmStatus: "Inactive",
+      ownerMode: "Not Active",
+      lastOnline: "2025-01-10 05:20 PM",
+      enrolled: "2025-01-05",
+      appVersion: "3.1.0",
+      androidVersion: "12",
+      online: false,
+      employeeid: 27,
+      cameraBlocked: true,
+      locationEnabled: false,
+      lastScreenshot: "2025-01-11 06:10 PM",
     },
   ];
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleRowsPerPageChange = (newRowsPerPage) => {
-    setRowsPerPage(newRowsPerPage);
-    setCurrentPage(1);
-  };
-  const handleApplyClick = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("Select Row");
-      return;
-    }
-
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
-
-    if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
-      return;
-    }
-
-    try {
-      const response = await updateUserStatus(validUsers, SelectedStatus);
-      if (response.status === true) {
-        setSelectedStatus("");
-        setSelectedUsers("");
-        fetchcontractors(); // Refresh user list
-        toast.success("Updated Successfully!");
-      } else {
-        toast.error(response.message || "Failed to create user.");
-      }
-    } catch (error) {
-      toast.error("Failed to update user status:", error);
-    }
-  };
-
-  const updateUserStatus = async (users, status) => {
-    try {
-      return await API.updateStatus({ users, status });
-    } catch (error) {
-      return error;
-    }
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value); // Update the search term
-    fetchcontractors(); // Trigger fetch with the updated search term
-  };
-
-  const handleEdit = async (userId) => {
-    try {
-      const res = await getData(`/contractors/${userId}`);
-      console.log("res", res);
-
-      if (res && res._id) {
-        // 👈 check directly on res
-        setSelectedUser(res); // ✅ set full contractor object
-        setIsEditUserFormVisible(true);
-      } else {
-        toast.error("Failed to fetch contractor data.");
-      }
-    } catch (err) {
-      console.error("❌ Error fetching contractor:", err);
-      toast.error("Something went wrong.");
-    }
-  };
-
-  // selected userlist delete
-  const handleDeleteUser = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("Select Row");
-      return;
-    }
-
-    // validate MongoDB ObjectIds (24 hex characters)
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
-
-    if (validUsers.length === 0) {
-      alert("Invalid contractor IDs provided.");
-      return;
-    }
-
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${validUsers.length} contractor(s)?`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      // run delete calls in parallel
-      await Promise.all(
-        validUsers.map((id) => deleteData(`/contractors/${id}`))
-      );
-
-      toast.success("Deleted successfully!");
-      fetchcontractors(); // refresh list
-    } catch (error) {
-      console.error("❌ Error deleting contractors:", error);
-      toast.error("Failed to delete contractor(s). Try again.");
-    }
-  };
-
-  const toggleAddUserForm = () => {
-    setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility
-  };
-
-  const toggleEditUserForm = () => {
-    setIsEditUserFormVisible((prev) => !prev); // Toggle form visibility
-  };
-  const handleListStatusChange = (event) => {
-    setSelectedStatus(event.target.value);
-    console.log("Selected Status:", event.target.value);
-  };
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [show, setShow] = useState(false);
-
-  const StatusApply = ({ onConfirm, onCancel }) => {
-    return (
-      <PopupModal>
-        <div className="p-6 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-lg font-semibold">Confirm Deletion</h2>
-          <p className="mt-2">
-            Are you sure you want to delete the selected user(s)?
-          </p>
-          <div className="flex justify-center gap-4 mt-4">
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 bg-gray-400 text-white rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              className="px-4 py-2 bg-red-500 text-white rounded-md"
-            >
-              Yes, Delete
-            </button>
-          </div>
-        </div>
-      </PopupModal>
+  // ========================= COLORS & BADGES ========================= //
+  const statusBadge = (status) => {
+    return status ? (
+      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Online</span>
+    ) : (
+      <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold">Offline</span>
     );
   };
 
-  {
-    show && <StatusApply />;
-  }
+  const cameraBadge = (blocked) => {
+    return blocked ? (
+      <span className="px-2 py-1 bg-red-200 text-red-700 rounded text-xs">Blocked</span>
+    ) : (
+      <span className="px-2 py-1 bg-green-200 text-green-700 rounded text-xs">Allowed</span>
+    );
+  };
+
+  const locationBadge = (on) => {
+    return on ? (
+      <span className="px-2 py-1 bg-green-200 text-green-700 rounded text-xs">ON</span>
+    ) : (
+      <span className="px-2 py-1 bg-red-200 text-red-700 rounded text-xs">OFF</span>
+    );
+  };
+
+  // ========================= OPEN MODAL ========================= //
+  const openDeviceModal = (device) => {
+    setSelectedDevice(device);
+    setShowModal(true);
+  };
+
   return (
-    <div className="relative p-4">
-      <div className="list-user-title ">
-        <h2 className="text-xl font-bold sub-title">List of Device</h2>
+    <div className="p-6">
+
+      {/* PAGE HEADING */}
+      <div className="bg-white p-5 rounded-xl shadow flex items-center gap-3 text-xl font-semibold text-gray-700">
+        <svg width="22"
+          fill="navy-blue"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 448 512">
+          <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z"></path>
+        </svg>
+        Device Management
       </div>
-      <div className="button-crm">
-        <div className="status-dropdown-section flex gap-4">
-          <div className="status-select-option-dropdown first-left form-item">
-            <select
-              name="status"
-              placeholder="Select Status"
-              value={SelectedStatus}
-              onChange={handleListStatusChange}
-            >
-              <option>Select Status</option>
 
-              <option value="Active">Active</option>
-              <option value="Disabled">Disable</option>
-              <option value="Blocked">Block</option>
-              <option value="Trash">Trash</option>
-            </select>
-          </div>
-          <div className="outer-aply-section">
-            <button
-              type="submit"
-              className="apply-section"
-              onClick={handleApplyClick}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-              >
-                <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-              </svg>
-              <div>Apply</div>
-            </button>
-          </div>
-          <PopupModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          >
-            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
-            <ConfirmDelete />
-          </PopupModal>
-          <div className="outer-delete-section">
-            <button
-              className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM472 200l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
-              </svg>
-              <div onClick={handleDeleteUser}>Delete</div>
-            </button>
-          </div>
-        </div>
+      {/* ========================= DEVICE TABLE ========================= */}
+      <div className="mt-6 bg-white p-5 rounded-xl shadow">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-gray-100 text-left text-gray-700">
+              <th className="p-3">Device</th>
+              <th className="p-3">User</th>
+              <th className="p-3">Employee ID</th>
+              <th className="p-3">Status</th>
+              {/* <th className="p-3">Battery</th> */}
+              <th className="p-3">Android</th>
+              <th className="p-3">App Ver.</th>
+              <th className="p-3">Last Online</th>
+              <th className="p-3 text-center">Actions</th>
+            </tr>
+          </thead>
 
-        <div className="combine-export-section">
-          <div className="input-search-bar flex ">
-            <input
-              type="text"
-              id="search"
-              name="search"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Search"
-              className="border rounded p-2 "
-            />
-            <div className="searching-log flex items-center">
-              <svg
-                fill="#blue"
-                width={16}
-                height={16}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-              >
-                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
-              </svg>
+          <tbody>
+            {deviceList.map((device) => (
+              <tr key={device.id} className="hover:bg-gray-50 border-b">
+
+                <td className="p-3 font-semibold">{device.deviceName}</td>
+
+                <td className="p-3">{device.userName}</td>
+
+                <td className="p-3">{device.employeeId}</td>
+
+                <td className="p-3">{statusBadge(device.online)}</td>
+
+                {/* <td className="p-3 font-semibold">{device.battery}%</td> */}
+
+                <td className="p-3">{device.androidVersion}</td>
+
+                <td className="p-3">{device.appVersion}</td>
+
+                <td className="p-3 text-sm text-gray-600">{device.lastOnline}</td>
+
+                <td className="p-3 text-center">
+                  <button
+                    onClick={() => openDeviceModal(device)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800"
+                  >
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ========================= DEVICE DETAILS MODAL ========================= */}
+      {showModal && selectedDevice && (
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
+          <div className="bg-white w-[800px] rounded-xl shadow-xl p-6 relative">
+
+            {/* CLOSE BUTTON */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-bold">{selectedDevice.deviceName}</h2>
+            <p className="text-gray-600">Android ID: {selectedDevice.androidId}</p>
+
+            {/* ========================= DEVICE STATUS CARDS ========================= */}
+            <div className="grid grid-cols-3 gap-4 mt-6">
+
+              <div className="p-4 bg-blue-50 rounded">
+                <h4 className="font-semibold">Device Owner</h4>
+                <p>{selectedDevice.ownerMode}</p>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded">
+                <h4 className="font-semibold">Camera</h4>
+                {cameraBadge(selectedDevice.cameraBlocked)}
+              </div>
+
+              <div className="p-4 bg-yellow-50 rounded">
+                <h4 className="font-semibold">Location</h4>
+                {locationBadge(selectedDevice.locationEnabled)}
+              </div>
+
+              <div className="p-4 bg-purple-50 rounded">
+                <h4 className="font-semibold">Last Screenshot</h4>
+                <p className="text-sm">{selectedDevice.lastScreenshot}</p>
+              </div>
+
+              <div className="p-4 bg-red-50 rounded">
+                <h4 className="font-semibold">Employee Id</h4>
+                <p className="text-lg">{selectedDevice.battery}</p>
+              </div>
+
+              <div className="p-4 bg-gray-100 rounded">
+                <h4 className="font-semibold">Enrollment Date</h4>
+                <p>{selectedDevice.enrolled}</p>
+              </div>
             </div>
-          </div>
 
-          <div className="export-section">
-            <button>
-              <svg
-                fill="#22374e"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-              >
-                <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z" />
-              </svg>
-              <div>Export</div>
-            </button>
-          </div>
-          <div>
-            <button
-              className="crm-buttonsection"
-              onClick={() => navigate("/dashboard/users/AddContractor")}
-            >
-              <svg
-                fill="white"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
-              </svg>
-              Add Contractor
-            </button>
-          </div>
-        </div>
-      </div>
-      {/* Toast Notifications */}
-      <ToastContainer />
-      {/* Error message */}
-      {error && <div className="text-red-500">{error}</div>}
+            {/* ========================= DEVICE CONTROLS ========================= */}
+            <h3 className="mt-6 text-xl font-semibold">Device Controls</h3>
 
-      {/* Loading state */}
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <CustomDataTable
-          columns={columns}
-          data={data}
-          totalRows={totalRows}
-          rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
-          defaultRowsPerPage={rowsPerPage}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          currentPage={currentPage}
-        />
-      )}
+            <div className="grid grid-cols-3 gap-4 mt-3">
+              <button className="p-3 bg-black text-white rounded hover:bg-gray-700">Lock Device</button>
+              <button className="p-3 bg-red-600 text-white rounded hover:bg-red-800">Wipe Device</button>
+              <button className="p-3 bg-orange-500 text-white rounded hover:bg-orange-700">Restart</button>
+              <button className="p-3 bg-blue-500 text-white rounded hover:bg-blue-700">Disable Camera</button>
+              <button className="p-3 bg-blue-500 text-white rounded hover:bg-blue-700">Disable Uninstall</button>
+              <button className="p-3 bg-green-600 text-white rounded hover:bg-green-700">Remote Command</button>
+            </div>
 
-      {/* Add User Form Sliding Panel */}
-      {isAddUserFormVisible && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">
-          <div className="sidebar-inner bg-white  transition-transform transform translate-x-0">
-            <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
-              onClick={toggleAddUserForm}
-            >
-              X
-            </button>
-            <AddUserForm />
+            {/* ========================= ACTION SHORTCUTS ========================= */}
+            <h3 className="mt-6 text-xl font-semibold">More Actions</h3>
+
+            <div className="grid grid-cols-2 gap-4 mt-3">
+              <button className="p-3 bg-gray-200 rounded hover:bg-gray-300">
+                View Activity Logs
+              </button>
+
+              <button className="p-3 bg-gray-200 rounded hover:bg-gray-300">
+                View Installed Apps
+              </button>
+
+              <button className="p-3 bg-gray-200 rounded hover:bg-gray-300">
+                View Location Timeline
+              </button>
+
+              <button className="p-3 bg-red-300 text-red-800 rounded hover:bg-red-400">
+                Remove Device
+              </button>
+            </div>
+
           </div>
         </div>
       )}
 
-      {/* Edit User Form Sliding Panel */}
-      {isEditUserFormVisible && selectedUser && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
-          <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
-            <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
-              onClick={toggleEditUserForm}
-            >
-              X
-            </button>
-            <EditUserForm user={selectedUser} />{" "}
-            {/* ✅ Now contains full data */}
-          </div>
-        </div>
-      )}
-      {/* Background overlay when Add or Edit User form is visible */}
-      {(isAddUserFormVisible || isEditUserFormVisible) && (
-        <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
-      )}
     </div>
   );
 };

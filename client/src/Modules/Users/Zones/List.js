@@ -136,67 +136,123 @@ const Zones = () => {
     },
 
     {
-      name: "Name",
+      name: "Zone ID",
+      selector: (row) => row.id,
+      width: "15%",
+    },
+    {
+      name: "Zone Name",
       selector: (row) => row.name,
+      width: "20%",
+    },
+    {
+      name: "Region Covered",
+      selector: (row) => row.region,
       width: "25%",
     },
     {
-      name: "Device Id",
-      selector: (row) => row.code,
-      width: "25%",
+      name: "Employees",
+      selector: (row) => row.employees,
+      width: "15%",
     },
-    {
-      name: "Contact Person",
-      selector: (row) => row.contactPerson,
-      width: "25%",
-    },
+
+    // ★ Status with green/red badge
     {
       name: "Status",
-      selector: (row) => row.status,
-      width: "25%",
+      width: "15%",
+      selector: (row) => (
+        <span
+          className={`px-3 py-0.5 rounded-md text-sm font-medium ${row.status.toLowerCase() === "active"
+            ? "bg-green-100 text-green-700 border border-green-300"
+            : "bg-red-100 text-red-700 border border-red-300"
+            }`}
+        >
+          {row.status}
+        </span>
+      ),
     },
 
     {
       name: "Actions",
-      width: "2%",
+      width: "10%",
       selector: (row) => (
-        <div className="flex space-x-2 justify-center ">
-          <div className="flex space-x-2">
-            <button
-              className="text-blue-500"
-              onClick={() => handleEdit(row._id)}
+        <div className="flex space-x-2 justify-center">
+          <button
+            className="text-blue-500"
+            onClick={() => {
+              console.log("👉 Edit clicked, row.uid:", row.uid);
+              handleEdit(row.uid);
+            }}
+          >
+            {/* ✏️ Edit Icon */}
+            <svg
+              fill="#22374e"
+              width={20}
+              height={20}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 640 512"
             >
-              <svg
-                fill="#22374e"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex space-x-2 ">
-            <button
-              className="text-red-500"
-              onClick={() => handleDelete(row._id)}
+              <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+            </svg>
+          </button>
+          {/* 🗑️ Delete Icon */}
+          <button
+            className="text-red-500"
+            onClick={() => {
+              console.log("🗑️ Delete clicked, row.uid:", row.uid);
+              handleDelete(row.uid);
+            }}
+          >
+            <svg
+              fill="red"
+              width={16}
+              height={16}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 448 512"
             >
-              <svg
-                fill="red"
-                width={16}
-                height={16}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-              >
-                <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-              </svg>
-            </button>
-          </div>
+              <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+            </svg>
+          </button>
         </div>
       ),
     },
   ];
+
+  const zonesTableData = [
+    {
+      id: "Z01",
+      name: "North Region",
+      region: "Delhi, Haryana, UP",
+      employees: 120,
+      status: "Active",
+      _id: "Z01",
+    },
+    {
+      id: "Z02",
+      name: "South Region",
+      region: "Bangalore, Chennai",
+      employees: 85,
+      status: "Inactive",
+      _id: "Z02",
+    },
+    {
+      id: "Z03",
+      name: "East Region",
+      region: "Kolkata, Assam, Manipur",
+      employees: 95,
+      status: "Active",
+      _id: "Z03",
+    },
+    {
+      id: "Z04",
+      name: "West Region",
+      region: "Mumbai, Pune, Gujarat",
+      employees: 78,
+      status: "Inactive",
+      _id: "Z04",
+    },
+  ];
+
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -355,66 +411,8 @@ const Zones = () => {
       </div>
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
-          <div className="status-select-option-dropdown first-left form-item">
-            <select
-              name="status"
-              placeholder="Select Status"
-              value={SelectedStatus}
-              onChange={handleListStatusChange}
-            >
-              <option>Select Status</option>
 
-              <option value="Active">Active</option>
-              <option value="Disabled">Disable</option>
-              <option value="Blocked">Block</option>
-              <option value="Trash">Trash</option>
-            </select>
-          </div>
-          <div className="outer-aply-section">
-            <button
-              type="submit"
-              className="apply-section"
-              onClick={handleApplyClick}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-              >
-                <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-              </svg>
-              <div>Apply</div>
-            </button>
-          </div>
-          <PopupModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          >
-            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
-            <ConfirmDelete />
-          </PopupModal>
-          <div className="outer-delete-section">
-            <button
-              className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM472 200l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
-              </svg>
-              <div onClick={handleDeleteUser}>Delete</div>
-            </button>
-          </div>
-        </div>
-
-        <div className="combine-export-section">
+          {/* [----input-search-bar----]  */}
           <div className="input-search-bar flex ">
             <input
               type="text"
@@ -437,7 +435,67 @@ const Zones = () => {
               </svg>
             </div>
           </div>
+          {/* [----select-option-dropdown----]  */}
+          {/* <div className="status-select-option-dropdown first-left form-item">
+            <select
+              name="status"
+              placeholder="Select Status"
+              value={SelectedStatus}
+              onChange={handleListStatusChange}
+            >
+              <option>Select Status</option>
 
+              <option value="Active">Active</option>
+              <option value="Disabled">Disable</option>
+              <option value="Blocked">Block</option>
+              <option value="Trash">Trash</option>
+            </select>
+          </div> */}
+          {/* <div className="outer-aply-section">
+            <button
+              type="submit"
+              className="apply-section"
+              onClick={handleApplyClick}
+            >
+              <svg
+                fill="#fff"
+                width={20}
+                height={20}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 448 512"
+              >
+                <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
+              </svg>
+              <div>Apply</div>
+            </button>
+          </div> */}
+          <PopupModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          >
+            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
+            <ConfirmDelete />
+          </PopupModal>
+          {/* <div className="outer-delete-section">
+            <button
+              className="apply-section"
+            // onClick={() => handleDeleteClick(user)}
+            >
+              <svg
+                fill="#fff"
+                width={20}
+                height={20}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 640 512"
+              >
+                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM472 200l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
+              </svg>
+              <div onClick={handleDeleteUser}>Delete</div>
+            </button>
+          </div> */}
+        </div>
+
+        <div className="combine-export-section">
           <div className="export-section">
             <button>
               <svg
@@ -482,7 +540,7 @@ const Zones = () => {
       ) : (
         <CustomDataTable
           columns={columns}
-          data={data}
+          data={zonesTableData}
           totalRows={totalRows}
           rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
           defaultRowsPerPage={rowsPerPage}

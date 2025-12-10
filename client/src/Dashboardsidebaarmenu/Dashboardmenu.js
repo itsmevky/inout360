@@ -45,10 +45,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Rfid", icon: "qr_code", path: `${basePath}/rfid` },
     { label: "Zones", icon: "map", path: `${basePath}/zones` },
     { label: "Location", icon: "my_location", path: `${basePath}/location` },
-
+    { label: "Activity", icon: "timeline", path: `${basePath}/activity` },
+    { label: "Settings", icon: "settings", path: `${basePath}/settings` },
     {
-      label: "Settings",
-      icon: "settings",
+      // label: "Settings",
+      // icon: "settings",
       // sublinks: [
       //   {
       //     label: "System Settings",
@@ -57,6 +58,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       // ],
     },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
+
+
   ];
 
   // ✅ Role-based visibility rules
@@ -71,6 +74,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Device",
       "Settings",
       "Location",
+      "Activity",
     ],
     admin: [
       "Dashboard",
@@ -79,7 +83,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Contractors",
       "Rfid",
       "Device",
+      "Settings",
       "Location",
+      "Activity",
     ],
     hr: ["Dashboard", "Employees", "Attendance"],
     employee: ["Dashboard", "Attendance"],
@@ -160,9 +166,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
                     {item.sublinks.map((link) => (
                       <li
                         key={link.path}
-                        className={`nav-subitem ${
-                          location.pathname === link.path ? "active" : ""
-                        }`}
+                        className={`nav-subitem ${location.pathname === link.path ? "active" : ""
+                          }`}
                         onClick={() => navigate(link.path)}
                       >
                         {link.label}
