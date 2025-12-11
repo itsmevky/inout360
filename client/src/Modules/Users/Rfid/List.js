@@ -457,7 +457,7 @@ const Teachers = () => {
     show && <StatusApply />;
   }
   return (
-    <div className="relative p-4">
+    <div className="relative p-4 ">
       {/* ---- RFID Management Section ---- */}
       <div className="w-full bg-white p-6 rounded-xl shadow-sm border border-gray-300 mb-6">
         <h2 className="text-xl font-bold sub-title text-gray-800">RFID Management</h2>
@@ -499,7 +499,7 @@ const Teachers = () => {
 
         {/* Add Button */}
         <div className="pt-2.5">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg flex items-center gap-2">
+          <button className="bg-[#22374e] hover:bg-[#0d2847] text-white px-5 py-2 rounded-lg flex items-center gap-2">
             <svg
               width="24"
               height="24"

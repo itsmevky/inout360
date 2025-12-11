@@ -165,7 +165,7 @@ const GetUsers = () => {
   ];
 
   return (
-    <div className="relative p-4">
+    <div className="relative p-4 ">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Employee List</h2>
 

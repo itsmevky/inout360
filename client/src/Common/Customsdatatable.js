@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// import FeatherIcon from "feather-icons-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -12,76 +11,46 @@ const CustomDataTable = ({
   onPageChange,
   onRowsPerPageChange,
   currentPage,
-  handleEdit,
-  handleDelete,
-  handleView,
-  handleShare,
 }) => {
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const [openDropdownId, setOpenDropdownId] = useState(null);
-
-  const toggleDropdown = (id) => {
-    setOpenDropdownId(openDropdownId === id ? null : id);
-  };
 
   useEffect(() => {
-    if (currentPage) {
-      onPageChange(currentPage);
-    } else {
-      onPageChange(1); // Ensure the first page is set on mount
-    }
+    onPageChange(currentPage || 1);
   }, [currentPage, onPageChange]);
 
-  const handlePageClick = (page) => {
-    onPageChange(page);
-  };
+  const handlePageClick = (page) => onPageChange(page);
 
-  const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
-    onRowsPerPageChange(newRowsPerPage);
+  const handleRowsPerPageChange = (e) => {
+    const newRows = parseInt(e.target.value, 10);
+    setRowsPerPage(newRows);
+    onRowsPerPageChange(newRows);
     onPageChange(1);
   };
 
   const startItem = Math.max((currentPage - 1) * rowsPerPage + 1, 1);
-
   const endItem = Math.min(currentPage * rowsPerPage, totalRows);
 
   const renderPaginationButtons = () => {
-    const paginationButtons = [];
-    const startPage = Math.max(currentPage - 2, 1);
-    const endPage = Math.min(currentPage + 2, totalPages);
+    const btns = [];
+    const start = Math.max(currentPage - 2, 1);
+    const end = Math.min(currentPage + 2, totalPages);
 
-    if (startPage > 1) {
-      paginationButtons.push(
-        <button
-          key={1}
-          onClick={() => handlePageClick(1)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${1 === currentPage
-            ? "bg-yellow-400 text-white font-semibold"
-            : "bg-gray-200 text-gray-700"
-            }`}
-        >
+    if (start > 1) {
+      btns.push(
+        <button key={1} onClick={() => handlePageClick(1)} className="mx-1 px-3 py-1 rounded-full shadow bg-gray-200">
           1
         </button>
       );
-
-      if (startPage > 2) {
-        paginationButtons.push(
-          <span key="start-dots" className="mx-1 px-3 py-1 text-gray-700">
-            ...
-          </span>
-        );
-      }
+      if (start > 2) btns.push(<span key="startDots">...</span>);
     }
 
-    for (let i = startPage; i <= endPage; i++) {
-      paginationButtons.push(
+    for (let i = start; i <= end; i++) {
+      btns.push(
         <button
           key={i}
           onClick={() => handlePageClick(i)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${i === currentPage ? "text-white font-semibold" : "text-gray-700"
+          className={`mx-1 px-3 py-1 rounded-full shadow ${i === currentPage ? "bg-yellow-400 text-white" : "bg-gray-100"
             }`}
         >
           {i}
@@ -89,120 +58,118 @@ const CustomDataTable = ({
       );
     }
 
-    if (endPage < totalPages - 1) {
-      paginationButtons.push(
-        <span key="end-dots" className="mx-1 px-3 py-1 text-gray-700">
-          ...
-        </span>
-      );
+    if (end < totalPages - 1) btns.push(<span key="endDots">...</span>);
 
-      paginationButtons.push(
+    if (end < totalPages) {
+      btns.push(
         <button
           key={totalPages}
           onClick={() => handlePageClick(totalPages)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${totalPages === currentPage
-            ? "bg-yellow-400 text-white font-semibold"
-            : "bg-gray-200 text-gray-700"
-            }`}
+          className="mx-1 px-3 py-1 rounded-full shadow bg-gray-200"
         >
           {totalPages}
         </button>
       );
     }
 
-    return paginationButtons;
+    return btns;
   };
 
   return (
-    <div className="table-container">
-      <table
-        className="min-w-full bg-white border rounded shadow"
-        id="tableContent"
-      >
-        <thead>
-          <tr>
-            {columns.map((col, index) => (
-              <th
-                key={index}
-                className="py-2 px-2 border-b text-left bg-gray-200 font-semibold text-gray-600"
-                style={{ width: col.width || "auto" }}
-              >
-                {col.name}
-              </th>
-            ))}
-          </tr>
-
-
-        </thead>
-
-
-        <tbody>
-          {data.map((row, rowIndex) => (
-            <tr
-              key={rowIndex}
-              className="hover:bg-gray-100 border-b transition duration-150"
-            >
-              {columns.map((col, colIndex) => (
-                <td
-                  key={colIndex}
-                  className=" update-single-status text-gray-700 p-0"
+    <div className="table-container w-full">
+      {/* ===========================
+          DESKTOP TABLE (md and above)
+      ============================ */}
+      <div className="hidden md:block">
+        <table className="min-w-full bg-white border rounded shadow" id="tableContent">
+          <thead>
+            <tr>
+              {columns.map((col, index) => (
+                <th
+                  key={index}
+                  className="py-2 px-2 border-b text-left bg-gray-200 font-semibold text-gray-600"
+                  style={{ width: col.width || "auto" }}
                 >
-                  {col.selector ? col.selector(row) : row[col.selectorKey]}
-                </td>
+                  {col.name}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
 
-      <div className="pagination-container flex items-center justify-between mt-4">
-        <div className="rows-per-page flex items-center ">
-          <div>
-            <span className="text-gray-600">Rows per page:</span>
+          <tbody>
+            {data.map((row, rowIndex) => (
+              <tr key={rowIndex} className="hover:bg-gray-100 border-b transition duration-150">
+                {columns.map((col, colIndex) => (
+                  <td key={colIndex} className="text-gray-700 p-2">
+                    {col.selector ? col.selector(row) : row[col.selectorKey]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ===========================
+          MOBILE / TABLET CARD VIEW
+      ============================ */}
+      <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
+        {data.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            className="p-4 bg-white border rounded shadow flex flex-col gap-2"
+          >
+            {columns.map((col, colIndex) => (
+              <div key={colIndex} className="flex justify-between">
+                <strong className="text-gray-600">{col.name}:</strong>
+                <span className="text-gray-800">
+                  {col.selector ? col.selector(row) : row[col.selectorKey]}
+                </span>
+              </div>
+            ))}
           </div>
-          <div>
-            <select
-              value={rowsPerPage}
-              onChange={handleRowsPerPageChange}
-              className="AJ-page-limit ml-2 border rounded p-1"
-            >
-              {rowsPerPageOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <span className="ml-2 text-gray-600">
-              {startItem}-{endItem} of {totalRows}
-            </span>
-          </div>
+        ))}
+      </div>
+
+      {/* ===========================
+          PAGINATION
+      ============================ */}
+      <div className="pagination-container flex flex-col md:flex-row md:items-center justify-between mt-4 gap-3">
+        {/* Rows Per Page */}
+        <div className="rows-per-page flex items-center gap-2">
+          <span className="text-gray-600">Rows per page:</span>
+
+          <select
+            value={rowsPerPage}
+            onChange={handleRowsPerPageChange}
+            className="border rounded p-1"
+          >
+            {rowsPerPageOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+
+          <span className="text-gray-600">
+            {startItem}-{endItem} of {totalRows}
+          </span>
         </div>
 
-        <div className="pagination-controls flex items-center space-x-2">
+        {/* Pagination Controls */}
+        <div className="pagination-controls flex items-center gap-2">
           <button
             onClick={() => handlePageClick(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
-            className={`pagination-button mx-1 px-3 py-1 rounded-full shadow ${currentPage === 1 ? "bg-gray-300" : "bg-white text-gray-700"
-              }`}
+            className="px-3 py-1 rounded shadow bg-gray-100 disabled:bg-gray-300"
           >
             Previous
           </button>
 
-          <div className="pagination-buttons flex space-x-2">
-            {renderPaginationButtons()}
-          </div>
+          <div className="flex gap-1">{renderPaginationButtons()}</div>
 
           <button
-            onClick={() =>
-              handlePageClick(Math.min(currentPage + 1, totalPages))
-            }
+            onClick={() => handlePageClick(Math.min(currentPage + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className={`pagination-button mx-1 px-3 py-1 rounded-full shadow ${currentPage === totalPages
-              ? "bg-gray-300"
-              : "bg-white text-gray-700"
-              }`}
+            className="px-3 py-1 rounded shadow bg-gray-100 disabled:bg-gray-300"
           >
             Next
           </button>

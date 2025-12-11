@@ -9,7 +9,7 @@ const SuperAdminDashboard = () => {
   return (
     <>
       <div className="layout-section-dashboard">
-        <div className="w-full mx-auto p-2">
+        <div className="dashboar-option-inner-page w-full mx-auto p-2">
           {/* <!-- Dashboard Header --> */}
           <div className="bg-white p-4 py-8  rounded-lg text-gray-700 font-semibold text-xl dashboard-crm-box-shadow">
             <span className="mr-2 flex items-center gap-4 space-x-2 ">

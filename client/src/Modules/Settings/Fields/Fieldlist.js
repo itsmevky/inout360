@@ -451,7 +451,7 @@ const GetUsers = () => {
     show && <StatusApply />;
   }
   return (
-    <div className="relative p-4">
+    <div className="relative p-4 ">
       <div className="list-user-title ">
         <h2 className="text-xl font-bold sub-title">List of Global Fields</h2>
       </div>

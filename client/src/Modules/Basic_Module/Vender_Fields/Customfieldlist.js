@@ -95,7 +95,7 @@ const CustomFieldsList = () => {
       } else {
         toast.error(result.message || "Failed to create user.");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
   const handleSelectAllChange = () => {
     if (selectedrecords.length === data.length) {
@@ -427,7 +427,7 @@ const CustomFieldsList = () => {
         validUsers.map(async (id) => {
           try {
             await API.singleuserDelete(id);
-          } catch (err) {}
+          } catch (err) { }
         })
       );
 
@@ -507,7 +507,7 @@ const CustomFieldsList = () => {
     fetchGroups();
   }, []);
   return (
-    <div className="relative p-4">
+    <div className="relative p-4 ">
       <div className="list-user-title ">
         <h2 className="text-xl font-bold sub-title">List of Custom Fields</h2>
       </div>

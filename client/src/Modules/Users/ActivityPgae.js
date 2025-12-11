@@ -226,7 +226,7 @@ const ActivityPage = () => {
             </div>
 
             {/* ================= CARDS ================= */}
-            <div className="grid lg:grid-cols-4 xl:grid-cols-5 sm:grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+            <div className="grid lg:grid-cols-4 xl:grid-cols-4 sm:grid-cols-1 md:grid-cols-2 gap-3 mt-6">
                 {cardConfig.map((item, i) => {
                     const isActive = selectedType === item.type;
 
@@ -398,7 +398,7 @@ const ActivityPage = () => {
                             <>
                                 <h3 className="text-lg font-semibold mb-3">Camera Activity</h3>
 
-                                <div className="grid grid-cols-4 gap-1 screenshot-cards">
+                                <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 gap-1 screenshot-cards">
                                     {modalUser.activities
                                         .filter(a =>
                                             ["screenshot", "take_picture", "video"].includes(a.type)

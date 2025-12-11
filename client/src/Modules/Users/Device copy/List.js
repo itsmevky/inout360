@@ -349,7 +349,7 @@ const Device = () => {
     show && <StatusApply />;
   }
   return (
-    <div className="relative p-4">
+    <div className="relative p-4 ">
       <div className="list-user-title ">
         <h2 className="text-xl font-bold sub-title">List of Device</h2>
       </div>
@@ -398,7 +398,7 @@ const Device = () => {
           <div className="outer-delete-section">
             <button
               className="apply-section"
-              // onClick={() => handleDeleteClick(user)}
+            // onClick={() => handleDeleteClick(user)}
             >
               <svg
                 fill="#fff"

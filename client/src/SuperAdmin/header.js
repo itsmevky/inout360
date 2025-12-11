@@ -63,7 +63,7 @@ const Header = () => {
         </div>
 
         {/* Right Section: User Profile */}
-        <div className="AJ-crm-right-profile-section flex">
+        <div className="AJ-crm-right-profile-section flex items-center">
           <div className="AJ-crm-notification-section">
             {/* <svg
               fill="#22374e"
