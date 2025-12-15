@@ -35,8 +35,8 @@ const LocationList = () => {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold mb-4">Geofence Location List</h2>
+      <div className="flex justify-between items-center mb-4 location-list-heading">
+        <h2 className="text-xl font-bold mb-4 ">Geofence Location List</h2>
 
         {/* ADD BUTTON */}
         <button

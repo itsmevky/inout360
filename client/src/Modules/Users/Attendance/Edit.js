@@ -15,6 +15,7 @@ const EditAttendanceForm = ({ attendance }) => {
     rfidCardId: "",
     sectionAssigned: "",
     date: "",
+    status: "Present",        // ✅ ADD
     entryGateIn: "",
     workfloorIn: "",
     workfloorOut: "",
@@ -36,6 +37,7 @@ const EditAttendanceForm = ({ attendance }) => {
         rfidCardId: attendance.rfidCardId || "",
         sectionAssigned: attendance.sectionAssigned || "",
         date: attendance.date ? attendance.date.split("T")[0] : "",
+        status: attendance.status || "Present",   // ✅ ADD
         entryGateIn: attendance.entryGateIn || "",
         workfloorIn: attendance.workfloorIn || "",
         workfloorOut: attendance.workfloorOut || "",
@@ -44,6 +46,7 @@ const EditAttendanceForm = ({ attendance }) => {
       });
     }
   }, [attendance]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,43 +66,43 @@ const EditAttendanceForm = ({ attendance }) => {
     errors[fieldName] ? "aj-field-error AJ-floating-input" : "AJ-floating-input";
 
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log("🔹 handleSubmit triggered");
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("🔹 handleSubmit triggered");
+    setLoading(true);
 
-  try {
-    console.log("🔹 Using userId:", selectedUserId);
+    try {
+      console.log("🔹 Using userId:", selectedUserId);
 
-    if (!selectedUserId) {
-      toast.error("❌ Missing userId.");
-      console.error("❌ No userId found in state.");
-      return;
+      if (!selectedUserId) {
+        toast.error("❌ Missing userId.");
+        console.error("❌ No userId found in state.");
+        return;
+      }
+
+      const endpoint = `/api/attendance/${selectedUserId}`;
+      console.log("🔹 API endpoint being called:", endpoint);
+      console.log("🔹 Form data being sent:", formData);
+
+      const response = await putData(endpoint, formData);
+
+      // If putData returns raw response.json(), "status" won’t exist
+      console.log("🔹 API parsed response:", response);
+
+      if (response?.success || response?.status === 200) {
+        toast.success("✅ Attendance updated successfully!");
+        // navigate("/dashboard/attendance");
+      } else {
+        toast.error(response?.message || "❌ Failed to update attendance.");
+      }
+    } catch (error) {
+      console.error("❌ Error updating attendance:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+      console.log("🔹 Loading set to false");
     }
-
-    const endpoint = `/api/attendance/${selectedUserId}`;
-    console.log("🔹 API endpoint being called:", endpoint);
-    console.log("🔹 Form data being sent:", formData);
-
-    const response = await putData(endpoint, formData);
-
-    // If putData returns raw response.json(), "status" won’t exist
-    console.log("🔹 API parsed response:", response);
-
-    if (response?.success || response?.status === 200) {
-      toast.success("✅ Attendance updated successfully!");
-      // navigate("/dashboard/attendance");
-    } else {
-      toast.error(response?.message || "❌ Failed to update attendance.");
-    }
-  } catch (error) {
-    console.error("❌ Error updating attendance:", error);
-    toast.error("An error occurred. Please try again.");
-  } finally {
-    setLoading(false);
-    console.log("🔹 Loading set to false");
-  }
-};
+  };
 
 
 

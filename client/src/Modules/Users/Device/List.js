@@ -42,6 +42,41 @@ const Device = () => {
       locationEnabled: false,
       lastScreenshot: "2025-01-11 06:10 PM",
     },
+    {
+      id: "DEV-2001",
+      deviceName: "Redmi k20",
+      userName: "vivek Kumar",
+      employeeId: "EMP-503",
+      androidId: "8dhwi88sjsn2",
+      fcmStatus: "Inactive",
+      ownerMode: "Active",
+      lastOnline: "2025-01-10 05:20 PM",
+      enrolled: "2025-01-05",
+      appVersion: "3.1.0",
+      androidVersion: "12",
+      online: false,
+      employeeid: 27,
+      cameraBlocked: true,
+      locationEnabled: false,
+      lastScreenshot: "2025-01-11 06:10 PM",
+    }, {
+      id: "DEV-2001",
+      deviceName: "Apple 15 pro",
+      userName: "Amit Kumar",
+      employeeId: "EMP-503",
+      androidId: "8dhwi88sjsn2",
+      fcmStatus: "Inactive",
+      ownerMode: "Not Active",
+      lastOnline: "2025-01-10 05:20 PM",
+      enrolled: "2025-01-05",
+      appVersion: "3.1.0",
+      androidVersion: "12",
+      online: true,
+      employeeid: 27,
+      cameraBlocked: true,
+      locationEnabled: false,
+      lastScreenshot: "2025-01-11 06:10 PM",
+    },
   ];
 
   // ========================= COLORS & BADGES ========================= //
@@ -76,11 +111,11 @@ const Device = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4">
 
       {/* PAGE HEADING */}
-      <div className="bg-white p-5 rounded-xl shadow flex items-center gap-3 text-xl font-semibold text-gray-700">
-        <svg width="22"
+      <div className="bg-white p-4 rounded-lg shadow flex items-center gap-3 text-xl font-semibold text-gray-700 device-list-heading">
+        <svg width="20"
           fill="navy-blue"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 448 512">
@@ -195,7 +230,7 @@ const Device = () => {
 
             <div className="grid grid-cols-3 gap-4 mt-3">
               <button className="p-3 bg-black text-white rounded hover:bg-gray-700">Lock Device</button>
-              <button className="p-3 bg-red-600 text-white rounded hover:bg-red-800">Wipe Device</button>
+
               <button className="p-3 bg-orange-500 text-white rounded hover:bg-orange-700">Restart</button>
               <button className="p-3 bg-blue-500 text-white rounded hover:bg-blue-700">Disable Camera</button>
               <button className="p-3 bg-blue-500 text-white rounded hover:bg-blue-700">Disable Uninstall</button>

@@ -121,9 +121,8 @@ const LoginForm = () => {
                     onBlur={HandleEmailBlur} // Trigger validation on blur
                     // onFocus={HandleEmailFocus} // Clear the red border on focus
                     value={userData.email}
-                    className={`input-field ${
-                      emailTouched && errors.email ? "error-border" : ""
-                    }`} // Conditionally apply red border
+                    className={`input-field ${emailTouched && errors.email ? "error-border" : ""
+                      }`} // Conditionally apply red border
                   />
                   <div>
                     {errors.email && (

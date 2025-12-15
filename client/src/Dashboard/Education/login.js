@@ -8,7 +8,7 @@ import { ToastContainer, toast } from "react-toastify"; // Import Toastify
 import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import securelogin from "../../Images/secure-login.png";
 import { useUser } from "../../Helpers/Context/UserContext.js";
-
+import pidilitelogo from "../../Images/pidilitelogo.png"
 const LoginComponent = () => {
   const { setUser } = useUser();
 
@@ -171,6 +171,9 @@ const LoginComponent = () => {
           <div className="right-section ">
             <div className="form-justification AJ-section ">
               <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <img width={200} src={pidilitelogo} />
+                </div>
                 <div className="inside-form">
                   <h2>Login Here</h2>
                   <div className="login-section AJ-login-Form-block">

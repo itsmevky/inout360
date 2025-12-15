@@ -85,47 +85,47 @@ const EditUserForm = ({ user }) => {
 
   const getFieldClassName = (fieldName) =>
     errors[fieldName] ? "aj-field-error AJ-floating-input" : "AJ-floating-input";
-  
 
-const handleSubmit = async (e) => {
-  console.log("🔹 handleSubmit triggered");
 
-  e.preventDefault();
-  console.log("🔹 Default form submission prevented");
+  const handleSubmit = async (e) => {
+    console.log("🔹 handleSubmit triggered");
 
-  setLoading(true);
-  console.log("🔹 Loading set to true");
+    e.preventDefault();
+    console.log("🔹 Default form submission prevented");
 
-  try {
-    console.log("🔹 Current user object:", user);
-    console.log("🔹 Checking user._id:", user?._id);
-    console.log("🔹 Checking user.employeeId:", user?.employeeId);
-    console.log("🔹 Checking user.id:", user?.id);
+    setLoading(true);
+    console.log("🔹 Loading set to true");
 
-    const endpoint = `/employee/${user?._id || user?.employeeId}`;
-    console.log("🔹 API endpoint being called:", endpoint);
+    try {
+      console.log("🔹 Current user object:", user);
+      console.log("🔹 Checking user._id:", user?._id);
+      console.log("🔹 Checking user.employeeId:", user?.employeeId);
+      console.log("🔹 Checking user.id:", user?.id);
 
-    console.log("🔹 Form data being sent:", formData);
+      const endpoint = `/employee/${user?._id || user?.employeeId}`;
+      console.log("🔹 API endpoint being called:", endpoint);
 
-    const response = await putData(endpoint, formData);
-    console.log("🔹 API raw response:", response);
+      console.log("🔹 Form data being sent:", formData);
 
-    if (response.status === 200 || response.success === true) {
-      console.log("✅ Employee updated successfully, navigating to users list");
-      toast.success("✅ Employee updated successfully!");
-      navigate("/dashboard/users");
-    } else {
-      console.log("❌ API returned error response:", response.message);
-      toast.error(response.message || "❌ Failed to update employee.");
+      const response = await putData(endpoint, formData);
+      console.log("🔹 API raw response:", response);
+
+      if (response.status === 200 || response.success === true) {
+        console.log("✅ Employee updated successfully, navigating to users list");
+        toast.success("✅ Employee updated successfully!");
+        navigate("/dashboard/users");
+      } else {
+        console.log("❌ API returned error response:", response.message);
+        toast.error(response.message || "❌ Failed to update employee.");
+      }
+    } catch (error) {
+      console.error("❌ Error updating employee:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+      console.log("🔹 Loading set to false");
     }
-  } catch (error) {
-    console.error("❌ Error updating employee:", error);
-    toast.error("An error occurred. Please try again.");
-  } finally {
-    setLoading(false);
-    console.log("🔹 Loading set to false");
-  }
-};
+  };
 
 
   return (

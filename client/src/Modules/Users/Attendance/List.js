@@ -1,189 +1,233 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import AddUserForm from "../Add.js";
 import EditUserForm from "./Edit.js";
-import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
-import Attendance from "./Add.js"
+
 const Teachers = () => {
-  const [data, setData] = useState([]);
-  const [selectedTeachers, setSelectedTeachers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
+
+  /* ================= STATIC DATA ================= */
+  const attendancedata = [
+    {
+      _id: "1",
+      rfidCardId: "RFID-1001",
+      name: "Amit Sharma",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "09:05 AM",
+      workfloorOut: "06:15 PM",
+    },
+    {
+      _id: "2",
+      rfidCardId: "RFID-1002",
+      name: "Neha Verma",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "09:00 AM",
+      workfloorOut: "06:10 PM",
+    },
+    {
+      _id: "3",
+      rfidCardId: "RFID-1003",
+      name: "Rohit Mehta",
+      date: "2025-02-10",
+      status: "Absent",
+      entryGateIn: "-",
+      workfloorOut: "-",
+    },
+    {
+      _id: "4",
+      rfidCardId: "RFID-1004",
+      name: "Suman Kaur",
+      date: "2025-02-10",
+      status: "Absent",
+      entryGateIn: "-",
+      workfloorOut: "-",
+    },
+    {
+      _id: "5",
+      rfidCardId: "RFID-1005",
+      name: "Vikram Singh",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "09:10 AM",
+      workfloorOut: "06:30 PM",
+    },
+    {
+      _id: "6",
+      rfidCardId: "RFID-1006",
+      name: "Priya Gupta",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "08:55 AM",
+      workfloorOut: "06:20 PM",
+    },
+    {
+      _id: "7",
+      rfidCardId: "RFID-1007",
+      name: "Arjun Patel",
+      date: "2025-02-10",
+      status: "On Leave",
+      entryGateIn: "-",
+      workfloorOut: "-",
+    },
+    {
+      _id: "8",
+      rfidCardId: "RFID-1008",
+      name: "Riya Sharma",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "09:02 AM",
+      workfloorOut: "06:18 PM",
+    },
+    {
+      _id: "9",
+      rfidCardId: "RFID-1009",
+      name: "Karan Yadav",
+      date: "2025-02-10",
+      status: "Absent",
+      entryGateIn: "-",
+      workfloorOut: "-",
+    },
+    {
+      _id: "10",
+      rfidCardId: "RFID-1010",
+      name: "Sneha Joshi",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "08:50 AM",
+      workfloorOut: "06:05 PM",
+    }, {
+      _id: "11",
+      rfidCardId: "RFID-1010",
+      name: "Sneha Joshi",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "08:50 AM",
+      workfloorOut: "06:05 PM",
+    }, {
+      _id: "12",
+      rfidCardId: "RFID-1010",
+      name: "Sneha Joshi",
+      date: "2025-02-10",
+      status: "Present",
+      entryGateIn: "08:50 AM",
+      workfloorOut: "06:05 PM",
+    },
+  ];
+
+
+  /* ================= STATES ================= */
+  const [data, setData] = useState(attendancedata);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [attendanceStatus, setAttendanceStatus] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalRows, setTotalRows] = useState(0);
+
   const [isAddUserFormVisible, setIsAddUserFormVisible] = useState(false);
   const [isEditUserFormVisible, setIsEditUserFormVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [isDropdownVisible, setDropdownVisible] = useState(false);
-  const dropdownRef = useRef(null);
-  const buttonRef = useRef(null);
-  const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
-  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
-  const [showPopup, setShowPopup] = useState(false);
-  // const { openPopup } = usePopup();
-  const [SelectedStatus, setSelectedStatus] = useState("");
-  const toggleDropdown = () => {
-    setDropdownVisible(!isDropdownVisible);
+  /* ================= FILTER ================= */
+  const filteredData = data.filter((item) => {
+    if (
+      searchTerm &&
+      !item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+      return false;
+
+    if (attendanceStatus && item.status !== attendanceStatus)
+      return false;
+
+    return true;
+  });
+
+  /* ================= HANDLERS ================= */
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
-  const statusValues = ["Active", "Disabled", "Blocked"];
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const handleAttendanceStatusChange = (e) => {
+    setAttendanceStatus(e.target.value);
+    setCurrentPage(1);
+  };
 
-  const fetchattendance = async () => {
-    setLoading(true);
-    try {
-      const response = await API.attendance.getAll({
-        search: searchTerm,
-        page: currentPage,
-        limit: rowsPerPage,
-      });
+  const handleDelete = (id) => {
+    if (!window.confirm("Are you sure you want to delete?")) return;
+    setData((prev) => prev.filter((item) => item._id !== id));
+    toast.success("Attendance deleted successfully");
+  };
 
-      console.log("attendance response", response);
+  const handlePageChange = (page) => setCurrentPage(page);
 
-      if (Array.isArray(response)) {
-        setData(response);                // ✅ Attendance data comes as array
-        setTotalRows(response.length);    // ✅ Just use array length
-      } else {
-        setError("No attendance data found");
-      }
-    } catch (err) {
-      console.error("Error fetching attendance:", err);
-      setError("Something went wrong while fetching attendance.");
-    } finally {
-      setLoading(false);
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1);
+  };
+  const handleEdit = (id) => {
+    const selected = attendancedata.find((item) => item._id === id);
+
+    if (!selected) {
+      toast.error("Attendance record not found");
+      return;
     }
+
+    setSelectedUser(selected);
+    setIsEditUserFormVisible(true);
+  };
+
+  // ✅ ADD THESE TWO FUNCTIONS EXACTLY HERE 👇
+  const toggleAddUserForm = () => {
+    setIsAddUserFormVisible((prev) => !prev);
+  };
+
+  const toggleEditUserForm = () => {
+    setIsEditUserFormVisible(false);
+    setSelectedUser(null);
   };
 
 
-  useEffect(() => {
-    fetchattendance();
-  }, [currentPage, rowsPerPage, searchTerm]);
 
-
-
-  const handleCheckboxChange = (id) => {
-    setSelectedTeachers((prev) =>
-      prev.includes(id) ? prev.filter((tid) => tid !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAllChange = () => {
-    if (selectedTeachers.length === data.length) {
-      setSelectedTeachers([]);
-    } else {
-      setSelectedTeachers(data.map((t) => t.id));
-    }
-  };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      const res = await putData("/employees/${id}`, data", {
-        teachers: [id],
-        status,
-      });
-      if (res.status) {
-        toast.success("Status updated");
-        fetchattendance();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("Failed to update status");
-    }
-  };
-
-
-  // const handleBulkStatusUpdate = async () => {
-  //   if (selectedTeachers.length === 0)
-  //     return toast.error("Select at least one teacher");
-  //   try {
-  //     const res = await putData("/teacher/status", {
-  //       teachers: selectedTeachers,
-  //       status: selectedStatus,
-  //     });
-  //     if (res.status) {
-  //       toast.success("Status updated");
-  //       fetchattendance();
-  //       setSelectedStatus("");
-  //       setSelectedTeachers([]);
-  //     } else {
-  //       toast.error(res.message);
-  //     }
-  //   } catch (err) {
-  //     toast.error("Failed to update status");
-  //   }
-  // };
-
-
-  const handleDelete = async (ids) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete?");
-    if (!confirmDelete) return;
-
-    try {
-      // If multiple IDs are allowed, you can loop or batch
-      const targetIds = Array.isArray(ids) ? ids : [ids];
-
-      for (const id of targetIds) {
-        const res = await deleteData(`/attendance/${id}`);
-
-        console.log("🔹 Delete response:", res);
-
-        if (res?.success || res?.status === 200) {
-          toast.success("✅ Attendance deleted successfully");
-        } else {
-          toast.error(res?.message || "❌ Failed to delete attendance");
-        }
-      }
-
-      // Refresh the list after deletion
-      fetchattendance();
-
-    } catch (err) {
-      console.error("❌ Error deleting attendance:", err);
-      toast.error("Failed to delete attendance");
-    }
-  };
-
+  /* ================= TABLE COLUMNS ================= */
   const columns = [
-
-
     {
       name: "Rfid Card Id",
       selector: (row) => row.rfidCardId,
-      width: "10%",
+      width: "10%"
     },
     {
       name: "Name",
       selector: (row) => row.name,
-      width: "20%",
+      width: "20%"
     },
     {
       name: "date",
       selector: (row) => row.date,
-      width: "20%",
+      width: "15%"
     },
     {
-      name: "Entry",
+      name: "Status",
+      selector: (row) => row.status,
+      width: "15%"
+    },
+    {
+      name: "In Time",
       selector: (row) => row.entryGateIn,
-      width: "20%",
+      width: "15%"
     },
     {
-      name: "Exit",
+      name: "Out Time",
       selector: (row) => row.workfloorOut,
-      width: "20%",
+      width: "15%"
     },
 
     {
+
       name: "Actions",
       width: "25%",
       selector: (row) => (
@@ -222,328 +266,57 @@ const Teachers = () => {
         </div>
       ),
     }
-
-  ];
-  const attendancedata = [
-    {
-      _id: "1",
-      rfidCardId: "RFID-1001",
-      name: "Amit Sharma",
-      date: "2025-02-10",
-      entryGateIn: "09:05 AM",
-      workfloorOut: "06:15 PM",
-    },
-    {
-      _id: "2",
-      rfidCardId: "RFID-1002",
-      date: "2025-02-10",
-      name: "	Neha Verma",
-      entryGateIn: "09:05 AM",
-      workfloorOut: "06:15 PM",
-    },
-    {
-      _id: "3",
-      rfidCardId: "RFID-1003",
-      name: "Rohit Mehta",
-      date: "2025-02-10",
-      entryGateIn: "09:12 AM",
-      workfloorOut: "06:00 PM",
-    },
-    {
-      _id: "5",
-      rfidCardId: "RFID-1004",
-      name: "Suman Kaur",
-      date: "2025-02-10",
-      entryGateIn: "08:55 AM",
-      workfloorOut: "06:05 PM",
-    },
-    {
-      _id: "6",
-      rfidCardId: "RFID-1005",
-      name: "Vikram Singh",
-      date: "2025-02-10",
-      entryGateIn: "09:10 AM",
-      workfloorOut: "06:30 PM",
-    },
   ];
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleRowsPerPageChange = (newRowsPerPage) => {
-    setRowsPerPage(newRowsPerPage);
-    setCurrentPage(1);
-  };
-  // selected user status update
-  const handleApplyClick = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("Select Row");
-      return;
-    }
-
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
-
-    if (validUsers.length === 0) {
-      alert("Invalid user IDs provided.");
-      return;
-    }
-
-    try {
-      const response = await updateUserStatus(validUsers, SelectedStatus);
-      if (response.status === true) {
-        setSelectedStatus("");
-        setSelectedUsers("");
-        fetchattendance(); // Refresh user list
-        toast.success("Updated Successfully!");
-      } else {
-        toast.error(response.message || "Failed to create user.");
-      }
-    } catch (error) {
-      toast.error("Failed to update user status:", error);
-    }
-  };
-
-  const updateUserStatus = async (users, status) => {
-    try {
-      return await API.updateStatus({ users, status });
-    } catch (error) {
-      return error;
-    }
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value); // Update the search term
-    fetchattendance(); // Trigger fetch with the updated search term
-  };
-
-  // ✅ Handle Edit (fetch full attendance/user details)
-  const handleEdit = async (userId) => {
-    try {
-      const res = await getData(`/attendance/${userId}`);
-      console.log("res", res);
-
-      if (res) {
-        // If API returns { employee: {...} }
-        if (res.employee) {
-          setSelectedUser(res.employee); // ✅ Set full employee object
-        } else {
-          setSelectedUser(res); // ✅ If API directly returns user data
-        }
-
-        setIsEditUserFormVisible(true); // ✅ Open side panel
-      } else {
-        toast.error("Failed to fetch user data.");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong while fetching user.");
-    }
-  };
-
-
-
-
-  // selected userlist delete
-  const handleDeleteUser = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("❌ Please select at least one row");
-      return;
-    }
-
-    // Ensure only valid MongoDB ObjectIds are processed
-    const validUsers = selectedUsers.filter((id) =>
-      /^[0-9a-fA-F]{24}$/.test(id)
-    );
-
-    if (validUsers.length === 0) {
-      toast.error("❌ Invalid user IDs provided.");
-      return;
-    }
-
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${validUsers.length} attendance record(s)?`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      for (const id of validUsers) {
-        const res = await deleteData(`/api/attendance/${id}`);
-
-        console.log("🔹 Delete response:", res);
-
-        if (res?.success || res?.status === 200) {
-          toast.success(`✅ Attendance record deleted: ${id}`);
-        } else {
-          toast.error(res?.message || `❌ Failed to delete record: ${id}`);
-        }
-      }
-
-      // Refresh table
-      fetchattendance();
-    } catch (error) {
-      console.error("❌ Error deleting user(s):", error);
-      toast.error("An error occurred while deleting. Please try again.");
-    }
-  };
-
-
-  const toggleAddUserForm = () => {
-    setIsAddUserFormVisible((prev) => !prev); // Toggle form visibility
-  };
-
-  const toggleEditUserForm = () => {
-    setIsEditUserFormVisible((prev) => !prev); // Toggle form visibility
-  };
-  const handleListStatusChange = (event) => {
-    setSelectedStatus(event.target.value);
-    console.log("Selected Status:", event.target.value);
-  };
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [show, setShow] = useState(false);
-
-  const StatusApply = ({ onConfirm, onCancel }) => {
-    return (
-      <PopupModal>
-        <div className="p-6 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-lg font-semibold">Confirm Deletion</h2>
-          <p className="mt-2">
-            Are you sure you want to delete the selected user(s)?
-          </p>
-          <div className="flex justify-center gap-4 mt-4">
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 bg-gray-400 text-white rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              className="px-4 py-2 bg-red-500 text-white rounded-md"
-            >
-              Yes, Delete
-            </button>
-          </div>
-        </div>
-      </PopupModal>
-    );
-  };
-
-  {
-    show && <StatusApply />;
-  }
+  /* ================= UI (UNCHANGED) ================= */
   return (
-    <div className="relative p-4 ">
-      <div className="list-user-title ">
+    <div className="relative p-4">
+      <div className="list-user-title">
         <h2 className="text-xl font-bold sub-title">List of Attendance</h2>
       </div>
+
       <div className="button-crm">
         <div className="status-dropdown-section flex gap-4">
 
-          {/* ------Atandance--Search--bar-----  */}
-          <div className="input-search-bar flex ">
+          {/* SEARCH */}
+          <div className="input-search-bar flex">
             <input
               type="text"
-              id="search"
-              name="search"
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder="Search"
-              className="border rounded p-2 "
+              className="border rounded p-2"
             />
-            <div className="searching-log flex items-center">
-              <svg
-                fill="#blue"
-                width={16}
-                height={16}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-              >
-                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
-              </svg>
-            </div>
           </div>
+
+          {/* STATUS FILTER */}
           <div className="status-select-option-dropdown first-left form-item">
             <select
-              name="status"
-              placeholder="Select Status"
-              value={SelectedStatus}
-              onChange={handleListStatusChange}
+              value={attendanceStatus}
+              onChange={handleAttendanceStatusChange}
             >
-              <option>Select Status</option>
-
-              <option value="Active">Absent</option>
-              <option value="Disabled">Present</option>
-              <option value="Blocked">On Leave</option>
+              <option value="">Select Status</option>
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+              <option value="On Leave">On Leave</option>
             </select>
           </div>
-          <PopupModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          >
-            <h2 className="text-xl font-bold mb-4">Fill the Form</h2>
-            <ConfirmDelete />
-          </PopupModal>
-        </div>
 
-        <div className="attendance-combine-export-section">
-          <div className="export-section">
-            <button>
-              <svg
-                fill="#22374e"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-              >
-                <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z" />
-              </svg>
-              <div>Export</div>
-            </button>
-          </div>
-          <div>
-            {/* <button
-              className="crm-buttonsection"
-              onClick={() => navigate("/dashboard/users/Addattendance")}
-            >
-              <svg
-                fill="white"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 640 512"
-              >
-                <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
-              </svg>
-              Add Attendance
-            </button> */}
-          </div>
         </div>
       </div>
-      {/* Toast Notifications */}
+
       <ToastContainer />
-      {/* Error message */}
-      {error && <div className="text-red-500">{error}</div>}
 
-      {/* Loading state */}
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <CustomDataTable
-          columns={columns}
-          data={attendancedata}
-          totalRows={totalRows}
-          rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
-          defaultRowsPerPage={rowsPerPage}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          currentPage={currentPage}
-        />
-      )}
-
+      <CustomDataTable
+        columns={columns}
+        data={filteredData}
+        totalRows={filteredData.length}
+        rowsPerPageOptions={[10, 20, 50, 100]}
+        defaultRowsPerPage={rowsPerPage}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        currentPage={currentPage}
+      />
       {/* Add User Form Sliding Panel */}
       {isAddUserFormVisible && (
         <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">

@@ -27,6 +27,8 @@ const Employeepage = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [attendanceFilter, setAttendanceFilter] = useState("");
+
 
   const [showPopup, setShowPopup] = useState(false);
   // const { openPopup } = usePopup();
@@ -49,8 +51,26 @@ const Employeepage = () => {
       console.log("response", response);
 
       if (response.employees && Array.isArray(response.employees)) {
-        setData(response.employees); // ✅ Correct key
-        setTotalRows(response.total || 0); // ✅ Use 'total' instead of 'pagination.totalRecords'
+
+        let filtered = response.employees;
+
+        // Department filter
+        if (SelectedStatus !== "") {
+          filtered = filtered.filter(
+            (emp) => emp.departmen?.toLowerCase() === SelectedStatus.toLowerCase()
+          );
+        }
+
+        // Attendance filter
+        if (attendanceFilter !== "") {
+          filtered = filtered.filter(
+            (emp) => emp.attendanceStatus?.toLowerCase() === attendanceFilter.toLowerCase()
+          );
+        }
+
+
+        setData(filtered);
+        setTotalRows(filtered.length);
       } else {
         setError("No employee data found"); // ✅ Corrected message
       }
@@ -61,9 +81,12 @@ const Employeepage = () => {
     }
   };
 
+
+
   useEffect(() => {
     fetchemployees();
-  }, [currentPage, rowsPerPage, searchTerm]);
+  }, [currentPage, rowsPerPage, searchTerm, SelectedStatus, attendanceFilter]);
+
 
   const handleCheckboxChange = (id) => {
     setSelectedTeachers((prev) =>
@@ -144,7 +167,7 @@ const Employeepage = () => {
     {
       name: "ID",
       selector: (row) => row._id,
-      width: "10%",
+      width: "15%",
     },
     {
       name: "Name",
@@ -154,11 +177,11 @@ const Employeepage = () => {
     {
       name: "Email",
       selector: (row) => row.email,
-      width: "25%",
+      width: "20%",
     },
     {
       name: "Status",
-      width: "10%",
+      width: "15%",
       selector: (row) => (
         <span
           className={`px-3 py-0.5 rounded-lg font-meduim text-sm ${row.status?.toLowerCase() === "active"
@@ -175,17 +198,17 @@ const Employeepage = () => {
     {
       name: "Gender",
       selector: (row) => row.gender,
-      width: "10%",
+      width: "15%",
     },
     {
       name: "Department",
       selector: (row) => row.departmen,
-      width: "20%",
+      width: "15%",
     },
 
     {
       name: "Actions",
-      width: "2%",
+      width: "10%",
       selector: (row) => (
         <div className="flex space-x-2 justify-center">
           <div className="flex space-x-2  ">
@@ -226,86 +249,97 @@ const Employeepage = () => {
   ];
   const datatable = [
     {
-      _id: "852694",
+      _id: "EMP001",
       firstName: "Amit Sharma",
       email: "amit.sharma@example.com",
       status: "Active",
       gender: "Male",
-      departmen: "Sales"
+      departmen: "Sales",
+      attendanceStatus: "Present"
     },
     {
-      _id: "528466",
+      _id: "EMP002",
       firstName: "Neha Verma",
       email: "neha.verma@example.com",
       status: "Active",
       gender: "Female",
-      departmen: "Sales"
+      departmen: "Marketing",
+      attendanceStatus: "Absent"
     },
     {
-      _id: "753951",
+      _id: "EMP003",
       firstName: "Rohit Mehta",
       email: "rohit.mehta@example.com",
       status: "Active",
       gender: "Male",
-      departmen: "Marketing"
+      departmen: "Finance",
+      attendanceStatus: "On Leave"
     },
     {
-      _id: "862248",
-      firstName: "Suman Kaur",
-      email: "suman.kaur@example.com",
-      status: "Active",
+      _id: "EMP004",
+      firstName: "Simran Kaur",
+      email: "simran.kaur@example.com",
+      status: "Inactive",
       gender: "Female",
-      departmen: "Finance"
+      departmen: "HR",
+      attendanceStatus: "Present"
     },
     {
-      _id: "569763",
+      _id: "EMP005",
       firstName: "Vikram Singh",
       email: "vikram.singh@example.com",
-      status: "Inactive",
+      status: "Active",
       gender: "Male",
-      departmen: "Sports Instructor"
+      departmen: "IT",
+      attendanceStatus: "Absent"
     },
     {
-      _id: "763987",
+      _id: "EMP006",
       firstName: "Pooja Mishra",
       email: "pooja.mishra@example.com",
-      status: "Inactive",
+      status: "Active",
       gender: "Female",
-      departmen: "HR"
+      departmen: "Operations",
+      attendanceStatus: "Present"
     },
     {
-      _id: "321568",
+      _id: "EMP007",
       firstName: "Karan Patel",
       email: "karan.patel@example.com",
       status: "Inactive",
       gender: "Male",
-      departmen: "Operations"
+      departmen: "Construction",
+      attendanceStatus: "On Leave"
     },
     {
-      _id: "486597",
+      _id: "EMP008",
       firstName: "Divya Saini",
       email: "divya.saini@example.com",
       status: "Active",
       gender: "Female",
-      departmen: "Construction"
+      departmen: "Manufacturing",
+      attendanceStatus: "Present"
     },
     {
-      _id: "759482",
+      _id: "EMP009",
       firstName: "Harish Yadav",
       email: "harish.yadav@example.com",
       status: "Active",
       gender: "Male",
-      departmen: "Construction"
+      departmen: "Sports Instructor",
+      attendanceStatus: "Absent"
     },
     {
-      _id: "926571",
+      _id: "EMP010",
       firstName: "Ritu Chauhan",
       email: "ritu.chauhan@example.com",
       status: "Inactive",
       gender: "Female",
-      departmen: "Art&Craft"
+      departmen: "Art & Craft",
+      attendanceStatus: "Present"
     }
   ];
+
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -361,18 +395,25 @@ const Employeepage = () => {
 
   const handleEdit = async (userId) => {
     try {
-      const res = await getData(`/employees/${userId}`);
-      console.log("res", res);
+      setLoading(true);
+
+      const res = await getData(`/employee/${userId}`); // ✅ singular
+      console.log("EDIT USER RESPONSE:", res);
+
       if (res && res.employee) {
-        setSelectedUser(res.employee); // ✅ Save full employee object
-        setIsEditUserFormVisible(true); // ✅ Open side panel
+        setSelectedUser(res.employee);        // full object
+        setIsEditUserFormVisible(true);       // open popup
       } else {
-        toast.error("Failed to fetch user data.");
+        toast.error("Employee not found");
       }
     } catch (err) {
-      toast.error("Something went wrong.");
+      console.error(err);
+      toast.error("Failed to load employee data");
+    } finally {
+      setLoading(false);
     }
   };
+
 
   // selected userlist delete
   const handleDeleteUser = async () => {
@@ -414,7 +455,8 @@ const Employeepage = () => {
   };
 
   const toggleEditUserForm = () => {
-    setIsEditUserFormVisible((prev) => !prev); // Toggle form visibility
+    setIsEditUserFormVisible(false);
+    setSelectedUser(null);
   };
   const handleListStatusChange = (event) => {
     setSelectedStatus(event.target.value);
@@ -455,12 +497,18 @@ const Employeepage = () => {
     show && <StatusApply />;
   }
   return (
-    <div>
+    <div className="m-0">
       {/* <!-- Employee list Departments  Card --> */}
-      <div className="relative p-2">
-        <div className="list-user-title ">
-          <h2 className="text-xl font-bold sub-title">List of Employees</h2>
-        </div>
+      <div className="relative p-4 !m-0 ">
+
+        <div class="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 list-user-title">
+          <svg width="20"
+            fill="navy-blue"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512">
+            <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z">
+            </path>
+          </svg>List of Employees</div>
         <div className="button-crm">
           <div className="status-dropdown-section flex gap-4">
 
@@ -497,37 +545,33 @@ const Employeepage = () => {
                 value={SelectedStatus}
                 onChange={handleListStatusChange}
               >
-                <option>Select Departments</option>
+                <option value="">Select Department</option>
 
-                <option value="Active">Sales</option>
-                <option value="Disabled">Marketing</option>
-                <option value="Blocked">Finance</option>
-                <option value="Trash">HR</option>
-                <option value="Trash">IT</option>
-                <option value="Trash">Operations</option>
-                <option value="Trash">Construction Chemicals</option>
-                <option value="Trash">Manufacturing</option>
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Finance">Finance</option>
+                <option value="HR">HR</option>
+                <option value="IT">IT</option>
+                <option value="Operations">Operations</option>
+                <option value="Construction">Construction</option>
+                <option value="Manufacturing">Manufacturing</option>
+                <option value="Sports Instructor">Sports Instructor</option>
+                <option value="Art&Craft">Art & Craft</option>
               </select>
             </div>
-
-            {/* <div className="outer-aply-section">
-            <button
-              type="submit"
-              className="apply-section"
-              onClick={handleApplyClick}
-            >
-              <svg
-                fill="#fff"
-                width={20}
-                height={20}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
+            {/* -----Attendance Status Filter----- */}
+            <div className="status-select-option-dropdown first-left form-item">
+              <select
+                name="attendance"
+                value={attendanceFilter}
+                onChange={(e) => setAttendanceFilter(e.target.value)}
               >
-                <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-              </svg>
-              <div>Apply</div>
-            </button>
-          </div> */}
+                <option value="">All Employees</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="On Leave">On Leave</option>
+              </select>
+            </div>
             <PopupModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
@@ -574,7 +618,7 @@ const Employeepage = () => {
             <div>
               <button
                 className="crm-buttonsection"
-                onClick={() => navigate("/dashboard/users/add")}
+                onClick={toggleAddUserForm}
               >
                 <svg
                   fill="white"
@@ -601,7 +645,7 @@ const Employeepage = () => {
         ) : (
           <CustomDataTable
             columns={columns}
-            data={datatable}
+            data={data.length > 0 ? data : datatable}
             totalRows={totalRows}
             rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
             defaultRowsPerPage={rowsPerPage}
@@ -610,21 +654,66 @@ const Employeepage = () => {
             currentPage={currentPage}
           />
         )}
-
-        {/* Add User Form Sliding Panel */}
+        {/* Add User Form Center Modal */}
         {isAddUserFormVisible && (
-          <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">
-            <div className="sidebar-inner bg-white  transition-transform transform translate-x-0">
-              <button
-                className="upclick-cut text-red-500 float-left rounded-sm"
-                onClick={toggleAddUserForm}
+          <>
+
+            {/* BACKDROP */}
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-fadeIn"
+              onClick={toggleAddUserForm}
+            ></div>
+
+            {/* CENTER WRAPPER */}
+            <div
+              className="
+        fixed inset-0 
+        flex items-center justify-center 
+        z-50
+      "
+            >
+
+              {/* MAIN MODAL */}
+              <div
+                className="
+          bg-white 
+          rounded-2xl 
+          shadow-2xl 
+          w-[75%] 
+          max-w-[1100px] 
+          max-h-[90vh] 
+          overflow-y-auto 
+          p-8 
+          relative 
+          animate-zoomIn
+        "
               >
-                X
-              </button>
-              <AddUserForm />
+                {/* CLOSE BUTTON */}
+                <button
+                  className="
+            absolute top-5 right-5
+            bg-red-500 text-white 
+            w-9 h-9 
+            flex items-center justify-center 
+            rounded-full shadow-lg
+          "
+                  onClick={toggleAddUserForm}
+                >
+                  ✕
+                </button>
+
+                {/* FORM CONTENT */}
+                <AddUserForm />
+              </div>
+
             </div>
-          </div>
+
+          </>
         )}
+
+
+
+
 
         {/* Edit User Form Sliding Panel */}
         {isEditUserFormVisible && selectedUser && (

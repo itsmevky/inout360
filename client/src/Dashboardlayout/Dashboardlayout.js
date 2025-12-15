@@ -48,8 +48,8 @@ function DashboardLayout({ userRole }) {
       <div
         className="flex flex-col transition-all duration-300 sm:ml-0 md:w-full right-section-all-pages "
         style={{
-          width: isCollapsed ? "94%" : "80%",
-          marginLeft: isCollapsed ? "6%" : "18%",
+          width: isCollapsed ? "100%" : "82%",
+          marginLeft: isCollapsed ? "5%" : "15%",
         }}
       >
         <Header />

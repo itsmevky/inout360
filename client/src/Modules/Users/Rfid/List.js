@@ -10,6 +10,10 @@ import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
 const Teachers = () => {
+
+  const [rfidNumber, setRfidNumber] = useState("");
+  const [assignTo, setAssignTo] = useState("Employee");
+  const [userName, setUserName] = useState("");
   const [data, setData] = useState([]);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,25 +51,45 @@ const Teachers = () => {
         limit: rowsPerPage,
       });
 
-      console.log("response", response);
-
+      let apiData = [];
       if (response?.success && Array.isArray(response.data)) {
-        setData(response.data);
-        setTotalRows(response.data.length); // ✅ use array length since no total
-      } else {
-        setError("No RFID data found");
-        setData([]);
-        setTotalRows(0);
+        apiData = response.data;
       }
+
+      // 🔥 MERGE STATIC + API DATA
+      let combined = [...rfiddatatable, ...apiData];
+
+      // 🔥 APPLY STATUS FILTER (if selected)
+      if (SelectedStatus && SelectedStatus !== "Select Status") {
+        combined = combined.filter((item) =>
+          item.status?.toLowerCase() === SelectedStatus.toLowerCase()
+        );
+      }
+
+      // 🔥 APPLY SEARCH FILTER
+      if (searchTerm.trim() !== "") {
+        const s = searchTerm.toLowerCase();
+        combined = combined.filter((item) =>
+          item.uid?.toLowerCase().includes(s) ||
+          item.employeeId?.firstName?.toLowerCase().includes(s)
+        );
+      }
+
+      setData(combined);
+      setTotalRows(combined.length);
+
     } catch (err) {
-      console.error("Error fetching RFID:", err);
-      setError("Something went wrong while fetching RFID data.");
-      setData([]);
-      setTotalRows(0);
+      console.error("❌ Error fetching RFID:", err);
+
+      // fallback → static only
+      setData(rfiddatatable);
+      setTotalRows(rfiddatatable.length);
+
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchrfid();
@@ -103,6 +127,32 @@ const Teachers = () => {
       toast.error("Failed to update status");
     }
   };
+  const handleAddContractor = () => {
+    if (!rfidNumber || !userName) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const newEntry = {
+      id: "RF" + (data.length + 1),
+      uid: rfidNumber,
+      employeeId: { firstName: userName },
+      issuedAt: new Date().toLocaleString(),
+      status: "Active",
+      _id: "RF" + (data.length + 1),
+    };
+
+    // 🔥 Add new entry into merged table
+    setData((prev) => [...prev, newEntry]);
+    setTotalRows((prev) => prev + 1);
+
+    toast.success("Contractor Added Successfully!");
+
+    setRfidNumber("");
+    setUserName("");
+    setAssignTo("Employee");
+  };
+
 
   // const handleBulkStatusUpdate = async () => {
   //   if (selectedTeachers.length === 0)
@@ -420,7 +470,7 @@ const Teachers = () => {
   };
   const handleListStatusChange = (event) => {
     setSelectedStatus(event.target.value);
-    console.log("Selected Status:", event.target.value);
+    fetchrfid();  // 🔥 Refresh results
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -473,13 +523,19 @@ const Teachers = () => {
               type="text"
               placeholder="Enter RFID Number"
               className="border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
+              value={rfidNumber}
+              onChange={(e) => setRfidNumber(e.target.value)}
             />
           </div>
 
           {/* Assign To Dropdown */}
           <div className="flex flex-col">
             <label className="text-gray-700 font-medium mb-1">Assign To</label>
-            <select className="border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200">
+            <select
+              className="border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
+              value={assignTo}
+              onChange={(e) => setAssignTo(e.target.value)}
+            >
               <option>Employee</option>
               <option>Contractor</option>
               <option>Visitor</option>
@@ -493,13 +549,18 @@ const Teachers = () => {
               type="text"
               placeholder="Enter User Name"
               className="border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
             />
           </div>
         </div>
 
         {/* Add Button */}
         <div className="pt-2.5">
-          <button className="bg-[#22374e] hover:bg-[#0d2847] text-white px-5 py-2 rounded-lg flex items-center gap-2">
+          <button
+            className="bg-[#22374e] hover:bg-[#0d2847] text-white px-5 py-2 rounded-lg flex items-center gap-2"
+            onClick={handleAddContractor}
+          >
             <svg
               width="24"
               height="24"
@@ -652,7 +713,7 @@ const Teachers = () => {
         ) : (
           <CustomDataTable
             columns={columns}
-            data={rfiddatatable}
+            data={data}     // ← यही change बहुत जरूरी है
             totalRows={totalRows}
             rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
             defaultRowsPerPage={rowsPerPage}

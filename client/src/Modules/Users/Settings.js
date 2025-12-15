@@ -53,14 +53,14 @@ const Settings = () => {
     };
 
     return (
-        <div>
-            <div className="bg-white p-5 rounded-xl shadow flex items-center gap-3 text-xl font-semibold text-gray-700">
+        <div className="p-4">
+            <div className="bg-white p-4 rounded-lg shadow flex items-center gap-3 text-xl font-semibold text-gray-700 setting-list-heading">
                 <svg width="22" fill="navy-blue" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                     <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z"></path>
                 </svg>
                 System Settings
             </div>
-            <div className="p-6 min-h-screen">
+            <div className="min-h-screen">
 
                 {/* ========= TOP SECTION ========= */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">

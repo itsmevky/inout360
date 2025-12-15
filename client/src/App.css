@@ -42,7 +42,9 @@
   height: 100vh !important;
 }
 
-
+.AJ-dashboard{
+justify-content: center;
+}
 
 .right-section {
   width: 50%;
@@ -1270,6 +1272,20 @@ tbody tr:nth-child(even) {
 
 .list-user-title {
   display: flex;
+  margin-bottom: 16px !important;
+  box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
+}
+.location-list-heading{
+ margin-bottom: 16px !important;
+}
+.setting-list-heading,
+.device-list-heading,
+.activity-list-heading{
+margin-bottom: 16px !important;
+box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
+}
+.activity-page-cards{
+  padding: 0 !important;
 }
 
 .table-container th {
@@ -1415,7 +1431,7 @@ tbody tr:nth-child(even) {
 }
 
 .sideform {
-  width: 81%;
+  /* width: 81%; */
   padding: 30px;
   padding-right: 15px;
 }
@@ -1799,6 +1815,7 @@ tbody tr:nth-child(even) {
 
 .inside-form {
   width: 70%;
+  margin-top: 30px;
 }
 
 .inside-form h2 {
@@ -2731,7 +2748,7 @@ font-size: 14px;
 
 .button-crm {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
   /* border-bottom: 1px solid grey; */
 }
@@ -3072,7 +3089,7 @@ select:focus {
 }
 
 .status-dropdown-section {
-  width: 50%;
+  /* width: 50%; */
   margin: 0 ;
   margin-bottom: 5px;
 }
@@ -3202,6 +3219,10 @@ border-radius: 10px;
 .login-section .form-item select:not([value=""])+label .form-item input:focus+label {
   font-size: 12px;
   top: -11px;
+}
+
+.login-section-AJ-login-Form-block{
+  
 }
 
 .login-section .form-item input,
@@ -4549,7 +4570,8 @@ input:checked + .slider:before {
 }
 }
 .setting-device-control,
-.setting-Notification-aleart-control{
+.setting-Notification-aleart-control,
+.dashboar-option-inner-page{
   margin: 0px;
 }
 .setting-rows{
@@ -4572,7 +4594,7 @@ input:checked + .slider:before {
 @media (min-width: 481px) and (max-width: 768px) {
 .dashboar-option-inner-page{
   padding: 0 !important;
-  margin: 0px;
+  margin: 0px !important;
 }
 .layout-section-dashboard{
     margin-top: 20px;
@@ -4591,4 +4613,42 @@ input:checked + .slider:before {
 }
 
 
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.animate-zoomIn {
+  animation: zoomIn 0.25s ease-out;
+}
+.sidebar-backdrop {
+  display: none;
+}
+
+/* Only mobile */
+@media (max-width: 768px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+}
 

@@ -21,11 +21,12 @@ const LocationAdd = () => {
     <div className="p-6 flex justify-center">
       <div className="bg-white shadow-xl rounded-lg p-6 w-full  border border-gray-200">
         {/* Heading */}
-        <div className="flex items-center mb-6 justify-between grid sm:grid-cols-2 gap-2">
+        <div className="flex items-center mb-6 justify-between grid sm:grid-cols-3 gap-2">
           <div className="flex gap-3">
             <MdAddLocationAlt className="text-blue-600" size={30} />
             <h2 className="text-xl font-semibold ml-2">Add New Location</h2>
           </div>
+          <div></div>
           <div className="mt-8 flex gap-2.5 ">
             <button
               onClick={save}

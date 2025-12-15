@@ -27,6 +27,9 @@ const Contractors = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [isAddPopup, setIsAddPopup] = useState(false);
+  const [isEditPopup, setIsEditPopup] = useState(false);
+  const [selectedContractor, setSelectedContractor] = useState(null);
 
   const [showPopup, setShowPopup] = useState(false);
   // const { openPopup } = usePopup();
@@ -50,8 +53,14 @@ const Contractors = () => {
       console.log("response", response);
 
       if (Array.isArray(response)) {
-        setData(response);
-        setTotalRows(response.length); // ✅ since no "total" key, use length
+        let result = response;
+
+        if (SelectedStatus !== "" && SelectedStatus !== "Select Status") {
+          result = response.filter((item) => item.status === SelectedStatus);
+        }
+
+        setData(result);
+        setTotalRows(result.length);
       } else {
         setError("No contractor data found");
       }
@@ -510,7 +519,7 @@ const Contractors = () => {
           <div>
             <button
               className="crm-buttonsection"
-              onClick={() => navigate("/dashboard/users/AddContractor")}
+              onClick={() => setIsAddPopup(true)}
             >
               <svg
                 fill="white"
@@ -537,7 +546,7 @@ const Contractors = () => {
       ) : (
         <CustomDataTable
           columns={columns}
-          data={contractordatatable}
+          data={data.length > 0 ? data : contractordatatable}
           totalRows={totalRows}
           rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
           defaultRowsPerPage={rowsPerPage}

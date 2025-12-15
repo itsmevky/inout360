@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const CustomDataTable = ({
@@ -38,11 +37,15 @@ const CustomDataTable = ({
 
     if (start > 1) {
       btns.push(
-        <button key={1} onClick={() => handlePageClick(1)} className="mx-1 px-3 py-1 rounded-full shadow bg-gray-200">
+        <button
+          key={1}
+          onClick={() => handlePageClick(1)}
+          className="px-3 py-1 rounded-full text-sm bg-gray-200"
+        >
           1
         </button>
       );
-      if (start > 2) btns.push(<span key="startDots">...</span>);
+      if (start > 2) btns.push(<span key="dots1">…</span>);
     }
 
     for (let i = start; i <= end; i++) {
@@ -50,7 +53,9 @@ const CustomDataTable = ({
         <button
           key={i}
           onClick={() => handlePageClick(i)}
-          className={`mx-1 px-3 py-1 rounded-full shadow ${i === currentPage ? "bg-yellow-400 text-white" : "bg-gray-100"
+          className={`px-3 py-1 rounded-full text-sm ${i === currentPage
+            ? "bg-yellow-400 text-white"
+            : "bg-gray-100"
             }`}
         >
           {i}
@@ -58,14 +63,14 @@ const CustomDataTable = ({
       );
     }
 
-    if (end < totalPages - 1) btns.push(<span key="endDots">...</span>);
+    if (end < totalPages - 1) btns.push(<span key="dots2">…</span>);
 
     if (end < totalPages) {
       btns.push(
         <button
           key={totalPages}
           onClick={() => handlePageClick(totalPages)}
-          className="mx-1 px-3 py-1 rounded-full shadow bg-gray-200"
+          className="px-3 py-1 rounded-full text-sm bg-gray-200"
         >
           {totalPages}
         </button>
@@ -76,18 +81,18 @@ const CustomDataTable = ({
   };
 
   return (
-    <div className="table-container w-full">
-      {/* ===========================
-          DESKTOP TABLE (md and above)
-      ============================ */}
-      <div className="hidden md:block">
-        <table className="min-w-full bg-white border rounded shadow" id="tableContent">
-          <thead>
+    <div className="w-full" style={{ margin: 0 }}>
+      {/* =========================
+          DESKTOP / TABLE VIEW
+      ========================== */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-[900px] w-full bg-white border rounded shadow">
+          <thead className="sticky top-0 z-10 bg-gray-200">
             <tr>
               {columns.map((col, index) => (
                 <th
                   key={index}
-                  className="py-2 px-2 border-b text-left bg-gray-200 font-semibold text-gray-600"
+                  className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap"
                   style={{ width: col.width || "auto" }}
                 >
                   {col.name}
@@ -98,10 +103,18 @@ const CustomDataTable = ({
 
           <tbody>
             {data.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-gray-100 border-b transition duration-150">
+              <tr
+                key={rowIndex}
+                className="border-b hover:bg-gray-50 transition"
+              >
                 {columns.map((col, colIndex) => (
-                  <td key={colIndex} className="text-gray-700 p-2">
-                    {col.selector ? col.selector(row) : row[col.selectorKey]}
+                  <td
+                    key={colIndex}
+                    className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap"
+                  >
+                    {col.selector
+                      ? col.selector(row)
+                      : row[col.selectorKey]}
                   </td>
                 ))}
               </tr>
@@ -110,20 +123,28 @@ const CustomDataTable = ({
         </table>
       </div>
 
-      {/* ===========================
-          MOBILE / TABLET CARD VIEW
-      ============================ */}
-      <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
+      {/* =========================
+          MOBILE / CARD VIEW
+          (320px optimized)
+      ========================== */}
+      <div className="md:hidden grid grid-cols-1 gap-3 mt-3">
         {data.map((row, rowIndex) => (
           <div
             key={rowIndex}
-            className="p-4 bg-white border rounded shadow flex flex-col gap-2"
+            className="bg-white border rounded-lg shadow p-3 space-y-2"
           >
             {columns.map((col, colIndex) => (
-              <div key={colIndex} className="flex justify-between">
-                <strong className="text-gray-600">{col.name}:</strong>
-                <span className="text-gray-800">
-                  {col.selector ? col.selector(row) : row[col.selectorKey]}
+              <div
+                key={colIndex}
+                className="flex justify-between gap-3 text-sm"
+              >
+                <span className="text-gray-500 font-medium">
+                  {col.name}
+                </span>
+                <span className="text-gray-800 text-right break-all">
+                  {col.selector
+                    ? col.selector(row)
+                    : row[col.selectorKey]}
                 </span>
               </div>
             ))}
@@ -131,45 +152,53 @@ const CustomDataTable = ({
         ))}
       </div>
 
-      {/* ===========================
-          PAGINATION
-      ============================ */}
-      <div className="pagination-container flex flex-col md:flex-row md:items-center justify-between mt-4 gap-3">
-        {/* Rows Per Page */}
-        <div className="rows-per-page flex items-center gap-2">
+      {/* =========================
+          PAGINATION (ALL SCREENS)
+      ========================== */}
+      <div className="mt-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Rows per page */}
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-gray-600">Rows per page:</span>
-
           <select
             value={rowsPerPage}
             onChange={handleRowsPerPageChange}
-            className="border rounded p-1"
+            className="border rounded px-2 py-1 text-sm"
           >
             {rowsPerPageOptions.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
-
           <span className="text-gray-600">
             {startItem}-{endItem} of {totalRows}
           </span>
         </div>
 
-        {/* Pagination Controls */}
-        <div className="pagination-controls flex items-center gap-2">
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => handlePageClick(Math.max(currentPage - 1, 1))}
+            onClick={() =>
+              handlePageClick(Math.max(currentPage - 1, 1))
+            }
             disabled={currentPage === 1}
-            className="px-3 py-1 rounded shadow bg-gray-100 disabled:bg-gray-300"
+            className="px-3 py-1 text-sm rounded bg-gray-100 disabled:opacity-50"
           >
-            Previous
+            Prev
           </button>
 
-          <div className="flex gap-1">{renderPaginationButtons()}</div>
+          <div className="flex flex-wrap gap-1">
+            {renderPaginationButtons()}
+          </div>
 
           <button
-            onClick={() => handlePageClick(Math.min(currentPage + 1, totalPages))}
+            onClick={() =>
+              handlePageClick(
+                Math.min(currentPage + 1, totalPages)
+              )
+            }
             disabled={currentPage === totalPages}
-            className="px-3 py-1 rounded shadow bg-gray-100 disabled:bg-gray-300"
+            className="px-3 py-1 text-sm rounded bg-gray-100 disabled:opacity-50"
           >
             Next
           </button>
