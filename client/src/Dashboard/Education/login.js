@@ -170,9 +170,9 @@ const LoginComponent = () => {
           </div>
           <div className="right-section ">
             <div className="form-justification AJ-section ">
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <img width={200} src={pidilitelogo} />
+              <form onSubmit={handleSubmit} className="login-form">
+                <div className="mb-4 ">
+                  <img className="login-page-logo" width={200} src={pidilitelogo} />
                 </div>
                 <div className="inside-form">
                   <h2>Login Here</h2>

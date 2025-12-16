@@ -49,13 +49,13 @@ function DashboardLayout({ userRole }) {
         className="flex flex-col transition-all duration-300 sm:ml-0 md:w-full right-section-all-pages "
         style={{
           width: isCollapsed ? "100%" : "82%",
-          marginLeft: isCollapsed ? "5%" : "15%",
+          marginLeft: isCollapsed ? "6%" : "15%",
         }}
       >
         <Header />
 
         <main className="flex-1 mt-2 sm:mt-5">
-          <div className="`p-4 shadow min-h-[calc(100vh-2%)]` sm:p-0 sm:mt-5">
+          <div className="`p-4 shadow min-h-[calc(100vh-2%)]` sm:p-0 sm:mt-5 !sm:ml-4 !md:ml-4">
             <Routes>
               {/* ✅ Dashboard */}
               <Route index element={<Dashboard />} />

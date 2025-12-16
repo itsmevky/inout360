@@ -509,8 +509,17 @@ const Teachers = () => {
   return (
     <div className="relative p-4 ">
       {/* ---- RFID Management Section ---- */}
+      <div class="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 Rfid-user-list">
+        <svg width="20"
+          fill="navy-blue"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 448 512">
+          <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z">
+          </path>
+        </svg>RFID Management</div>
       <div className="w-full bg-white p-6 rounded-xl shadow-sm border border-gray-300 mb-6">
-        <h2 className="text-xl font-bold sub-title text-gray-800">RFID Management</h2>
+
+        {/* <h2 className="text-xl font-bold sub-title text-gray-800">RFID Management</h2> */}
         <p className="text-gray-600 mb-6">Welcome to the Super Admin dashboard.</p>
 
         {/* Form Inputs */}
@@ -577,7 +586,7 @@ const Teachers = () => {
       </div>
 
       <div className="pt-3">
-        <div className="list-user-title ">
+        <div className="">
           <h2 className="text-xl font-bold sub-title">List of Rfid</h2>
         </div>
         <div className="button-crm">

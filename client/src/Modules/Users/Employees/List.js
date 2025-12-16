@@ -11,7 +11,7 @@ import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
 const Employeepage = () => {
   const [data, setData] = useState([]);
-  const [selectedTeachers, setSelectedTeachers] = useState([]);
+  // const [selectedUsers, setselectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -28,6 +28,10 @@ const Employeepage = () => {
   const [users, setUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [attendanceFilter, setAttendanceFilter] = useState("");
+
+  const [allEmployees, setAllEmployees] = useState([]);
+
+
 
 
   const [showPopup, setShowPopup] = useState(false);
@@ -48,34 +52,13 @@ const Employeepage = () => {
         rowsPerPage
       );
 
-      console.log("response", response);
-
-      if (response.employees && Array.isArray(response.employees)) {
-
-        let filtered = response.employees;
-
-        // Department filter
-        if (SelectedStatus !== "") {
-          filtered = filtered.filter(
-            (emp) => emp.departmen?.toLowerCase() === SelectedStatus.toLowerCase()
-          );
-        }
-
-        // Attendance filter
-        if (attendanceFilter !== "") {
-          filtered = filtered.filter(
-            (emp) => emp.attendanceStatus?.toLowerCase() === attendanceFilter.toLowerCase()
-          );
-        }
-
-
-        setData(filtered);
-        setTotalRows(filtered.length);
+      if (Array.isArray(response.employees)) {
+        setAllEmployees(response.employees); // 🔥 original data
       } else {
-        setError("No employee data found"); // ✅ Corrected message
+        setError("No employee data found");
       }
-    } catch (err) {
-      setError("Something went wrong while fetching employees.");
+    } catch {
+      setError("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -89,25 +72,29 @@ const Employeepage = () => {
 
 
   const handleCheckboxChange = (id) => {
-    setSelectedTeachers((prev) =>
-      prev.includes(id) ? prev.filter((tid) => tid !== id) : [...prev, id]
+    setSelectedUsers((prev) =>
+      prev.includes(id)
+        ? prev.filter((uid) => uid !== id)
+        : [...prev, id]
     );
   };
 
+
   const handleSelectAllChange = () => {
-    if (selectedTeachers.length === data.length) {
-      setSelectedTeachers([]);
+    if (selectedUsers.length === data.length) {
+      setSelectedUsers([]);
     } else {
-      setSelectedTeachers(data.map((t) => t.id));
+      setSelectedUsers(data.map((row) => row._id));
     }
   };
 
   const handleStatusChange = async (id, status) => {
     try {
-      const res = await putData("/employees/${id}`, data", {
+      const res = await putData(`/employees/${id}`, {
         teachers: [id],
         status,
       });
+
       if (res.status) {
         toast.success("Status updated");
         fetchemployees();
@@ -120,31 +107,22 @@ const Employeepage = () => {
   };
 
   const handleDelete = async (id) => {
-    console.log("🗑️ Deleting employee with id:", id);
-
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this employee?"
-    );
-    if (!confirmDelete) {
-      console.log("❌ Delete cancelled by user");
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this employee?")) return;
 
     try {
-      const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
-      console.log("🔹 Delete API response:", res);
+      const res = await deleteData(`/employee/${id}`);
 
-      if (res.status === 200 || res.success === true) {
-        toast.success("✅ Employee deleted successfully!");
-        fetchemployees(); // refresh the list after delete
+      if (res?.status === 200 || res?.success) {
+        toast.success("Employee deleted successfully");
+        fetchemployees();
       } else {
-        toast.error(res.message || "❌ Failed to delete employee.");
+        toast.error(res?.message || "Delete failed");
       }
     } catch (err) {
-      console.error("❌ Error while deleting employee:", err);
-      toast.error("Failed to delete. Please try again.");
+      toast.error("Delete failed");
     }
   };
+
 
   const columns = [
     {
@@ -152,13 +130,13 @@ const Employeepage = () => {
         <input
           type="checkbox"
           onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
+          checked={selectedUsers.length === data.length && data.length > 0}
         />
       ),
       selector: (row) => (
         <input
           type="checkbox"
-          checked={selectedTeachers.includes(row._id)}
+          checked={selectedUsers.includes(row._id)}
           onChange={() => handleCheckboxChange(row._id)}
         />
       ),
@@ -214,7 +192,7 @@ const Employeepage = () => {
           <div className="flex space-x-2  ">
             <button
               className="text-blue-500"
-              onClick={() => handleEdit(row._id)} // ✅ updated
+              onClick={() => handleEdit(row._id)}// ✅ updated
             >
               <svg
                 fill="#22374e"
@@ -397,22 +375,21 @@ const Employeepage = () => {
     try {
       setLoading(true);
 
-      const res = await getData(`/employee/${userId}`); // ✅ singular
-      console.log("EDIT USER RESPONSE:", res);
+      const res = await getData(`/employee/${userId}`);
 
-      if (res && res.employee) {
-        setSelectedUser(res.employee);        // full object
-        setIsEditUserFormVisible(true);       // open popup
+      if (res?.employee) {
+        setSelectedUser(res.employee);
+        setIsEditUserFormVisible(true);
       } else {
         toast.error("Employee not found");
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load employee data");
+    } catch (error) {
+      toast.error("Failed to load employee");
     } finally {
       setLoading(false);
     }
   };
+
 
 
   // selected userlist delete
@@ -717,22 +694,53 @@ const Employeepage = () => {
 
         {/* Edit User Form Sliding Panel */}
         {isEditUserFormVisible && selectedUser && (
-          <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
-            <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
-              <button
-                className="upclick-cut text-red-500 float-left rounded-sm"
-                onClick={toggleEditUserForm}
-              >
-                X
-              </button>
-              <EditUserForm user={selectedUser} />{" "}
-              {/* ✅ Now contains full data */}
+          <>
+            {/* BACKDROP */}
+            <div
+              className="fixed inset-0 bg-black/50 z-[9998]"
+              onClick={() => {
+                setIsEditUserFormVisible(false);
+                setSelectedUser(null);
+              }}
+            />
+
+            {/* SIDE PANEL */}
+            <div
+              className="fixed top-0 right-0 w-full md:w-1/3 h-full bg-white shadow-2xl z-[9999] animate-slideIn"
+              onClick={(e) => e.stopPropagation()} // ✅ important
+            >
+              <div className="p-4 h-full overflow-y-auto">
+
+                {/* CLOSE BUTTON */}
+                <button
+                  className="absolute top-4 right-4 text-red-500 font-bold text-xl"
+                  onClick={() => {
+                    setIsEditUserFormVisible(false);
+                    setSelectedUser(null);
+                  }}
+                >
+                  ✕
+                </button>
+
+                {/* FORM */}
+                <EditUserForm
+                  user={selectedUser}
+                  onSuccess={() => {
+                    setIsEditUserFormVisible(false);
+                    setSelectedUser(null);
+                    fetchemployees();
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          </>
         )}
+
         {/* Background overlay when Add or Edit User form is visible */}
         {(isAddUserFormVisible || isEditUserFormVisible) && (
-          <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
+          <div className="fixed inset-0 bg-black opacity-50 z-40">
+
+          </div>
         )}
       </div>
     </div>

@@ -376,22 +376,22 @@ const AddUserForm = () => {
 
             {/* ================= SYSTEM ACCESS ================= */}
             <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">System Access</h2>
+              <h2 className="text-lg font-semibold mb-2 !m-0">System Access</h2>
             </div>
 
-            <div className="flex items-center space-x-2 mb-3">
+            <div className="flex items-center space-x-2 mb-3 gap-2">
               <input type="checkbox" className="w-4 h-4" />
-              <label className="text-sm text-gray-700">Email Verified</label>
+              <label className="text-sm text-gray-700 !m-0">Email Verified</label>
             </div>
 
-            <div className="flex items-center space-x-2 mb-3">
+            <div className="flex items-center space-x-2 mb-3 gap-2">
               <input type="checkbox" className="w-4 h-4" />
-              <label className="text-sm text-gray-700">Phone Verified</label>
+              <label className="text-sm text-gray-700 !m-0">Phone Verified</label>
             </div>
 
-            <div className="flex items-center space-x-2 mb-3">
+            <div className="flex items-center space-x-2 mb-3 gap-2">
               <input type="checkbox" className="w-4 h-4" />
-              <label className="text-sm text-gray-700">Login Enabled</label>
+              <label className="text-sm text-gray-700 !m-0">Login Enabled</label>
             </div>
 
             <div className="AJ-floating-label-wrapper mb-6 col-span-2">

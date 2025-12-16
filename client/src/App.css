@@ -33,13 +33,13 @@
 .sections {
   display: flex;
   height: 100% !important;
-  min-height: 100vh;
+  min-height: 99vh;
 }
 
 .login-page .sections {
   display: flex;
   height: 100% !important;
-  height: 100vh !important;
+  height: 99vh !important;
 }
 
 .AJ-dashboard{
@@ -311,8 +311,102 @@ justify-content: center;
 .log {
   display: flex;
 }
+.login-section.AJ-login-Form-block{
+  margin: auto;
+}
+.form {
+    margin: 0;
+}
 
 /* login-section */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .login-section {
+  width:90% !important;
+  padding: 0 !important;
+}
+.inside-form{
+  width: 90% !important;
+  margin: 10px 0px !important;
+}
+.remember-me-container,
+.forgot-section{
+  font-size: 14px !important;
+}
+.side-section{
+  align-items: center ;
+}
+.login-page-logo{
+  width: 130px !important;
+  height:auto ;
+}
+.button-section{
+      padding: 10px 10px;
+}
+.AJ-floating-input{
+  /* padding:10px !important; */
+}
+}
+
+@media (min-width: 320px) and (max-width: 420px){
+.inside-form{
+  width: 100% !important;
+}
+
+.inside-form h2 {
+  margin-block: 15px;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+}
+.inside-form{
+  margin: 0 !important;
+}
+.login-page-logo{
+   width: 120px !important;
+  height:auto ;
+}
+}
+.form-justification{
+  margin: auto;
+}
+
+@media (min-width: 320px) and (max-width: 768px){
+.left-section-inner{
+  display: none;
+}
+.left-section{
+  display: none;  
+
+}
+.right-section {
+width: 100% !important;
+}
+.button-section
+{
+  margin: 0;
+}
+.AJ-login-Form-block {
+  padding: 0 !important;
+}
+.login-section{
+  width: 100% !important;
+}
+.inside-form{
+  /* width: 80% !important; */
+}
+.remember-me-container,
+.forgot-section{
+  font-size: 14px;
+}
+}
+
+@media (min-width: 1024px) and (max-width: 1400px){
+.login-section{
+  width: 95% !important;
+}
+
+
+}
+
 
 
 
@@ -1270,7 +1364,11 @@ tbody tr:nth-child(even) {
     font-weight: 500;
 }
 
-.list-user-title {
+.list-user-title,
+.list-user-zone,
+.Rfid-user-list,
+.Contractor-user-list,
+.Attendance-user-list {
   display: flex;
   margin-bottom: 16px !important;
   box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
@@ -1465,14 +1563,15 @@ box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
 /* login form */
 .sections {
   display: flex;
-  height: 100% !important;
-  min-height: 100vh;
+  /* height: 100% !important;
+  min-height: 100vh; */
+  align-items: center;
 }
 
 .login-page .sections {
   display: flex;
-  height: 100% !important;
-  height: 100vh !important;
+  /* height: 100% !important;
+  height: 100vh !important; */
 }
 
 
@@ -1822,6 +1921,13 @@ box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
   font-size: 24px;
   font-weight: 500;
   color: #22374e;
+}
+
+.login-form{
+      display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: anchor-center;
 }
 
 .button-section button:hover {
@@ -3706,7 +3812,7 @@ button:hover svg {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 90vh;
   background: linear-gradient(#f1f3ff, #cbd4ff);
 }
 
@@ -3724,7 +3830,7 @@ body {
 }
 
 .sidebar.collapsed {
-  width: 85px;
+  width: 80px;
 }
 
 .sidebar .sidebar-header {

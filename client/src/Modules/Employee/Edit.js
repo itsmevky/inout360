@@ -6,7 +6,7 @@ import Validator from "../../Helpers/validators.js";
 import { putData } from "../../Helpers/api.js";
 import rules from "./Rules.js";
 
-const EditUserForm = ({ user }) => {
+const EditUserForm = ({ user, onSuccess }) => {
   const navigate = useNavigate();
   const validator = new Validator(rules);
 
@@ -93,9 +93,9 @@ const EditUserForm = ({ user }) => {
     try {
       const response = await putData(`/employees/${user.id}`, formData);
 
-      if (response.status === true || response.success === true) {
-        toast.success("✅ Employee updated successfully!");
-        navigate("/dashboard/users");
+      if (response.status === 200 || response.success === true) {
+        toast.success("Employee updated successfully");
+        onSuccess();   // 👈 close panel + refresh list
       } else {
         toast.error(response.message || "❌ Failed to update employee.");
       }
@@ -106,6 +106,7 @@ const EditUserForm = ({ user }) => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="edituser-outer-section">

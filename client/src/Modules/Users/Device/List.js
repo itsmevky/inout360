@@ -125,142 +125,228 @@ const Device = () => {
       </div>
 
       {/* ========================= DEVICE TABLE ========================= */}
-      <div className="mt-6 bg-white p-5 rounded-xl shadow">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-left text-gray-700">
-              <th className="p-3">Device</th>
-              <th className="p-3">User</th>
-              <th className="p-3">Employee ID</th>
-              <th className="p-3">Status</th>
-              {/* <th className="p-3">Battery</th> */}
-              <th className="p-3">Android</th>
-              <th className="p-3">App Ver.</th>
-              <th className="p-3">Last Online</th>
-              <th className="p-3 text-center">Actions</th>
-            </tr>
-          </thead>
+      <div className="mt-6">
 
-          <tbody>
-            {deviceList.map((device) => (
-              <tr key={device.id} className="hover:bg-gray-50 border-b">
-
-                <td className="p-3 font-semibold">{device.deviceName}</td>
-
-                <td className="p-3">{device.userName}</td>
-
-                <td className="p-3">{device.employeeId}</td>
-
-                <td className="p-3">{statusBadge(device.online)}</td>
-
-                {/* <td className="p-3 font-semibold">{device.battery}%</td> */}
-
-                <td className="p-3">{device.androidVersion}</td>
-
-                <td className="p-3">{device.appVersion}</td>
-
-                <td className="p-3 text-sm text-gray-600">{device.lastOnline}</td>
-
-                <td className="p-3 text-center">
-                  <button
-                    onClick={() => openDeviceModal(device)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800"
-                  >
-                    View
-                  </button>
-                </td>
+        {/* ================= DESKTOP TABLE ================= */}
+        <div className="hidden lg:block bg-white p-5 rounded-xl shadow">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100 text-left text-gray-700">
+                <th className="p-3">Device</th>
+                <th className="p-3">User</th>
+                <th className="p-3">Employee ID</th>
+                <th className="p-3">Status</th>
+                <th className="p-3">Android</th>
+                <th className="p-3">App Ver.</th>
+                <th className="p-3">Last Online</th>
+                <th className="p-3 text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {deviceList.map((device) => (
+                <tr key={device.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3 font-semibold">{device.deviceName}</td>
+                  <td className="p-3">{device.userName}</td>
+                  <td className="p-3">{device.employeeId}</td>
+                  <td className="p-3">{statusBadge(device.online)}</td>
+                  <td className="p-3">{device.androidVersion}</td>
+                  <td className="p-3">{device.appVersion}</td>
+                  <td className="p-3 text-sm text-gray-600">{device.lastOnline}</td>
+                  <td className="p-3 text-center">
+                    <button
+                      onClick={() => openDeviceModal(device)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ================= MOBILE + TABLET STACKED TABLE ================= */}
+        <div className="block lg:hidden space-y-5 md:flex md:flex-col md:gap-2 sm:flex sm:flex-col sm:gap-2">
+          {deviceList.map((device) => (
+            <div
+              key={device.id}
+              className="bg-white rounded-xl border shadow p-2 !mt-2 !mb-2"
+            >
+              {/* CHECKBOX ROW */}
+              {/* <div className="flex justify-between items-center mb-3">
+                <input type="checkbox" />
+                <input type="checkbox" />
+              </div> */}
+
+              {/* LABEL / VALUE TABLE */}
+              <div className="grid grid-cols-2 gap-y-2 text-sm">
+                <div className="text-gray-500 font-medium">Device</div>
+                <div className="text-right font-semibold">{device.deviceName}</div>
+
+                <div className="text-gray-500 font-medium">User</div>
+                <div className="text-right">{device.userName}</div>
+
+                <div className="text-gray-500 font-medium">Employee ID</div>
+                <div className="text-right">{device.employeeId}</div>
+
+                <div className="text-gray-500 font-medium">Status</div>
+                <div className="text-right">{statusBadge(device.online)}</div>
+
+                <div className="text-gray-500 font-medium">Android</div>
+                <div className="text-right">{device.androidVersion}</div>
+
+                <div className="text-gray-500 font-medium">App Ver.</div>
+                <div className="text-right">{device.appVersion}</div>
+
+                <div className="text-gray-500 font-medium">Last Online</div>
+                <div className="text-right text-xs text-gray-600">
+                  {device.lastOnline}
+                </div>
+              </div>
+
+              {/* ACTIONS */}
+              <div className="flex justify-end gap-4 mt-4">
+                <button
+                  onClick={() => openDeviceModal(device)}
+                  className="text-blue-700 font-semibold"
+                >
+                  View
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
+
 
       {/* ========================= DEVICE DETAILS MODAL ========================= */}
       {showModal && selectedDevice && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-          <div className="bg-white w-[800px] rounded-xl shadow-xl p-6 relative">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center">
+
+          {/* MODAL CONTAINER */}
+          <div
+            className="
+        bg-white 
+        w-full 
+        sm:max-w-[800px] 
+        max-h-[95vh] 
+        overflow-y-auto 
+        rounded-t-2xl sm:rounded-2xl
+        shadow-xl
+        p-4 sm:p-6
+        relative
+      "
+          >
+            {/* DRAG INDICATOR (Mobile UX) */}
+            <div className="sm:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3"></div>
 
             {/* CLOSE BUTTON */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
+              className="absolute top-3 right-4 text-xl text-gray-600"
             >
               ✕
             </button>
 
-            <h2 className="text-2xl font-bold">{selectedDevice.deviceName}</h2>
-            <p className="text-gray-600">Android ID: {selectedDevice.androidId}</p>
+            {/* HEADER */}
+            <h2 className="text-lg sm:text-2xl font-bold">
+              {selectedDevice.deviceName}
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Android ID: {selectedDevice.androidId}
+            </p>
 
-            {/* ========================= DEVICE STATUS CARDS ========================= */}
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            {/* ================= DEVICE STATUS (STACKED ON MOBILE) ================= */}
+            <div className="mt-5 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 md:grid-cols-3 sm:gap-4">
 
-              <div className="p-4 bg-blue-50 rounded">
-                <h4 className="font-semibold">Device Owner</h4>
-                <p>{selectedDevice.ownerMode}</p>
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-sm">Device Owner</h4>
+                <p className="text-sm">{selectedDevice.ownerMode}</p>
               </div>
 
-              <div className="p-4 bg-green-50 rounded">
-                <h4 className="font-semibold">Camera</h4>
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h4 className="font-semibold text-sm">Camera</h4>
                 {cameraBadge(selectedDevice.cameraBlocked)}
               </div>
 
-              <div className="p-4 bg-yellow-50 rounded">
-                <h4 className="font-semibold">Location</h4>
+              <div className="p-4 bg-yellow-50 rounded-lg">
+                <h4 className="font-semibold text-sm">Location</h4>
                 {locationBadge(selectedDevice.locationEnabled)}
               </div>
 
-              <div className="p-4 bg-purple-50 rounded">
-                <h4 className="font-semibold">Last Screenshot</h4>
-                <p className="text-sm">{selectedDevice.lastScreenshot}</p>
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <h4 className="font-semibold text-sm">Last Screenshot</h4>
+                <p className="text-xs">{selectedDevice.lastScreenshot}</p>
               </div>
 
-              <div className="p-4 bg-red-50 rounded">
-                <h4 className="font-semibold">Employee Id</h4>
-                <p className="text-lg">{selectedDevice.battery}</p>
+              <div className="p-4 bg-red-50 rounded-lg">
+                <h4 className="font-semibold text-sm">Battery</h4>
+                <p className="text-sm">{selectedDevice.battery}%</p>
               </div>
 
-              <div className="p-4 bg-gray-100 rounded">
-                <h4 className="font-semibold">Enrollment Date</h4>
-                <p>{selectedDevice.enrolled}</p>
+              <div className="p-4 bg-gray-100 rounded-lg">
+                <h4 className="font-semibold text-sm">Enrollment Date</h4>
+                <p className="text-sm">{selectedDevice.enrolled}</p>
               </div>
             </div>
 
-            {/* ========================= DEVICE CONTROLS ========================= */}
-            <h3 className="mt-6 text-xl font-semibold">Device Controls</h3>
+            {/* ================= DEVICE CONTROLS ================= */}
+            <h3 className="mt-6 text-base sm:text-xl font-semibold">
+              Device Controls
+            </h3>
 
-            <div className="grid grid-cols-3 gap-4 mt-3">
-              <button className="p-3 bg-black text-white rounded hover:bg-gray-700">Lock Device</button>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <button className="w-full py-3 bg-black text-white rounded-lg">
+                Lock Device
+              </button>
 
-              <button className="p-3 bg-orange-500 text-white rounded hover:bg-orange-700">Restart</button>
-              <button className="p-3 bg-blue-500 text-white rounded hover:bg-blue-700">Disable Camera</button>
-              <button className="p-3 bg-blue-500 text-white rounded hover:bg-blue-700">Disable Uninstall</button>
-              <button className="p-3 bg-green-600 text-white rounded hover:bg-green-700">Remote Command</button>
+              <button className="w-full py-3 bg-orange-500 text-white rounded-lg">
+                Restart
+              </button>
+
+              <button className="w-full py-3 bg-blue-500 text-white rounded-lg">
+                Disable Camera
+              </button>
+
+              <button className="w-full py-3 bg-blue-500 text-white rounded-lg">
+                Disable Uninstall
+              </button>
+
+              <button className="w-full py-3 bg-green-600 text-white rounded-lg">
+                Remote Command
+              </button>
             </div>
 
-            {/* ========================= ACTION SHORTCUTS ========================= */}
-            <h3 className="mt-6 text-xl font-semibold">More Actions</h3>
+            {/* ================= MORE ACTIONS ================= */}
+            <h3 className="mt-6 text-base sm:text-xl font-semibold">
+              More Actions
+            </h3>
 
-            <div className="grid grid-cols-2 gap-4 mt-3">
-              <button className="p-3 bg-gray-200 rounded hover:bg-gray-300">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button className="w-full py-3 bg-gray-200 rounded-lg">
                 View Activity Logs
               </button>
 
-              <button className="p-3 bg-gray-200 rounded hover:bg-gray-300">
+              <button className="w-full py-3 bg-gray-200 rounded-lg">
                 View Installed Apps
               </button>
 
-              <button className="p-3 bg-gray-200 rounded hover:bg-gray-300">
+              <button className="w-full py-3 bg-gray-200 rounded-lg">
                 View Location Timeline
               </button>
 
-              <button className="p-3 bg-red-300 text-red-800 rounded hover:bg-red-400">
+              <button className="w-full py-3 bg-red-300 text-red-800 rounded-lg">
                 Remove Device
               </button>
             </div>
-
           </div>
         </div>
       )}
+
+
 
     </div>
   );

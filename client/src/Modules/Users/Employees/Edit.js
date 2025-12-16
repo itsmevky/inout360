@@ -100,7 +100,7 @@ const EditUserForm = ({ user }) => {
       console.log("🔹 Current user object:", user);
       console.log("🔹 Checking user._id:", user?._id);
       console.log("🔹 Checking user.employeeId:", user?.employeeId);
-      console.log("🔹 Checking user.id:", user?.id);
+      console.log("🔹 Checking user._id:", user?.id);
 
       const endpoint = `/employee/${user?._id || user?.employeeId}`;
       console.log("🔹 API endpoint being called:", endpoint);
