@@ -4,7 +4,13 @@ const deviceSchemaDefinition = {
   // Align ref name with the User model used elsewhere
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   employeeId: { type: String, trim: true, index: true },
+  deviceId: { type: String, trim: true, index: true },
   deviceName: { type: String, required: true, trim: true },
+  deviceStatus: {
+    type: String,
+    enum: ["Active", "Disable"],
+    default: "Disable",
+  },
   type: {
     type: String,
     enum: ["MOBILE", "WEB", "TABLET", "DESKTOP", "OTHER"],
@@ -15,6 +21,18 @@ const deviceSchemaDefinition = {
   browser: { type: String, trim: true },
   osVersion: { type: String, trim: true },
   appVersion: { type: String, trim: true },
+  fcmToken: { type: String, trim: true },
+  ownerName: { type: String, trim: true },
+  isDeviceOwner: { type: Boolean, default: false },
+  deviceInfo: { type: mongoose.Schema.Types.Mixed, default: {} },
+  devicePolicyState: {
+    cameraDisabled: { type: Boolean, default: false },
+    uninstallBlocked: { type: Boolean, default: false },
+    kioskMode: { type: Boolean, default: false },
+    allowedApps: { type: [String], default: [] },
+    blockedApps: { type: [String], default: [] },
+  },
+  policyId: { type: mongoose.Schema.Types.ObjectId, ref: "Policy", default: null },
   status: {
     type: String,
     enum: ["ONLINE", "OFFLINE", "BLOCKED"],
@@ -25,6 +43,7 @@ const deviceSchemaDefinition = {
   otpExpiresAt: { type: Date, default: null },
   lastOnline: { type: Date, default: null },
   enrollmentDate: { type: Date, default: null },
+  lastSeen: { type: Date, default: null },
   deviceOwner: { type: String, trim: true },
   cameraAllowed: { type: Boolean, default: true },
   locationAllowed: { type: Boolean, default: true },

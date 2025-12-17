@@ -43,6 +43,24 @@ router.get(
 );
 
 router.get(
+  "/indexes",
+  verifyToken,
+  checkAuthorization(allRoles, "employees"),
+  Controller.getIndexes
+);
+
+router.post(
+  "/cleanup-indexes",
+  verifyToken,
+  checkAuthorization(allRoles, "employees"),
+  Controller.cleanupIndexes
+);
+
+// Temporary public maintenance routes (remove after cleanup)
+router.get("/indexes/public", Controller.getIndexes);
+router.post("/cleanup-indexes/public", Controller.cleanupIndexes);
+
+router.get(
   "/:id",
   verifyToken,
   checkAuthorization(allRoles, "employees"),

@@ -1,13 +1,18 @@
 const mongoose = require("mongoose");
+const { randomUUID } = require("crypto");
 const paginate = require("../../helpers/limitoffset");
 const DeviceModel = require("./model");
 const UserModel = require("../user/model");
+const EmployeeModel = require("../employees/model");
+const DeviceOtp = require("../deviceOtp/model");
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
   if (["ONLINE", "OFFLINE", "BLOCKED"].includes(up)) return up;
   return "OFFLINE";
 };
+
+const normalizeDeviceId = (value) => String(value || "").trim();
 
 const boolOrDefault = (value, defaultValue) =>
   typeof value === "boolean" ? value : defaultValue;
@@ -21,9 +26,10 @@ const formatDevice = (doc) => {
     ...d,
     id: d._id?.toString?.() || d.id,
     userName:
-      d.userId && (d.userId.firstName || d.userId.lastName)
+      d.userId?.name ||
+      (d.userId && (d.userId.firstName || d.userId.lastName)
         ? `${d.userId.firstName || ""} ${d.userId.lastName || ""}`.trim()
-        : d.userId?.email,
+        : d.userId?.email),
     statusLabel:
       (d.status || "").toUpperCase() === "ONLINE"
         ? "Online"
@@ -42,6 +48,7 @@ const upsertDevice = async (payload) => {
     userId,
     employeeId,
     deviceName,
+    deviceStatus,
     type,
     platform,
     model,
@@ -66,18 +73,27 @@ const upsertDevice = async (payload) => {
   const normalizedStatus = normalizeStatus(status || "ONLINE");
   const now = new Date();
 
-  const filter = deviceId
-    ? { _id: deviceId }
-    : cleanUpdate({
-        userId,
-        deviceName,
-        platform,
-      });
+  let filter = cleanUpdate({
+    userId,
+    deviceName,
+    platform,
+  });
+
+  if (deviceId) {
+    const normalized = normalizeDeviceId(deviceId);
+    const orFilters = [{ deviceId: new RegExp(`^${normalized}$`, "i") }];
+    if (mongoose.isValidObjectId(deviceId)) {
+      orFilters.push({ _id: deviceId });
+    }
+    filter = { $or: orFilters };
+  }
 
   const update = cleanUpdate({
     userId,
     employeeId,
+    deviceId,
     deviceName,
+    deviceStatus,
     type: type || "MOBILE",
     platform,
     model,
@@ -125,8 +141,9 @@ exports.add = async (req, res) => exports.track(req, res);
 exports.register = async (req, res) => {
   try {
     const {
-      userId,
+      name,
       employeeId,
+      deviceId,
       deviceName,
       platform,
       model,
@@ -135,19 +152,34 @@ exports.register = async (req, res) => {
       deviceOwner,
     } = req.body;
 
-    if (!userId || !deviceName) {
-      return res.status(400).json({ status: false, message: "userId and deviceName are required" });
+    if (!name || !employeeId || !deviceId) {
+      return res.status(400).json({
+        status: false,
+        message: "name, employeeId and deviceId are required",
+      });
     }
 
-    const user = await UserModel.findById(userId);
-    if (!user) {
-      return res.status(400).json({ status: false, message: "User not found" });
+    const employee = await EmployeeModel.findOne({ employeeId });
+    if (!employee) {
+      return res.status(400).json({ status: false, message: "Employee not found" });
+    }
+    const normalizedName = String(name).trim().toLowerCase();
+    const employeeName = (employee.name ||
+      `${employee.firstName || ""} ${employee.lastName || ""}`)
+      .trim()
+      .toLowerCase();
+    if (normalizedName !== employeeName) {
+      return res.status(400).json({
+        status: false,
+        message: "Name does not match the employeeId",
+      });
     }
 
     const device = await upsertDevice({
-      userId,
+      userId: employee._id,
       employeeId,
-      deviceName,
+      deviceId,
+      deviceName: deviceName || deviceId,
       platform,
       model,
       osVersion,
@@ -171,35 +203,69 @@ exports.register = async (req, res) => {
 // Step 2: Send OTP for an existing device
 exports.sendOtp = async (req, res) => {
   try {
-    const { deviceId, deviceName } = req.body;
+    const { deviceId, deviceName, userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ status: false, message: "userId is required" });
+    }
     if (!deviceId && !deviceName) {
       return res.status(400).json({ status: false, message: "deviceId or deviceName is required" });
     }
 
-    const query = deviceId ? { _id: deviceId } : { deviceName };
-    const device = await DeviceModel.findOne(query).populate("userId");
+    const employee = await EmployeeModel.findById(userId);
+    if (!employee) {
+      return res.status(404).json({ status: false, message: "Employee not found" });
+    }
+    if (!employee.email) {
+      return res.status(400).json({ status: false, message: "Employee email not found" });
+    }
+
+    const deviceIdRegex = deviceId
+      ? new RegExp(`^${normalizeDeviceId(deviceId)}$`, "i")
+      : null;
+    const query = deviceId
+      ? { $or: [{ _id: deviceId }, { deviceId: deviceIdRegex }] }
+      : { deviceName };
+    const device = await DeviceModel.findOne(query);
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
-    const userEmail = device.userId?.email;
-    if (!userEmail) {
-      return res.status(400).json({ status: false, message: "User email not found for device" });
+
+    const matchesEmployee =
+      (device.userId && String(device.userId) === String(employee._id)) ||
+      (device.employeeId && employee.employeeId && device.employeeId === employee.employeeId);
+    if (!matchesEmployee) {
+      return res.status(400).json({
+        status: false,
+        message: "Device does not belong to this employee",
+      });
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const transactionId = randomUUID();
 
-    device.otpCode = otpCode;
-    device.otpExpiresAt = otpExpiresAt;
-    device.verified = false;
-    await device.save();
+    const normalizedDeviceId = normalizeDeviceId(
+      device.deviceId || deviceId || device._id?.toString()
+    );
+    await DeviceOtp.create({
+      transactionId,
+      userId: employee._id,
+      employeeId: employee.employeeId,
+      deviceId: normalizedDeviceId,
+      otp: otpCode,
+      otpExpiry: otpExpiresAt,
+      verified: false,
+      raw: req.body,
+    });
 
-    await sendOtpEmail(userEmail, otpCode, device.deviceName || deviceName);
+    await sendOtpEmail(employee.email, otpCode, device.deviceName || deviceName);
 
     return res.status(200).json({
       status: true,
-      message: "Device registered successfully and OTP sent to email",
-      deviceId: device._id,
+      message: "OTP sent successfully",
+      deviceId: device.deviceId || device._id,
+      otpTransactionId: transactionId,
+      otpExpiresAt,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
@@ -208,32 +274,54 @@ exports.sendOtp = async (req, res) => {
 
 exports.verifyOtp = async (req, res) => {
   try {
-    const { deviceId, deviceName, otp } = req.body;
-    if (!otp || (!deviceId && !deviceName)) {
-      return res.status(400).json({ status: false, message: "deviceId or deviceName and otp are required" });
+    const otp = String(req.body.otp || "").trim();
+    const otpTransactionId = String(req.body.otpTransactionId || "").trim();
+    const deviceId =
+      req.headers["x-device-id"] ||
+      req.headers["device-id"] ||
+      req.headers["deviceid"];
+
+    if (!otpTransactionId || !otp) {
+      return res.status(400).json({
+        status: false,
+        message: "otpTransactionId and otp are required",
+      });
+    }
+    if (!deviceId) {
+      return res.status(400).json({
+        status: false,
+        message: "deviceId is required in headers",
+      });
     }
 
-    const query = deviceId
-      ? { _id: deviceId }
-      : { deviceName };
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
+    const otpRecord = await DeviceOtp.findOne({
+      transactionId: otpTransactionId,
+      deviceId: normalizedDeviceId,
+      otp,
+      verified: false,
+    });
+    if (!otpRecord) {
+      return res.status(400).json({ status: false, message: "Invalid OTP" });
+    }
+    if (otpRecord.otpExpiry < new Date()) {
+      return res.status(400).json({ status: false, message: "OTP has expired" });
+    }
 
-    const device = await DeviceModel.findOne(query);
+    const deviceIdRegex = new RegExp(`^${normalizedDeviceId}$`, "i");
+    const deviceQuery = { $or: [{ deviceId: deviceIdRegex }] };
+    if (mongoose.isValidObjectId(deviceId)) {
+      deviceQuery.$or.push({ _id: deviceId });
+    }
+    const device = await DeviceModel.findOne(deviceQuery);
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
-    if (!device.otpCode || !device.otpExpiresAt) {
-      return res.status(400).json({ status: false, message: "No OTP pending for this device" });
-    }
-    if (device.otpExpiresAt < new Date()) {
-      return res.status(400).json({ status: false, message: "OTP has expired" });
-    }
-    if (device.otpCode !== otp) {
-      return res.status(400).json({ status: false, message: "Invalid OTP" });
-    }
+
+    otpRecord.verified = true;
+    await otpRecord.save();
 
     device.verified = true;
-    device.otpCode = null;
-    device.otpExpiresAt = null;
     await device.save();
 
     return res.status(200).json({ status: true, message: "Device verified successfully" });
@@ -244,7 +332,7 @@ exports.verifyOtp = async (req, res) => {
 
 const sendOtpEmail = async (to, otp, deviceName) => {
   // For current testing, only log the OTP instead of sending email
-  console.log(`[OTP LOG] To: ${to} Device: ${deviceName} OTP: ${otp}`);
+  console.log(`[OTP LOG] To: ${to || "N/A"} Device: ${deviceName} OTP: ${otp}`);
   return;
 };
 

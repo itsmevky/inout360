@@ -1,8 +1,14 @@
 const { ajModel } = require("../../common/classes/Model");
 
 const userSchemaDefinition = {
-  firstName: { type: String, required: true, trim: true },
-  lastName: { type: String, required: true, trim: true },
+  name: { type: String, required: true, trim: true },
+  employeeId: { type: String, required: true, trim: true, index: true },
+  deviceId: { type: String, required: true, trim: true, index: true },
+  sessionStatus: {
+    type: String,
+    enum: ["Logged In", "Logout"],
+    default: "Logout",
+  },
 
   email: {
     type: String,
@@ -11,11 +17,10 @@ const userSchemaDefinition = {
     lowercase: true,
     trim: true,
   },
-
   password: {
     type: String,
     required: true,
-    select: false, // 🔒 hidden by default
+    select: false,
   },
 
   role: {
@@ -29,16 +34,17 @@ const userSchemaDefinition = {
       "superadmin",
       "contractor",
     ],
-    default: "hr",
+    default: "employee",
   },
 };
 
 const userTransform = (ret) => ({
   id: ret._id,
-  firstName: ret.firstName,
-  lastName: ret.lastName,
-  fullname: `${ret.firstName} ${ret.lastName}`.trim(),
-  email: ret.email,
+  name: ret.name,
+  fullname: ret.name,
+  employeeId: ret.employeeId,
+  deviceId: ret.deviceId,
+  sessionStatus: ret.sessionStatus,
   role: ret.role,
   createdAt: ret.createdAt,
   updatedAt: ret.updatedAt,

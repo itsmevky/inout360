@@ -8,6 +8,7 @@ const modulesPath = path.join(__dirname, "Modules");
 const responseTimeLogger = require("./middleware/responseTimeLogger");
 const cors = require("cors");
 const userRoutes = require("./Modules/user/routes");
+const EmployeeModel = require("./Modules/employees/model");
 
 const app = express();
 app.use(express.json());
@@ -43,9 +44,31 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
+const dropLegacyEmployeeIndexes = async () => {
+  try {
+    const collection = EmployeeModel.collection;
+    const indexes = await collection.listIndexes().toArray();
+    const legacy = indexes.filter((idx) => {
+      if (!idx?.key) return false;
+      return Object.keys(idx.key).some(
+        (key) => key.startsWith("professional.") || key.startsWith("personal.")
+      );
+    });
+    for (const idx of legacy) {
+      await collection.dropIndex(idx.name);
+      console.log(`✅ Dropped legacy index: ${idx.name}`);
+    }
+  } catch (error) {
+    console.warn("⚠️ Legacy index cleanup skipped:", error.message);
+  }
+};
+
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
+  .then(async () => {
+    console.log("MongoDB connected");
+    await dropLegacyEmployeeIndexes();
+  })
   .catch((err) => console.log(err));
 
 //=======================Middleware===============================//

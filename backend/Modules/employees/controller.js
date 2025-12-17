@@ -5,9 +5,31 @@ const Validator = require("../../helpers/validators");
 
 const normalizePayload = (data) => {
   const toDate = (v) => (v ? new Date(v) : v);
+  const nameInput = data.name || data.fullName || data.full_name || "";
+  let firstName = data.firstName || data.first_name || "";
+  let lastName = data.lastName || data.last_name || "";
+
+  if ((!firstName || !lastName) && nameInput) {
+    const parts = String(nameInput)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!firstName && parts.length) {
+      firstName = parts[0];
+    }
+    if (!lastName) {
+      lastName = parts.slice(1).join(" ").trim() || parts[0] || "";
+    }
+  }
+
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const name = nameInput || fullName;
 
   return {
     ...data,
+    ...(name ? { name } : {}),
+    ...(firstName ? { firstName } : {}),
+    ...(lastName ? { lastName } : {}),
     profileImage: data.profileImage || data.profile_image || "",
     currentAddress: {
       street: data.currentAddress?.street || data.currentStreet || data.current_address_street,
@@ -185,6 +207,48 @@ exports.getAll = async (req, res) => {
       message: "Server Error",
       error: error.message,
     });
+  }
+};
+
+exports.getIndexes = async (_req, res) => {
+  try {
+    const indexes = await EmployeeModel.collection.listIndexes().toArray();
+    return res.status(200).json({
+      status: true,
+      message: "Indexes fetched",
+      indexes: indexes.map((idx) => ({
+        name: idx.name,
+        key: idx.key,
+        unique: !!idx.unique,
+      })),
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.cleanupIndexes = async (_req, res) => {
+  try {
+    const collection = EmployeeModel.collection;
+    const indexes = await collection.listIndexes().toArray();
+    const legacy = indexes.filter((idx) => {
+      if (!idx?.key) return false;
+      return Object.keys(idx.key).some(
+        (key) => key.startsWith("professional.") || key.startsWith("personal.")
+      );
+    });
+    const dropped = [];
+    for (const idx of legacy) {
+      await collection.dropIndex(idx.name);
+      dropped.push(idx.name);
+    }
+    return res.status(200).json({
+      status: true,
+      message: "Legacy indexes cleaned",
+      dropped,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
   }
 };
 
