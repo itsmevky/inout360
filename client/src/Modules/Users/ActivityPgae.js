@@ -259,7 +259,7 @@ const ActivityPage = () => {
 
             {/* ================= CAMERA FILTER ================= */}
             {selectedType === "camera_activity" && (
-                <div className="mt-6 flex gap-3 items-center">
+                <div className="mt-6 flex gap-3 items-center activity-page-searchbar-dropdown">
                     <div className="input-search-bar-activity-page flex ">
                         <input
                             type="text"
@@ -294,132 +294,146 @@ const ActivityPage = () => {
 
             {/* ================= TABLE ================= */}
             {selectedType && (
-                <div className="mt-10 bg-white p-5 rounded-xl shadow">
+                <div className="mt-10 bg-white p-5 rounded-xl shadow activity-table-wrapper">
                     <h2 className="text-xl font-bold mb-4">
                         User Activity — {
                             selectedType === "camera_activity"
-                                ? (cameraFilter ? cameraFilter.replace("_", " ").toUpperCase() : "ALL CAMERA ACTIVITY")
+                                ? (cameraFilter
+                                    ? cameraFilter.replace("_", " ").toUpperCase()
+                                    : "ALL CAMERA ACTIVITY")
                                 : selectedType.replace("_", " ").toUpperCase()
                         }
                     </h2>
 
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-gray-100 text-left text-gray-700">
-                                <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
-                                <th style={{ width: columnWidths.user }} className="p-3">User</th>
-                                <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
-                                <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
-                                <th style={{ width: columnWidths.emp }} className="p-3">Employee ID</th>
-                                <th style={{ width: columnWidths.time }} className="p-3">Time</th>
-                                <th style={{ width: columnWidths.action }} className="p-3">Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {filteredUsers.map((item, index) => (
-                                <tr key={item.id} className="hover:bg-gray-50">
-                                    <td className="p-3">{index + 1}</td>
-                                    <td className="p-3">{item.user}</td>
-                                    <td className="p-3">{item.type.replace("_", " ")}</td>
-                                    <td className="p-3">{item.deviceId}</td>
-                                    <td className="p-3">{item.employeeId}</td>
-                                    <td className="p-3">{item.timestamp}</td>
-
-                                    <td className="p-3 flex items-center gap-2">
-                                        <button
-                                            onClick={() => openModal(item)}
-                                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 flex items-center gap-1"
-                                        >
-                                            View
-                                        </button>
-
-                                        <svg
-                                            onClick={() => openModal(item)}
-                                            className="cursor-pointer"
-                                            width={24}
-                                            height={24}
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 640 640"
-                                        >
-                                            <path fill="black" d="M320 96C239.2 96 174.5 132.8 127.4 176.6C80.6 220.1 49.3 272 34.4 307.7C31.1 315.6 31.1 324.4 34.4 332.3C49.3 368 80.6 420 127.4 463.4C174.5 507.1 239.2 544 320 544C400.8 544 465.5 507.2 512.6 463.4C559.4 419.9 590.7 368 605.6 332.3C608.9 324.4 608.9 315.6 605.6 307.7C590.7 272 559.4 220 512.6 176.6C465.5 132.9 400.8 96 320 96zM176 320C176 240.5 240.5 176 320 176C399.5 176 464 240.5 464 320C464 399.5 399.5 464 320 464C240.5 464 176 399.5 176 320zM320 256C320 291.3 291.3 320 256 320C244.5 320 233.7 317 224.3 311.6C223.3 322.5 224.2 333.7 227.2 344.8C240.9 396 293.6 426.4 344.8 412.7C396 399 426.4 346.3 412.7 295.1C400.5 249.4 357.2 220.3 311.6 224.3C316.9 233.6 320 244.4 320 256z" />
-                                        </svg>
-                                    </td>
+                    <div className="activity-table-scroll">
+                        <table className="w-full border-collapse activity-table">
+                            <thead>
+                                <tr className="bg-gray-100 text-left text-gray-700">
+                                    <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
+                                    <th style={{ width: columnWidths.user }} className="p-3">User</th>
+                                    <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
+                                    <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
+                                    <th style={{ width: columnWidths.emp }} className="p-3">Employee ID</th>
+                                    <th style={{ width: columnWidths.time }} className="p-3">Time</th>
+                                    <th style={{ width: columnWidths.action }} className="p-3">Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+
+                            <tbody>
+                                {filteredUsers.map((item, index) => (
+                                    <tr key={item.id} className="hover:bg-gray-50">
+                                        <td className="p-3">{index + 1}</td>
+                                        <td className="p-3">{item.user}</td>
+                                        <td className="p-3">{item.type.replace("_", " ")}</td>
+                                        <td className="p-3">{item.deviceId}</td>
+                                        <td className="p-3">{item.employeeId}</td>
+                                        <td className="p-3">{item.timestamp}</td>
+
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-3 !p-0 !m-0">
+
+                                                {/* VIEW BUTTON (existing) */}
+                                                <button
+                                                    onClick={() => openModal(item)}
+                                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 !m-0"
+                                                >
+                                                    View
+                                                </button>
+
+                                                {/* EYE ICON BUTTON (NEW) */}
+                                                <button
+                                                    onClick={() => openModal(item)}
+                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 !m-0"
+                                                    title="View Details"
+                                                >
+                                                    <svg
+                                                        width={22}
+                                                        height={22}
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 576 512">
+                                                        <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+                                                    </svg>
+                                                </button>
+
+                                            </div>
+                                        </td>
+
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
+
+
             {/* ================= MODAL ================= */}
             {modalUser && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50">
-                    <div className="bg-white w-[720px] rounded-xl shadow-xl relative p-6">
+                <div className="modal-overlay">
+                    <div className="modal-container">
 
                         <button
                             onClick={closeModal}
-                            className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
+                            className="modal-close-btn"
                         >
                             ✕
                         </button>
 
-                        <div className="mb-4">
-                            <h2 className="text-xl font-bold">{modalUser.user}</h2>
-                            <p className="text-gray-700 text-sm font-semibold">
+                        <div className="modal-header">
+                            <h2 className="modal-user-name">{modalUser.user}</h2>
+                            <p className="modal-meta">
                                 Employee ID: {modalUser.activities[0]?.employeeId}
                             </p>
-                            <p className="text-gray-700 text-sm font-semibold">
+                            <p className="modal-meta">
                                 Device ID: {modalUser.activities[0]?.deviceId}
                             </p>
                         </div>
 
-                        {/* APP LOGS */}
                         {modalUser.activities.some(a =>
                             ["app_install", "app_uninstall"].includes(a.type)
                         ) ? (
                             <>
-                                <h3 className="text-lg font-semibold mb-3">App Activity</h3>
+                                <h3 className="modal-section-title">App Activity</h3>
 
                                 {modalUser.activities
                                     .filter(a =>
                                         ["app_install", "app_uninstall"].includes(a.type)
                                     )
                                     .map((act) => (
-                                        <div key={act.id} className="border rounded-lg p-4 mb-3 bg-gray-50">
-                                            <p className="text-sm font-semibold">
+                                        <div key={act.id} className="app-log-card">
+                                            <p className="app-log-title">
                                                 {act.appName} — {act.type === "app_install" ? "Installed" : "Uninstalled"}
                                             </p>
-                                            <p className="text-xs text-gray-600 mt-1">{act.timestamp}</p>
+                                            <p className="app-log-time">{act.timestamp}</p>
                                         </div>
                                     ))}
                             </>
                         ) : (
                             <>
-                                <h3 className="text-lg font-semibold mb-3">Camera Activity</h3>
+                                <h3 className="modal-section-title">Camera Activity</h3>
 
-                                <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 gap-1 screenshot-cards">
+                                <div className="camera-grid">
                                     {modalUser.activities
                                         .filter(a =>
                                             ["screenshot", "take_picture", "video"].includes(a.type)
                                         )
                                         .map((act) => (
-                                            <div key={act.id} className="flex flex-col items-center">
+                                            <div key={act.id} className="camera-card">
                                                 <img
                                                     src={act.media}
-                                                    className="w-30 h-28 object-cover rounded border"
                                                     alt="activity"
+                                                    className="camera-img"
                                                 />
-                                                <p className="text-xs mt-1 font-semibold text-gray-700">
+                                                <p className="camera-type">
                                                     {act.type.replace("_", " ").toUpperCase()}
                                                 </p>
-                                                <p className="text-xs text-gray-500 font-medium">{act.timestamp}</p>
+                                                <p className="camera-time">{act.timestamp}</p>
                                             </div>
                                         ))}
                                 </div>
                             </>
                         )}
-
                     </div>
                 </div>
             )}
