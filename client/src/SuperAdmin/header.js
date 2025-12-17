@@ -63,7 +63,7 @@ const Header = () => {
         </div>
 
         {/* Right Section: User Profile */}
-        <div className="AJ-crm-right-profile-section flex items-center">
+        <div className="AJ-crm-right-profile-section flex items-center ">
           <div className="AJ-crm-notification-section">
             {/* <svg
               fill="#22374e"
@@ -86,10 +86,10 @@ const Header = () => {
           >
             <div
               style={{ background: "#22374e" }}
-              className="AJ-crm-profile-section flex items-center  text-white rounded-full  py-4 cursor-pointer"
+              className="AJ-crm-profile-section flex items-center  text-white rounded-full  py-4 cursor-pointer gap-2.5"
             >
-              <img src={Pic} alt="Profile" className="w-10 h-10 rounded-full" />
-              <div className="flex ml-4">
+              <img src={Pic} alt="Profile" className="w-10 h-10 rounded-full !m-0" />
+              <div className="flex ml-4 items-center gap-2">
                 <span className="text-sm"> Hi, {userName}</span>
 
                 {/* <p>Your permissions: {permissions.join(", ")}</p> */}

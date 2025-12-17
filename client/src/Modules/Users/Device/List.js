@@ -8,7 +8,7 @@ const Device = () => {
   const deviceList = [
     {
       id: "DEV-1001",
-      deviceName: "Samsung A52",
+      deviceName: "Samsung 23 Ultra",
       userName: "Rahul Sharma",
       employeeId: "EMP-501",
       androidId: "fjs73hshs883",
@@ -44,7 +44,7 @@ const Device = () => {
     },
     {
       id: "DEV-2001",
-      deviceName: "Redmi k20",
+      deviceName: "Apple 16 pro",
       userName: "vivek Kumar",
       employeeId: "EMP-503",
       androidId: "8dhwi88sjsn2",
@@ -61,7 +61,7 @@ const Device = () => {
       lastScreenshot: "2025-01-11 06:10 PM",
     }, {
       id: "DEV-2001",
-      deviceName: "Apple 15 pro",
+      deviceName: "Apple 17 pro",
       userName: "Amit Kumar",
       employeeId: "EMP-503",
       androidId: "8dhwi88sjsn2",
@@ -181,7 +181,7 @@ const Device = () => {
               </div> */}
 
               {/* LABEL / VALUE TABLE */}
-              <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <div className="grid grid-cols-2 gap-y-1 text-sm">
                 <div className="text-gray-500 font-medium">Device</div>
                 <div className="text-right font-semibold">{device.deviceName}</div>
 
@@ -228,17 +228,7 @@ const Device = () => {
 
           {/* MODAL CONTAINER */}
           <div
-            className="
-        bg-white 
-        w-full 
-        sm:max-w-[800px] 
-        max-h-[95vh] 
-        overflow-y-auto 
-        rounded-t-2xl sm:rounded-2xl
-        shadow-xl
-        p-4 sm:p-6
-        relative
-      "
+            className=" bg-white w-full sm:max-w-[800px] max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl shadow-xl p-4 sm:p-6 relative !m-5"
           >
             {/* DRAG INDICATOR (Mobile UX) */}
             <div className="sm:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3"></div>
@@ -246,7 +236,7 @@ const Device = () => {
             {/* CLOSE BUTTON */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-3 right-4 text-xl text-gray-600"
+              className="absolute top-3 right-4 text-xl text-gray-600 !m-0 device-page-popup-cut-button"
             >
               ✕
             </button>
