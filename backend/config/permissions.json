@@ -1,0 +1,81 @@
+{
+  "superadmin": {
+    "hierarchy": 1,
+    "modules": {
+      "user": ["create", "read", "update", "delete"],
+      "employees": ["create", "read", "update", "delete"],
+      "contractors": ["create", "read", "update", "delete"],
+      "sections": ["create", "read", "update", "delete"],
+      "shift": ["create", "read", "update", "delete"],
+      "attendance": ["create", "read", "update", "delete"],
+      "rfid": ["create", "read", "update", "delete"],
+      "permissions": ["create", "read", "update", "delete"],
+      "role": ["create", "read", "update", "delete"]
+    }
+  },
+  "admin": {
+    "hierarchy": 2,
+    "modules": {
+      "user": ["create", "read", "update", "delete"],
+      "employees": ["create", "read", "update", "delete"],
+      "contractors": ["create", "read", "update", "delete"],
+      "sections": ["create", "read", "update", "delete"],
+      "shift": ["create", "read", "update", "delete"],
+      "attendance": ["create", "read", "update", "delete"],
+      "rfid": ["create", "read", "update", "delete"],
+      "permissions": ["create", "read", "update"],
+      "role": ["create", "read", "update"]
+    }
+  },
+  "hr": {
+    "hierarchy": 3,
+    "modules": {
+      "user": ["read", "update"],
+      "employees": ["create", "read", "update"],
+      "contractors": ["create", "read", "update"],
+      "sections": ["create", "read", "update"],
+      "shift": ["create", "read", "update"],
+      "attendance": ["create", "read", "update"],
+      "rfid": ["create", "read", "update"],
+      "permissions": ["read"],
+      "role": ["read"]
+    }
+  },
+  "supervisor": {
+    "hierarchy": 4,
+    "modules": {
+      "employees": ["read"],
+      "contractors": ["read"],
+      "sections": ["read"],
+      "shift": ["read"],
+      "attendance": ["read", "update"],
+      "rfid": ["read"]
+    }
+  },
+  "manager": {
+    "hierarchy": 5,
+    "modules": {
+      "user": ["read"],
+      "employees": ["read"],
+      "contractors": ["read"],
+      "sections": ["read"],
+      "shift": ["read"],
+      "attendance": ["read"],
+      "rfid": ["read"]
+    }
+  },
+  "employee": {
+    "hierarchy": 6,
+    "modules": {
+      "sections": ["read"],
+      "shift": ["read"]
+    }
+  },
+  "contractor": {
+    "hierarchy": 7,
+    "modules": {
+      "sections": ["read"],
+      "shift": ["read"]
+    }
+  }
+}

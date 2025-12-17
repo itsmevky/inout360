@@ -1,0 +1,2015 @@
+{
+  "info": {
+    "name": "InOut360 Backend",
+    "description": "Postman collection for the InOut360 Express backend. Set `base_url` and `token` (Bearer) in the collection variables before running requests.",
+    "_postman_id": "e37fd5e8-0000-4c4c-8e9e-collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth / Users",
+      "item": [
+        {
+          "name": "Register",
+          "event": [],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Passw0rd!\",\n  \"role\": \"hr\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Activity",
+      "item": [
+        {
+          "name": "Create Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"64c0b3f7c9f1a2b001234567\",\n  \"employeeId\": \"EMP-001\",\n  \"deviceId\": \"DEV-001\",\n  \"category\": \"screenshot\",\n  \"activityType\": \"capture\",\n  \"title\": \"Workstation screenshot\",\n  \"description\": \"Captured desktop for audit\",\n  \"occurredAt\": \"2024-01-10T10:30:00Z\",\n  \"media\": [\n    {\n      \"url\": \"https://example.com/screenshot.png\",\n      \"thumbnail\": \"https://example.com/screenshot_thumb.png\",\n      \"type\": \"screenshot\",\n      \"capturedAt\": \"2024-01-10T10:30:00Z\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/activity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "activity"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/activity?employeeId=EMP-001&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "activity"
+              ],
+              "query": [
+                {
+                  "key": "employeeId",
+                  "value": "EMP-001"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activity Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/activity/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "activity",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/activity/{{activityId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "activity",
+                "{{activityId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Activity (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\", \"64c0b3f7c9f1a2b009876543\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/activity/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "activity",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "Create Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractorId\": \"CTR-001\",\n  \"rfidCardId\": \"RFID-EMP-001\",\n  \"employeeId\": \"64c0b3f7c9f1a2b001234567\",\n  \"date\": \"2024-01-10\",\n  \"entryGateIn\": \"2024-01-10T08:55:00Z\",\n  \"workfloorIn\": \"2024-01-10T09:05:00Z\",\n  \"workfloorOut\": \"2024-01-10T17:05:00Z\",\n  \"exitGateOut\": \"2024-01-10T17:15:00Z\",\n  \"sectionAssigned\": \"Section-A\",\n  \"hrApproved\": true,\n  \"supervisorApproved\": true,\n  \"remarks\": \"On time\",\n  \"status\": \"Present\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance?contractorId=CTR-001&sectionAssigned=Section-A&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "contractorId",
+                  "value": "CTR-001"
+                },
+                {
+                  "key": "sectionAssigned",
+                  "value": "Section-A"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attendance by ID or RFID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendanceIdOrRfid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendanceIdOrRfid}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Attendance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Left early for appointment\",\n  \"status\": \"HalfDay\",\n  \"supervisorApproved\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendanceId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendanceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Attendance (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\", \"64c0b3f7c9f1a2b009876543\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contractors",
+      "item": [
+        {
+          "name": "Create Contractor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alpha Services\",\n  \"code\": \"CTR-001\",\n  \"contactPerson\": \"Jane Doe\",\n  \"contactPhone\": \"+1-555-0100\",\n  \"gstNumber\": \"29ABCDE1234F2Z5\",\n  \"status\": \"Active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/contractors",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contractors"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Contractors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/contractors?status=Active&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contractors"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Active"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contractor by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/contractors/{{contractorId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contractors",
+                "{{contractorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Contractor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contactPerson\": \"Updated Name\",\n  \"status\": \"Inactive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/contractors/{{contractorId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contractors",
+                "{{contractorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Contractor (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/contractors/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contractors",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Summary Counts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Device",
+      "item": [
+        {
+          "name": "Register Device",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"64c0b3f7c9f1a2b001234567\",\n  \"employeeId\": \"EMP-001\",\n  \"deviceName\": \"Pixel 6\",\n  \"type\": \"MOBILE\",\n  \"platform\": \"android\",\n  \"model\": \"Pixel 6\",\n  \"osVersion\": \"14\",\n  \"appVersion\": \"1.0.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/device/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"64c0b3f7c9f1a2b001234567\",\n  \"deviceId\": \"64c0b3f7c9f1a2b009876543\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/device/send-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device",
+                "send-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"64c0b3f7c9f1a2b001234567\",\n  \"deviceId\": \"64c0b3f7c9f1a2b009876543\",\n  \"otpCode\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/device/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device",
+                "verify-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Device (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"64c0b3f7c9f1a2b001234567\",\n  \"employeeId\": \"EMP-001\",\n  \"deviceName\": \"MacBook Pro\",\n  \"type\": \"DESKTOP\",\n  \"platform\": \"darwin\",\n  \"model\": \"M2\",\n  \"osVersion\": \"14.2\",\n  \"status\": \"ONLINE\",\n  \"verified\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/device/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Track Device",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"64c0b3f7c9f1a2b009876543\",\n  \"location\": {\n    \"lat\": 12.9716,\n    \"lng\": 77.5946\n  },\n  \"lastOnline\": \"2024-01-10T10:30:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/device/track",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device",
+                "track"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Devices",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/device",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Device by ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/device/{{deviceId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "device",
+                "{{deviceId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileImage\": \"https://example.com/profile.jpg\",\n  \"firstName\": \"Asha\",\n  \"lastName\": \"Kumar\",\n  \"gender\": \"Female\",\n  \"dob\": \"1995-03-12\",\n  \"email\": \"asha.kumar@example.com\",\n  \"phone\": \"+1-555-2200\",\n  \"password\": \"Passw0rd!\",\n  \"currentAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"Bengaluru\",\n    \"state\": \"KA\",\n    \"pincode\": \"560001\"\n  },\n  \"permanentAddress\": {\n    \"street\": \"789 Park Ave\",\n    \"city\": \"Chennai\",\n    \"state\": \"TN\",\n    \"pincode\": \"600001\"\n  },\n  \"employeeId\": \"EMP-001\",\n  \"rfid\": \"RFID-EMP-001\",\n  \"joiningDate\": \"2024-01-01\",\n  \"designation\": \"Engineer\",\n  \"department\": \"R&D\",\n  \"section\": \"Section-A\",\n  \"shift\": \"Shift-1\",\n  \"employmentType\": \"Full-time\",\n  \"role\": \"employee\",\n  \"status\": \"Active\",\n  \"attendanceStatus\": \"Present\",\n  \"bankDetails\": {\n    \"aadharcardnumber\": \"1234-5678-9012\",\n    \"pancard\": \"ABCDE1234F\",\n    \"accountNumber\": \"0123456789\",\n    \"ifscCode\": \"HDFC0000123\",\n    \"bankName\": \"HDFC Bank\",\n    \"branch\": \"MG Road\"\n  },\n  \"emergencyContact\": {\n    \"name\": \"Rahul Kumar\",\n    \"relation\": \"Brother\",\n    \"phone\": \"+1-555-3300\"\n  },\n  \"systemAccess\": {\n    \"emailVerified\": false,\n    \"phoneVerified\": false,\n    \"loginEnabled\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/employees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Employee by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employeeObjectId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employeeObjectId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designation\": \"Senior Engineer\",\n  \"status\": \"Active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/employees/{{employeeObjectId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employeeObjectId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"EMP-001\",\n  \"status\": \"Inactive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/employees/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Employee (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/employees/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Location",
+      "item": [
+        {
+          "name": "Create Location",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"HQ Campus\",\n  \"lat\": 12.9716,\n  \"lng\": 77.5946,\n  \"radius\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/location/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "location",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Locations",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "location"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Location by ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/location/{{locationId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "location",
+                "{{locationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"radius\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/location/{{locationId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "location",
+                "{{locationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Location",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/location/{{locationId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "location",
+                "{{locationId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "Create Permissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"manager\",\n  \"business_type\": \"factory\",\n  \"hierarchy\": 2,\n  \"modules\": {\n    \"attendance\": [\"read\", \"create\", \"update\"],\n    \"employees\": [\"read\"],\n    \"activity\": [\"read\"]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/permissions/search?role=manager",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "manager"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Permissions by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/permissions/{{permissionsId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "{{permissionsId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Permissions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modules\": {\n    \"attendance\": [\"read\", \"create\", \"update\", \"delete\"],\n    \"employees\": [\"read\", \"update\"]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/permissions/{{permissionsId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "{{permissionsId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Permissions (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/permissions/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rebuild Permissions JSON (superadmin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/permissions/system",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "system"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "RFID",
+      "item": [
+        {
+          "name": "Create RFID Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uid\": \"RFID-EMP-001\",\n  \"employeeId\": \"64c0b3f7c9f1a2b001234567\",\n  \"status\": \"Active\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rfid",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rfid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List RFID Cards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rfid",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rfid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get RFID by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rfid/{{rfidId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rfid",
+                "{{rfidId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update RFID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Disabled\",\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rfid/{{rfidId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rfid",
+                "{{rfidId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete RFID (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rfid/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rfid",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"supervisor\",\n  \"description\": \"Supervises sections\",\n  \"modules\": [\"attendance\", \"activity\"],\n  \"status\": \"Active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "role"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "role"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/role/{{roleId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "role",
+                "{{roleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"modules\": [\"attendance\", \"employees\"],\n  \"status\": \"Active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/role/{{roleId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "role",
+                "{{roleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/role/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "role",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sections",
+      "item": [
+        {
+          "name": "Create Section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Section-A\",\n  \"code\": \"SEC-A\",\n  \"description\": \"Assembly line A\",\n  \"supervisorId\": \"64c0b3f7c9f1a2b001234567\",\n  \"status\": \"Active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/sections",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sections"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Sections (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sections?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sections"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Sections (all)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sections/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sections",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Section by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sections/{{sectionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sections",
+                "{{sectionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Section",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/sections/{{sectionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sections",
+                "{{sectionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Section (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/sections/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sections",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiEndpointUrl\": \"https://api.example.com\",\n  \"unitLocation\": \"Plant 1\",\n  \"apkFileUrl\": \"https://example.com/app.apk\",\n  \"companyLogoUrl\": \"https://example.com/logo.png\",\n  \"deviceControls\": {\n    \"cameraAccess\": true,\n    \"allowAppUninstall\": false,\n    \"locationAccess\": true,\n    \"allowScreenshots\": false,\n    \"blockUnknownApps\": true,\n    \"autoSyncEnable\": true,\n    \"whatsappCameraAccess\": false,\n    \"facebookCameraAccess\": false\n  },\n  \"alerts\": {\n    \"appInstallAlert\": true,\n    \"appUninstallAlert\": true,\n    \"screenshotAlert\": false,\n    \"cameraActivityAlert\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shift",
+      "item": [
+        {
+          "name": "Create Shift",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shiftName\": \"Shift-1\",\n  \"sectionId\": \"64c0b3f7c9f1a2b001234567\",\n  \"supervisorId\": \"64c0b3f7c9f1a2b009876543\",\n  \"contractors\": [\"64c0b3f7c9f1a2b001111111\"],\n  \"startTime\": \"2024-01-10T09:00:00Z\",\n  \"endTime\": \"2024-01-10T17:00:00Z\",\n  \"breakTimes\": [{\"from\": \"13:00\", \"to\": \"13:30\"}],\n  \"plannedHeadcount\": 20,\n  \"overtimeAllowed\": false,\n  \"notes\": \"Day shift\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/shift",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/shift?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Shifts (all)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/shift/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shift by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/shift/{{shiftId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift",
+                "{{shiftId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Shift",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ongoing\",\n  \"actualHeadcount\": 18\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/shift/{{shiftId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift",
+                "{{shiftId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Shift (single or many)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recordId\": [\"64c0b3f7c9f1a2b001234567\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/shift/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shift",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
