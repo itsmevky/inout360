@@ -54,7 +54,8 @@ function DashboardLayout({ userRole }) {
       >
         <Header />
 
-        <main className="flex-1 mt-2 sm:mt-5">
+        <main className="flex-1 mt-2 sm:mt-5"
+        >
           <div className="`p-4 shadow min-h-[calc(100vh-2%)]` sm:p-0 sm:mt-5 !sm:ml-4 !md:ml-4">
             <Routes>
               {/* ✅ Dashboard */}
@@ -99,7 +100,7 @@ function DashboardLayout({ userRole }) {
 
         <Footer />
       </div>
-    </div>
+    </div >
   );
 }
 

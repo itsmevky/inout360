@@ -5,7 +5,7 @@ const AddUserForm = () => {
     <div className="adduser-outer-section">
       <div className="adduser-inner-section">
         <form
-          className="w-full max-w-5xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-md"
+          className="w-full max-w-5xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-md addnew-employe-popup-form"
           noValidate
         >
           <h2 className="text-lg font-semibold mb-6 text-gray-800">
@@ -23,18 +23,14 @@ const AddUserForm = () => {
                 />
               </div>
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className="block mb-2 text-sm font-medium text-gray-700 !p-6">
                   Upload Profile Image
                 </label>
                 <input
                   type="file"
                   accept="image/*"
-                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
-                             file:rounded-lg file:border-0 
-                             file:text-sm file:font-semibold 
-                             file:bg-blue-50 file:text-blue-700 
-                             hover:file:bg-blue-100"
-                />
+                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  style={{ paddingTop: "10px", paddingBottom: "10px" }} />
               </div>
             </div>
 

@@ -17,12 +17,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     navigate("/login");
   };
 
-  // ✅ Collapse automatically on small screens
+  // ✅ Collapse automatically on tablet & mobile
   useEffect(() => {
     if (window.innerWidth <= 1024) setIsCollapsed(true);
   }, [setIsCollapsed]);
 
-  // ✅ Track current path
+  // ✅ Track active route
   useEffect(() => {
     const normalizedPath = location.pathname.endsWith("/")
       ? location.pathname.slice(0, -1)
@@ -30,47 +30,27 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     setActiveLink(normalizedPath);
   }, [location.pathname]);
 
-  // ✅ Dynamic base path by role
+  // ✅ Base path by role
   const basePath =
     userRole === "superadmin" || userRole === "admin"
       ? "/dashboard/users"
       : "/dashboard/employee";
 
-  // ✅ Full list of all possible menu items
+  // ✅ All menu items
   const allNavItems = [
     { label: "Dashboard", icon: "dashboard", path: "/dashboard" },
     { label: "Employees", icon: "group", path: `${basePath}/employees` },
-    // { label: "Attendance", icon: "event", path: `${basePath}/attendance` },
-    // { label: "Contractors", icon: "badge", path: `${basePath}/contractor` },
-    // { label: "Rfid", icon: "qr_code", path: `${basePath}/rfid` },
-    // { label: "Zones", icon: "map", path: `${basePath}/zones` },
     { label: "Location", icon: "my_location", path: `${basePath}/location` },
     { label: "Activity", icon: "timeline", path: `${basePath}/activity` },
     { label: "Settings", icon: "settings", path: `${basePath}/settings` },
-    {
-      // label: "Settings",
-      // icon: "settings",
-      // sublinks: [
-      //   {
-      //     label: "System Settings",
-      //     path: "/dashboard/settings/systemsettings",
-      //   },
-      // ],
-    },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
-
-
   ];
 
-  // ✅ Role-based visibility rules
+  // ✅ Role access
   const roleAccess = {
     superadmin: [
       "Dashboard",
       "Employees",
-      // "Attendance",
-      // "Contractors",
-      // "Rfid",
-      // "Zones",
       "Device",
       "Settings",
       "Location",
@@ -79,19 +59,16 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     admin: [
       "Dashboard",
       "Employees",
-      // "Attendance",
-      // "Contractors",
-      // "Rfid",
       "Device",
       "Settings",
       "Location",
       "Activity",
     ],
-    hr: ["Dashboard", "Employees", "Attendance"],
-    employee: ["Dashboard", "Attendance"],
+    hr: ["Dashboard", "Employees"],
+    employee: ["Dashboard"],
   };
 
-  // ✅ Filter menu items for current role
+  // ✅ Filter items
   const visibleNavItems = allNavItems.filter((item) =>
     roleAccess[userRole?.toLowerCase()]?.includes(item.label)
   );
@@ -102,95 +79,109 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
   };
 
   return (
-    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
-      {/* Header */}
-      <header className="sidebar-header">
-        <img src={logo} alt="Pidilite" style={{ height: 40 }} />
-        <button
-          className="sidebar-toggler"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          <span className="material-symbols-rounded">chevron_left</span>
-        </button>
-      </header>
+    <>
+      {/* ================= MOBILE / TABLET TOGGLE BUTTON ================= */}
+      <button
+        className="mobile-sidebar-toggle"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <span className="material-symbols-rounded">
+          {isCollapsed ? "menu" : "close"}
+        </span>
+      </button>
 
-      {/* Navigation */}
-      <nav className="sidebar-nav">
-        <ul className="nav-list primary-nav">
-          {visibleNavItems.map((item) => {
-            const isActive =
-              location.pathname.toLowerCase() ===
-              (item.path || "").toLowerCase();
+      {/* ================= SIDEBAR ================= */}
+      <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
+        {/* Header */}
+        <header className="sidebar-header">
+          <img src={logo} alt="Pidilite" style={{ height: 40 }} />
+          <button
+            className="sidebar-toggler"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            <span className="material-symbols-rounded">chevron_left</span>
+          </button>
+        </header>
 
-            return (
-              <li
-                key={item.label}
-                className={`nav-item ${isActive ? "active" : ""}`}
-              >
-                <div
-                  className="nav-link"
-                  onClick={() =>
-                    item.sublinks
-                      ? toggleDropdown(item.label)
-                      : navigate(item.path)
-                  }
-                  role="button"
-                  tabIndex={0}
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          <ul className="nav-list primary-nav">
+            {visibleNavItems.map((item) => {
+              const isActive =
+                location.pathname.toLowerCase() ===
+                (item.path || "").toLowerCase();
+
+              return (
+                <li
+                  key={item.label}
+                  className={`nav-item ${isActive ? "active" : ""}`}
                 >
-                  {item.icon && (
-                    <span className="material-symbols-rounded">
-                      {item.icon}
-                    </span>
-                  )}
-                  <span className="nav-label">{item.label}</span>
-                  {item.sublinks && (
-                    <span className="dropdown-icon material-symbols-rounded">
-                      {openDropdown === item.label
-                        ? "keyboard_arrow_up"
-                        : "keyboard_arrow_down"}
-                    </span>
-                  )}
-                </div>
-
-                {/* Dropdown menu */}
-                {item.sublinks && (
-                  <ul
-                    className="dropdown-menu"
-                    style={{
-                      height:
-                        openDropdown === item.label
-                          ? `${item.sublinks.length * 40}px`
-                          : "0",
-                    }}
+                  <div
+                    className="nav-link"
+                    onClick={() =>
+                      item.sublinks
+                        ? toggleDropdown(item.label)
+                        : navigate(item.path)
+                    }
+                    role="button"
+                    tabIndex={0}
                   >
-                    {item.sublinks.map((link) => (
-                      <li
-                        key={link.path}
-                        className={`nav-subitem ${location.pathname === link.path ? "active" : ""
-                          }`}
-                        onClick={() => navigate(link.path)}
-                      >
-                        {link.label}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                    {item.icon && (
+                      <span className="material-symbols-rounded">
+                        {item.icon}
+                      </span>
+                    )}
+                    <span className="nav-label">{item.label}</span>
 
-        {/* Footer */}
-        <ul className="nav-list secondary-nav">
-          <li className="nav-item">
-            <div onClick={handleLogout} className="nav-link cursor-pointer">
-              <span className="material-symbols-rounded">logout</span>
-              <span className="nav-label">Sign Out</span>
-            </div>
-          </li>
-        </ul>
-      </nav>
-    </aside>
+                    {item.sublinks && (
+                      <span className="dropdown-icon material-symbols-rounded">
+                        {openDropdown === item.label
+                          ? "keyboard_arrow_up"
+                          : "keyboard_arrow_down"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Dropdown */}
+                  {item.sublinks && (
+                    <ul
+                      className="dropdown-menu"
+                      style={{
+                        height:
+                          openDropdown === item.label
+                            ? `${item.sublinks.length * 40}px`
+                            : "0",
+                      }}
+                    >
+                      {item.sublinks.map((link) => (
+                        <li
+                          key={link.path}
+                          className={`nav-subitem ${location.pathname === link.path ? "active" : ""
+                            }`}
+                          onClick={() => navigate(link.path)}
+                        >
+                          {link.label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Footer */}
+          <ul className="nav-list secondary-nav">
+            <li className="nav-item">
+              <div onClick={handleLogout} className="nav-link cursor-pointer">
+                <span className="material-symbols-rounded">logout</span>
+                <span className="nav-label">Sign Out</span>
+              </div>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+    </>
   );
 };
 

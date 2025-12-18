@@ -145,7 +145,7 @@ const EditUserForm = ({ user }) => {
                     selectedPhoto
                       ? URL.createObjectURL(selectedPhoto)
                       : user?.photo ||
-                        "https://via.placeholder.com/132x170.png?text=Photo"
+                      "https://via.placeholder.com/132x170.png?text=Photo"
                   }
                   alt="Passport"
                   className="object-cover w-full h-full"

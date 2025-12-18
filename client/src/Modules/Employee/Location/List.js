@@ -30,7 +30,8 @@ const LocationList = () => {
   return (
     <div className="p-4">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-4 location-list-heading">
+      <div className="flex justify-between items-center mb-4 location-list-heading"
+        style={{ marginTop: "70px" }}>
         <h2 className="text-xl font-bold mb-4">Geofence Location List</h2>
 
         <button
@@ -159,7 +160,7 @@ const LocationList = () => {
           </div>
         ))}
       </div>
-    </div>
+    </div >
   );
 };
 

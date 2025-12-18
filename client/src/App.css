@@ -3744,23 +3744,23 @@ select.field-error {
 }
 
 @media (min-width: 420px) and (max-width: 1200px){
-  .combine-export-section{
+  /* .combine-export-section{
     display: flex;
     flex-direction: column;
     justify-content: end; 
     align-items: end;
     gap: 10px;
-  }
-  .status-dropdown-section{
+  } */
+  /* .status-dropdown-section{
     display: flex;
     flex-direction: column;
     align-items: start;
     gap: 10px;
-  }
+  } */
 }
 @media (min-width: 320px) and (max-width: 1200px){
   .button-crm{
-align-items: end !important;
+align-items: center !important;
   }
 }
 @media (min-width: 320px) and (max-width: 600px){
@@ -3769,19 +3769,27 @@ align-items: end !important;
   flex-direction: column;
   align-items: center !important;
 }
- .status-dropdown-section{
+ /* .status-dropdown-section{
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-  }
-    .combine-export-section{
+    width: 100%;
+  } */
+  
+    /* .combine-export-section{
     display: flex;
     flex-direction: column;
     justify-content: center; 
     align-items: center;
     gap: 10px;
-  }
+  } */
+  /* .combine-export-section{
+    display: flex;
+    flex-direction: row;
+justify-content: space-between;
+width: 100% !important;
+  } */
 }
 
 .attendance-combine-export-section button{
@@ -4094,6 +4102,205 @@ body {
   min-height: 90vh;
   background: linear-gradient(#f1f3ff, #cbd4ff);
 }
+@media (min-width: 320px) and (max-width: 767px) {
+  .header-logo img{
+    margin-left: 30px !important;
+    width: 120px;
+    height: auto;
+  }
+  .header{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+  }
+  /* .layout-section-dashboard{
+  margin-top: 95px !important;
+  } */
+  .AJ-crm-profile-section{display: none;}
+ .list-user-title,
+    .setting-list-heading,
+    .device-list-heading,
+    .activity-list-heading
+    {
+      margin-top: 70px;
+    }
+     .dashboard-crm-box-shadow{
+       margin-top: 90px;
+     }
+
+}
+
+@media (min-width: 420px) and (max-width: 1024px){
+  .status-select-option-dropdown.first-left.form-item {
+    width: 47%;
+}
+.status-dropdown-section{
+ flex-wrap: wrap;
+ gap: 4px;
+ justify-content: space-between;
+
+}
+.input-search-bar
+ {
+    width: 100%;
+}
+
+.input-search-bar input
+ {
+    width: 100%;
+}
+    .combine-export-section {
+        flex-direction: row-reverse;
+        width: 100%;
+        justify-content: space-between;
+    }
+.action-button button, .export-section button{
+  margin: 0 !important;
+}
+    .button-crm {
+        display: block;
+    }
+}
+
+
+/* /.............min-width: 0px) and (max-width: 420px................./  */
+@media (min-width: 0px) and (max-width: 430px){
+  .status-select-option-dropdown.first-left.form-item {
+    width:100%;
+}
+.status-dropdown-section{
+ flex-wrap: wrap;
+ gap: 4px;
+ justify-content: space-between;
+
+}
+.input-search-bar
+ {
+    width: 100%;
+}
+
+.input-search-bar input
+ {
+    width: 100%;
+}
+.combine-export-section {
+flex-direction: row-reverse;
+width: 100%;
+justify-content: space-between;
+}
+.action-button button, .export-section button{
+  margin: 0 !important;
+}
+.button-crm {
+    display: block;
+}
+.activity-table-scroll{
+  padding: 0px !important;
+}
+.activity-table-wrapper h2 {
+  font-size: 16px;
+}
+.activity-page-searchbar-dropdown{
+  flex-direction: column;
+}
+.input-search-bar-activity-page,
+.activity-page-select-option{
+  width: 100%;
+}
+.activity-page-cards p{
+      font-size: 16px;
+}
+.location-list-heading h2{
+font-size: 16px !important;
+margin: 20px 0px;
+}
+.location-list-heading {
+  flex-direction: column;
+}
+}
+
+/* /////////@media (max-width: 415px)//////////////  */
+
+@media (max-width: 415px){
+   .combine-export-section {
+        flex-direction: column;
+        width: 100%;
+        justify-content: space-between;
+    }
+    .add-new-employee-button,
+    .crm-buttonsection,
+    .export-section button{
+      width: 100% !important;
+    }
+    .combine-export-section {
+      display: block;
+    
+    }
+    .export-section button{
+        margin-bottom: 8px !important;
+    }
+}
+@media (max-width: 768px){
+.addnew-employe-popup-form{
+  padding: 10px;
+}
+.animate-zoomIn{
+  padding: 1rem;
+}
+}
+
+/* ============================= */
+/* MOBILE SIDEBAR TOGGLE BUTTON */
+/* ============================= */
+.mobile-sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 1100;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+
+.mobile-sidebar-toggle span {
+  font-size: 28px;
+  color: #1e293b;
+}
+
+/* ============================= */
+/* TABLET & MOBILE SIDEBAR */
+/* ============================= */
+@media (max-width: 768px) {
+  .mobile-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+}
+
+
+
+
+
 
 .sidebar {
   position: fixed;
@@ -4182,6 +4389,7 @@ body {
   padding-bottom: 20px;
   height: calc(100vh - 227px);
   scrollbar-color: transparent transparent;
+  /* margin-top: 20px; */
 }
 
 .sidebar .sidebar-nav .primary-nav:hover {
@@ -4345,11 +4553,12 @@ width: 98% !important;
 .sidebar .sidebar-header{
   display: flex;
   position: relative;
-  padding: 25px 20px;
+  padding: 20px 20px;
   align-items: center;
   justify-content: space-between;
   /* left: 70px; */
   top: 43px;
+  margin: 30px 0px;
 }
 }
 .list-user-title .h2 {
@@ -4382,6 +4591,12 @@ width: 98% !important;
   .sidebar.collapsed .sidebar-nav .primary-nav {
     transform: translateY(15px);
   }
+  .sidebar .sidebar-nav .primary-nav {
+  margin-top: 20px !important;
+}
+.AJ-crm-right-profile-section{
+      margin-left: 30px;
+}
 }
 
 .AJ-dasboard main div,
@@ -4995,9 +5210,6 @@ input:checked + .slider:before {
 .dashboar-option-inner-page{
   padding: 0 !important;
   margin: 0px !important;
-}
-.layout-section-dashboard{
-    margin-top: 20px;
 }
 .sidebar.collapsed .sidebar-header .sidebar-toggler{
 

@@ -592,7 +592,7 @@ const Employeepage = () => {
                 <div>Export</div>
               </button>
             </div>
-            <div>
+            <div className="add-new-employee-button">
               <button
                 className="crm-buttonsection"
                 onClick={toggleAddUserForm}

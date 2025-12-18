@@ -52,7 +52,7 @@ const Header = () => {
 
   return (
     <div style={{ boxShadow: "0px 0px 10px 2px rgba(96, 75, 75, 0.21)" }}>
-      <header className="flex justify-between items-center px-7 py-1 bg-white">
+      <header className="flex justify-between items-center px-7 py-1 bg-white header">
         {/* Left Section: Logo and Title */}
         <div className="flex items-center space-x-2">
           <div className="dash-header">
