@@ -3,7 +3,6 @@ const { ajModel } = require("../../common/classes/Model");
 const userSchemaDefinition = {
   name: { type: String, required: true, trim: true },
   employeeId: { type: String, required: true, trim: true, index: true },
-  deviceId: { type: String, required: true, trim: true, index: true },
   sessionStatus: {
     type: String,
     enum: ["Logged In", "Logout"],
@@ -43,7 +42,6 @@ const userTransform = (ret) => ({
   name: ret.name,
   fullname: ret.name,
   employeeId: ret.employeeId,
-  deviceId: ret.deviceId,
   sessionStatus: ret.sessionStatus,
   role: ret.role,
   createdAt: ret.createdAt,
