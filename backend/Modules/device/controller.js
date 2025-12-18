@@ -219,13 +219,19 @@ exports.sendOtp = async (req, res) => {
       return res.status(400).json({ status: false, message: "Employee email not found" });
     }
 
-    const deviceIdRegex = deviceId
-      ? new RegExp(`^${normalizeDeviceId(deviceId)}$`, "i")
-      : null;
-    const query = deviceId
-      ? { $or: [{ _id: deviceId }, { deviceId: deviceIdRegex }] }
-      : { deviceName };
-    const device = await DeviceModel.findOne(query);
+    const deviceFilters = [];
+    if (deviceId) {
+      const normalizedDeviceId = normalizeDeviceId(deviceId);
+      deviceFilters.push({ deviceId: new RegExp(`^${normalizedDeviceId}$`, "i") });
+      if (mongoose.isValidObjectId(deviceId)) {
+        deviceFilters.push({ _id: deviceId });
+      }
+    } else if (deviceName) {
+      deviceFilters.push({ deviceName });
+    }
+
+    const deviceQuery = deviceFilters.length ? { $or: deviceFilters } : {};
+    const device = await DeviceModel.findOne(deviceQuery);
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
@@ -322,6 +328,9 @@ exports.verifyOtp = async (req, res) => {
     await otpRecord.save();
 
     device.verified = true;
+    // Mark device as active upon successful verification
+    device.deviceStatus = "Active";
+    device.status = "ONLINE";
     await device.save();
 
     return res.status(200).json({ status: true, message: "Device verified successfully" });

@@ -64,20 +64,29 @@ const normalizePayload = (data) => {
     status: data.status || "Active",
     role: data.role || "employee",
     bankDetails: {
-      aadharcardnumber: data.aadharcardnumber,
-      pancard: data.pancard,
-      accountNumber: data.accountNumber,
-      ifscCode: data.ifscCode,
-      bankName: data.bankName,
-      branch: data.branch,
+      aadharcardnumber:
+        data.bankDetails?.aadharcardnumber || data.aadharcardnumber,
+      pancard: data.bankDetails?.pancard || data.pancard,
+      accountNumber: data.bankDetails?.accountNumber || data.accountNumber,
+      ifscCode: data.bankDetails?.ifscCode || data.ifscCode,
+      bankName: data.bankDetails?.bankName || data.bankName,
+      branch: data.bankDetails?.branch || data.branch,
     },
     emergencyContact: {
-      name: data.emergencyName || data.emergency_contact_name || data.emergency_contact,
+      name:
+        data.emergencyContact?.name ||
+        data.emergencyName ||
+        data.emergency_contact_name ||
+        data.emergency_contact,
       relation:
+        data.emergencyContact?.relation ||
         data.emergencyRelation ||
         data.emergency_contact_relation ||
         data.emergency_relation,
-      phone: data.emergencyPhone || data.emergency_contact_phone,
+      phone:
+        data.emergencyContact?.phone ||
+        data.emergencyPhone ||
+        data.emergency_contact_phone,
     },
     systemAccess: {
       emailVerified: !!data.emailVerified,
