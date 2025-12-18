@@ -39,7 +39,8 @@ const employeeSchema = {
   dob: { type: Date, required: true },
   email: { type: String, required: true, unique: true, trim: true },
   phone: { type: String, required: true, trim: true },
-  password: { type: String, required: true },
+  password: { type: String, default: null, select: false },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
 
   // Addresses
   currentAddress: addressSchema,

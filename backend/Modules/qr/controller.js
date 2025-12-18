@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const { randomUUID } = require("crypto");
 const qrcode = require("qrcode");
 const User = require("../user/model");
 const DeviceModel = require("../device/model");
 const UserSession = require("../userSessions/model");
-const QrToken = require("../qrTokens/model");
+const QrToken = require("./model");
 const AttendanceModel = require("../attendance/model");
 const EmployeeModel = require("../employees/model");
 
@@ -294,18 +295,36 @@ exports.consumeQr = async (req, res) => {
       return res.status(400).json({ message: "Location does not match QR" });
     }
 
+    // Resolve user/employee: accept userId as User _id or Employee _id/employeeId/userId
+    let user = null;
     let employee = null;
-    if (userId) {
-      employee = await EmployeeModel.findById(userId);
-      if (!employee) {
-        employee = await EmployeeModel.findOne({ employeeId: String(userId) });
+
+    if (mongoose.isValidObjectId(userId)) {
+      user = await User.findById(userId);
+      if (!user) {
+        employee =
+          (await EmployeeModel.findById(userId)) ||
+          (await EmployeeModel.findOne({ userId }));
       }
+    }
+    if (!user && !employee) {
+      employee =
+        (await EmployeeModel.findOne({ employeeId: String(userId) })) ||
+        (await EmployeeModel.findOne({ userId: userId }));
+    }
+    if (!user && employee?.userId) {
+      user = await User.findById(employee.userId);
+    }
+    if (!employee && user?.employeeId) {
+      employee = await EmployeeModel.findOne({ employeeId: user.employeeId });
+    }
+
+    if (!employee && !user) {
+      return res.status(404).json({ message: "User not found" });
     }
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-
-    const user = await User.findOne({ employeeId: employee.employeeId });
 
     let sessionDeviceId = deviceId;
     if (user) {

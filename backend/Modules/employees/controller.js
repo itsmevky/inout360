@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const EmployeeModel = require("./model");
+const UserModel = require("../user/model");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 
@@ -105,7 +106,6 @@ const validateEmployeeData = async (data) => {
     dob: "required|date",
     email: "required|email",
     phone: "required|string",
-    password: "required|string|min:5",
 
     "currentAddress.street": "required|string",
     "currentAddress.city": "required|string",
@@ -153,10 +153,27 @@ exports.add = async (req, res) => {
         .json({ status: false, message: "Employee already exists with this email" });
     }
 
-    const hashedPassword = await bcrypt.hash(normalized.password, 10);
-    const data = { ...normalized, password: hashedPassword, raw: req.body };
+    // Ensure a corresponding user record exists with required fields
+    let user = await UserModel.findOne({
+      $or: [{ email: normalized.email }, { employeeId: normalized.employeeId }],
+    });
+    if (!user) {
+      user = await UserModel.create({
+        name: normalized.name,
+        firstName: normalized.firstName,
+        lastName: normalized.lastName,
+        employeeId: normalized.employeeId,
+        email: normalized.email,
+        password: null,
+        role: normalized.role || "employee",
+      });
+    }
+
+    // Do not store password; keep null for employee/user created via this flow
+    const data = { ...normalized, password: null, userId: user._id };
 
     const employee = await EmployeeModel.create(data);
+
     return res.status(201).json({
       status: true,
       message: "Employee created successfully",
@@ -280,17 +297,15 @@ exports.getbyid = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const normalized = normalizePayload(req.body);
-    const updates = { ...normalized, raw: req.body };
+    const updates = { ...normalized };
 
-    if (updates.password) {
-      updates.password = await bcrypt.hash(updates.password, 10);
-    }
+    // Do not process password updates in this flow
+    delete updates.password;
 
-    const updated = await EmployeeModel.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: false }
-    );
+    const updated = await EmployeeModel.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: false,
+    });
     if (!updated) {
       return res.status(404).json({ status: false, message: "Not found" });
     }

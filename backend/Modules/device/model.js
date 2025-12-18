@@ -39,8 +39,6 @@ const deviceSchemaDefinition = {
     default: "OFFLINE",
   },
   verified: { type: Boolean, default: false },
-  otpCode: { type: String, trim: true, default: null },
-  otpExpiresAt: { type: Date, default: null },
   lastOnline: { type: Date, default: null },
   enrollmentDate: { type: Date, default: null },
   lastSeen: { type: Date, default: null },

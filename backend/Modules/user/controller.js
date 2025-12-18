@@ -44,7 +44,7 @@ exports.registerUser = async (req, res) => {
   };
   if (req.body.role) {
     rules.role =
-      "in:admin,hr,supervisor,employee,manager,superadmin,contractor";
+      "in:admin,hr,supervisor,employee,manager,superadmin,contractor,visitor";
   }
 
   try {

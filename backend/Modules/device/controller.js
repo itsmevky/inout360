@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
 const paginate = require("../../helpers/limitoffset");
 const DeviceModel = require("./model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
-const DeviceOtp = require("../deviceOtp/model");
+const DeviceOtp = require("./otpModel");
+const OtpEmailConfig = require("./otpEmailModel");
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
@@ -163,6 +165,12 @@ exports.register = async (req, res) => {
     if (!employee) {
       return res.status(400).json({ status: false, message: "Employee not found" });
     }
+    const user = employee.userId
+      ? await UserModel.findById(employee.userId)
+      : await UserModel.findOne({ employeeId });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found for this employee" });
+    }
     const normalizedName = String(name).trim().toLowerCase();
     const employeeName = (employee.name ||
       `${employee.firstName || ""} ${employee.lastName || ""}`)
@@ -175,8 +183,24 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Prevent assigning a new device if the user already has an Active device
+    const activeFilter = {
+      userId: user._id,
+      deviceStatus: "Active",
+    };
+    if (deviceId && mongoose.isValidObjectId(deviceId)) {
+      activeFilter._id = { $ne: deviceId };
+    }
+    const activeDevice = await DeviceModel.findOne(activeFilter);
+    if (activeDevice) {
+      return res.status(400).json({
+        status: false,
+        message: "User already has an active device assigned",
+      });
+    }
+
     const device = await upsertDevice({
-      userId: employee._id,
+      userId: user._id,
       employeeId,
       deviceId,
       deviceName: deviceName || deviceId,
@@ -203,7 +227,7 @@ exports.register = async (req, res) => {
 // Step 2: Send OTP for an existing device
 exports.sendOtp = async (req, res) => {
   try {
-    const { deviceId, deviceName, userId } = req.body;
+    const { deviceId, deviceName, userId, employeeId: employeeIdBody } = req.body;
     if (!userId) {
       return res.status(400).json({ status: false, message: "userId is required" });
     }
@@ -211,12 +235,30 @@ exports.sendOtp = async (req, res) => {
       return res.status(400).json({ status: false, message: "deviceId or deviceName is required" });
     }
 
-    const employee = await EmployeeModel.findById(userId);
-    if (!employee) {
-      return res.status(404).json({ status: false, message: "Employee not found" });
+    // Resolve user by user collection; if missing, fall back to employee collection (accepting employee _id or employeeId or explicit employeeId in body)
+    let user = await UserModel.findById(userId);
+    let employee = null;
+    if (!user) {
+      employee =
+        (mongoose.isValidObjectId(userId) && (await EmployeeModel.findById(userId))) ||
+        (employeeIdBody && (await EmployeeModel.findOne({ employeeId: employeeIdBody }))) ||
+        (await EmployeeModel.findOne({ employeeId: userId }));
+      if (!employee) {
+        return res.status(404).json({ status: false, message: "User not found" });
+      }
+      // Try to locate linked user by employeeId, but allow proceeding with employee only
+      user = await UserModel.findOne({ employeeId: employee.employeeId });
+    } else if (user.employeeId) {
+      employee =
+        (await EmployeeModel.findOne({ employeeId: user.employeeId })) ||
+        (employeeIdBody && (await EmployeeModel.findOne({ employeeId: employeeIdBody })));
+    } else if (employeeIdBody) {
+      employee = await EmployeeModel.findOne({ employeeId: employeeIdBody });
     }
-    if (!employee.email) {
-      return res.status(400).json({ status: false, message: "Employee email not found" });
+    const resolvedUserId = user?._id || employee?._id;
+    const resolvedEmployeeId = user?.employeeId || employee?.employeeId;
+    if (!resolvedUserId) {
+      return res.status(404).json({ status: false, message: "User not found" });
     }
 
     const deviceFilters = [];
@@ -236,35 +278,41 @@ exports.sendOtp = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
-    const matchesEmployee =
-      (device.userId && String(device.userId) === String(employee._id)) ||
-      (device.employeeId && employee.employeeId && device.employeeId === employee.employeeId);
-    if (!matchesEmployee) {
+    const matchesUser =
+      (device.userId && String(device.userId) === String(resolvedUserId)) ||
+      (device.employeeId && resolvedEmployeeId && device.employeeId === resolvedEmployeeId);
+    if (!matchesUser) {
       return res.status(400).json({
         status: false,
-        message: "Device does not belong to this employee",
+        message: "Device does not belong to this user",
       });
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     const transactionId = randomUUID();
+    const hashedOtp = await bcrypt.hash(otpCode, 10);
 
     const normalizedDeviceId = normalizeDeviceId(
       device.deviceId || deviceId || device._id?.toString()
     );
     await DeviceOtp.create({
       transactionId,
-      userId: employee._id,
-      employeeId: employee.employeeId,
+      userId: resolvedUserId,
+      employeeId: resolvedEmployeeId,
       deviceId: normalizedDeviceId,
-      otp: otpCode,
+      otp: hashedOtp,
       otpExpiry: otpExpiresAt,
       verified: false,
       raw: req.body,
     });
 
-    await sendOtpEmail(employee.email, otpCode, device.deviceName || deviceName);
+    // Resolve OTP email (superadmin-configured, global)
+    const emailConfig = await OtpEmailConfig.findOne();
+    if (!emailConfig) {
+      return res.status(400).json({ status: false, message: "OTP email not configured" });
+    }
+    await sendOtpEmail(emailConfig.email, otpCode, device.deviceName || deviceName);
 
     return res.status(200).json({
       status: true,
@@ -304,7 +352,6 @@ exports.verifyOtp = async (req, res) => {
     const otpRecord = await DeviceOtp.findOne({
       transactionId: otpTransactionId,
       deviceId: normalizedDeviceId,
-      otp,
       verified: false,
     });
     if (!otpRecord) {
@@ -312,6 +359,11 @@ exports.verifyOtp = async (req, res) => {
     }
     if (otpRecord.otpExpiry < new Date()) {
       return res.status(400).json({ status: false, message: "OTP has expired" });
+    }
+
+    const isMatch = await bcrypt.compare(otp, otpRecord.otp);
+    if (!isMatch) {
+      return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
 
     const deviceIdRegex = new RegExp(`^${normalizedDeviceId}$`, "i");
@@ -328,7 +380,6 @@ exports.verifyOtp = async (req, res) => {
     await otpRecord.save();
 
     device.verified = true;
-    // Mark device as active upon successful verification
     device.deviceStatus = "Active";
     device.status = "ONLINE";
     await device.save();
@@ -339,8 +390,47 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
+// Superadmin: set OTP email (global)
+exports.setOtpEmail = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ status: false, message: "email is required" });
+    }
+
+    const record = await OtpEmailConfig.findOneAndUpdate(
+      {},
+      { email, updatedBy: req.user?._id || null },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "OTP email saved",
+      data: record,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Superadmin: get OTP email (global)
+exports.getOtpEmail = async (req, res) => {
+  try {
+    const record = await OtpEmailConfig.findOne();
+    if (!record) {
+      return res.status(404).json({ status: false, message: "Not found" });
+    }
+    return res.status(200).json({
+      status: true,
+      data: record,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 const sendOtpEmail = async (to, otp, deviceName) => {
-  // For current testing, only log the OTP instead of sending email
   console.log(`[OTP LOG] To: ${to || "N/A"} Device: ${deviceName} OTP: ${otp}`);
   return;
 };

@@ -90,6 +90,7 @@
       "item": [
         {
           "name": "Register Device",
+          "description": "Requires existing employee with matching name. Fields: name, employeeId, deviceId. Optional: deviceName/platform/model/osVersion/appVersion.",
           "request": {
             "method": "POST",
             "header": [
@@ -104,6 +105,7 @@
         },
         {
           "name": "Send OTP",
+          "description": "Send device OTP. Body: userId (user _id or employeeId/_id), employeeId (optional but recommended), deviceId or deviceName. Requires OTP email to be configured (superadmin).",
           "request": {
             "method": "POST",
             "header": [
@@ -112,12 +114,13 @@
             "url": "{{base_url}}/device/send-otp",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{employee_id}}\",\n  \"deviceId\": \"DEV-777\"\n}"
+              "raw": "{\n  \"userId\": \"{{user_or_employee_id}}\",\n  \"employeeId\": \"EMP001\",\n  \"deviceId\": \"DEV-777\"\n}"
             }
           }
         },
         {
           "name": "Verify OTP",
+          "description": "Verify OTP. Header: x-device-id (deviceId). Body: otpTransactionId, otp.",
           "request": {
             "method": "POST",
             "header": [
@@ -129,6 +132,33 @@
               "mode": "raw",
               "raw": "{\n  \"otpTransactionId\": \"{{otp_txn_id}}\",\n  \"otp\": \"123456\"\n}"
             }
+          }
+        },
+        {
+          "name": "Set OTP Email (superadmin)",
+          "description": "Superadmin only. Configures global OTP destination email. Requires Authorization: Bearer {{auth_token}} for superadmin.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": "{{base_url}}/device/otp-email",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"otp@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get OTP Email (superadmin)",
+          "description": "Superadmin only. Fetch global OTP destination email. Requires Authorization: Bearer {{auth_token}} for superadmin.",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": "{{base_url}}/device/otp-email"
           }
         },
         {
@@ -168,6 +198,7 @@
       "item": [
         {
           "name": "Add Employee",
+          "description": "Create employee and linked user. No password required/stored. Auth required (Bearer).",
           "request": {
             "method": "POST",
             "header": [
@@ -177,7 +208,7 @@
             "url": "{{base_url}}/employees",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Amit\",\n  \"lastName\": \"Sharma\",\n  \"gender\": \"Male\",\n  \"dob\": \"1990-01-01\",\n  \"email\": \"amit.sharma@example.com\",\n  \"phone\": \"5550010001\",\n  \"password\": \"Pass12345\",\n  \"employeeId\": \"EMP001\",\n  \"rfid\": \"RFID-EMP-001\",\n  \"joiningDate\": \"2023-01-01\",\n  \"designation\": \"Operator\",\n  \"department\": \"Operations\",\n  \"section\": \"Assembly\",\n  \"shift\": \"Morning\",\n  \"employmentType\": \"Full time\",\n  \"role\": \"employee\",\n  \"status\": \"Active\",\n  \"currentAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"Delhi\",\n    \"state\": \"DL\",\n    \"pincode\": \"110001\"\n  },\n  \"permanentAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"Delhi\",\n    \"state\": \"DL\",\n    \"pincode\": \"110001\"\n  },\n  \"bankDetails\": {\n    \"aadharcardnumber\": \"123412341234\",\n    \"pancard\": \"ABCDE1234F\",\n    \"accountNumber\": \"000111222333\",\n    \"ifscCode\": \"IFSC0001\"\n  },\n  \"emergencyContact\": {\n    \"name\": \"Ramesh\",\n    \"relation\": \"Brother\",\n    \"phone\": \"9998887771\"\n  }\n}"
+              "raw": "{\n  \"firstName\": \"Amit\",\n  \"lastName\": \"Sharma\",\n  \"gender\": \"Male\",\n  \"dob\": \"1990-01-01\",\n  \"email\": \"amit.sharma@example.com\",\n  \"phone\": \"5550010001\",\n  \"employeeId\": \"EMP001\",\n  \"rfid\": \"RFID-EMP-001\",\n  \"joiningDate\": \"2023-01-01\",\n  \"designation\": \"Operator\",\n  \"department\": \"Operations\",\n  \"section\": \"Assembly\",\n  \"shift\": \"Morning\",\n  \"employmentType\": \"Full time\",\n  \"role\": \"employee\",\n  \"status\": \"Active\",\n  \"currentAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"Delhi\",\n    \"state\": \"DL\",\n    \"pincode\": \"110001\"\n  },\n  \"permanentAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"Delhi\",\n    \"state\": \"DL\",\n    \"pincode\": \"110001\"\n  },\n  \"bankDetails\": {\n    \"aadharcardnumber\": \"123412341234\",\n    \"pancard\": \"ABCDE1234F\",\n    \"accountNumber\": \"000111222333\",\n    \"ifscCode\": \"IFSC0001\"\n  },\n  \"emergencyContact\": {\n    \"name\": \"Ramesh\",\n    \"relation\": \"Brother\",\n    \"phone\": \"9998887771\"\n  }\n}"
             }
           }
         },
@@ -538,6 +569,7 @@
     { "key": "employee_db_id", "value": "" },
     { "key": "qr_token", "value": "" },
     { "key": "otp_txn_id", "value": "" },
-    { "key": "device_id", "value": "" }
+    { "key": "device_id", "value": "" },
+    { "key": "user_or_employee_id", "value": "" }
   ]
 }

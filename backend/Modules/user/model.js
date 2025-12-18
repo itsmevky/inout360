@@ -18,7 +18,6 @@ const userSchemaDefinition = {
   },
   password: {
     type: String,
-    required: true,
     select: false,
   },
 
@@ -32,6 +31,7 @@ const userSchemaDefinition = {
       "manager",
       "superadmin",
       "contractor",
+      "visitor",
     ],
     default: "employee",
   },
