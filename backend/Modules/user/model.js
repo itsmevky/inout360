@@ -1,6 +1,8 @@
 const { ajModel } = require("../../common/classes/Model");
 
 const userSchemaDefinition = {
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
   name: { type: String, required: true, trim: true },
   employeeId: { type: String, required: true, trim: true, index: true },
   sessionStatus: {
@@ -19,6 +21,17 @@ const userSchemaDefinition = {
   password: {
     type: String,
     select: false,
+  },
+  resetOtp: {
+    type: String,
+    select: false,
+  },
+  resetOtpExpiresAt: {
+    type: Date,
+  },
+  resetOtpVerified: {
+    type: Boolean,
+    default: false,
   },
 
   role: {

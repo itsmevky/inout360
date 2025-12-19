@@ -1,7 +1,9 @@
 const nodemailer = require("nodemailer");
-const EmailTemplate = require("../models/Template.js"); // Assuming you have an EmailTemplate model
+const EmailTemplate = require("../models/Template.js");
+const fs = require("fs");
+const path = require("path");
 
-//=====Configure the email transport (Gmail is used in this example)====//
+// ===== Configure email transport =====
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -10,37 +12,102 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ===========Function to send email using a template======//
-async function sendEmail(templateName, to, dynamicData) {
+/* =========================
+   HELPER FUNCTIONS
+========================= */
+
+// Build OTP HTML (used in OTP emails)
+const buildOtpHtml = (otp) =>
+  String(otp || "")
+    .split("")
+    .map((digit) => `<span class="otp-digit">${digit}</span>`)
+    .join("");
+
+// Load HTML template from filesystem (optional usage)
+const loadTemplateFromFile = async (templateName) => {
+  const templatePath = path.join(
+    __dirname,
+    "..",
+    "emailTemplate",
+    templateName
+  );
+  return fs.readFileSync(templatePath, "utf8");
+};
+
+// Attachments based on template
+const getTemplateAttachments = (templateName) => {
+  if (
+    templateName === "pidilitetemplate.html" ||
+    templateName === "resetpassword.html"
+  ) {
+    return [
+      {
+        filename: "pidilitelogo.avif",
+        path: path.join(
+          __dirname,
+          "..",
+          "emailTemplate",
+          "pidilitelogo.avif"
+        ),
+        cid: "pidilite-logo",
+      },
+    ];
+  }
+  return [];
+};
+
+/* =========================
+   SEND EMAIL FUNCTION
+========================= */
+async function sendEmail(templateName, to, dynamicData = {}, options = {}) {
   try {
-    //==========Fetch email template from the database=======//
+    let subject;
+    let emailContent;
+    let attachments = [];
+
+    // 1️⃣ Try DB template first
     const template = await EmailTemplate.findOne({ name: templateName });
 
-    if (!template) {
+    if (template) {
+      subject = template.subject;
+      emailContent = template.body;
+    } else if (options.fromFile === true) {
+      // 2️⃣ Fallback to file-based template
+      emailContent = await loadTemplateFromFile(templateName);
+      subject = options.subject || "Notification";
+      attachments = getTemplateAttachments(templateName);
+    } else {
       throw new Error("Email template not found");
     }
 
-    //==========Perform dynamic data replacement (e.g., replace
-    // {{first_name}} with the actual name)
-    let emailContent = template.body;
+    // 3️⃣ Inject OTP HTML automatically if otp exists
+    if (dynamicData.otp) {
+      dynamicData.otp_html = buildOtpHtml(dynamicData.otp);
+    }
+
+    // 4️⃣ Replace dynamic placeholders {{key}}
     for (const key in dynamicData) {
       const regex = new RegExp(`{{${key}}}`, "g");
       emailContent = emailContent.replace(regex, dynamicData[key]);
     }
 
-    //================Send email=================//
+    // 5️⃣ Send email
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: to,
-      subject: template.subject,
+      to,
+      subject,
       html: emailContent,
+      attachments,
     };
 
     await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
+    console.log("✅ Email sent successfully to", to);
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("❌ Error sending email:", error.message);
+    throw error;
   }
 }
 
-module.exports = { sendEmail };
+module.exports = {
+  sendEmail,
+};

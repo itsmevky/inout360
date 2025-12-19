@@ -3,6 +3,7 @@ const paginate = require("../../helpers/limitoffset");
 const DeviceModel = require("./model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
+const PolicyModel = require("../policy/model");
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
@@ -275,6 +276,68 @@ exports.getById = async (req, res) => {
       status: true,
       message: "Record fetched",
       data: formatDevice(device),
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Assign or update policy for a device
+exports.setDevicePolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const policyData = req.body || {};
+
+    const device = await DeviceModel.findById(id);
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    let policy;
+    if (device.policyId) {
+      policy = await PolicyModel.findByIdAndUpdate(
+        device.policyId,
+        { rules: policyData },
+        { new: true }
+      );
+    } else {
+      policy = await PolicyModel.create({
+        name: `Policy-${device.deviceId || device._id}`,
+        rules: policyData,
+      });
+      device.policyId = policy._id;
+    }
+
+    device.devicePolicyState = { ...policyData };
+    await device.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Policy assigned successfully",
+      policy,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Fetch policy and applied state for a device
+exports.getDevicePolicy = async (req, res) => {
+  try {
+    const device = await DeviceModel.findById(req.params.id)
+      .populate("policyId")
+      .lean();
+
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      data: {
+        policy: device.policyId || null,
+        appliedState: device.devicePolicyState || {},
+      },
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
