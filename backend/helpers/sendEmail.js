@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const EmailTemplate = require("../models/Template.js"); // Assuming you have an EmailTemplate model
+const EmailTemplate = require("../models/Template.js");
 
 //=====Configure the email transport (Gmail is used in this example)====//
 const transporter = nodemailer.createTransport({
@@ -14,11 +14,13 @@ const transporter = nodemailer.createTransport({
 async function sendEmail(templateName, to, dynamicData) {
   try {
     //==========Fetch email template from the database=======//
-    const template = await EmailTemplate.findOne({ name: templateName });
-
-    if (!template) {
-      throw new Error("Email template not found");
-    }
+    const template =
+      (await EmailTemplate.findOne({ name: templateName })) ||
+      // fallback default template if DB is empty
+      {
+        subject: "Notification",
+        body: "<p>{{message}}</p>",
+      };
 
     //==========Perform dynamic data replacement (e.g., replace
     // {{first_name}} with the actual name)
@@ -38,6 +40,7 @@ async function sendEmail(templateName, to, dynamicData) {
 
     await transporter.sendMail(mailOptions);
     console.log("Email sent successfully");
+    // console.log(mailOptions)
   } catch (error) {
     console.error("Error sending email:", error);
   }
