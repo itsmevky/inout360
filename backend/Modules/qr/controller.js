@@ -8,6 +8,7 @@ const UserSession = require("../userSessions/model");
 const QrToken = require("./model");
 const AttendanceModel = require("../attendance/model");
 const EmployeeModel = require("../employees/model");
+const SettingsModel = require("../settings/model");
 
 const JWT_SECRET =
   process.env.SECRET_KEY ||
@@ -185,6 +186,12 @@ const createQrToken = async (payload) => {
       throw error;
     }
     expirationMs = seconds * 1000;
+  } else {
+    const settings = await SettingsModel.findOne().lean();
+    const fallbackSeconds = Number(settings?.qrExpirySeconds);
+    if (Number.isFinite(fallbackSeconds) && fallbackSeconds > 0) {
+      expirationMs = fallbackSeconds * 1000;
+    }
   }
 
   const tokenId = randomUUID();
@@ -238,6 +245,8 @@ exports.generateQrPng = async (req, res) => {
     res.set({
       "Content-Type": "image/png",
       "Cache-Control": "no-store",
+      "Access-Control-Expose-Headers":
+        "X-QR-Token, X-QR-Expires-At, X-QR-Action, X-QR-Location",
       "X-QR-Token": token,
       "X-QR-Expires-At": expiresAt.toISOString(),
       "X-QR-Action": action,
@@ -249,6 +258,57 @@ exports.generateQrPng = async (req, res) => {
     return res
       .status(error.status || 500)
       .json({ message: error.message || "Server error", error: error.message });
+  }
+};
+
+exports.getStatus = async (req, res) => {
+  try {
+    const { token, tokenId } = req.query;
+    if (!token && !tokenId) {
+      return res.status(400).json({ message: "token or tokenId is required" });
+    }
+
+    let resolvedTokenId = tokenId;
+    if (token) {
+      let decoded = null;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch (error) {
+        if (error.name === "TokenExpiredError") {
+          decoded = jwt.decode(token);
+        } else {
+          return res.status(400).json({ message: "token is invalid" });
+        }
+      }
+      resolvedTokenId = decoded?.jti;
+    }
+
+    if (!resolvedTokenId) {
+      return res.status(400).json({ message: "tokenId missing in token" });
+    }
+
+    const qrRecord = await QrToken.findOne({ tokenId: resolvedTokenId }).lean();
+    if (!qrRecord) {
+      return res.status(404).json({ message: "QR token not found" });
+    }
+
+    const now = new Date();
+    const expired = qrRecord.expiresAt ? qrRecord.expiresAt < now : false;
+
+    return res.status(200).json({
+      status: true,
+      data: {
+        tokenId: qrRecord.tokenId,
+        action: qrRecord.action,
+        location: qrRecord.location,
+        expiresAt: qrRecord.expiresAt,
+        usedAt: qrRecord.usedAt,
+        expired,
+        used: !!qrRecord.usedAt,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

@@ -215,6 +215,7 @@ exports.register = async (req, res) => {
       status: true,
       message: "Device registered successfully. Proceed to send OTP.",
       deviceId: device._id,
+      userId: user._id,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

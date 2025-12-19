@@ -5,12 +5,19 @@ const toBool = (v, fallback) => (typeof v === "boolean" ? v : fallback);
 const normalizePayload = (body = {}) => {
   const deviceControls = body.deviceControls || {};
   const alerts = body.alerts || {};
+  const qrExpirySeconds =
+    Number.isFinite(Number(body.qrExpirySeconds)) && Number(body.qrExpirySeconds) > 0
+      ? Number(body.qrExpirySeconds)
+      : undefined;
+  const otpEmail = body.otpEmail ? String(body.otpEmail).trim().toLowerCase() : undefined;
 
   return {
     apiEndpointUrl: body.apiEndpointUrl,
     unitLocation: body.unitLocation,
     apkFileUrl: body.apkFileUrl,
     companyLogoUrl: body.companyLogoUrl,
+    qrExpirySeconds,
+    otpEmail,
     deviceControls: {
       cameraAccess: toBool(deviceControls.cameraAccess, true),
       allowAppUninstall: toBool(deviceControls.allowAppUninstall, false),

@@ -9,6 +9,7 @@
       "shift": ["create", "read", "update", "delete"],
       "attendance": ["create", "read", "update", "delete"],
       "rfid": ["create", "read", "update", "delete"],
+      "settings": ["read", "update"],
       "permissions": ["create", "read", "update", "delete"],
       "role": ["create", "read", "update", "delete"]
     }
@@ -23,6 +24,7 @@
       "shift": ["create", "read", "update", "delete"],
       "attendance": ["create", "read", "update", "delete"],
       "rfid": ["create", "read", "update", "delete"],
+      "settings": ["read", "update"],
       "permissions": ["create", "read", "update"],
       "role": ["create", "read", "update"]
     }

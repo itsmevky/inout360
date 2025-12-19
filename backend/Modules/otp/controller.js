@@ -6,6 +6,7 @@ const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const DeviceOtp = require("./otpModel");
 const OtpEmailConfig = require("./otpEmailModel");
+const SettingsModel = require("../settings/model");
 const { sendEmail } = require("../../helpers/sendemail");
 
 const normalizeDeviceId = (value) => String(value || "").trim();
@@ -94,16 +95,19 @@ exports.sendOtp = async (req, res) => {
       raw: req.body,
     });
 
-    // Resolve OTP email (superadmin-configured, global)
-    const emailConfig = await OtpEmailConfig.findOne();
-    if (!emailConfig) {
+    // Resolve OTP email (settings overrides legacy config)
+    const settings = await SettingsModel.findOne().lean();
+    const otpEmail =
+      (settings?.otpEmail && String(settings.otpEmail).trim()) ||
+      (await OtpEmailConfig.findOne())?.email;
+    if (!otpEmail) {
       return res.status(400).json({ status: false, message: "OTP email not configured" });
     }
 
     const resolvedUserName = user?.name || employee?.name || "User";
     const displayEmployeeId = resolvedEmployeeId || "N/A";
     await sendOtpEmail(
-      emailConfig.email,
+      otpEmail,
       otpCode,
       device.deviceName || deviceName,
       resolvedUserName,

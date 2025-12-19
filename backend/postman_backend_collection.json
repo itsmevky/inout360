@@ -34,6 +34,48 @@
               "raw": "{\n  \"email\": \"ravi104@example.com\",\n  \"password\": \"Passw0rd!\"\n}"
             }
           }
+        },
+        {
+          "name": "Forgot Password (Send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/forgot-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ravi104@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify OTP (Reset Password)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/verify-otp",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ravi104@example.com\",\n  \"otp\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ravi104@example.com\",\n  \"newPassword\": \"NewPass@123\"\n}"
+            }
+          }
         }
       ]
     },
@@ -105,13 +147,13 @@
         },
         {
           "name": "Send OTP",
-          "description": "Send device OTP. Body: userId (user _id or employeeId/_id), employeeId (optional but recommended), deviceId or deviceName. Requires OTP email to be configured (superadmin).",
+          "description": "Send device OTP. Body: userId (user _id or employeeId/_id), employeeId (optional), deviceId or deviceName. Requires OTP email to be configured (superadmin).",
           "request": {
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": "{{base_url}}/otp/send-otp",
+            "url": "{{base_url}}/device/send-otp",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"userId\": \"{{user_or_employee_id}}\",\n  \"employeeId\": \"EMP001\",\n  \"deviceId\": \"DEV-777\"\n}"
@@ -120,17 +162,53 @@
         },
         {
           "name": "Verify OTP",
-          "description": "Verify OTP. Header: x-device-id (deviceId). Body: otpTransactionId, otp.",
+          "description": "Verify OTP. Header: x-device-id (deviceId) or deviceId in body. Body: otpTransactionId, otp.",
           "request": {
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
               { "key": "x-device-id", "value": "DEV-777" }
             ],
-            "url": "{{base_url}}/otp/verify-otp",
+            "url": "{{base_url}}/device/verify-otp",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"otpTransactionId\": \"{{otp_txn_id}}\",\n  \"otp\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Set Device Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/device/{{device_id}}/policy",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cameraDisabled\": false,\n  \"uninstallBlocked\": true,\n  \"kioskMode\": false,\n  \"allowedApps\": [\"com.example.app\"],\n  \"blockedApps\": [\"com.bad.app\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Device Policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/device/{{device_id}}/policy"
+          }
+        },
+        {
+          "name": "Device Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/device/device-event",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"{{device_id}}\",\n  \"event\": \"camera_opened\",\n  \"cameraStatus\": \"on\",\n  \"name\": \"Ravi Kumar\",\n  \"employeeId\": \"EMP-104\",\n  \"imagePath\": \"/path/to/image.jpg\"\n}"
             }
           }
         },

@@ -28,6 +28,18 @@ const settingsSchemaDefinition = {
     default: "",
   },
 
+  qrExpirySeconds: {
+    type: Number,
+    default: 60,
+  },
+
+  otpEmail: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: "",
+  },
+
   deviceControls: {
     cameraAccess: { type: Boolean, default: true },
     allowAppUninstall: { type: Boolean, default: false },
@@ -65,6 +77,8 @@ const settingsTransform = (ret) => {
     unitLocation: ret.unitLocation,
     apkFileUrl: ret.apkFileUrl,
     companyLogoUrl: ret.companyLogoUrl,
+    qrExpirySeconds: ret.qrExpirySeconds,
+    otpEmail: ret.otpEmail,
 
     deviceControls: ret.deviceControls,
     alerts: ret.alerts,
