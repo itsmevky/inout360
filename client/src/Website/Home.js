@@ -17,19 +17,19 @@ const Home = () => {
           <h1 className="text-2xl font-bold text-blue-700">Inout360</h1>
           <div className="flex space-x-4 gap-5">
 
-          <button
-          onClick={() => {
-            localStorage.removeItem("accesstoken");
-            localStorage.removeItem("refreshtoken");
-            Cookies.remove("accesstoken");
-            Cookies.remove("refreshtoken");
-            navigate("/login");
-          }}
-          className="bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          style={{ padding: "6px" }}
-        >
-          Login
-        </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem("accesstoken");
+                localStorage.removeItem("refreshtoken");
+                Cookies.remove("accesstoken");
+                Cookies.remove("refreshtoken");
+                navigate("/login");
+              }}
+              className="bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              style={{ padding: "6px" }}
+            >
+              Login
+            </button>
 
             {/* <button
               onClick={() => navigate("/register")}
@@ -43,18 +43,18 @@ const Home = () => {
 
         {/* Hero Section */}
         <main
-          className="h-screen flex container m-auto flex-col md:flex-row items-center  px-8 md:px-20 py-20"
+          className="h-screen flex container m-auto flex-col md:flex-row items-center  px-8 md:px-20 py-20 homepage-main-box"
           style={{ margin: "auto" }}
         >
-          <div className="md:w-1/2 text-center md:text-left">
-            <h2 className="text-4xl md:text-5xl font-bold text-blue-700 mb-6">
-            Contractor Workforce Entry Management Process.</h2>
+          <div className="md:w-1/2 text-center md:text-left homepage-heading">
+            <h2 className="text-4xl md:text-5xl sm:text-2xl font-bold text-blue-700 mb-6 py-5">
+              Contractor Workforce Entry Management Process.</h2>
             <p className="text-lg text-gray-700 mb-6">
-             To streamline and monitor the attendance, movement, and deployment of contractor
+              To streamline and monitor the attendance, movement, and deployment of contractor
               students, teachers, parents, finances, and more—all from a single
               platform.
             </p>
-            <div className="Designation-section flex gap-10">
+            <div className="Designation-section flex gap-5 !px-0">
               <button
                 onClick={() => navigate("/login")}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
@@ -73,11 +73,11 @@ const Home = () => {
           </div>
 
           {/* Illustration or Image */}
-          <div className="mt-10 md:mt-0 md:w-1/2">
+          <div className="mt-10 md:mt-0 md:w-1/2 homepage-storyset-imag-box">
             <img
               src="https://img.freepik.com/free-vector/education-concept-illustration_114360-6310.jpg"
               alt="School Management Illustration"
-              className="w-full max-w-md mx-auto"
+              className="w-full max-w-md mx-auto homepage-storyset-image"
             />
           </div>
         </main>

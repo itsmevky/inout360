@@ -5270,6 +5270,105 @@ input:checked + .slider:before {
 }
 
 
+@media (min-width: 421px) and (max-width: 550px){
+  .inside-form{
+width: 90%;
+}
+}
+/* =========================
+   HOME PAGE
+========================= */
+
+@media (min-width: 320px) and (max-width: 550px){
+  .homepage-main-box{
+    padding: 20px 25px !important; 
+    justify-content: center;
+    flex-direction: column-reverse;
+    gap: 10px;
+
+  }
+  .homepage-heading h2{
+font-size: 20px;
+  }
+   .homepage-heading p{
+font-size: 15px;
+   }
+   .Designation-section{
+    justify-content: center;
+    gap: 10px;
+   }
+   .homepage-storyset-image {
+    width: 300px;
+}
+.right-section-all-pages{
+  margin: 0px 10px !important;
+}
+}
+
+@media (min-width: 768px) and (max-width: 1024px){
+.homepage-main-box{
+  padding: 25px 10px !important;
+  width: 100%;
+  margin: 0px 30px;
+}
+.homepage-main-box h2{
+font-size: 2rem;
+}
+.homepage-storyset-image{
+  width: 300px;
+}
+.homepage-main-box p{
+font-size: 1rem;
+}
+   .homepage-storyset-imag-box{
+    width: 50%;
+    display: flex;
+    justify-content: end;
+    }
+    .homepage-heading{
+width: 50%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    }
+}
+
+@media (min-width: 551px) and (max-width: 767px){
+ .homepage-main-box{
+    padding: 20px 25px; justify-content: center;
+    flex-direction: column-reverse;
+    gap: 10px;
+
+  }
+  .homepage-heading h2{
+font-size: 22px;
+  }
+   .homepage-heading p{
+font-size: 15px;
+   }
+   .Designation-section{
+    justify-content: center;
+    gap: 10px;
+   }
+   .homepage-storyset-image {
+    width: 280px;
+}
+}
+
+.homepage-main-box{
+  padding: 20px 50px;
+  width: 100%;
+}
+.homepage-storyset-imag-box {
+display: flex;
+justify-content: center;
+/* width: 50%; */
+}
+.homepage-heading{
+  /* width: 50%; */
+}
+
+
 
 /* =========================
    BASE RESET
@@ -5329,7 +5428,7 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 ========================= */
 .form-item {
   position: relative;
-  margin-bottom: 22px;
+  /* margin-bottom: 22px; */
 }
 
 .form-item input {
@@ -5367,6 +5466,7 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   top: -7px;
   font-size: 12px;
   color: #5d45f9;
+      left: 14px;
 }
 
 /* =========================

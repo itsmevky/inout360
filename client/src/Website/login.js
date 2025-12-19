@@ -112,9 +112,8 @@ const LoginComponent = () => {
         Cookies.set("refreshtoken", refreshToken);
 
         // 👤 Store full name (combine first + last name)
-        const fullName = `${userInfo.firstName || ""} ${
-          userInfo.lastName || ""
-        }`.trim();
+        const fullName = `${userInfo.firstName || ""} ${userInfo.lastName || ""
+          }`.trim();
         if (fullName) {
           localStorage.setItem("user_fullname", fullName);
           userInfo.fullname = fullName; // add for later use
@@ -147,8 +146,8 @@ const LoginComponent = () => {
       console.error("❌ Login error:", error);
       toast.error(
         error.response?.data?.message ||
-          error.message ||
-          "An error occurred. Please try again."
+        error.message ||
+        "An error occurred. Please try again."
       );
     }
   };
