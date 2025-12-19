@@ -53,17 +53,7 @@ const roles = {
   contractor: {
     can: ["read_sections", "read_shift"],
   },
-  teacher: {
-    can: [
-      "read_user",
-      "read_employees",
-      "read_contractors",
-      "read_sections",
-      "read_shift",
-      "read_attendance",
-      "read_rfid",
-    ],
-  },
+  
 };
 
 module.exports = roles;

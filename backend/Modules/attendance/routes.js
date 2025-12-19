@@ -4,7 +4,7 @@ const Controller = require("./controller");
 const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
 
-const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor", "teacher"];
+const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor"];
 
 router.post(
   "/",
