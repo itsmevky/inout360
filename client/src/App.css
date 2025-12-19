@@ -4130,12 +4130,16 @@ body {
        margin-top: 90px;
      }
 
+}@media (min-width: 420px) and (max-width: 768px){
+  .status-select-option-dropdown.first-left.form-item {
+    width: 100%;
+}
 }
 
 @media (min-width: 420px) and (max-width: 1024px){
-  .status-select-option-dropdown.first-left.form-item {
-    width: 47%;
-}
+  /* .status-select-option-dropdown.first-left.form-item {
+    width: 100%;
+} */
 .status-dropdown-section{
  flex-wrap: wrap;
  gap: 4px;
@@ -4147,7 +4151,8 @@ body {
     width: 100%;
 }
 
-.input-search-bar input
+.input-search-bar input,
+.form-item select select
  {
     width: 100%;
 }
@@ -5264,3 +5269,211 @@ input:checked + .slider:before {
   }
 }
 
+
+
+/* =========================
+   BASE RESET
+========================= */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* =========================
+   PAGE WRAPPER
+========================= */
+.auth-wrapper {
+  min-height: 99vh;
+  /* background: linear-gradient(180deg, #02050b, #0b1530); */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+/* =========================
+   CARD
+========================= */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background:#fff;
+  border-radius: 16px;
+  padding: 32px;
+box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  color: #fff;
+}
+
+/* =========================
+   TEXT
+========================= */
+.auth-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: #9aa4c7;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+/* =========================
+   FORM FIELD
+========================= */
+.form-item {
+  position: relative;
+  margin-bottom: 22px;
+}
+
+.form-item input {
+  width: 100%;
+  padding: 18px 10px;
+  border-radius: 10px;
+  border: 1px solid #2a3565;
+  background: transparent;
+  color: #666666;
+  font-size: 15px;
+  outline: none;
+}
+
+.form-item input:focus {
+  border-color: #5d45f9;
+}
+
+/* Floating Label */
+.form-item label {
+  position: absolute;
+  top: 15%;
+  left: 14px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #363636;
+  pointer-events: none;
+  transition: 0.2s ease;
+  font-weight: 600;
+  background:#fff;
+  padding: 0 6px;
+}
+
+.form-item input:focus + label,
+.form-item input:not(:placeholder-shown) + label {
+  top: -7px;
+  font-size: 12px;
+  color: #5d45f9;
+}
+
+/* =========================
+   ERROR / MESSAGE
+========================= */
+.error-message {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #ff6b6b;
+}
+
+.field-error {
+  border-color: #ff6b6b !important;
+}
+
+.message-section {
+  margin-top: 18px;
+  font-size: 14px;
+  text-align: center;
+  color: #6ee7b7;
+}
+
+/* =========================
+   BUTTON
+========================= */
+.primary-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+ background: #22374e;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  /* box-shadow: 0 10px 30px rgba(93, 69, 249, 0.4); */
+  transition: all 0.2s ease;
+}
+
+.primary-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+/* =========================
+   📱 MOBILE (≤480px)
+========================= */
+@media (max-width: 480px) {
+  .auth-wrapper {
+    padding: 16px;
+  }
+
+  .auth-card {
+    padding: 22px;
+    border-radius: 14px;
+  }
+
+  .auth-title {
+    font-size: 22px;
+  }
+
+  .auth-subtitle {
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
+
+  .form-item input {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .primary-btn {
+    font-size: 15px;
+    padding: 13px;
+  }
+}
+
+/* =========================
+   📲 TABLET (481px–768px)
+========================= */
+@media (min-width: 481px) and (max-width: 768px) {
+  .auth-card {
+    max-width: 460px;
+    padding: 28px;
+  }
+
+  .auth-title {
+    font-size: 24px;
+  }
+}
+
+/* =========================
+   💻 LAPTOP (769px–1200px)
+========================= */
+@media (min-width: 769px) {
+  .auth-card {
+    max-width: 420px;
+  }
+}
+
+/* =========================
+   🖥 LARGE SCREENS (≥1200px)
+========================= */
+@media (min-width: 1200px) {
+  .auth-card {
+    max-width: 440px;
+  }
+}

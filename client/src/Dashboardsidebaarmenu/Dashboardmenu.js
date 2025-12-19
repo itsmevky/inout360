@@ -40,10 +40,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
   const allNavItems = [
     { label: "Dashboard", icon: "dashboard", path: "/dashboard" },
     { label: "Employees", icon: "group", path: `${basePath}/employees` },
+    // { label: "Attendance", icon: "event", path: `${basePath}/attendance` },
+    // { label: "Contractors", icon: "badge", path: `${basePath}/contractor` },
+    // { label: "Rfid", icon: "qr_code", path: `${basePath}/rfid` },
+    // { label: "Zones", icon: "map", path: `${basePath}/zones` },
     { label: "Location", icon: "my_location", path: `${basePath}/location` },
     { label: "Activity", icon: "timeline", path: `${basePath}/activity` },
     { label: "Settings", icon: "settings", path: `${basePath}/settings` },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
+
   ];
 
   // ✅ Role access
@@ -51,6 +56,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     superadmin: [
       "Dashboard",
       "Employees",
+      // "Attendance",
+      // "Contractors",
+      // "Rfid",
+      // "Zones",
       "Device",
       "Settings",
       "Location",
@@ -59,6 +68,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     admin: [
       "Dashboard",
       "Employees",
+      // "Attendance",
+      // "Contractors",
+      // "Rfid",
       "Device",
       "Settings",
       "Location",

@@ -31,7 +31,8 @@ const LocationList = () => {
     <div className="p-4">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-4 location-list-heading"
-        style={{ marginTop: "70px" }}>
+      >
+        {/* style={{ marginTop: "70px" }} */}
         <h2 className="text-xl font-bold mb-4">Geofence Location List</h2>
 
         <button

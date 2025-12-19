@@ -81,50 +81,44 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="main-inner">
-      <div className="sections">
-        <div className="left-section"></div>
-        <div className="right-section">
-          <div className="form-justification">
-            <form onSubmit={handleSubmit}>
-              <div className="inside-form">
-                <h2>Forgot Your Password</h2>
-                <div className="email-section">
-                  <div className="form-item">
-                    <input
-                      type="text"
-                      name="email"
-                      value={userData.email}
-                      autoComplete="off"
-                      onChange={handleInputChange}
-                      onBlur={handleBlur}
-                      className={getFieldClassName("email")}
-                      placeholder=""
-                    />
-                    <label htmlFor="email">Email</label>
-                    {/* <div className="error-section">
-                          {errors.email && (
-                            <span className="error-message">
-                              {errors.email}
-                            </span>
-                          )}
-                        </div> */}
-                  </div>
-                </div>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <h2 className="auth-title">Forgot your password?</h2>
+        <p className="auth-subtitle">
+          Enter your registered email to receive OTP
+        </p>
 
-                <div className="last-section">
-                  <div className="button-section">
-                    <button type="submit">Get Otp</button>
-                  </div>
-                </div>
-                {message && <div className="message-section">{message}</div>}
-              </div>
-            </form>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-item">
+            <input
+              type="text"
+              name="email"
+              value={userData.email}
+              autoComplete="off"
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              className={getFieldClassName("email")}
+              placeholder=" "
+            />
+            <label>Email address</label>
+
+            {errors.email && (
+              <span className="error-message">{errors.email}</span>
+            )}
           </div>
-        </div>
+
+          <button type="submit" className="primary-btn">
+            Get OTP
+          </button>
+
+          {message && (
+            <div className="message-section">{message}</div>
+          )}
+        </form>
       </div>
     </div>
   );
+
 };
 
 export default ForgotPassword;

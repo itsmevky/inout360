@@ -87,7 +87,7 @@ const CustomDataTable = ({
       ========================== */}
       <div className="hidden md:block overflow-x-auto">
         <table className="min-w-[900px] w-full bg-white border rounded shadow">
-          <thead className="sticky top-0 z-10 bg-gray-200">
+          <thead className="sticky top-0  bg-gray-200">
             <tr>
               {columns.map((col, index) => (
                 <th
