@@ -110,9 +110,12 @@ class Validator {
     }
 
     if (Object.keys(this.errors).length > 0) {
-      const error = new Error("Validation failed");
+      const firstField = Object.keys(this.errors)[0];
+      const firstMessage = this.errors[firstField]?.[0];
+      const error = new Error(firstMessage || "Validation failed");
       error.status = 400;
       error.errors = this.errors;
+      error.firstMessage = firstMessage;
       throw error;
     }
 

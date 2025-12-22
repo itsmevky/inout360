@@ -9,7 +9,7 @@ const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmi
 router.get(
   "/summary",
   verifyToken,
-  checkAuthorization(allRoles, "activity"),
+  checkAuthorization(allRoles, "dashboard"),
   Controller.getSummary
 );
 

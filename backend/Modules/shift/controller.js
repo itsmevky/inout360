@@ -52,7 +52,7 @@ exports.add = async (req, res) => {
     if (error.errors) {
       return res.status(400).json({
         status: false,
-        message: "Validation failed",
+        message: error.message || "Validation failed",
         errors: error.errors,
       });
     }

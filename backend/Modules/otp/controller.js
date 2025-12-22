@@ -183,9 +183,16 @@ exports.verifyOtp = async (req, res) => {
     device.verified = true;
     device.deviceStatus = "Active";
     device.status = "ONLINE";
+    if (!device.registerToken) {
+      device.registerToken = randomUUID();
+    }
     await device.save();
 
-    return res.status(200).json({ status: true, message: "Device verified successfully" });
+    return res.status(200).json({
+      status: true,
+      message: "Device verified successfully",
+      registerToken: device.registerToken,
+    });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
   }

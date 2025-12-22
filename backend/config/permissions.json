@@ -9,6 +9,7 @@
       "shift": ["create", "read", "update", "delete"],
       "attendance": ["create", "read", "update", "delete"],
       "rfid": ["create", "read", "update", "delete"],
+      "dashboard": ["read"],
       "settings": ["read", "update"],
       "permissions": ["create", "read", "update", "delete"],
       "role": ["create", "read", "update", "delete"]
@@ -24,6 +25,7 @@
       "shift": ["create", "read", "update", "delete"],
       "attendance": ["create", "read", "update", "delete"],
       "rfid": ["create", "read", "update", "delete"],
+      "dashboard": ["read"],
       "settings": ["read", "update"],
       "permissions": ["create", "read", "update"],
       "role": ["create", "read", "update"]
@@ -39,6 +41,7 @@
       "shift": ["create", "read", "update"],
       "attendance": ["create", "read", "update"],
       "rfid": ["create", "read", "update"],
+      "dashboard": ["read"],
       "permissions": ["read"],
       "role": ["read"]
     }
@@ -51,7 +54,8 @@
       "sections": ["read"],
       "shift": ["read"],
       "attendance": ["read", "update"],
-      "rfid": ["read"]
+      "rfid": ["read"],
+      "dashboard": ["read"]
     }
   },
   "manager": {
@@ -63,21 +67,24 @@
       "sections": ["read"],
       "shift": ["read"],
       "attendance": ["read"],
-      "rfid": ["read"]
+      "rfid": ["read"],
+      "dashboard": ["read"]
     }
   },
   "employee": {
     "hierarchy": 6,
     "modules": {
       "sections": ["read"],
-      "shift": ["read"]
+      "shift": ["read"],
+      "dashboard": ["read"]
     }
   },
   "contractor": {
     "hierarchy": 7,
     "modules": {
       "sections": ["read"],
-      "shift": ["read"]
+      "shift": ["read"],
+      "dashboard": ["read"]
     }
   }
 }

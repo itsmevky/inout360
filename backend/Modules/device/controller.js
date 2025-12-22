@@ -16,6 +16,19 @@ const normalizeDeviceId = (value) => String(value || "").trim();
 const boolOrDefault = (value, defaultValue) =>
   typeof value === "boolean" ? value : defaultValue;
 
+const toValidDate = (value) => {
+  if (!value) return undefined;
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? undefined : value;
+  }
+  const str = String(value).trim();
+  if (!str) return undefined;
+  // Trim microseconds to milliseconds if present (e.g. 2025-12-22T12:07:02.922527)
+  const normalized = str.replace(/(\.\d{3})\d+/, "$1");
+  const d = new Date(normalized);
+  return isNaN(d.getTime()) ? undefined : d;
+};
+
 const cleanUpdate = (obj) =>
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 
@@ -24,6 +37,7 @@ const formatDevice = (doc) => {
   return {
     ...d,
     id: d._id?.toString?.() || d.id,
+    name: d.name,
     userName:
       d.userId?.name ||
       (d.userId && (d.userId.firstName || d.userId.lastName)
@@ -47,6 +61,7 @@ const upsertDevice = async (payload) => {
     userId,
     employeeId,
     deviceName,
+    name,
     deviceStatus,
     type,
     platform,
@@ -54,12 +69,18 @@ const upsertDevice = async (payload) => {
     browser,
     osVersion,
     appVersion,
+    fcmToken,
+    isDeviceOwner,
+    deviceInfo,
+    devicePolicyState,
     status,
     deviceOwner,
     cameraAllowed,
     locationAllowed,
     lastScreenshotAt,
     enrollmentDate,
+    lastSeen,
+    createdAt,
     metadata = {},
     raw = {},
     verified,
@@ -75,6 +96,7 @@ const upsertDevice = async (payload) => {
   let filter = cleanUpdate({
     userId,
     deviceName,
+    name,
     platform,
   });
 
@@ -87,11 +109,12 @@ const upsertDevice = async (payload) => {
     filter = { $or: orFilters };
   }
 
-  const update = cleanUpdate({
+  const updateSet = cleanUpdate({
     userId,
     employeeId,
     deviceId,
     deviceName,
+    name,
     deviceStatus,
     type: type || "MOBILE",
     platform,
@@ -99,23 +122,54 @@ const upsertDevice = async (payload) => {
     browser,
     osVersion,
     appVersion,
+    fcmToken,
+    isDeviceOwner: typeof isDeviceOwner === "boolean" ? isDeviceOwner : undefined,
+    deviceInfo,
+    devicePolicyState,
     status: normalizedStatus,
     lastOnline: normalizedStatus === "ONLINE" ? now : undefined,
-    enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined,
+    enrollmentDate: toValidDate(enrollmentDate),
+    lastSeen: toValidDate(lastSeen),
     deviceOwner,
     cameraAllowed: boolOrDefault(cameraAllowed, true),
     locationAllowed: boolOrDefault(locationAllowed, true),
-    lastScreenshotAt: lastScreenshotAt ? new Date(lastScreenshotAt) : undefined,
+    lastScreenshotAt: toValidDate(lastScreenshotAt),
     metadata,
     raw,
     verified: typeof verified === "boolean" ? verified : undefined,
   });
 
-  return DeviceModel.findOneAndUpdate(filter, update, {
+  const createdAtDate = toValidDate(createdAt);
+  const updateDoc = {
+    $set: updateSet,
+    ...(createdAtDate ? { $setOnInsert: { createdAt: createdAtDate } } : {}),
+  };
+
+  const result = await DeviceModel.findOneAndUpdate(filter, updateDoc, {
     new: true,
     upsert: true,
     setDefaultsOnInsert: true,
-  }).populate("userId");
+    runValidators: true,
+    rawResult: true,
+  });
+
+  let doc = result?.value;
+  if (doc && typeof doc.populate === "function") {
+    await doc.populate("userId");
+  }
+  if (!doc) {
+    doc = await DeviceModel.findOne(filter).populate("userId");
+  }
+
+  const wasInserted = !!result?.lastErrorObject?.upserted;
+  if (process.env.NODE_ENV !== "production") {
+    const id = doc?._id ? doc._id.toString() : "unknown";
+    console.log(
+      `Device upsert ${wasInserted ? "inserted" : "updated"}: ${id}`
+    );
+  }
+
+  return doc;
 };
 
 // Track or upsert device info (used on login or heartbeats)
@@ -129,7 +183,12 @@ exports.track = async (req, res) => {
       data: formatDevice(device),
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    const details = error && error.stack ? error.stack : error;
+    console.error("Device register failed:", details);
+    return res.status(500).json({
+      status: false,
+      message: error.message || "Device register failed",
+    });
   }
 };
 
@@ -148,6 +207,12 @@ exports.register = async (req, res) => {
       model,
       osVersion,
       appVersion,
+      fcmToken,
+      isDeviceOwner,
+      deviceInfo,
+      devicePolicyState,
+      createdAt,
+      lastSeen,
       deviceOwner,
     } = req.body;
 
@@ -201,21 +266,75 @@ exports.register = async (req, res) => {
       employeeId,
       deviceId,
       deviceName: deviceName || deviceId,
+      name,
       platform,
       model,
       osVersion,
       appVersion,
+      fcmToken,
+      isDeviceOwner,
+      deviceInfo,
+      devicePolicyState,
+      createdAt,
+      lastSeen,
       deviceOwner,
       status: "OFFLINE",
       verified: false,
-      raw: req.body,
     });
+
+    if (!device || !device._id) {
+      return res.status(500).json({
+        status: false,
+        message: "Device register failed: no document returned from DB",
+      });
+    }
+
+    console.log("Device register saved:", device._id.toString());
 
     return res.status(200).json({
       status: true,
       message: "Device registered successfully. Proceed to send OTP.",
       deviceId: device._id,
       userId: user._id,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Verify device register token to allow skipping OTP on future launches
+exports.verifyRegisterToken = async (req, res) => {
+  try {
+    const token = String(req.body.registerToken || "").trim();
+    const deviceId = String(req.body.deviceId || "").trim();
+    if (!token || !deviceId) {
+      return res.status(400).json({
+        status: false,
+        message: "deviceId and registerToken are required",
+      });
+    }
+
+    const orFilters = [{ deviceId: new RegExp(`^${normalizeDeviceId(deviceId)}$`, "i") }];
+    if (mongoose.isValidObjectId(deviceId)) {
+      orFilters.push({ _id: deviceId });
+    }
+    const device = await DeviceModel.findOne({ $or: orFilters });
+    if (!device || !device.registerToken) {
+      return res.status(404).json({ status: false, message: "Device not registered" });
+    }
+    if (device.registerToken !== token) {
+      return res.status(401).json({ status: false, message: "Invalid register token" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Device verified",
+      data: {
+        deviceId: device._id,
+        employeeId: device.employeeId,
+        userId: device.userId,
+        verified: !!device.verified,
+      },
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

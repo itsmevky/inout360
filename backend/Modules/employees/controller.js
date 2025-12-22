@@ -33,31 +33,51 @@ const normalizePayload = (data) => {
     ...(lastName ? { lastName } : {}),
     profileImage: data.profileImage || data.profile_image || "",
     currentAddress: {
-      street: data.currentAddress?.street || data.currentStreet || data.current_address_street,
-      city: data.currentAddress?.city || data.currentCity || data.current_address_city,
-      state: data.currentAddress?.state || data.currentState || data.current_address_state,
+      street:
+        data.currentAddress?.street ||
+        data.currentStreet ||
+        data.current_address_street ||
+        data.currentaddress,
+      city:
+        data.currentAddress?.city ||
+        data.currentCity ||
+        data.current_address_city ||
+        data.city,
+      state:
+        data.currentAddress?.state ||
+        data.currentState ||
+        data.current_address_state ||
+        data.state,
       pincode:
         data.currentAddress?.pincode ||
         data.currentPincode ||
-        data.current_address_pincode,
+        data.current_address_pincode ||
+        data.pincode,
     },
     permanentAddress: {
       street:
         data.permanentAddress?.street ||
         data.permanentStreet ||
-        data.permanent_address_street,
+        data.permanent_address_street ||
+        data.permanentaddress,
       city:
         data.permanentAddress?.city ||
         data.permanentCity ||
-        data.permanent_address_city,
+        data.permanent_address_city ||
+        data.permanentCity ||
+        data.city,
       state:
         data.permanentAddress?.state ||
         data.permanentState ||
-        data.permanent_address_state,
+        data.permanent_address_state ||
+        data.permanentState ||
+        data.state,
       pincode:
         data.permanentAddress?.pincode ||
         data.permanentPincode ||
-        data.permanent_address_pincode,
+        data.permanent_address_pincode ||
+        data.permanentPincode ||
+        data.pincode,
     },
     joiningDate: toDate(data.joiningDate || data.joining_date),
     dob: toDate(data.dob || data.date_of_birth),
@@ -183,7 +203,7 @@ exports.add = async (req, res) => {
     if (error.errors) {
       return res.status(400).json({
         status: false,
-        message: "Validation failed",
+        message: error.message || "Validation failed",
         errors: error.errors,
       });
     }
@@ -213,10 +233,11 @@ exports.getAll = async (req, res) => {
     // Normalize payload for UI (add id and name)
     const employees = result.data.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
+      const fullName = `${plain.firstName || ""} ${plain.lastName || ""}`.trim();
       return {
         ...plain,
         id: plain._id?.toString?.() || plain.id,
-        name: `${plain.firstName || ""} ${plain.lastName || ""}`.trim(),
+        name: plain.name || fullName,
       };
     });
 

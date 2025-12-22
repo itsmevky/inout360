@@ -6,6 +6,7 @@ const deviceSchemaDefinition = {
   employeeId: { type: String, trim: true, index: true },
   deviceId: { type: String, trim: true, index: true },
   deviceName: { type: String, required: true, trim: true },
+  name: { type: String, trim: true },
   deviceStatus: {
     type: String,
     enum: ["Active", "Disable"],
@@ -39,6 +40,7 @@ const deviceSchemaDefinition = {
     default: "OFFLINE",
   },
   verified: { type: Boolean, default: false },
+  registerToken: { type: String, trim: true, index: true, default: null },
   lastOnline: { type: Date, default: null },
   enrollmentDate: { type: Date, default: null },
   lastSeen: { type: Date, default: null },
@@ -50,7 +52,7 @@ const deviceSchemaDefinition = {
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
 };
 
-const deviceModel = new ajModel("UserDevice", deviceSchemaDefinition);
+const deviceModel = new ajModel("Device", deviceSchemaDefinition);
 deviceModel.schema.index({ userId: 1, type: 1 });
 deviceModel.schema.index({ employeeId: 1 });
 

@@ -430,8 +430,9 @@ exports.consumeQr = async (req, res) => {
       });
     }
 
+    const usedAt = new Date();
     await QrToken.findByIdAndUpdate(qrRecord._id, {
-      usedAt: new Date(),
+      usedAt,
     });
 
     return res.status(200).json({
@@ -440,6 +441,11 @@ exports.consumeQr = async (req, res) => {
       employeeId: employee.employeeId,
       deviceId: sessionDeviceId,
       location,
+      tokenId,
+      action,
+      expiresAt: qrRecord.expiresAt,
+      usedAt,
+      redirectUrl: `${process.env.CLIENT_URL || "http://localhost:3000"}/login-success`,
     });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
