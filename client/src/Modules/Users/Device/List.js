@@ -1,87 +1,36 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { getData } from "../../../Helpers/api.js";
 
 const Device = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [deviceList, setDeviceList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // ========================= SAMPLE DEVICE LIST ========================= //
-  const deviceList = [
-    {
-      id: "DEV-1001",
-      deviceName: "Samsung 23 Ultra",
-      userName: "Rahul Sharma",
-      employeeId: "EMP-501",
-      androidId: "fjs73hshs883",
-      fcmStatus: "Active",
-      ownerMode: "Device Owner",
-      lastOnline: "2025-01-12 10:15 AM",
-      enrolled: "2025-01-01",
-      appVersion: "3.2.1",
-      androidVersion: "13",
-      online: true,
-      battery: 822586,
-      cameraBlocked: false,
-      locationEnabled: true,
-      lastScreenshot: "2025-01-12 09:45 AM",
-    },
-    {
-      id: "DEV-2001",
-      deviceName: "Vivo Y20",
-      userName: "Amit Kumar",
-      employeeId: "EMP-503",
-      androidId: "8dhwi88sjsn2",
-      fcmStatus: "Inactive",
-      ownerMode: "Not Active",
-      lastOnline: "2025-01-10 05:20 PM",
-      enrolled: "2025-01-05",
-      appVersion: "3.1.0",
-      androidVersion: "12",
-      online: false,
-      employeeid: 27,
-      cameraBlocked: true,
-      locationEnabled: false,
-      lastScreenshot: "2025-01-11 06:10 PM",
-    },
-    {
-      id: "DEV-2001",
-      deviceName: "Apple 16 pro",
-      userName: "vivek Kumar",
-      employeeId: "EMP-503",
-      androidId: "8dhwi88sjsn2",
-      fcmStatus: "Inactive",
-      ownerMode: "Active",
-      lastOnline: "2025-01-10 05:20 PM",
-      enrolled: "2025-01-05",
-      appVersion: "3.1.0",
-      androidVersion: "12",
-      online: false,
-      employeeid: 27,
-      cameraBlocked: true,
-      locationEnabled: false,
-      lastScreenshot: "2025-01-11 06:10 PM",
-    }, {
-      id: "DEV-2001",
-      deviceName: "Apple 17 pro",
-      userName: "Amit Kumar",
-      employeeId: "EMP-503",
-      androidId: "8dhwi88sjsn2",
-      fcmStatus: "Inactive",
-      ownerMode: "Not Active",
-      lastOnline: "2025-01-10 05:20 PM",
-      enrolled: "2025-01-05",
-      appVersion: "3.1.0",
-      androidVersion: "12",
-      online: true,
-      employeeid: 27,
-      cameraBlocked: true,
-      locationEnabled: false,
-      lastScreenshot: "2025-01-11 06:10 PM",
-    },
-  ];
+  const loadDevices = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getData("/device");
+      setDeviceList(res?.devices || []);
+    } catch (err) {
+      setError("Failed to load devices.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ========================= COLORS & BADGES ========================= //
   const statusBadge = (status) => {
-    return status ? (
+    const normalized = String(status || "").toUpperCase();
+    const isOnline =
+      normalized === "ONLINE" ||
+      normalized === "ACTIVE" ||
+      normalized === "TRUE" ||
+      normalized === "ONLINE" ||
+      normalized === "ON";
+    return isOnline ? (
       <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Online</span>
     ) : (
       <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold">Offline</span>
@@ -103,6 +52,17 @@ const Device = () => {
       <span className="px-2 py-1 bg-red-200 text-red-700 rounded text-xs">OFF</span>
     );
   };
+
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toLocaleString();
+  };
+
+  useEffect(() => {
+    loadDevices();
+  }, []);
 
   // ========================= OPEN MODAL ========================= //
   const openDeviceModal = (device) => {
@@ -126,6 +86,16 @@ const Device = () => {
 
       {/* ========================= DEVICE TABLE ========================= */}
       <div className="mt-6">
+        {loading ? (
+          <div className="bg-white p-5 rounded-xl shadow text-gray-600">
+            Loading devices...
+          </div>
+        ) : null}
+        {!loading && error ? (
+          <div className="bg-white p-5 rounded-xl shadow text-red-600">
+            {error}
+          </div>
+        ) : null}
 
         {/* ================= DESKTOP TABLE ================= */}
         <div className="hidden lg:block bg-white p-5 rounded-xl shadow">
@@ -146,13 +116,23 @@ const Device = () => {
             <tbody>
               {deviceList.map((device) => (
                 <tr key={device.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 font-semibold">{device.deviceName}</td>
-                  <td className="p-3">{device.userName}</td>
+                  <td className="p-3 font-semibold">
+                    {device.deviceName || device.deviceId || device.name || "-"}
+                  </td>
+                  <td className="p-3">{device.userName || "-"}</td>
                   <td className="p-3">{device.employeeId}</td>
-                  <td className="p-3">{statusBadge(device.online)}</td>
-                  <td className="p-3">{device.androidVersion}</td>
-                  <td className="p-3">{device.appVersion}</td>
-                  <td className="p-3 text-sm text-gray-600">{device.lastOnline}</td>
+                  <td className="p-3">
+                    {statusBadge(device.statusLabel || device.status)}
+                  </td>
+                  <td className="p-3">
+                    {device.osVersion || device.androidVersion || "-"}
+                  </td>
+                  <td className="p-3">
+                    {device.appVersion || device.appVer || "-"}
+                  </td>
+                  <td className="p-3 text-sm text-gray-600">
+                    {formatDate(device.lastOnline || device.lastSeen)}
+                  </td>
                   <td className="p-3 text-center">
                     <button
                       onClick={() => openDeviceModal(device)}
@@ -183,26 +163,34 @@ const Device = () => {
               {/* LABEL / VALUE TABLE */}
               <div className="grid grid-cols-2 gap-y-1 text-sm">
                 <div className="text-gray-500 font-medium">Device</div>
-                <div className="text-right font-semibold">{device.deviceName}</div>
+                <div className="text-right font-semibold">
+                  {device.deviceName || device.deviceId || device.name || "-"}
+                </div>
 
                 <div className="text-gray-500 font-medium">User</div>
-                <div className="text-right">{device.userName}</div>
+                <div className="text-right">{device.userName || "-"}</div>
 
                 <div className="text-gray-500 font-medium">Employee ID</div>
                 <div className="text-right">{device.employeeId}</div>
 
                 <div className="text-gray-500 font-medium">Status</div>
-                <div className="text-right">{statusBadge(device.online)}</div>
+                <div className="text-right">
+                  {statusBadge(device.statusLabel || device.status)}
+                </div>
 
                 <div className="text-gray-500 font-medium">Android</div>
-                <div className="text-right">{device.androidVersion}</div>
+                <div className="text-right">
+                  {device.osVersion || device.androidVersion || "-"}
+                </div>
 
                 <div className="text-gray-500 font-medium">App Ver.</div>
-                <div className="text-right">{device.appVersion}</div>
+                <div className="text-right">
+                  {device.appVersion || device.appVer || "-"}
+                </div>
 
                 <div className="text-gray-500 font-medium">Last Online</div>
                 <div className="text-right text-xs text-gray-600">
-                  {device.lastOnline}
+                  {formatDate(device.lastOnline || device.lastSeen)}
                 </div>
               </div>
 
@@ -243,10 +231,10 @@ const Device = () => {
 
             {/* HEADER */}
             <h2 className="text-lg sm:text-2xl font-bold">
-              {selectedDevice.deviceName}
+              {selectedDevice.deviceName || selectedDevice.deviceId || selectedDevice.name || "-"}
             </h2>
             <p className="text-gray-500 text-sm">
-              Android ID: {selectedDevice.androidId}
+              Android ID: {selectedDevice.deviceInfo?.androidId || selectedDevice.deviceId || "-"}
             </p>
 
             {/* ================= DEVICE STATUS (STACKED ON MOBILE) ================= */}
@@ -254,32 +242,44 @@ const Device = () => {
 
               <div className="p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Device Owner</h4>
-                <p className="text-sm">{selectedDevice.ownerMode}</p>
+                <p className="text-sm">
+                  {selectedDevice.isDeviceOwner ? "Device Owner" : "Not Active"}
+                </p>
               </div>
 
               <div className="p-4 bg-green-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Camera</h4>
-                {cameraBadge(selectedDevice.cameraBlocked)}
+                {cameraBadge(!!selectedDevice.cameraDisabled)}
               </div>
 
               <div className="p-4 bg-yellow-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Location</h4>
-                {locationBadge(selectedDevice.locationEnabled)}
+                {locationBadge(
+                  selectedDevice.locationAllowed !== undefined
+                    ? selectedDevice.locationAllowed
+                    : true
+                )}
               </div>
 
               <div className="p-4 bg-purple-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Last Screenshot</h4>
-                <p className="text-xs">{selectedDevice.lastScreenshot}</p>
+                <p className="text-xs">
+                  {formatDate(selectedDevice.lastScreenshotAt)}
+                </p>
               </div>
 
               <div className="p-4 bg-red-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Battery</h4>
-                <p className="text-sm">{selectedDevice.battery}%</p>
+                <p className="text-sm">
+                  {selectedDevice.battery ? `${selectedDevice.battery}%` : "-"}
+                </p>
               </div>
 
               <div className="p-4 bg-gray-100 rounded-lg">
                 <h4 className="font-semibold text-sm">Enrollment Date</h4>
-                <p className="text-sm">{selectedDevice.enrolled}</p>
+                <p className="text-sm">
+                  {formatDate(selectedDevice.enrollmentDate)}
+                </p>
               </div>
             </div>
 

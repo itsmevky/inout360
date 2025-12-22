@@ -16,10 +16,8 @@ const attendanceSchemaDefinition = {
     trim: true,
   },
 
-  employeeId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee",
-  },
+  employeeId: { type: String, trim: true, index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
   date: {
     type: Date,
@@ -79,6 +77,7 @@ const attendanceTransform = (ret) => {
     id: ret._id,
     contractorId: ret.contractorId,
     employeeId: ret.employeeId,
+    userId: ret.userId,
     rfidCardId: ret.rfidCardId,
     date: ret.date,
 

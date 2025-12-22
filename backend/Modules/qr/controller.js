@@ -96,10 +96,10 @@ const getDayRange = (date) => {
   return { start, end };
 };
 
-const markAttendance = async (employee, action) => {
+const markAttendance = async (employee, action, userId) => {
   const { start, end } = getDayRange(new Date());
   const attendanceQuery = {
-    employeeId: employee._id,
+    employeeId: employee.employeeId,
     date: { $gte: start, $lte: end },
   };
   const now = new Date();
@@ -117,7 +117,8 @@ const markAttendance = async (employee, action) => {
     return AttendanceModel.create({
       contractorId: employee.employeeId,
       rfidCardId: employee.rfid,
-      employeeId: employee._id,
+      employeeId: employee.employeeId,
+      userId: userId || employee.userId || null,
       date: start,
       entryGateIn: now,
       sectionAssigned: employee.section,
@@ -136,7 +137,8 @@ const markAttendance = async (employee, action) => {
     return AttendanceModel.create({
       contractorId: employee.employeeId,
       rfidCardId: employee.rfid,
-      employeeId: employee._id,
+      employeeId: employee.employeeId,
+      userId: userId || employee.userId || null,
       date: start,
       exitGateOut: now,
       sectionAssigned: employee.section,
@@ -194,6 +196,29 @@ const createQrToken = async (payload) => {
     }
   }
 
+  const now = new Date();
+  const normalizedLocation = normalizeLocation(location);
+  const reuseFilter = {
+    action,
+    location: normalizedLocation,
+    usedAt: { $exists: false },
+    expiresAt: { $gt: now },
+  };
+
+  const existing = await QrToken.findOne(reuseFilter).sort({ createdAt: -1 }).lean();
+  if (existing) {
+    const token = jwt.sign(
+      { jti: existing.tokenId, action, location },
+      JWT_SECRET,
+      {
+        expiresIn: Math.max(
+          1,
+          Math.floor((existing.expiresAt.getTime() - Date.now()) / 1000)
+        ),
+      }
+    );
+    return { token, expiresAt: existing.expiresAt, action, location, reused: true };
+  }
   const tokenId = randomUUID();
   const token = jwt.sign(
     { jti: tokenId, action, location },
@@ -210,12 +235,12 @@ const createQrToken = async (payload) => {
     raw: payload,
   });
 
-  return { token, expiresAt: expiresAtDate, action, location };
+  return { token, expiresAt: expiresAtDate, action, location, reused: false };
 };
 
 exports.generateQr = async (req, res) => {
   try {
-    const { token, expiresAt, action, location } = await createQrToken(req.body);
+    const { token, expiresAt, action, location, reused } = await createQrToken(req.body);
 
     return res.status(201).json({
       message: "QR generated successfully",
@@ -223,6 +248,7 @@ exports.generateQr = async (req, res) => {
       expiresAt,
       action,
       location,
+      reused,
     });
   } catch (error) {
     console.error("QR Generate Error:", error);
@@ -234,7 +260,7 @@ exports.generateQr = async (req, res) => {
 
 exports.generateQrPng = async (req, res) => {
   try {
-    const { token, expiresAt, action, location } = await createQrToken(req.body);
+    const { token, expiresAt, action, location, reused } = await createQrToken(req.body);
     const pngBuffer = await qrcode.toBuffer(token, {
       type: "png",
       errorCorrectionLevel: "M",
@@ -246,11 +272,12 @@ exports.generateQrPng = async (req, res) => {
       "Content-Type": "image/png",
       "Cache-Control": "no-store",
       "Access-Control-Expose-Headers":
-        "X-QR-Token, X-QR-Expires-At, X-QR-Action, X-QR-Location",
+        "X-QR-Token, X-QR-Expires-At, X-QR-Action, X-QR-Location, X-QR-Reused",
       "X-QR-Token": token,
       "X-QR-Expires-At": expiresAt.toISOString(),
       "X-QR-Action": action,
       "X-QR-Location": String(location),
+      "X-QR-Reused": String(reused),
     });
     return res.status(200).send(pngBuffer);
   } catch (error) {
@@ -313,7 +340,7 @@ exports.getStatus = async (req, res) => {
 };
 
 exports.consumeQr = async (req, res) => {
-  const { token, userId, deviceId, location } = req.body;
+  const { token, userId, deviceId, location, deviceLocation } = req.body;
 
   try {
     if (!token) {
@@ -321,6 +348,9 @@ exports.consumeQr = async (req, res) => {
     }
     if (!userId) {
       return res.status(400).json({ message: "userId is required" });
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "userId must be a valid user id" });
     }
     if (location === undefined || location === null || location === "") {
       return res.status(400).json({ message: "location is required" });
@@ -359,18 +389,11 @@ exports.consumeQr = async (req, res) => {
     let user = null;
     let employee = null;
 
-    if (mongoose.isValidObjectId(userId)) {
-      user = await User.findById(userId);
-      if (!user) {
-        employee =
-          (await EmployeeModel.findById(userId)) ||
-          (await EmployeeModel.findOne({ userId }));
-      }
-    }
-    if (!user && !employee) {
+    user = await User.findById(userId);
+    if (!user) {
       employee =
-        (await EmployeeModel.findOne({ employeeId: String(userId) })) ||
-        (await EmployeeModel.findOne({ userId: userId }));
+        (await EmployeeModel.findById(userId)) ||
+        (await EmployeeModel.findOne({ userId }));
     }
     if (!user && employee?.userId) {
       user = await User.findById(employee.userId);
@@ -413,17 +436,35 @@ exports.consumeQr = async (req, res) => {
       return res.status(400).json({ message: "Employee RFID/section missing for attendance" });
     }
 
-    await markAttendance(employee, action);
+    await markAttendance(employee, action, user?._id);
 
     const sessionAction = action === "login" ? "Logged In" : "Logout";
+    const sessionUserId = employee?.userId || user?._id || employee._id;
+    const rawPayload = { ...req.body };
+    delete rawPayload.token;
+    delete rawPayload.userId;
+    delete rawPayload.deviceId;
+    delete rawPayload.employeeId;
+    delete rawPayload.action;
+    delete rawPayload.location;
+    delete rawPayload.deviceLocation;
+
     await UserSession.create({
-      userId: user ? user._id : employee._id,
+      userId: sessionUserId,
       deviceId: sessionDeviceId,
       employeeId: employee.employeeId,
       action: sessionAction,
+      token,
       location,
-      raw: req.body,
+      deviceLocation,
+      raw: rawPayload,
     });
+    if (deviceLocation !== undefined) {
+      await DeviceModel.updateOne(
+        { deviceId: sessionDeviceId },
+        { $set: { deviceLocation } }
+      );
+    }
     if (user) {
       await User.findByIdAndUpdate(user._id, {
         sessionStatus: sessionAction,
@@ -441,6 +482,7 @@ exports.consumeQr = async (req, res) => {
       employeeId: employee.employeeId,
       deviceId: sessionDeviceId,
       location,
+      deviceLocation,
       tokenId,
       action,
       expiresAt: qrRecord.expiresAt,

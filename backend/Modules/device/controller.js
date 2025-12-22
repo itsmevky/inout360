@@ -38,6 +38,7 @@ const formatDevice = (doc) => {
     ...d,
     id: d._id?.toString?.() || d.id,
     name: d.name,
+    deviceId: d.deviceId || d._id,
     userName:
       d.userId?.name ||
       (d.userId && (d.userId.firstName || d.userId.lastName)
@@ -49,6 +50,10 @@ const formatDevice = (doc) => {
         : (d.status || "").toUpperCase() === "BLOCKED"
           ? "Blocked"
           : "Offline",
+    deviceStatus: d.deviceStatus,
+    cameraDisabled: d.devicePolicyState?.cameraDisabled ?? false,
+    uninstallBlocked: d.devicePolicyState?.uninstallBlocked ?? false,
+    cameraAllowed: d.cameraAllowed ?? true,
     androidVersion: d.osVersion,
     appVer: d.appVersion,
     verified: !!d.verified,
@@ -80,6 +85,7 @@ const upsertDevice = async (payload) => {
     lastScreenshotAt,
     enrollmentDate,
     lastSeen,
+    deviceLocation,
     createdAt,
     metadata = {},
     raw = {},
@@ -130,6 +136,7 @@ const upsertDevice = async (payload) => {
     lastOnline: normalizedStatus === "ONLINE" ? now : undefined,
     enrollmentDate: toValidDate(enrollmentDate),
     lastSeen: toValidDate(lastSeen),
+    deviceLocation,
     deviceOwner,
     cameraAllowed: boolOrDefault(cameraAllowed, true),
     locationAllowed: boolOrDefault(locationAllowed, true),
@@ -175,12 +182,25 @@ const upsertDevice = async (payload) => {
 // Track or upsert device info (used on login or heartbeats)
 exports.track = async (req, res) => {
   try {
+    const { userId, employeeId, deviceId } = req.body || {};
+    if (!userId || !employeeId || !deviceId) {
+      return res.status(400).json({
+        status: false,
+        message: "userId, employeeId and deviceId are required",
+      });
+    }
     const device = await upsertDevice(req.body);
     return res.status(200).json({
       status: true,
       message: "Device tracked",
-      deviceId: device._id,
-      data: formatDevice(device),
+      data: {
+        deviceId: device.deviceId || device._id,
+        userId: device.userId?._id || device.userId,
+        deviceStatus: device.deviceStatus,
+        verified: !!device.verified,
+        devicePolicyState: device.devicePolicyState || {},
+        deviceLocation: device.deviceLocation || null,
+      },
     });
   } catch (error) {
     const details = error && error.stack ? error.stack : error;

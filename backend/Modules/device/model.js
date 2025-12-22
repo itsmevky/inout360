@@ -50,6 +50,7 @@ const deviceSchemaDefinition = {
   lastScreenshotAt: { type: Date, default: null },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
+  deviceLocation: { type: mongoose.Schema.Types.Mixed, default: null },
 };
 
 const deviceModel = new ajModel("Device", deviceSchemaDefinition);

@@ -13,7 +13,9 @@ const userSessionSchemaDefinition = {
     enum: ["Logged In", "Logout"],
     required: true,
   },
+  token: { type: String, trim: true, default: null },
   location: { type: mongoose.Schema.Types.Mixed, default: null },
+  deviceLocation: { type: mongoose.Schema.Types.Mixed, default: null },
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
 };
 
