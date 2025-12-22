@@ -28,6 +28,7 @@ const attendanceSchemaDefinition = {
   workfloorIn: { type: Date },
   workfloorOut: { type: Date },
   exitGateOut: { type: Date },
+  totalWorkHours: { type: Number, default: null },
 
   sectionAssigned: {
     type: String, // accept code or name
@@ -87,6 +88,7 @@ const attendanceTransform = (ret) => {
       workfloorOut: ret.workfloorOut,
       exitGateOut: ret.exitGateOut,
     },
+    totalWorkHours: ret.totalWorkHours,
 
     sectionAssigned: ret.sectionAssigned,
 

@@ -105,7 +105,10 @@ const markAttendance = async (employee, action, userId) => {
   const now = new Date();
 
   if (action === "login") {
-    const existing = await AttendanceModel.findOne(attendanceQuery);
+    const existing = await AttendanceModel.findOne({
+      ...attendanceQuery,
+      exitGateOut: { $exists: false },
+    });
     if (existing) {
       if (!existing.entryGateIn) {
         existing.entryGateIn = now;
@@ -127,9 +130,16 @@ const markAttendance = async (employee, action, userId) => {
   }
 
   if (action === "logout") {
-    const existing = await AttendanceModel.findOne(attendanceQuery);
+    const existing = await AttendanceModel.findOne({
+      ...attendanceQuery,
+      exitGateOut: { $exists: false },
+    }).sort({ createdAt: -1 });
     if (existing) {
       existing.exitGateOut = now;
+      if (existing.entryGateIn) {
+        const diffMs = now.getTime() - existing.entryGateIn.getTime();
+        existing.totalWorkHours = Math.max(0, diffMs / (1000 * 60 * 60));
+      }
       await existing.save();
       return existing;
     }
@@ -471,6 +481,20 @@ exports.consumeQr = async (req, res) => {
       });
     }
 
+    const deviceRecord = sessionDeviceId
+      ? await DeviceModel.findOne({ deviceId: sessionDeviceId }).lean()
+      : null;
+    const deviceSettings = deviceRecord
+      ? {
+          deviceStatus: deviceRecord.deviceStatus,
+          cameraDisabled: deviceRecord.devicePolicyState?.cameraDisabled ?? false,
+          uninstallBlocked: deviceRecord.devicePolicyState?.uninstallBlocked ?? false,
+          cameraAllowed: deviceRecord.cameraAllowed ?? true,
+          locationAllowed: deviceRecord.locationAllowed ?? true,
+          devicePolicyState: deviceRecord.devicePolicyState || {},
+        }
+      : null;
+
     const usedAt = new Date();
     await QrToken.findByIdAndUpdate(qrRecord._id, {
       usedAt,
@@ -483,6 +507,7 @@ exports.consumeQr = async (req, res) => {
       deviceId: sessionDeviceId,
       location,
       deviceLocation,
+      deviceSettings,
       tokenId,
       action,
       expiresAt: qrRecord.expiresAt,

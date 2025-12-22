@@ -461,6 +461,48 @@ exports.setDevicePolicy = async (req, res) => {
   }
 };
 
+// Toggle a single policy flag on a device
+exports.toggleDevicePolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { field } = req.body || {};
+    const allowedFields = ["cameraDisabled", "uninstallBlocked"];
+
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({ status: false, message: "Invalid policy field" });
+    }
+
+    const device = await DeviceModel.findById(id);
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    const current = device.devicePolicyState?.[field] ?? false;
+    const nextValue = !current;
+    device.devicePolicyState = {
+      ...(device.devicePolicyState || {}),
+      [field]: nextValue,
+    };
+    await device.save();
+
+    if (device.policyId) {
+      await PolicyModel.findByIdAndUpdate(
+        device.policyId,
+        { $set: { [`rules.${field}`]: nextValue } },
+        { new: true }
+      );
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Policy updated",
+      data: formatDevice(device),
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 // Fetch policy and applied state for a device
 exports.getDevicePolicy = async (req, res) => {
   try {
