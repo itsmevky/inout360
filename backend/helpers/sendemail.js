@@ -50,6 +50,7 @@ const getTemplateAttachments = (templateName) => {
           "pidilitelogo.avif"
         ),
         cid: "pidilite-logo",
+        contentDisposition: "inline",
       },
     ];
   }
@@ -71,6 +72,9 @@ async function sendEmail(templateName, to, dynamicData = {}, options = {}) {
     if (template) {
       subject = template.subject;
       emailContent = template.body;
+      if (emailContent.includes("cid:pidilite-logo")) {
+        attachments = getTemplateAttachments(templateName);
+      }
     } else if (options.fromFile === true) {
       // 2️⃣ Fallback to file-based template
       emailContent = await loadTemplateFromFile(templateName);
@@ -80,8 +84,14 @@ async function sendEmail(templateName, to, dynamicData = {}, options = {}) {
       throw new Error("Email template not found");
     }
 
-    // 3️⃣ Inject OTP HTML automatically if otp exists
-    if (dynamicData.otp) {
+    // 3️⃣ Normalize OTP fields and inject HTML
+    if (!dynamicData.otp && dynamicData.OTP) {
+      dynamicData.otp = dynamicData.OTP;
+    }
+    if (!dynamicData.otp_html && dynamicData.OTP_HTML) {
+      dynamicData.otp_html = dynamicData.OTP_HTML;
+    }
+    if (dynamicData.otp && !dynamicData.otp_html) {
       dynamicData.otp_html = buildOtpHtml(dynamicData.otp);
     }
 
