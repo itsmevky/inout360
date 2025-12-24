@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "../Add.js";
@@ -40,20 +39,25 @@ const Employeepage = () => {
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
-  const statusValues = ["Active", "Disabled", "Blocked"];
+  const statusValues = ["Active", "Inactive"];
 
   const [searchTerm, setSearchTerm] = useState("");
   const fetchemployees = async () => {
     setLoading(true);
     try {
-      const response = await API.getEmployees(
-        searchTerm,
-        currentPage,
-        rowsPerPage
-      );
+      const response = await API.getEmployees(searchTerm, currentPage, rowsPerPage, {
+        department: SelectedStatus || undefined,
+        attendanceStatus: attendanceFilter || undefined,
+      });
 
       if (Array.isArray(response.employees)) {
-        setAllEmployees(response.employees); // 🔥 original data
+        setAllEmployees(response.employees);
+        setData(response.employees);
+        setTotalRows(
+          response.total ??
+            response.pagination?.totalrecords ??
+            response.employees.length
+        );
       } else {
         setError("No employee data found");
       }
@@ -71,7 +75,10 @@ const Employeepage = () => {
   }, [currentPage, rowsPerPage, searchTerm, SelectedStatus, attendanceFilter]);
 
 
+  const getRowId = (row) => row?.id || row?._id;
+
   const handleCheckboxChange = (id) => {
+    if (!id) return;
     setSelectedUsers((prev) =>
       prev.includes(id)
         ? prev.filter((uid) => uid !== id)
@@ -84,7 +91,7 @@ const Employeepage = () => {
     if (selectedUsers.length === data.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(data.map((row) => row._id));
+      setSelectedUsers(data.map((row) => row.id || row._id).filter(Boolean));
     }
   };
 
@@ -112,7 +119,7 @@ const Employeepage = () => {
     try {
       const res = await deleteData(`/employee/${id}`);
 
-      if (res?.status === 200 || res?.success) {
+      if (res?.status === true || res?.success === true) {
         toast.success("Employee deleted successfully");
         fetchemployees();
       } else {
@@ -136,20 +143,20 @@ const Employeepage = () => {
       selector: (row) => (
         <input
           type="checkbox"
-          checked={selectedUsers.includes(row._id)}
-          onChange={() => handleCheckboxChange(row._id)}
+          checked={selectedUsers.includes(getRowId(row))}
+          onChange={() => handleCheckboxChange(getRowId(row))}
         />
       ),
       width: "3%",
     },
     {
       name: "ID",
-      selector: (row) => row._id,
+      selector: (row) => row.employeeId || row._id,
       width: "15%",
     },
     {
       name: "Name",
-      selector: (row) => row.firstName,
+      selector: (row) => row.name || row.firstName || "",
       width: "15%",
     },
     {
@@ -180,7 +187,7 @@ const Employeepage = () => {
     },
     {
       name: "Department",
-      selector: (row) => row.departmen,
+      selector: (row) => row.department,
       width: "15%",
     },
 
@@ -225,100 +232,6 @@ const Employeepage = () => {
       ),
     },
   ];
-  const datatable = [
-    {
-      _id: "EMP001",
-      firstName: "Amit Sharma",
-      email: "amit.sharma@example.com",
-      status: "Active",
-      gender: "Male",
-      departmen: "Sales",
-      attendanceStatus: "Present"
-    },
-    {
-      _id: "EMP002",
-      firstName: "Neha Verma",
-      email: "neha.verma@example.com",
-      status: "Active",
-      gender: "Female",
-      departmen: "Marketing",
-      attendanceStatus: "Absent"
-    },
-    {
-      _id: "EMP003",
-      firstName: "Rohit Mehta",
-      email: "rohit.mehta@example.com",
-      status: "Active",
-      gender: "Male",
-      departmen: "Finance",
-      attendanceStatus: "On Leave"
-    },
-    {
-      _id: "EMP004",
-      firstName: "Simran Kaur",
-      email: "simran.kaur@example.com",
-      status: "Inactive",
-      gender: "Female",
-      departmen: "HR",
-      attendanceStatus: "Present"
-    },
-    {
-      _id: "EMP005",
-      firstName: "Vikram Singh",
-      email: "vikram.singh@example.com",
-      status: "Active",
-      gender: "Male",
-      departmen: "IT",
-      attendanceStatus: "Absent"
-    },
-    {
-      _id: "EMP006",
-      firstName: "Pooja Mishra",
-      email: "pooja.mishra@example.com",
-      status: "Active",
-      gender: "Female",
-      departmen: "Operations",
-      attendanceStatus: "Present"
-    },
-    {
-      _id: "EMP007",
-      firstName: "Karan Patel",
-      email: "karan.patel@example.com",
-      status: "Inactive",
-      gender: "Male",
-      departmen: "Construction",
-      attendanceStatus: "On Leave"
-    },
-    {
-      _id: "EMP008",
-      firstName: "Divya Saini",
-      email: "divya.saini@example.com",
-      status: "Active",
-      gender: "Female",
-      departmen: "Manufacturing",
-      attendanceStatus: "Present"
-    },
-    {
-      _id: "EMP009",
-      firstName: "Harish Yadav",
-      email: "harish.yadav@example.com",
-      status: "Active",
-      gender: "Male",
-      departmen: "Sports Instructor",
-      attendanceStatus: "Absent"
-    },
-    {
-      _id: "EMP010",
-      firstName: "Ritu Chauhan",
-      email: "ritu.chauhan@example.com",
-      status: "Inactive",
-      gender: "Female",
-      departmen: "Art & Craft",
-      attendanceStatus: "Present"
-    }
-  ];
-
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -347,7 +260,7 @@ const Employeepage = () => {
       const response = await updateUserStatus(validUsers, SelectedStatus);
       if (response.status === true) {
         setSelectedStatus("");
-        setSelectedUsers("");
+        setSelectedUsers([]);
         fetchemployees(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
@@ -368,7 +281,6 @@ const Employeepage = () => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchemployees(); // Trigger fetch with the updated search term
   };
 
   const handleEdit = async (userId) => {
@@ -622,7 +534,7 @@ const Employeepage = () => {
         ) : (
           <CustomDataTable
             columns={columns}
-            data={data.length > 0 ? data : datatable}
+            data={data}
             totalRows={totalRows}
             rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
             defaultRowsPerPage={rowsPerPage}
@@ -680,7 +592,12 @@ const Employeepage = () => {
                 </button>
 
                 {/* FORM CONTENT */}
-                <AddUserForm />
+                <AddUserForm
+                  onSuccess={() => {
+                    toggleAddUserForm();
+                    fetchemployees();
+                  }}
+                />
               </div>
 
             </div>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "../Add.js";
@@ -11,7 +10,7 @@ import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
 const Teachers = () => {
   const [data, setData] = useState([]);
-  const [selectedTeachers, setSelectedTeachers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -20,7 +19,6 @@ const Teachers = () => {
   const [isAddUserFormVisible, setIsAddUserFormVisible] = useState(false);
   const [isEditUserFormVisible, setIsEditUserFormVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
@@ -34,7 +32,7 @@ const Teachers = () => {
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
-  const statusValues = ["Active", "Disabled", "Blocked"];
+  const statusValues = ["Active", "Inactive"];
 
   const [searchTerm, setSearchTerm] = useState("");
   const fetchemployees = async () => {
@@ -67,34 +65,20 @@ const Teachers = () => {
 
 
 
+  const getRowId = (row) => row?.id || row?._id;
+
   const handleCheckboxChange = (id) => {
-    setSelectedTeachers((prev) =>
-      prev.includes(id) ? prev.filter((tid) => tid !== id) : [...prev, id]
+    if (!id) return;
+    setSelectedUsers((prev) =>
+      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
     );
   };
 
   const handleSelectAllChange = () => {
-    if (selectedTeachers.length === data.length) {
-      setSelectedTeachers([]);
+    if (selectedUsers.length === data.length) {
+      setSelectedUsers([]);
     } else {
-      setSelectedTeachers(data.map((t) => t.id));
-    }
-  };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      const res = await putData("/employees/${id}`, data", {
-        teachers: [id],
-        status,
-      });
-      if (res.status) {
-        toast.success("Status updated");
-        fetchemployees();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error("Failed to update status");
+      setSelectedUsers(data.map((row) => getRowId(row)).filter(Boolean));
     }
   };
 
@@ -132,10 +116,10 @@ const Teachers = () => {
       const res = await deleteData(`/employee/${id}`); // DELETE /api/employee/:id
       console.log("🔹 Delete API response:", res);
 
-      if (res.status === 200 || res.success === true) {
-        toast.success("✅ Employee deleted successfully!");
-        fetchemployees(); // refresh the list after delete
-      } else {
+    if (res.status === true || res.success === true) {
+      toast.success("✅ Employee deleted successfully!");
+      fetchemployees(); // refresh the list after delete
+    } else {
         toast.error(res.message || "❌ Failed to delete employee.");
       }
     } catch (err) {
@@ -150,14 +134,14 @@ const Teachers = () => {
         <input
           type="checkbox"
           onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
+          checked={selectedUsers.length === data.length && data.length > 0}
         />
       ),
       selector: (row) => (
         <input
           type="checkbox"
-          checked={selectedTeachers.includes(row._id)}
-          onChange={() => handleCheckboxChange(row._id)}
+          checked={selectedUsers.includes(getRowId(row))}
+          onChange={() => handleCheckboxChange(getRowId(row))}
         />
       ),
       width: "5%",
@@ -192,7 +176,7 @@ const Teachers = () => {
           <div className="flex space-x-2  ">
             <button
               className="text-blue-500"
-              onClick={() => handleEdit(row._id)}   // ✅ updated
+              onClick={() => handleEdit(getRowId(row))}
             >
               <svg
                 fill="#22374e"
@@ -208,7 +192,7 @@ const Teachers = () => {
           <div className="flex space-x-2 ">
             <button
               className="text-red-500"
-              onClick={() => handleDelete(row._id)}
+              onClick={() => handleDelete(getRowId(row))}
             >
               <svg
                 fill="red"
@@ -256,7 +240,7 @@ const Teachers = () => {
       const response = await updateUserStatus(validUsers, SelectedStatus);
       if (response.status === true) {
         setSelectedStatus("");
-        setSelectedUsers("");
+        setSelectedUsers([]);
         fetchemployees(); // Refresh user list
         toast.success("Updated Successfully!");
       } else {
@@ -277,7 +261,6 @@ const Teachers = () => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value); // Update the search term
-    fetchemployees(); // Trigger fetch with the updated search term
   };
 
   const handleEdit = async (userId) => {
@@ -393,9 +376,7 @@ const Teachers = () => {
               <option>Select Status</option>
 
               <option value="Active">Active</option>
-              <option value="Disabled">Disable</option>
-              <option value="Blocked">Block</option>
-              <option value="Trash">Trash</option>
+              <option value="Inactive">Inactive</option>
             </select>
           </div>
           <div className="outer-aply-section">

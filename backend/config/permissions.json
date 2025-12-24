@@ -11,6 +11,7 @@
       "rfid": ["create", "read", "update", "delete"],
       "dashboard": ["read"],
       "settings": ["read", "update"],
+      "activity": ["read"],
       "permissions": ["create", "read", "update", "delete"],
       "role": ["create", "read", "update", "delete"]
     }
@@ -27,6 +28,7 @@
       "rfid": ["create", "read", "update", "delete"],
       "dashboard": ["read"],
       "settings": ["read", "update"],
+      "activity": ["read"],
       "permissions": ["create", "read", "update"],
       "role": ["create", "read", "update"]
     }

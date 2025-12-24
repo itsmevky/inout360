@@ -1,133 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import { getData } from "../../Helpers/api.js";
 
 const ActivityPage = () => {
 
     // ============================================================
     // STATIC CAMERA & APP ACTIVITY DATA
     // ============================================================
-    const camActivityData = [
-        {
-            id: "A001",
-            user: "Rahul",
-            type: "screenshot",
-            deviceId: "DEV-1001",
-            employeeId: "EMP-501",
-            timestamp: "2025-01-12 10:15 AM",
-            media: "https://picsum.photos/200?random=1"
-        },
-        {
-            id: "A002",
-            user: "Rahul",
-            type: "screenshot",
-            deviceId: "DEV-1001",
-            employeeId: "EMP-501",
-            timestamp: "2025-01-14 02:10 PM",
-            media: "https://picsum.photos/200?random=2"
-        },
-        {
-            id: "A003",
-            user: "Simran",
-            type: "screenshot",
-            deviceId: "DEV-1002",
-            employeeId: "EMP-502",
-            timestamp: "2025-01-14 03:45 PM",
-            media: "https://picsum.photos/200?random=3"
-        },
-        {
-            id: "A004",
-            user: "Amit",
-            type: "screenshot",
-            deviceId: "DEV-1003",
-            employeeId: "EMP-503",
-            timestamp: "2025-01-15 09:20 AM",
-            media: "https://picsum.photos/200?random=4"
-        },
-        {
-            id: "A005",
-            user: "Neha",
-            type: "screenshot",
-            deviceId: "DEV-1004",
-            employeeId: "EMP-504",
-            timestamp: "2025-01-15 11:15 AM",
-            media: "https://picsum.photos/200?random=8"
-        },
-        {
-            id: "A006",
-            user: "Arjun",
-            type: "screenshot",
-            deviceId: "DEV-1005",
-            employeeId: "EMP-505",
-            timestamp: "2025-01-15 11:30 AM",
-            media: "https://picsum.photos/200?random=9"
-        },
-
-        {
-            id: "A007",
-            user: "Amit",
-            type: "take_picture",
-            deviceId: "DEV-1001",
-            employeeId: "EMP-503",
-            timestamp: "2025-01-12 11:00 AM",
-            media: "https://picsum.photos/200?random=5"
-        },
-        {
-            id: "A008",
-            user: "Simran",
-            type: "take_picture",
-            deviceId: "DEV-1002",
-            employeeId: "EMP-502",
-            timestamp: "2025-01-13 12:22 PM",
-            media: "https://picsum.photos/200?random=6"
-        },
-
-        {
-            id: "A011",
-            user: "Simran",
-            type: "video",
-            deviceId: "DEV-1002",
-            employeeId: "EMP-502",
-            timestamp: "2025-01-12 11:30 AM",
-            media: "https://picsum.photos/200?random=7"
-        },
-
-        {
-            id: "A014",
-            user: "Karan",
-            type: "app_install",
-            deviceId: "DEV-2001",
-            employeeId: "EMP-504",
-            timestamp: "2025-01-13 01:22 PM",
-            appName: "Pidilite"
-        },
-        {
-            id: "A015",
-            user: "Raj Kumar",
-            type: "app_install",
-            deviceId: "DEV-2001",
-            employeeId: "EMP-504",
-            timestamp: "2025-01-13 01:22 PM",
-            appName: "Pidilite"
-        },
-        {
-            id: "A016",
-            user: "Payal",
-            type: "app_install",
-            deviceId: "DEV-2001",
-            employeeId: "EMP-504",
-            timestamp: "2025-01-13 01:22 PM",
-            appName: "Pidilite"
-        },
-
-        {
-            id: "A018",
-            user: "Pooja",
-            type: "app_uninstall",
-            deviceId: "DEV-2002",
-            employeeId: "EMP-505",
-            timestamp: "2025-01-13 02:41 PM",
-            appName: "Pidilite"
-        },
-    ];
+    const [activityData, setActivityData] = useState([]);
+    const [summary, setSummary] = useState({
+        camera: 0,
+        app_install: 0,
+        app_uninstall: 0,
+    });
+    const [loading, setLoading] = useState(true);
 
     // ============================================================
     // COLUMN WIDTH CONFIG
@@ -146,11 +32,9 @@ const ActivityPage = () => {
     // COUNTS
     // ============================================================
     const counts = {
-        cameraTotal: camActivityData.filter(a =>
-            ["screenshot", "take_picture", "video"].includes(a.type)
-        ).length,
-        install: camActivityData.filter(a => a.type === "app_install").length,
-        uninstall: camActivityData.filter(a => a.type === "app_uninstall").length,
+        cameraTotal: summary.camera || 0,
+        install: summary.app_install || 0,
+        uninstall: summary.app_uninstall || 0,
     };
 
     const [selectedType, setSelectedType] = useState(null);
@@ -169,36 +53,41 @@ const ActivityPage = () => {
     // ============================================================
     // FILTER + SEARCH
     // ============================================================
-    const filteredUsers = (() => {
+    const filteredUsers = useMemo(() => {
         let list = [];
+        const cameraTypes = ["screenshot", "take_picture", "video"];
 
         if (selectedType === "camera_activity") {
             list = cameraFilter
-                ? camActivityData.filter(a => a.type === cameraFilter)
-                : camActivityData.filter(a =>
-                    ["screenshot", "take_picture", "video"].includes(a.type)
+                ? activityData.filter(a => a.type === cameraFilter)
+                : activityData.filter(a =>
+                    cameraTypes.includes(a.type) ||
+                    a.category === "camera" ||
+                    ["screenshot", "video"].includes(a.category)
                 );
+        } else if (selectedType === "app_install" || selectedType === "app_uninstall") {
+            list = activityData.filter(a => a.category === selectedType);
         } else if (selectedType) {
-            list = camActivityData.filter(a => a.type === selectedType);
+            list = activityData.filter(a => a.type === selectedType);
         }
 
         // Search filter (ADDED)
         if (searchTerm.trim() !== "") {
             list = list.filter(item =>
-                item.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.deviceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
+                String(item.user || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                String(item.deviceId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                String(item.employeeId || "").toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
         return list;
-    })();
+    }, [activityData, cameraFilter, searchTerm, selectedType]);
 
     // ============================================================
     // MODAL OPEN
     // ============================================================
     const openModal = (record) => {
-        const all = camActivityData.filter(a => a.user === record.user);
+        const all = activityData.filter(a => a.userKey === record.userKey);
         setModalUser({ user: record.user, activities: all });
     };
 
@@ -212,6 +101,70 @@ const ActivityPage = () => {
         { title: "App Installed", type: "app_install", count: counts.install },
         { title: "App Uninstalled", type: "app_uninstall", count: counts.uninstall },
     ];
+
+    const formatTimestamp = (value) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString();
+    };
+
+    useEffect(() => {
+        const fetchActivity = async () => {
+            setLoading(true);
+            try {
+                const [summaryResponse, listResponse] = await Promise.all([
+                    getData("/activity/summary"),
+                    getData("/activity"),
+                ]);
+                if (summaryResponse?.data) {
+                    setSummary(summaryResponse.data);
+                }
+                const list = Array.isArray(listResponse) ? listResponse : [];
+                const normalized = list.map((item) => {
+                    const userName =
+                        item.userName ||
+                        item.metadata?.userName ||
+                        item.metadata?.name ||
+                        item.metadata?.user ||
+                        item.userId ||
+                        "-";
+                    const activityType =
+                        item.activityType || item.title || item.category || "-";
+                    const appName =
+                        item.metadata?.appName ||
+                        item.metadata?.app ||
+                        item.title ||
+                        "";
+                    const mediaUrl =
+                        item.media?.[0]?.url ||
+                        item.metadata?.mediaUrl ||
+                        item.metadata?.media ||
+                        "";
+                    const userKey = item.userId || userName;
+
+                    return {
+                        id: item.id || item._id,
+                        user: userName,
+                        userKey,
+                        type: activityType,
+                        category: item.category,
+                        deviceId: item.deviceId,
+                        employeeId: item.employeeId,
+                        timestamp: item.occurredAt,
+                        appName,
+                        media: mediaUrl,
+                    };
+                });
+                setActivityData(normalized);
+            } catch (error) {
+                toast.error("Failed to load activity.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchActivity();
+    }, []);
 
     // ============================================================
     // RENDER UI
@@ -287,6 +240,7 @@ const ActivityPage = () => {
                     >
                         <option value="">All Camera Activity</option>
                         <option value="screenshot">Screenshot</option>
+                        <option value="take_picture">Take Picture</option>
                         <option value="video">Record Video</option>
                     </select>
                 </div>
@@ -324,10 +278,10 @@ const ActivityPage = () => {
                                     <tr key={item.id} className="hover:bg-gray-50">
                                         <td className="p-3">{index + 1}</td>
                                         <td className="p-3">{item.user}</td>
-                                        <td className="p-3">{item.type.replace("_", " ")}</td>
+                                        <td className="p-3">{(item.type || "-").replace("_", " ")}</td>
                                         <td className="p-3">{item.deviceId}</td>
                                         <td className="p-3">{item.employeeId}</td>
-                                        <td className="p-3">{item.timestamp}</td>
+                                        <td className="p-3">{formatTimestamp(item.timestamp)}</td>
 
                                         <td className="p-3">
                                             <div className="flex items-center gap-3 !p-0 !m-0">
@@ -391,21 +345,21 @@ const ActivityPage = () => {
                         </div>
 
                         {modalUser.activities.some(a =>
-                            ["app_install", "app_uninstall"].includes(a.type)
+                            ["app_install", "app_uninstall"].includes(a.category || a.type)
                         ) ? (
                             <>
                                 <h3 className="modal-section-title">App Activity</h3>
 
                                 {modalUser.activities
                                     .filter(a =>
-                                        ["app_install", "app_uninstall"].includes(a.type)
+                                        ["app_install", "app_uninstall"].includes(a.category || a.type)
                                     )
                                     .map((act) => (
                                         <div key={act.id} className="app-log-card">
                                             <p className="app-log-title">
-                                                {act.appName} — {act.type === "app_install" ? "Installed" : "Uninstalled"}
+                                                {act.appName || "-"} — {(act.category || act.type) === "app_install" ? "Installed" : "Uninstalled"}
                                             </p>
-                                            <p className="app-log-time">{act.timestamp}</p>
+                                            <p className="app-log-time">{formatTimestamp(act.timestamp)}</p>
                                         </div>
                                     ))}
                             </>
@@ -416,19 +370,25 @@ const ActivityPage = () => {
                                 <div className="camera-grid">
                                     {modalUser.activities
                                         .filter(a =>
-                                            ["screenshot", "take_picture", "video"].includes(a.type)
+                                            ["screenshot", "take_picture", "video"].includes(a.type) ||
+                                            a.category === "camera" ||
+                                            ["screenshot", "video"].includes(a.category)
                                         )
                                         .map((act) => (
                                             <div key={act.id} className="camera-card">
-                                                <img
-                                                    src={act.media}
-                                                    alt="activity"
-                                                    className="camera-img"
-                                                />
+                                                {act.media ? (
+                                                    <img
+                                                        src={act.media}
+                                                        alt="activity"
+                                                        className="camera-img"
+                                                    />
+                                                ) : (
+                                                    <div className="camera-img camera-img--empty">No media</div>
+                                                )}
                                                 <p className="camera-type">
-                                                    {act.type.replace("_", " ").toUpperCase()}
+                                                    {(act.type || act.category || "-").replace("_", " ").toUpperCase()}
                                                 </p>
-                                                <p className="camera-time">{act.timestamp}</p>
+                                                <p className="camera-time">{formatTimestamp(act.timestamp)}</p>
                                             </div>
                                         ))}
                                 </div>

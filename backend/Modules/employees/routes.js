@@ -3,6 +3,7 @@ const router = express.Router();
 const Controller = require("./controller");
 const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
+const { upload } = require("../../middleware/upload");
 
 const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor"];
 
@@ -10,6 +11,7 @@ router.post(
   "/",
   verifyToken,
   checkAuthorization(allRoles, "employees"),
+  upload.single("profileImage"),
   Controller.add
 );
 
@@ -18,6 +20,7 @@ router.post(
   "/add",
   verifyToken,
   checkAuthorization(allRoles, "employees"),
+  upload.single("profileImage"),
   Controller.add
 );
 
@@ -71,6 +74,7 @@ router.put(
   "/:id",
   verifyToken,
   checkAuthorization(allRoles, "employees"),
+  upload.single("profileImage"),
   Controller.update
 );
 

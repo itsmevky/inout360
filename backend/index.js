@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const modulesPath = path.join(__dirname, "Modules");
+const { UPLOAD_ROOT } = require("./middleware/upload");
 const responseTimeLogger = require("./middleware/responseTimeLogger");
 const cors = require("cors");
 const userRoutes = require("./Modules/user/routes");
@@ -73,6 +74,7 @@ mongoose
 
 //=======================Middleware===============================//
 app.use(cors(corsOptions));
+app.use("/uploads", express.static(UPLOAD_ROOT));
 
 // Explicit auth alias to user routes so frontend /api/auth/* continues to work
 app.use("/api/auth", userRoutes);

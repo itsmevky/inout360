@@ -1,8 +1,11 @@
 const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
 const EmployeeModel = require("./model");
 const UserModel = require("../user/model");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
+const { UPLOAD_ROOT } = require("../../middleware/upload");
 
 const normalizePayload = (data) => {
   const toDate = (v) => (v ? new Date(v) : v);
@@ -164,6 +167,9 @@ const validateEmployeeData = async (data) => {
 exports.add = async (req, res) => {
   try {
     const normalized = normalizePayload(req.body);
+    if (req.file) {
+      normalized.profileImage = `/uploads/employees/${req.file.filename}`;
+    }
     await validateEmployeeData(normalized);
 
     const existing = await EmployeeModel.findOne({ email: normalized.email });
@@ -319,6 +325,12 @@ exports.update = async (req, res) => {
   try {
     const normalized = normalizePayload(req.body);
     const updates = { ...normalized };
+    const previous = req.file
+      ? await EmployeeModel.findById(req.params.id).select("profileImage")
+      : null;
+    if (req.file) {
+      updates.profileImage = `/uploads/employees/${req.file.filename}`;
+    }
 
     // Do not process password updates in this flow
     delete updates.password;
@@ -329,6 +341,19 @@ exports.update = async (req, res) => {
     });
     if (!updated) {
       return res.status(404).json({ status: false, message: "Not found" });
+    }
+    if (req.file && previous?.profileImage) {
+      const oldPath = previous.profileImage;
+      if (oldPath.startsWith("/uploads/")) {
+        const absolutePath = path.join(UPLOAD_ROOT, oldPath.replace("/uploads/", ""));
+        try {
+          await fs.promises.unlink(absolutePath);
+        } catch (err) {
+          if (err.code !== "ENOENT") {
+            console.warn("Failed to delete image:", absolutePath, err.message);
+          }
+        }
+      }
     }
     return res.status(200).json({
       status: true,
@@ -381,11 +406,49 @@ exports.delete = async (req, res) => {
       });
     }
 
+    const employees = await EmployeeModel.find({ _id: { $in: recordIds } }).select(
+      "_id userId employeeId profileImage"
+    );
+    const userIds = employees
+      .map((employee) => employee.userId)
+      .filter(Boolean);
+    const employeeIds = employees
+      .map((employee) => employee.employeeId)
+      .filter(Boolean);
+    const imagePaths = employees
+      .map((employee) => employee.profileImage)
+      .filter(Boolean);
+
     const result = await EmployeeModel.deleteMany({ _id: { $in: recordIds } });
     if (result.deletedCount === 0) {
       return res
         .status(404)
         .json({ status: false, message: "No matching records found" });
+    }
+
+    if (userIds.length > 0 || employeeIds.length > 0) {
+      await UserModel.deleteMany({
+        $or: [
+          ...(userIds.length ? [{ _id: { $in: userIds } }] : []),
+          ...(employeeIds.length ? [{ employeeId: { $in: employeeIds } }] : []),
+        ],
+      });
+    }
+
+    if (imagePaths.length > 0) {
+      await Promise.all(
+        imagePaths.map(async (imagePath) => {
+          if (!imagePath.startsWith("/uploads/")) return;
+          const absolutePath = path.join(UPLOAD_ROOT, imagePath.replace("/uploads/", ""));
+          try {
+            await fs.promises.unlink(absolutePath);
+          } catch (err) {
+            if (err.code !== "ENOENT") {
+              console.warn("Failed to delete image:", absolutePath, err.message);
+            }
+          }
+        })
+      );
     }
 
     return res.status(200).json({

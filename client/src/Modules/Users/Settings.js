@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { domainpath, getData, putData } from "../../Helpers/api.js";
 
 const Settings = () => {
     const defaultDevice = {
-        cameraEnabled: true,
-        uninstallAllowed: false,
-        locationEnabled: true,
-        screenshotAllowed: false,
+        cameraAccess: true,
+        allowAppUninstall: false,
+        locationAccess: true,
+        allowScreenshots: false,
         blockUnknownApps: true,
-        autoSync: true,
-
-        whatsappCameraEnabled: true,
-        facebookCameraEnabled: true,
+        autoSyncEnable: true,
+        whatsappCameraAccess: false,
+        facebookCameraAccess: false,
     };
 
     const defaultAlerts = {
@@ -21,17 +23,24 @@ const Settings = () => {
     };
 
     const defaultSystem = {
-        apiUrl: "",
+        apiEndpointUrl: "",
         unitLocation: "",
         apkFile: null,
         logoFile: null,
+        apkFileUrl: "",
+        companyLogoUrl: "",
     };
 
     const [deviceSettings, setDeviceSettings] = useState(defaultDevice);
     const [alerts, setAlerts] = useState(defaultAlerts);
     const [systemConfig, setSystemConfig] = useState(defaultSystem);
-
+    const [initialDevice, setInitialDevice] = useState(defaultDevice);
+    const [initialAlerts, setInitialAlerts] = useState(defaultAlerts);
+    const [initialSystem, setInitialSystem] = useState(defaultSystem);
     const [isChanged, setIsChanged] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const baseUrl = useMemo(() => domainpath.replace(/\/api\/?$/, ""), []);
 
     const toggle = (setter, key) => {
         setIsChanged(true);
@@ -43,21 +52,92 @@ const Settings = () => {
         setSystemConfig((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleSave = () => {
-        setIsChanged(false);
-        alert("Changes Saved Successfully!");
+    const handleSave = async () => {
+        try {
+            const payload = new FormData();
+            payload.append("apiEndpointUrl", systemConfig.apiEndpointUrl || "");
+            payload.append("unitLocation", systemConfig.unitLocation || "");
+            payload.append("deviceControls", JSON.stringify(deviceSettings));
+            payload.append("alerts", JSON.stringify(alerts));
+
+            if (systemConfig.apkFile) {
+                payload.append("apkFile", systemConfig.apkFile);
+            }
+            if (systemConfig.logoFile) {
+                payload.append("companyLogo", systemConfig.logoFile);
+            }
+
+            const response = await putData("/settings", payload);
+            if (response?.status) {
+                const data = response?.data || {};
+                const nextSystem = {
+                    apiEndpointUrl: data.apiEndpointUrl || "",
+                    unitLocation: data.unitLocation || "",
+                    apkFile: null,
+                    logoFile: null,
+                    apkFileUrl: data.apkFileUrl || "",
+                    companyLogoUrl: data.companyLogoUrl || "",
+                };
+                const nextDevice = data.deviceControls || defaultDevice;
+                const nextAlerts = data.alerts || defaultAlerts;
+                setSystemConfig(nextSystem);
+                setDeviceSettings(nextDevice);
+                setAlerts(nextAlerts);
+                setInitialSystem(nextSystem);
+                setInitialDevice(nextDevice);
+                setInitialAlerts(nextAlerts);
+                setIsChanged(false);
+                toast.success(response.message || "Changes saved successfully!");
+            } else {
+                toast.error(response?.message || "Failed to save settings.");
+            }
+        } catch (error) {
+            toast.error("Failed to save settings.");
+        }
     };
 
     const handleCancel = () => {
-        setDeviceSettings(defaultDevice);
-        setAlerts(defaultAlerts);
-        setSystemConfig(defaultSystem);
+        setDeviceSettings(initialDevice);
+        setAlerts(initialAlerts);
+        setSystemConfig(initialSystem);
         setIsChanged(false);
     };
 
+    useEffect(() => {
+        const fetchSettings = async () => {
+            setLoading(true);
+            try {
+                const response = await getData("/settings");
+                const data = response?.data || {};
+                const nextSystem = {
+                    apiEndpointUrl: data.apiEndpointUrl || "",
+                    unitLocation: data.unitLocation || "",
+                    apkFile: null,
+                    logoFile: null,
+                    apkFileUrl: data.apkFileUrl || "",
+                    companyLogoUrl: data.companyLogoUrl || "",
+                };
+                const nextDevice = data.deviceControls || defaultDevice;
+                const nextAlerts = data.alerts || defaultAlerts;
+                setSystemConfig(nextSystem);
+                setDeviceSettings(nextDevice);
+                setAlerts(nextAlerts);
+                setInitialSystem(nextSystem);
+                setInitialDevice(nextDevice);
+                setInitialAlerts(nextAlerts);
+            } catch (error) {
+                toast.error("Failed to load settings.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSettings();
+    }, []);
+
     return (
-        <div className="p-4">
-            <div className="bg-white p-4 rounded-lg shadow flex items-center gap-3 text-xl font-semibold text-gray-700 setting-list-heading">
+        <>
+            <div className="p-4">
+                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-3 text-xl font-semibold text-gray-700 setting-list-heading">
                 <svg width="20"
                     fill="navy-blue"
                     xmlns="http://www.w3.org/2000/svg"
@@ -79,9 +159,9 @@ const Settings = () => {
                             <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
                             <input
                                 type="text"
-                                value={systemConfig.apiUrl}
+                                value={systemConfig.apiEndpointUrl}
                                 placeholder="https://your-backend.com/api/"
-                                onChange={(e) => handleConfigChange("apiUrl", e.target.value)}
+                                onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
                                 className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -111,6 +191,16 @@ const Settings = () => {
                                 onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
                                 className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 "
                             />
+                            {systemConfig.apkFileUrl && (
+                                <a
+                                    className="text-sm text-blue-600 underline mt-2 inline-block"
+                                    href={`${baseUrl}${systemConfig.apkFileUrl}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    View current APK
+                                </a>
+                            )}
                         </div>
 
                         {/* Logo Upload */}
@@ -123,9 +213,13 @@ const Settings = () => {
                                 className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50"
                             />
 
-                            {systemConfig.logoFile && (
+                            {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
                                 <img
-                                    src={URL.createObjectURL(systemConfig.logoFile)}
+                                    src={
+                                        systemConfig.logoFile
+                                            ? URL.createObjectURL(systemConfig.logoFile)
+                                            : `${baseUrl}${systemConfig.companyLogoUrl}`
+                                    }
                                     className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
                                     alt="Preview"
                                 />
@@ -145,14 +239,14 @@ const Settings = () => {
 
                         <div className="mt-6 space-y-4 flex flex-col">
                             {[
-                                ["Camera Access", "cameraEnabled"],
-                                ["Allow App Uninstall", "uninstallAllowed"],
-                                ["Location Access", "locationEnabled"],
-                                ["Allow Screenshots", "screenshotAllowed"],
+                                ["Camera Access", "cameraAccess"],
+                                ["Allow App Uninstall", "allowAppUninstall"],
+                                ["Location Access", "locationAccess"],
+                                ["Allow Screenshots", "allowScreenshots"],
                                 ["Block Unknown Apps", "blockUnknownApps"],
-                                ["Auto Sync Enable", "autoSync"],
-                                ["Whatsapp Camera Access", "whatsappAllow"],
-                                ["Facebook Camera Access", "Facebookallow"],
+                                ["Auto Sync Enable", "autoSyncEnable"],
+                                ["Whatsapp Camera Access", "whatsappCameraAccess"],
+                                ["Facebook Camera Access", "facebookCameraAccess"],
                             ]
                                 .map(([label, key]) => (
                                     <div key={key} className="flex items-center justify-between p-3.5 bg-gray-10 border rounded-lg setting-rows ">
@@ -161,7 +255,7 @@ const Settings = () => {
                                         <label className="relative inline-flex items-center cursor-pointer setting-device-control">
                                             <input
                                                 type="checkbox"
-                                                checked={deviceSettings[key]}
+                                                checked={!!deviceSettings[key]}
                                                 onChange={() => toggle(setDeviceSettings, key)}
                                                 className="sr-only peer"
                                             />
@@ -193,7 +287,7 @@ const Settings = () => {
                                     <label className="relative inline-flex items-center cursor-pointer setting-Notification-aleart-control">
                                         <input
                                             type="checkbox"
-                                            checked={alerts[key]}
+                                            checked={!!alerts[key]}
                                             onChange={() => toggle(setAlerts, key)}
                                             className="sr-only peer"
                                         />
@@ -207,7 +301,7 @@ const Settings = () => {
                 </div>
 
                 {/* ========= SAVE / CANCEL BUTTONS ========= */}
-                {isChanged && (
+                {isChanged && !loading && (
                     <div className="mt-8 flex gap-4 justify-end">
                         <button
                             onClick={handleCancel}
@@ -225,8 +319,10 @@ const Settings = () => {
                     </div>
                 )}
 
+                </div>
             </div>
-        </div>
+            <ToastContainer position="top-right" autoClose={3000} />
+        </>
     );
 };
 

@@ -19,6 +19,7 @@ const Header = () => {
   };
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
 
   useEffect(() => {
     const accessToken =
@@ -37,12 +38,21 @@ const Header = () => {
         const decodedData = atob(encodedUserDetails); // Decode Base64
         const userDetails = JSON.parse(decodedData); // Parse JSON
 
-        let name = userDetails.first_name || "User"; // Fallback to 'User' if not found
+        const resolvedName =
+          userDetails.name ||
+          userDetails.fullname ||
+          [userDetails.firstName, userDetails.lastName].filter(Boolean).join(" ") ||
+          userDetails.first_name ||
+          "User";
+        setUserName(resolvedName);
 
-        // Ensure first letter is uppercase & rest is lowercase
-        name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-
-        setUserName(name); // Set the formatted name
+        const resolvedAvatar =
+          userDetails.profileImage ||
+          userDetails.profile_image ||
+          userDetails.avatar ||
+          userDetails.image ||
+          "";
+        setUserAvatar(resolvedAvatar);
       } catch (error) {
         console.error("Error decoding user details:", error);
         setUserName("User"); // Default fallback
@@ -88,7 +98,11 @@ const Header = () => {
               style={{ background: "#22374e" }}
               className="AJ-crm-profile-section flex items-center  text-white rounded-full  py-4 cursor-pointer gap-2.5"
             >
-              <img src={Pic} alt="Profile" className="w-10 h-10 rounded-full !m-0" />
+              <img
+                src={userAvatar || Pic}
+                alt="Profile"
+                className="w-10 h-10 rounded-full !m-0 object-cover"
+              />
               <div className="flex ml-4 items-center gap-2">
                 <span className="text-sm"> Hi, {userName}</span>
 

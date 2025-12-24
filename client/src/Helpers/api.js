@@ -40,13 +40,15 @@ const makeRequest = async (
   customHeaders = {}
 ) => {
   const token = localStorage.getItem("accesstoken");
+  const isFormData =
+    typeof FormData !== "undefined" && data instanceof FormData;
 
   try {
     const response = await axios({
       method,
       url: `${domainpath}${url}`,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         Authorization: token ? `Bearer ${token}` : "",
         ...customHeaders,
       },
@@ -121,6 +123,9 @@ const deleteData = (url, data = {}, headers = {}) =>
 const API = {
   auth: {
     login: "/auth/login",
+    forgotPassword: "/auth/forgot-password",
+    verifyOtp: "/auth/verify-otp",
+    resetPassword: "/auth/reset-password",
   },
 
   shift: {

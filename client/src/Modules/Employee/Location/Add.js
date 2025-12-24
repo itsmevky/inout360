@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdAddLocationAlt } from "react-icons/md";
+import { postData } from "../../../Helpers/api.js";
 
 const LocationAdd = () => {
   const navigate = useNavigate();
@@ -11,10 +12,26 @@ const LocationAdd = () => {
     long: "",
     radius: "",
   });
+  const [error, setError] = useState("");
 
-  const save = () => {
-    console.log("Save Location:", form);
-    navigate("/dashboard/users/location"); // redirect to list
+  const save = async () => {
+    setError("");
+    try {
+      const payload = {
+        name: form.name,
+        lat: form.lat,
+        lng: form.long,
+        radius: form.radius,
+      };
+      const res = await postData("/location/add", payload);
+      if (res?.status) {
+        navigate("/dashboard/users/location");
+        return;
+      }
+      setError(res?.message || "Failed to save location.");
+    } catch (err) {
+      setError("Failed to save location.");
+    }
   };
 
   return (
@@ -41,6 +58,8 @@ const LocationAdd = () => {
             </button>
           </div>
         </div>
+
+        {error ? <div className="text-red-600 mb-2">{error}</div> : null}
 
         {/* Form Inputs */}
         <div className="space-y-5  grid lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2  md:gap-2 gap-4 items-end">

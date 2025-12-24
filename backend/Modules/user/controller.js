@@ -134,6 +134,10 @@ exports.loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    if (!user.password) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -176,7 +180,7 @@ exports.forgotPassword = async (req, res) => {
     await validator.validate();
 
     const user = await User.findOne({ email }).select(
-      "email name firstName lastName"
+      "email name firstName lastName role"
     );
     if (!user) {
       return res.status(400).json({
@@ -184,10 +188,16 @@ exports.forgotPassword = async (req, res) => {
         message: "Email not found",
       });
     }
+    if (user.role !== "superadmin") {
+      return res.status(403).json({
+        status: false,
+        message: "You are not authorized",
+      });
+    }
     const resolvedName = [user.firstName, user.lastName]
       .filter(Boolean)
       .join(" ")
-      .trim();
+      .trim() || user.name?.trim();
 
     const otp = generateOtp();
     const otpHash = await bcrypt.hash(otp, 10);

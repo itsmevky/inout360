@@ -1,23 +1,65 @@
 // Location/Edit.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MdEditLocationAlt } from "react-icons/md";
+import { getData, putData } from "../../../Helpers/api.js";
 
 const LocationEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Prefilled example data
   const [form, setForm] = useState({
-    name: "Office Gate",
-    lat: "28.6139",
-    long: "77.2090",
-    radius: "20",
+    name: "",
+    lat: "",
+    long: "",
+    radius: "",
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const update = () => {
-    console.log("Update Location:", form);
-    navigate("/dashboard/users/location");
+  useEffect(() => {
+    const fetchLocation = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await getData(`/location/${id}`);
+        if (res?.status && res?.data) {
+          setForm({
+            name: res.data.name || "",
+            lat: res.data.lat ?? "",
+            long: res.data.lng ?? res.data.long ?? "",
+            radius: res.data.radius ?? "",
+          });
+        } else {
+          setError(res?.message || "Failed to load location.");
+        }
+      } catch (err) {
+        setError("Failed to load location.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLocation();
+  }, [id]);
+
+  const update = async () => {
+    setError("");
+    try {
+      const payload = {
+        name: form.name,
+        lat: form.lat,
+        lng: form.long,
+        radius: form.radius,
+      };
+      const res = await putData(`/location/${id}`, payload);
+      if (res?.status) {
+        navigate("/dashboard/users/location");
+        return;
+      }
+      setError(res?.message || "Failed to update location.");
+    } catch (err) {
+      setError("Failed to update location.");
+    }
   };
 
   return (
@@ -47,6 +89,12 @@ const LocationEdit = () => {
           </div>
         </div>
 
+        {error ? <div className="text-red-600 mb-2">{error}</div> : null}
+
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+        <>
         {/* Form Inputs */}
         <div className="grid grid-cols-5 gap-4 items-end">
           {/* Name */}
@@ -97,6 +145,8 @@ const LocationEdit = () => {
             />
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

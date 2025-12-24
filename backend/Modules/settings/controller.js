@@ -1,10 +1,24 @@
 const SettingsModel = require("./model");
 
-const toBool = (v, fallback) => (typeof v === "boolean" ? v : fallback);
+const toBool = (v, fallback) => {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "string") {
+    if (v.toLowerCase() === "true") return true;
+    if (v.toLowerCase() === "false") return false;
+  }
+  if (typeof v === "number") return v === 1;
+  return fallback;
+};
 
 const normalizePayload = (body = {}) => {
-  const deviceControls = body.deviceControls || {};
-  const alerts = body.alerts || {};
+  const deviceControls =
+    typeof body.deviceControls === "string"
+      ? JSON.parse(body.deviceControls)
+      : body.deviceControls || {};
+  const alerts =
+    typeof body.alerts === "string"
+      ? JSON.parse(body.alerts)
+      : body.alerts || {};
   const qrExpirySeconds =
     Number.isFinite(Number(body.qrExpirySeconds)) && Number(body.qrExpirySeconds) > 0
       ? Number(body.qrExpirySeconds)
@@ -50,6 +64,15 @@ exports.get = async (_req, res) => {
 exports.update = async (req, res) => {
   try {
     const payload = normalizePayload(req.body);
+    const apkFile = req.files?.apkFile?.[0];
+    const companyLogo = req.files?.companyLogo?.[0];
+
+    if (apkFile) {
+      payload.apkFileUrl = `/uploads/settings/${apkFile.filename}`;
+    }
+    if (companyLogo) {
+      payload.companyLogoUrl = `/uploads/settings/${companyLogo.filename}`;
+    }
     const record = await SettingsModel.findOneAndUpdate({}, payload, {
       new: true,
       upsert: true,

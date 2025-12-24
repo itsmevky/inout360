@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API, postData } from "../Helpers/api.js";
-import Validator from "../Helpers/validators.js";
+import { toast } from "react-toastify";
 
 const ForgotPassword = () => {
   const [userData, setUserdata] = useState({
@@ -60,7 +60,7 @@ const ForgotPassword = () => {
       console.log("Request data:", { email: userData.email });
 
       // Send request to API
-      const result = await postData(API.auth.forgetpassword, {
+      const result = await postData(API.auth.forgotPassword, {
         email: userData.email,
       });
 
@@ -69,14 +69,22 @@ const ForgotPassword = () => {
 
       // Check if the result contains the expected response format
       if (result && result.status === true) {
-        setMessage(result.message || "OTP sent successfully.");
+        const successMessage = result.message || "OTP sent successfully.";
+        setMessage(successMessage);
+        toast.success(successMessage);
+        sessionStorage.setItem("resetEmail", userData.email);
         navigate("/getotp"); // Redirect to OTP page
       } else {
-        setMessage(result.message || "Failed to send OTP. Please try again.");
+        const errorMessage =
+          result.message || "Failed to send OTP. Please try again.";
+        setMessage(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error("API Error:", error); // Log the actual error for debugging
-      setMessage("An error occurred. Please try again.");
+      const fallbackMessage = "An error occurred. Please try again.";
+      setMessage(fallbackMessage);
+      toast.error(fallbackMessage);
     }
   };
 

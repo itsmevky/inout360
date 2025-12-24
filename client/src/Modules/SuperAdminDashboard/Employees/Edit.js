@@ -110,7 +110,7 @@ const handleSubmit = async (e) => {
     const response = await putData(endpoint, formData);
     console.log("🔹 API raw response:", response);
 
-    if (response.status === 200 || response.success === true) {
+    if (response.status === true || response.success === true) {
       console.log("✅ Employee updated successfully, navigating to users list");
       toast.success("✅ Employee updated successfully!");
       navigate("/dashboard/users");

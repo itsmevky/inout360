@@ -35,6 +35,8 @@ const AddUserForm = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [businesses, setBusinesses] = useState([]); // New state for businesses
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState("");
   const validator = new Validator(rules);
 
   const handleChange = (e) => {
@@ -86,14 +88,27 @@ const AddUserForm = () => {
     try {
       console.log("📦 Submitting employee data:", formData);
 
+      const payload = profileImageFile
+        ? (() => {
+            const data = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+              data.append(key, value ?? "");
+            });
+            data.append("profileImage", profileImageFile);
+            return data;
+          })()
+        : formData;
+
       // ✅ Use the employee add endpoint here
-      const result = await API.add("employees/add", formData);
+      const result = await API.add("employees/add", payload);
 
       console.log("✅ API Response------>:", result);
 
       if (result.status === true || result.success === true) {
         toast.success("✅ Employee created successfully!");
         setFormData(initialFormData);
+        setProfileImageFile(null);
+        setProfileImagePreview("");
       } else {
         toast.error(result.message || "❌ Failed to create employee.");
       }
@@ -107,6 +122,21 @@ const AddUserForm = () => {
 
   const getFieldClassName = (fieldName) =>
     errors[fieldName] ? "field-error" : "field";
+
+  useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreview("");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(profileImageFile);
+    setProfileImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [profileImageFile]);
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setProfileImageFile(file);
+  };
 
   return (
     <div className="adduser-outer-section">
@@ -128,9 +158,11 @@ const AddUserForm = () => {
               {/* Passport Size Photogaph */}
               <div className="flex items-center space-x-4">
                 <div className="w-[132px] h-[170px] border rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
-                  {/* Placeholder Image */}
                   <img
-                    src="https://via.placeholder.com/132x170.png?text=Photo"
+                    src={
+                      profileImagePreview ||
+                      "https://via.placeholder.com/132x170.png?text=Photo"
+                    }
                     alt="Passport"
                     className="object-cover w-full h-full"
                   />
@@ -142,6 +174,7 @@ const AddUserForm = () => {
                   <input
                     type="file"
                     accept="image/*"
+                    onChange={handleProfileImageChange}
                     className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
                    file:rounded-lg file:border-0 
                    file:text-sm file:font-semibold 

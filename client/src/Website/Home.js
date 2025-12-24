@@ -16,6 +16,13 @@ const Home = () => {
         >
           <h1 className="text-2xl font-bold text-blue-700">Inout360</h1>
           <div className="flex space-x-4 gap-5">
+            <button
+              onClick={() => navigate("/qr")}
+              className="border border-blue-600 text-blue-600 rounded hover:bg-blue-100 transition"
+              style={{ padding: "6px" }}
+            >
+              QR
+            </button>
 
             <button
               onClick={() => {

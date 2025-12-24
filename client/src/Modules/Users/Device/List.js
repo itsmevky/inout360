@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getData } from "../../../Helpers/api.js";
+import { getData, putData } from "../../../Helpers/api.js";
 
 const Device = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -70,6 +70,28 @@ const Device = () => {
     setShowModal(true);
   };
 
+  const applyDeviceUpdate = (updated) => {
+    if (!updated?.id) return;
+    setDeviceList((prev) =>
+      prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+    );
+    setSelectedDevice((prev) => (prev ? { ...prev, ...updated } : prev));
+  };
+
+  const togglePolicy = async (field) => {
+    if (!selectedDevice?.id) return;
+    try {
+      const res = await putData(`/device/${selectedDevice.id}/policy/toggle`, {
+        field,
+      });
+      if (res?.status && res?.data) {
+        applyDeviceUpdate(res.data);
+      }
+    } catch (err) {
+      // api helper already toasts
+    }
+  };
+
   return (
     <div className="p-4">
 
@@ -125,7 +147,10 @@ const Device = () => {
                     {statusBadge(device.statusLabel || device.status)}
                   </td>
                   <td className="p-3">
-                    {device.osVersion || device.androidVersion || "-"}
+                    {device.deviceInfo?.version?.release ||
+                      device.osVersion ||
+                      device.androidVersion ||
+                      "-"}
                   </td>
                   <td className="p-3">
                     {device.appVersion || device.appVer || "-"}
@@ -180,7 +205,10 @@ const Device = () => {
 
                 <div className="text-gray-500 font-medium">Android</div>
                 <div className="text-right">
-                  {device.osVersion || device.androidVersion || "-"}
+                  {device.deviceInfo?.version?.release ||
+                    device.osVersion ||
+                    device.androidVersion ||
+                    "-"}
                 </div>
 
                 <div className="text-gray-500 font-medium">App Ver.</div>
@@ -297,11 +325,17 @@ const Device = () => {
                 Restart
               </button>
 
-              <button className="w-full py-3 bg-blue-500 text-white rounded-lg">
+              <button
+                onClick={() => togglePolicy("cameraDisabled")}
+                className="w-full py-3 bg-blue-500 text-white rounded-lg"
+              >
                 Disable Camera
               </button>
 
-              <button className="w-full py-3 bg-blue-500 text-white rounded-lg">
+              <button
+                onClick={() => togglePolicy("uninstallBlocked")}
+                className="w-full py-3 bg-blue-500 text-white rounded-lg"
+              >
                 Disable Uninstall
               </button>
 

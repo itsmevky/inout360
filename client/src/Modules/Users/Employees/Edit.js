@@ -42,17 +42,25 @@ const EditUserForm = ({ user }) => {
   // ✅ Prefill user data
   useEffect(() => {
     if (user) {
+      const fullName = user.name || "";
+      const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
+      const derivedFirstName = nameParts[0] || "";
+      const derivedLastName = nameParts.slice(1).join(" ") || "";
+      const currentAddress = user.currentAddress || {};
+      const permanentAddress = user.permanentAddress || {};
+      const bankDetails = user.bankDetails || {};
+
       setFormData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
+        firstName: user.firstName || derivedFirstName || "",
+        lastName: user.lastName || derivedLastName || "",
         gender: user.gender || "",
         dob: user.dob ? user.dob.split("T")[0] : "",
         email: user.email || "",
-        currentaddress: user.currentaddress || "",
-        permanentaddress: user.permanentaddress || "",
-        state: user.state || "",
-        city: user.city || "",
-        pincode: user.pincode || "",
+        currentaddress: user.currentaddress || currentAddress.street || "",
+        permanentaddress: user.permanentaddress || permanentAddress.street || "",
+        state: user.state || currentAddress.state || "",
+        city: user.city || currentAddress.city || "",
+        pincode: user.pincode || currentAddress.pincode || "",
         phone: user.phone || "",
         joiningDate: user.joiningDate ? user.joiningDate.split("T")[0] : "",
         designation: user.designation || "",
@@ -61,10 +69,10 @@ const EditUserForm = ({ user }) => {
         section: user.section || "",
         rfid: user.rfid || "",
         role: user.role || "",
-        aadharcardnumber: user.aadharcardnumber || "",
-        pancard: user.pancard || "",
-        accountNumber: user.accountNumber || "",
-        ifscCode: user.ifscCode || "",
+        aadharcardnumber: user.aadharcardnumber || bankDetails.aadharcardnumber || "",
+        pancard: user.pancard || bankDetails.pancard || "",
+        accountNumber: user.accountNumber || bankDetails.accountNumber || "",
+        ifscCode: user.ifscCode || bankDetails.ifscCode || "",
       });
     }
   }, [user]);
@@ -418,7 +426,7 @@ const EditUserForm = ({ user }) => {
             {/* RFID */}
             <div className="AJ-floating-label-wrapper mb-6">
               <input
-                type="number"
+                type="text"
                 name="rfid"
                 value={formData.rfid}
                 onChange={handleChange}
@@ -431,18 +439,23 @@ const EditUserForm = ({ user }) => {
 
             {/* Role */}
             <div className="AJ-floating-label-wrapper mb-6">
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("role")}
-              >
-                <option value="" disabled hidden></option>
-                <option value="SuperAdmin">SuperAdmin</option>
-                <option value="Admin">Admin</option>
-                <option value="Employee">Employee</option>
-              </select>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={getFieldClassName("role")}
+            >
+              <option value="" disabled hidden></option>
+              <option value="superadmin">SuperAdmin</option>
+              <option value="admin">Admin</option>
+              <option value="hr">HR</option>
+              <option value="employee">Employee</option>
+              <option value="manager">Manager</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="contractor">Contractor</option>
+              <option value="visitor">Visitor</option>
+            </select>
               <label className="AJ-floating-label">Role</label>
             </div>
 

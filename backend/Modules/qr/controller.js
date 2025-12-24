@@ -382,9 +382,6 @@ exports.consumeQr = async (req, res) => {
     if (!qrRecord) {
       return res.status(400).json({ message: "QR token not found" });
     }
-    if (qrRecord.usedAt) {
-      return res.status(400).json({ message: "QR already used" });
-    }
     if (qrRecord.expiresAt && qrRecord.expiresAt < new Date()) {
       return res.status(400).json({ message: "QR expired" });
     }
@@ -435,7 +432,7 @@ exports.consumeQr = async (req, res) => {
 
     if (action === "login" && user?.sessionStatus === "Logged In") {
       return res.status(400).json({
-        message: "User is already logged in on another device",
+        message: "User is already Logged In ",
       });
     }
     if (action === "logout" && user?.sessionStatus === "Logout") {
@@ -495,11 +492,6 @@ exports.consumeQr = async (req, res) => {
         }
       : null;
 
-    const usedAt = new Date();
-    await QrToken.findByIdAndUpdate(qrRecord._id, {
-      usedAt,
-    });
-
     return res.status(200).json({
       message: action === "login" ? "Logged in successfully" : "Logged out successfully",
       userId: user ? user._id : employee._id,
@@ -511,7 +503,6 @@ exports.consumeQr = async (req, res) => {
       tokenId,
       action,
       expiresAt: qrRecord.expiresAt,
-      usedAt,
       redirectUrl: `${process.env.CLIENT_URL || "http://localhost:3000"}/login-success`,
     });
   } catch (error) {

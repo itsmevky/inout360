@@ -2,10 +2,33 @@ import React, { useEffect, useState, useRef } from "react";
 import Sidebar from "../Dashboardsidebaarmenu/Dashboardmenu.js";
 import Header from "./header.js";
 import Footer from "./footer.js";
+import { getData } from "../Helpers/api.js";
 // import "../../src/App.css ";
 const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
 const SuperAdminDashboard = () => {
   // console.log("SuperAdminDashboard");
+  const [summary, setSummary] = useState({
+    contractors: 0,
+    employees: 0,
+    supervisors: 0,
+    managers: 0,
+    departments: 0,
+    monthlyReports: 0,
+  });
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const res = await getData("/dashboard/summary");
+        if (res?.status && res?.data) {
+          setSummary(res.data);
+        }
+      } catch (error) {
+        // Keep defaults; error toast is handled by API helper.
+      }
+    };
+    fetchSummary();
+  }, []);
   return (
     <>
       <div className="layout-section-dashboard">
@@ -45,7 +68,7 @@ const SuperAdminDashboard = () => {
                   </svg>
                   <span className="font-semibold text-lg">Contractors</span>
                 </p>
-                <h2 className="text-2xl font-bold mt-2">12</h2>
+                <h2 className="text-2xl font-bold mt-2">{summary.contractors}</h2>
                 <p className="text-gray-400 text-sm">
                   Total number of contractors.
                 </p>
@@ -64,7 +87,7 @@ const SuperAdminDashboard = () => {
                   </svg>{" "}
                   <span className="font-semibold text-lg">Employee</span>
                 </p>
-                <h2 className="text-2xl font-bold mt-2">5</h2>
+                <h2 className="text-2xl font-bold mt-2">{summary.employees}</h2>
                 <p className="text-gray-400 text-sm">
                   Total number of Employee
                 </p>
@@ -83,7 +106,7 @@ const SuperAdminDashboard = () => {
                   </svg>{" "}
                   <span className="font-semibold text-lg">Supervisor</span>
                 </p>
-                <h2 className="text-2xl font-bold mt-2">7</h2>
+                <h2 className="text-2xl font-bold mt-2">{summary.supervisors}</h2>
                 <p className="text-gray-400 text-sm">Total number of parents</p>
               </div>
               {/* <!-- Staff Card --> */}
@@ -100,7 +123,7 @@ const SuperAdminDashboard = () => {
                   </svg>{" "}
                   <span className="font-semibold text-lg">Manager</span>
                 </p>
-                <h2 className="text-2xl font-bold mt-2">6</h2>
+                <h2 className="text-2xl font-bold mt-2">{summary.managers}</h2>
                 <p className="text-gray-400 text-sm">Total number of Manager</p>
               </div>
               {/* <!-- Departments Card --> */}
@@ -119,7 +142,7 @@ const SuperAdminDashboard = () => {
                   {" "}
                   <span className="font-semibold text-lg">Departments</span>
                 </p>
-                <h2 className="text-2xl font-bold mt-2">6</h2>
+                <h2 className="text-2xl font-bold mt-2">{summary.departments}</h2>
                 <p className="text-gray-400 text-sm">Total number of Departments</p>
               </div>
               {/* <!-- Monthly Reposrt Card --> */}
@@ -142,7 +165,7 @@ const SuperAdminDashboard = () => {
                   {" "}
                   <span className="font-semibold text-lg">Monthly Reports</span>
                 </p>
-                <h2 className="text-2xl font-bold mt-2">6</h2>
+                <h2 className="text-2xl font-bold mt-2">{summary.monthlyReports}</h2>
                 <p className="text-gray-400 text-sm">Total of Monthly Reports</p>
               </div>
             </div>

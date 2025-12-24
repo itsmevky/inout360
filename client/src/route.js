@@ -10,6 +10,7 @@ import SuperAdminLayout from "./Layouts/SuperadminLayout.js";
 import PermissionDenied from "./Website/PermissionDenied.js";
 import Registerpage from "./Website/registerform.js";
 import Getotp from "./Website/getotp.js";
+import Resetpassword from "./Website/resetpassword.js";
 import Homepage from "./Website/Home.js";
 import NotFound from "./Website/NotFound.js";
 import Loginpage from "../src/Website/login.js";
@@ -52,6 +53,7 @@ const App = () => {
         <Route path="/register" element={<Registerpage />} />
         <Route path="/forgotpassword" element={<Forgotpassword />} />
         <Route path="/getotp" element={<Getotp />} />
+        <Route path="/resetpassword" element={<Resetpassword />} />
         {/* Permission Denied Page */}
         <Route path="/permission-denied" element={<PermissionDenied />} />
 

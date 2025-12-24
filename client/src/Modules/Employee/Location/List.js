@@ -1,30 +1,48 @@
 // Location/List.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { deleteData, getData } from "../../../Helpers/api.js";
 
 const LocationList = () => {
   const navigate = useNavigate();
 
-  const [locations, setLocations] = useState([
-    {
-      id: 1,
-      name: "Office Gate",
-      lat: "28.6139",
-      long: "77.2090",
-      radius: "20",
-    },
-    {
-      id: 2,
-      name: "Warehouse",
-      lat: "28.7041",
-      long: "77.1025",
-      radius: "15",
-    },
-  ]);
+  const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleDelete = (id) => {
+  const fetchLocations = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getData("/location");
+      if (res?.status) {
+        setLocations(res.locations || []);
+      } else {
+        setError(res?.message || "Failed to load locations.");
+      }
+    } catch (err) {
+      setError("Failed to load locations.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this location?")) return;
-    setLocations(locations.filter((item) => item.id !== id));
+    try {
+      const res = await deleteData(`/location/${id}`);
+      if (res?.status) {
+        fetchLocations();
+      } else {
+        setError(res?.message || "Failed to delete location.");
+      }
+    } catch (err) {
+      setError("Failed to delete location.");
+    }
   };
 
   return (
@@ -43,6 +61,12 @@ const LocationList = () => {
         </button>
       </div>
 
+      {error ? <div className="text-red-600 mb-2">{error}</div> : null}
+
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+      <>
       {/* ===================== DESKTOP TABLE ===================== */}
       <div className="hidden lg:block">
         <table className="w-full">
@@ -58,10 +82,10 @@ const LocationList = () => {
 
           <tbody>
             {locations.map((loc) => (
-              <tr key={loc.id} className="bg-white text-sm font-semibold">
+              <tr key={loc.id || loc._id} className="bg-white text-sm font-semibold">
                 <td className="p-2 text-gray-700">{loc.name}</td>
                 <td className="p-2 text-gray-700">{loc.lat}</td>
-                <td className="p-2 text-gray-700">{loc.long}</td>
+                <td className="p-2 text-gray-700">{loc.lng ?? loc.long}</td>
                 <td className="p-2 text-gray-700">{loc.radius}</td>
 
                 <td className="p-2 flex gap-2">
@@ -69,7 +93,7 @@ const LocationList = () => {
                   <button
                     className="mr-3"
                     onClick={() =>
-                      navigate(`/dashboard/users/location/edit/${loc.id}`)
+                      navigate(`/dashboard/users/location/edit/${loc.id || loc._id}`)
                     }
                   >
                     <svg
@@ -83,7 +107,7 @@ const LocationList = () => {
                   </button>
 
                   {/* DELETE */}
-                  <button onClick={() => handleDelete(loc.id)}>
+                  <button onClick={() => handleDelete(loc.id || loc._id)}>
                     <svg
                       fill="red"
                       width={16}
@@ -104,7 +128,7 @@ const LocationList = () => {
       <div className="block lg:hidden space-y-4">
         {locations.map((loc) => (
           <div
-            key={loc.id}
+            key={loc.id || loc._id}
             className="bg-white rounded-xl border shadow p-4"
           >
             <div className="grid grid-cols-2 gap-y-2 text-sm">
@@ -115,7 +139,7 @@ const LocationList = () => {
               <span className="text-right">{loc.lat}</span>
 
               <span className="text-gray-500">Long</span>
-              <span className="text-right">{loc.long}</span>
+              <span className="text-right">{loc.lng ?? loc.long}</span>
 
               <span className="text-gray-500">Radius</span>
               <span className="text-right">{loc.radius}</span>
@@ -125,7 +149,7 @@ const LocationList = () => {
                 {/* EDIT ICON */}
                 <button
                   onClick={() =>
-                    navigate(`/dashboard/users/location/edit/${loc.id}`)
+                    navigate(`/dashboard/users/location/edit/${loc.id || loc._id}`)
                   }
                   className="flex items-center justify-center w-6 h-6 !m-0"
                 >
@@ -141,7 +165,7 @@ const LocationList = () => {
 
                 {/* DELETE ICON */}
                 <button
-                  onClick={() => handleDelete(loc.id)}
+                  onClick={() => handleDelete(loc.id || loc._id)}
                   className="flex items-center justify-center w-6 h-6 !m-0"
                 >
                   <svg
@@ -161,6 +185,8 @@ const LocationList = () => {
           </div>
         ))}
       </div>
+      </>
+      )}
     </div >
   );
 };
