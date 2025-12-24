@@ -4366,7 +4366,13 @@ margin: 20px 0px;
 }
 
 
-
+.employee-editpopup-cut-button{
+      background: #ff0000;
+    border-radius: 29px;
+    height: 40px;
+    color: white;
+    width: 40px;
+}
 
 
 
@@ -5817,4 +5823,6 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 .password-toggle-icon:hover {
   color: #4f46e5;
 }
+
+
 

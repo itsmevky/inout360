@@ -592,7 +592,7 @@ const Employeepage = () => {
           <>
             {/* BACKDROP */}
             <div
-              className="fixed inset-0 bg-black/50 z-[9998]"
+              className="fixed inset-0 bg-black/50 z-[10]"
               onClick={() => {
                 setIsEditUserFormVisible(false);
                 setSelectedUser(null);
@@ -601,7 +601,7 @@ const Employeepage = () => {
 
             {/* SIDE PANEL */}
             <div
-              className="fixed top-0 right-0 w-full md:w-1/3 h-full bg-white shadow-2xl z-[9999] animate-slideIn"
+              className=" top-0 right-0 left-0 w-full md:w-1/3 h-full bg-white shadow-2xl z-[9999] animate-slideIn"
               onClick={(e) => e.stopPropagation()} // ✅ important
             >
               <div className="p-4 h-full overflow-y-auto">

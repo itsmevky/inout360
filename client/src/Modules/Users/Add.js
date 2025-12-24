@@ -7,6 +7,7 @@ const AddUserForm = ({ onSuccess, onClose }) => {
   const [formError, setFormError] = useState("");
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState("");
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   /* ================= REQUIRED FIELDS ================= */
@@ -37,6 +38,26 @@ const AddUserForm = ({ onSuccess, onClose }) => {
   };
 
   const normalizeValue = (v) => String(v || "").trim();
+
+  /* ================= OPEN ANIMATION ================= */
+  useEffect(() => {
+    setTimeout(() => setOpen(true), 20);
+  }, []);
+
+  /* ================= IMAGE PREVIEW ================= */
+  useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(profileImageFile);
+    setProfileImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [profileImageFile]);
+
+  const handleProfileImageChange = (e) => {
+    setProfileImageFile(e.target.files?.[0] || null);
+  };
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
@@ -85,113 +106,111 @@ const AddUserForm = ({ onSuccess, onClose }) => {
     }
   };
 
-  /* ================= IMAGE PREVIEW ================= */
-  useEffect(() => {
-    if (!profileImageFile) return setProfileImagePreview("");
-    const url = URL.createObjectURL(profileImageFile);
-    setProfileImagePreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [profileImageFile]);
-
-  const handleProfileImageChange = (e) => {
-    setProfileImageFile(e.target.files?.[0] || null);
+  const handleClose = () => {
+    setOpen(false);
+    setTimeout(() => {
+      onClose ? onClose() : navigate(-1);
+    }, 200);
   };
 
+  /* ================= UI ================= */
   return (
-    /* ===== OVERLAY ===== */
-    <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start overflow-y-auto px-4 py-10">
+    <>
+      {/* OVERLAY (NO SCROLL) */}
+      <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
 
-      {/* ===== MODAL ===== */}
-      <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-xl">
-
-        {/* ===== CLOSE BUTTON (FIXED TOP RIGHT) ===== */}
-        <button
-          type="button"
-          onClick={() => (onClose ? onClose() : navigate(-1))}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
+        {/* MODAL */}
+        <div
+          className={`
+            relative w-full max-w-4xl mx-4
+            bg-white rounded-xl shadow-2xl
+            max-h-[90vh] overflow-y-auto
+            transform transition-all duration-300
+            ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}
+          `}
         >
-          ✕
-        </button>
+          {/* CLOSE BUTTON */}
+          <button
+            type="button"
+            onClick={handleClose}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full
+                       bg-red-600 text-white flex items-center justify-center
+                       hover:bg-red-700 transition"
+          >
+            ✕
+          </button>
 
-        {/* ===== CONTENT ===== */}
-        <div className="p-6">
+          {/* CONTENT */}
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">
+              Add New Employee
+            </h2>
 
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">
-            Add New Employee
-          </h2>
+            <form onSubmit={handleSubmit} noValidate>
+              {/* PROFILE */}
+              <div className="flex flex-col sm:flex-row gap-6 mb-8">
+                <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
+                  <img
+                    src={
+                      profileImagePreview ||
+                      "https://via.placeholder.com/120x150?text=Profile"
+                    }
+                    className="w-full h-full object-cover"
+                    alt="Profile"
+                  />
+                </div>
 
-          <form onSubmit={handleSubmit} noValidate>
-
-            {/* ===== PROFILE ===== */}
-            <div className="flex flex-col sm:flex-row gap-6 mb-8 addemployee-profile-page-box">
-              <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
-                <img
-                  src={
-                    profileImagePreview ||
-                    "https://via.placeholder.com/120x150?text=Profile"
-                  }
-                  className="w-full h-full object-cover"
-                  alt="Profile"
-                />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Upload Profile Image
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfileImageChange}
+                    className="text-sm"
+                  />
+                </div>
               </div>
 
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2 !mx-0">
-                  Upload Profile Image
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfileImageChange}
-                  className="text-sm !px-0"
-                />
+              {/* PERSONAL INFO */}
+              <Section title="Personal Information" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="First Name *" name="firstName" />
+                <Field label="Last Name *" name="lastName" />
+                <SelectField label="Gender *" name="gender" options={["Male", "Female", "Other"]} />
+                <Field label="Date of Birth *" name="dob" type="date" />
+                <Field label="Email *" name="email" type="email" />
+                <Field label="Phone *" name="phone" />
               </div>
-            </div>
 
-            {/* ===== PERSONAL INFO ===== */}
-            <Section title="Personal Information" />
+              {/* ADDRESS */}
+              <Section title="Current Address" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Street *" name="currentaddress" />
+                <Field label="City *" name="city" />
+                <Field label="State *" name="state" />
+                <Field label="Pincode *" name="pincode" type="number" />
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="First Name *" name="firstName" />
-              <Field label="Last Name *" name="lastName" />
-              <SelectField
-                label="Gender *"
-                name="gender"
-                options={["Male", "Female", "Other"]}
-              />
-              <Field label="Date of Birth *" name="dob" type="date" />
-              <Field label="Email *" name="email" type="email" />
-              <Field label="Phone *" name="phone" />
-              {/* <Field label="Password *" name="password" type="password" full /> */}
-            </div>
+              {/* SUBMIT */}
+              <div className="mt-8 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Submit
+                </button>
+              </div>
 
-            {/* ===== ADDRESS ===== */}
-            <Section title="Current Address" />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Street *" name="currentaddress" />
-              <Field label="City *" name="city" />
-              <Field label="State *" name="state" />
-              <Field label="Pincode *" name="pincode" type="number" />
-            </div>
-
-            {/* ===== SUBMIT ===== */}
-            <div className="mt-8 flex justify-end">
-              <button
-                type="submit"
-                className="px-8 py-2 !mt-5 bg-blue-600 text-white rounded-md hover:bg-blue-700 add-employee-submit-button"
-              >
-                Submit
-              </button>
-            </div>
-
-            {formError && (
-              <div className="text-red-600 text-sm mt-3">{formError}</div>
-            )}
-          </form>
+              {formError && (
+                <div className="text-red-600 text-sm mt-3">{formError}</div>
+              )}
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -203,8 +222,8 @@ const Section = ({ title }) => (
   </h3>
 );
 
-const Field = ({ label, name, type = "text", full }) => (
-  <div className={full ? "md:col-span-2" : ""}>
+const Field = ({ label, name, type = "text" }) => (
+  <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>

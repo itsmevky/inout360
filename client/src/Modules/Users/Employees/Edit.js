@@ -1,547 +1,221 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Validator from "../../../Helpers/validators.js";
 import { putData } from "../../../Helpers/api.js";
-import rules from "../Rules.js";
 
 const EditUserForm = ({ user }) => {
   const navigate = useNavigate();
-  const validator = new Validator(rules);
+  const fileRef = useRef(null);
 
-  const initialFormData = {
-    firstName: "",
-    lastName: "",
-    gender: "",
-    dob: "",
-    email: "",
-    currentaddress: "",
-    permanentaddress: "",
-    state: "",
-    city: "",
-    pincode: "",
-    phone: "",
-    joiningDate: "",
-    designation: "",
-    shift: "",
-    department: "",
-    section: "",
-    rfid: "",
-    role: "",
-    aadharcardnumber: "",
-    pancard: "",
-    accountNumber: "",
-    ifscCode: "",
-  };
-
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
+  const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  // ✅ Prefill user data
+  const [profileFile, setProfileFile] = useState(null);
+  const [profilePreview, setProfilePreview] = useState("");
+
+  /* ================= PREFILL ================= */
   useEffect(() => {
-    if (user) {
-      const fullName = user.name || "";
-      const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
-      const derivedFirstName = nameParts[0] || "";
-      const derivedLastName = nameParts.slice(1).join(" ") || "";
-      const currentAddress = user.currentAddress || {};
-      const permanentAddress = user.permanentAddress || {};
-      const bankDetails = user.bankDetails || {};
+    if (!user) return;
 
-      setFormData({
-        firstName: user.firstName || derivedFirstName || "",
-        lastName: user.lastName || derivedLastName || "",
-        gender: user.gender || "",
-        dob: user.dob ? user.dob.split("T")[0] : "",
-        email: user.email || "",
-        currentaddress: user.currentaddress || currentAddress.street || "",
-        permanentaddress: user.permanentaddress || permanentAddress.street || "",
-        state: user.state || currentAddress.state || "",
-        city: user.city || currentAddress.city || "",
-        pincode: user.pincode || currentAddress.pincode || "",
-        phone: user.phone || "",
-        joiningDate: user.joiningDate ? user.joiningDate.split("T")[0] : "",
-        designation: user.designation || "",
-        shift: user.shift || "",
-        department: user.department || "",
-        section: user.section || "",
-        rfid: user.rfid || "",
-        role: user.role || "",
-        aadharcardnumber: user.aadharcardnumber || bankDetails.aadharcardnumber || "",
-        pancard: user.pancard || bankDetails.pancard || "",
-        accountNumber: user.accountNumber || bankDetails.accountNumber || "",
-        ifscCode: user.ifscCode || bankDetails.ifscCode || "",
-      });
-    }
+    const fullName = user.name || "";
+    const [firstName = "", ...rest] = fullName.split(" ");
+
+    setFormData({
+      firstName: user.firstName || firstName,
+      lastName: user.lastName || rest.join(" "),
+      gender: user.gender || "",
+      dob: user.dob ? user.dob.split("T")[0] : "",
+      email: user.email || "",
+      phone: user.phone || "",
+      currentaddress: user.currentaddress || "",
+      permanentaddress: user.permanentaddress || "",
+      state: user.state || "",
+      city: user.city || "",
+      pincode: user.pincode || "",
+      joiningDate: user.joiningDate ? user.joiningDate.split("T")[0] : "",
+      designation: user.designation || "",
+      shift: user.shift || "",
+      department: user.department || "",
+      section: user.section || "",
+      rfid: user.rfid || "",
+      role: user.role || "",
+      aadharcardnumber: user.aadharcardnumber || "",
+      pancard: user.pancard || "",
+      accountNumber: user.accountNumber || "",
+      ifscCode: user.ifscCode || "",
+    });
+
+    setProfilePreview(user?.photo || "");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => setOpen(true), 50);
+
+    return () => (document.body.style.overflow = "auto");
   }, [user]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  /* ================= IMAGE HANDLERS ================= */
+  const handleProfileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setProfileFile(file);
+    setProfilePreview(URL.createObjectURL(file));
   };
 
-  const handleBlur = async (e) => {
-    const { name, value } = e.target;
-    const fieldErrors = await validator.validate({ [name]: value }, { [name]: rules[name] });
-    setErrors((prev) => ({
-      ...prev,
-      [name]: fieldErrors[name] || "",
-    }));
+  const cancelProfileChange = () => {
+    setProfileFile(null);
+    setProfilePreview(user?.photo || "");
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  const getFieldClassName = (fieldName) =>
-    errors[fieldName] ? "aj-field-error AJ-floating-input" : "AJ-floating-input";
+  /* ================= FORM HANDLERS ================= */
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const handleClose = () => {
+    setOpen(false);
+    setTimeout(() => navigate("/dashboard/users"), 200);
+  };
 
   const handleSubmit = async (e) => {
-    console.log("🔹 handleSubmit triggered");
-
     e.preventDefault();
-    console.log("🔹 Default form submission prevented");
-
     setLoading(true);
-    console.log("🔹 Loading set to true");
 
     try {
-      console.log("🔹 Current user object:", user);
-      console.log("🔹 Checking user._id:", user?._id);
-      console.log("🔹 Checking user.employeeId:", user?.employeeId);
-      console.log("🔹 Checking user._id:", user?.id);
+      const payload = new FormData();
 
-      const endpoint = `/employee/${user?._id || user?.employeeId}`;
-      console.log("🔹 API endpoint being called:", endpoint);
+      Object.entries(formData).forEach(([k, v]) => payload.append(k, v));
+      if (profileFile) payload.append("profileImage", profileFile);
 
-      console.log("🔹 Form data being sent:", formData);
+      const res = await putData(`/employee/${user?._id}`, payload);
 
-      const response = await putData(endpoint, formData);
-      console.log("🔹 API raw response:", response);
-
-      if (response.status === 200 || response.success === true) {
-        console.log("✅ Employee updated successfully, navigating to users list");
-        toast.success("✅ Employee updated successfully!");
-        navigate("/dashboard/users");
+      if (res?.success || res?.status === 200) {
+        toast.success("Employee updated successfully");
+        handleClose();
       } else {
-        console.log("❌ API returned error response:", response.message);
-        toast.error(response.message || "❌ Failed to update employee.");
+        toast.error(res.message || "Update failed");
       }
-    } catch (error) {
-      console.error("❌ Error updating employee:", error);
-      toast.error("An error occurred. Please try again.");
+    } catch {
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
-      console.log("🔹 Loading set to false");
     }
   };
 
-
+  /* ================= UI ================= */
   return (
-    <div className="edituser-outer-section">
-      <div className="edituser-inner-section">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-5xl mx-auto mt-8 bg-white"
-          noValidate
+    <>
+      {/* OVERLAY */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm !m-0">
+        {/* MODAL */}
+        <div
+          className={`
+            relative w-full max-w-4xl mx-4
+            bg-white rounded-xl shadow-2xl
+            max-h-[90vh] overflow-y-auto
+            transform transition-all duration-300
+            ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}
+          `}
         >
-          <h2 className="text-lg font-semibold mb-6 text-gray-800">
-            Edit Employee
-          </h2>
+          {/* CLOSE */}
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 text-red-500 text-2xl font-bold employee-editpopup-cut-button"
+          >
+            ✕
+          </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            {/* Passport Photo Upload */}
-            <div className="flex items-center space-x-4 col-span-2">
-              <div className="w-[132px] h-[170px] border rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+            <h2 className="text-xl font-semibold mb-6">Edit Employee</h2>
+
+            {/* ================= PROFILE SECTION ================= */}
+            <div className="flex items-center gap-6 mb-8">
+              <div className="w-[120px] h-[150px] border rounded-md overflow-hidden bg-gray-100">
                 <img
-                  src={user?.photo || "https://via.placeholder.com/132x170.png?text=Photo"}
-                  alt="Passport"
-                  className="object-cover w-full h-full"
+                  src={
+                    profilePreview ||
+                    "https://via.placeholder.com/120x150?text=Profile"
+                  }
+                  className="w-full h-full object-cover"
+                  alt="Profile"
                 />
               </div>
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Update Passport Size Photo
-                </label>
+
+              <div className="flex flex-col gap-2">
                 <input
                   type="file"
                   accept="image/*"
-                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
-                             file:rounded-lg file:border-0 
-                             file:text-sm file:font-semibold 
-                             file:bg-blue-50 file:text-blue-700 
-                             hover:file:bg-blue-100"
+                  ref={fileRef}
+                  onChange={handleProfileSelect}
+                  className="hidden"
                 />
+
+                <button
+                  type="button"
+                  onClick={() => fileRef.current.click()}
+                  className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md"
+                >
+                  {profileFile ? "Change Image" : "Choose Image"}
+                </button>
+
+                {profileFile && (
+                  <button
+                    type="button"
+                    onClick={cancelProfileChange}
+                    className="px-3 py-2 text-sm border border-gray-400 rounded-md hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* ================= PERSONAL INFO ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Personal Information</h2>
+            {/* ================= FORM FIELDS ================= */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Object.entries(formData).map(([key, value]) => (
+                <Field
+                  key={key}
+                  label={key.replace(/([A-Z])/g, " $1")}
+                  name={key}
+                  value={value}
+                  onChange={handleChange}
+                />
+              ))}
             </div>
 
-            {/* First Name */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("firstName")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">
-                First Name <span className="text-red-500">*</span>
-              </label>
-            </div>
-
-            {/* Last Name */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("lastName")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Last Name</label>
-            </div>
-
-            {/* Gender */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("gender")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Gender</label>
-            </div>
-
-            {/* DOB */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="date"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("dob")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Date of Birth</label>
-            </div>
-
-            {/* Email */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("email")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">
-                Email <span className="text-red-500">*</span>
-              </label>
-            </div>
-
-            {/* ================= CONTACT INFO ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Contact Information</h2>
-            </div>
-
-            {/* Current Address */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="currentaddress"
-                value={formData.currentaddress}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("currentaddress")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Current Address</label>
-            </div>
-
-            {/* Permanent Address */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="permanentaddress"
-                value={formData.permanentaddress}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("permanentaddress")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Permanent Address</label>
-            </div>
-
-            {/* State */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("state")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">State</label>
-            </div>
-
-            {/* City */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("city")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">City</label>
-            </div>
-
-            {/* Pincode */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="number"
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("pincode")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Pincode</label>
-            </div>
-
-            {/* Phone */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("phone")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Phone</label>
-            </div>
-
-            {/* ================= PROFESSIONAL INFO ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Professional Information</h2>
-            </div>
-
-            {/* Joining Date */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="date"
-                name="joiningDate"
-                value={formData.joiningDate}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("joiningDate")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Joining Date</label>
-            </div>
-
-            {/* Designation */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="designation"
-                value={formData.designation}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("designation")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Designation</label>
-            </div>
-
-            {/* Shift */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="shift"
-                value={formData.shift}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("shift")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Shift</label>
-            </div>
-
-            {/* Department */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("department")}
+            {/* ACTIONS */}
+            <div className="mt-8 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-8 py-2 bg-blue-600 text-white rounded-md"
               >
-                <option value="" disabled hidden></option>
-                <option value="Plumber">Plumber</option>
-                <option value="Assembler">Assembler</option>
-                <option value="Welder">Welder</option>
-              </select>
-              <label className="AJ-floating-label">Department</label>
+                {loading ? "Updating..." : "Update"}
+              </button>
             </div>
-
-            {/* Section */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select
-                name="section"
-                value={formData.section}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("section")}
-              >
-                <option value="" disabled hidden></option>
-                <option value="Welding">Welding</option>
-                <option value="Electrical">Electrical</option>
-                <option value="Assembly">Assembly</option>
-              </select>
-              <label className="AJ-floating-label">Section</label>
-            </div>
-
-            {/* RFID */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="rfid"
-                value={formData.rfid}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("rfid")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">RFID</label>
-            </div>
-
-            {/* Role */}
-            <div className="AJ-floating-label-wrapper mb-6">
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={getFieldClassName("role")}
-            >
-              <option value="" disabled hidden></option>
-              <option value="superadmin">SuperAdmin</option>
-              <option value="admin">Admin</option>
-              <option value="hr">HR</option>
-              <option value="employee">Employee</option>
-              <option value="manager">Manager</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="contractor">Contractor</option>
-              <option value="visitor">Visitor</option>
-            </select>
-              <label className="AJ-floating-label">Role</label>
-            </div>
-
-            {/* ================= BANKING DETAILS ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-4">Banking Details</h2>
-            </div>
-
-            {/* Aadhar */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="aadharcardnumber"
-                value={formData.aadharcardnumber}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("aadharcardnumber")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Aadhar Card</label>
-            </div>
-
-            {/* PAN */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="pancard"
-                value={formData.pancard}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("pancard")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">PAN Card</label>
-            </div>
-
-            {/* Account Number */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="accountNumber"
-                value={formData.accountNumber}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("accountNumber")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">Account Number</label>
-            </div>
-
-            {/* IFSC */}
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                name="ifscCode"
-                value={formData.ifscCode}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={getFieldClassName("ifscCode")}
-                placeholder=" "
-              />
-              <label className="AJ-floating-label">IFSC Code</label>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <div className="AJ-crm-save w-full md:col-span-2 mt-6">
-            <button
-              type="submit"
-              className="button-section w-full md:w-auto rounded"
-              disabled={loading}
-            >
-              {loading ? "Updating..." : "Update"}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
 
-      <ToastContainer position="top-right" autoClose={3000} />
-      {loading && (
-        <div className="loader-wrapper">
-          <div className="loader"></div>
-        </div>
-      )}
-    </div>
+      <ToastContainer />
+    </>
   );
 };
+
+/* ================= FIELD ================= */
+const Field = ({ label, name, value, onChange }) => (
+  <div>
+    <label className="block text-sm font-medium mb-1 capitalize">
+      {label}
+    </label>
+    <input
+      type="text"
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      className="w-full border rounded-md px-3 py-2 focus:ring-1 focus:ring-blue-500"
+    />
+  </div>
+);
 
 export default EditUserForm;
