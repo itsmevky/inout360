@@ -10,38 +10,11 @@ const AddUserForm = ({ onSuccess, onClose }) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
-  /* ================= REQUIRED FIELDS ================= */
-  const requiredFields = [
-    "firstName",
-    "lastName",
-    "gender",
-    "dob",
-    "email",
-    "phone",
-    "currentaddress",
-    "city",
-    "state",
-    "pincode",
-  ];
-
-  const fieldLabel = {
-    firstName: "First Name",
-    lastName: "Last Name",
-    gender: "Gender",
-    dob: "Date of Birth",
-    email: "Email",
-    phone: "Phone",
-    currentaddress: "Street",
-    city: "City",
-    state: "State",
-    pincode: "Pincode",
-  };
-
-  const normalizeValue = (v) => String(v || "").trim();
-
-  /* ================= OPEN ANIMATION ================= */
+  /* ================= OPEN POPUP ================= */
   useEffect(() => {
+    document.body.style.overflow = "hidden";
     setTimeout(() => setOpen(true), 20);
+    return () => (document.body.style.overflow = "auto");
   }, []);
 
   /* ================= IMAGE PREVIEW ================= */
@@ -62,42 +35,19 @@ const AddUserForm = ({ onSuccess, onClose }) => {
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError("");
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const payload = {};
 
-    for (const [k, v] of formData.entries()) {
-      if (v instanceof File) continue;
-      payload[k] = typeof v === "string" ? v.trim() : v;
-    }
-
-    payload.name = `${payload.firstName || ""} ${payload.lastName || ""}`.trim();
-    formData.set("name", payload.name);
-
-    const missing = requiredFields.find((k) => !normalizeValue(payload[k]));
-    if (missing) {
-      const msg = `${fieldLabel[missing]} is required`;
-      setFormError(msg);
-      toast.error(msg);
-      return;
+    if (profileImageFile) {
+      formData.append("profileImage", profileImageFile);
     }
 
     try {
-      const res = await API.add(
-        "employees/add",
-        profileImageFile ? formData : payload
-      );
-
-      if (res?.status || res?.success) {
-        toast.success(res.message || "Employee created successfully");
-        form.reset();
-        setProfileImageFile(null);
-        setProfileImagePreview("");
-
-        if (onSuccess) return onSuccess(res);
-        navigate("/dashboard/users/employees", { replace: true });
+      const res = await API.add("employees/add", formData);
+      if (res?.success || res?.status) {
+        toast.success("Employee created successfully");
+        onSuccess ? onSuccess(res) : navigate("/dashboard/users");
       } else {
         toast.error(res.message || "Failed to create employee");
       }
@@ -115,102 +65,127 @@ const AddUserForm = ({ onSuccess, onClose }) => {
 
   /* ================= UI ================= */
   return (
-    <>
-      {/* OVERLAY (NO SCROLL) */}
-      <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
-
-        {/* MODAL */}
-        <div
-          className={`
-            relative w-full max-w-4xl mx-4
-            bg-white rounded-xl shadow-2xl
-            max-h-[90vh] overflow-y-auto
-            transform transition-all duration-300
-            ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}
-          `}
+    <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
+      <div
+        className={`
+          relative w-full max-w-3xl mx-4
+          bg-white rounded-xl shadow-2xl
+          max-h-[90vh] overflow-y-auto
+          transform transition-all duration-300
+          ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}
+        `}
+      >
+        {/* CLOSE BUTTON */}
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute top-4 right-4 w-9 h-9 rounded-full
+                     bg-red-600 text-white flex items-center justify-center
+                     hover:bg-red-700 transition"
         >
-          {/* CLOSE BUTTON */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full
-                       bg-red-600 text-white flex items-center justify-center
-                       hover:bg-red-700 transition"
-          >
-            ✕
-          </button>
+          ✕
+        </button>
 
-          {/* CONTENT */}
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              Add New Employee
-            </h2>
+        <div className="p-6">
+          <h2 className="text-xl font-semibold mb-6">Add New Employee</h2>
 
-            <form onSubmit={handleSubmit} noValidate>
-              {/* PROFILE */}
-              <div className="flex flex-col sm:flex-row gap-6 mb-8">
-                <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
-                  <img
-                    src={
-                      profileImagePreview ||
-                      "https://via.placeholder.com/120x150?text=Profile"
-                    }
-                    className="w-full h-full object-cover"
-                    alt="Profile"
-                  />
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Upload Profile Image
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleProfileImageChange}
-                    className="text-sm"
-                  />
-                </div>
+          <form onSubmit={handleSubmit} noValidate>
+            {/* PROFILE */}
+            <div className="flex flex-col sm:flex-row gap-6 mb-8">
+              <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
+                <img
+                  src={
+                    profileImagePreview ||
+                    "https://via.placeholder.com/120x150?text=Profile"
+                  }
+                  className="w-full h-full object-cover"
+                  alt="Profile"
+                />
               </div>
 
-              {/* PERSONAL INFO */}
-              <Section title="Personal Information" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="First Name *" name="firstName" />
-                <Field label="Last Name *" name="lastName" />
-                <SelectField label="Gender *" name="gender" options={["Male", "Female", "Other"]} />
-                <Field label="Date of Birth *" name="dob" type="date" />
-                <Field label="Email *" name="email" type="email" />
-                <Field label="Phone *" name="phone" />
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Upload Profile Image
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfileImageChange}
+                  className="text-sm !px-0"
+                />
               </div>
+            </div>
 
-              {/* ADDRESS */}
-              <Section title="Current Address" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="Street *" name="currentaddress" />
-                <Field label="City *" name="city" />
-                <Field label="State *" name="state" />
-                <Field label="Pincode *" name="pincode" type="number" />
-              </div>
+            {/* ================= PERSONAL INFORMATION ================= */}
+            <Section title="Personal Information" />
+            <Grid>
+              <Field label="First Name" name="firstName" />
+              <Field label="Last Name" name="lastName" />
+              <SelectField label="Gender *" name="gender" options={["Male", "Female", "Other"]} />
+              <Field label="Date of Birth" name="dob" type="date" />
+              <Field label="Email" name="email" />
+              <Field label="Phone" name="phone" />
+            </Grid>
 
-              {/* SUBMIT */}
-              <div className="mt-8 flex justify-end">
-                <button
-                  type="submit"
-                  className="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Submit
-                </button>
-              </div>
+            {/* ================= CURRENT ADDRESS ================= */}
+            <Section title="Current Address" />
+            <Grid>
+              <Field label="Street" name="currentAddress.street" />
+              <Field label="City" name="currentAddress.city" />
+              <Field label="State" name="currentAddress.state" />
+              <Field label="Pincode" name="currentAddress.pincode" />
+            </Grid>
 
-              {formError && (
-                <div className="text-red-600 text-sm mt-3">{formError}</div>
-              )}
-            </form>
-          </div>
+            {/* ================= PERMANENT ADDRESS ================= */}
+            <Section title="Permanent Address" />
+            <Grid>
+              <Field label="Street" name="permanentAddress.street" />
+              <Field label="City" name="permanentAddress.city" />
+              <Field label="State" name="permanentAddress.state" />
+              <Field label="Pincode" name="permanentAddress.pincode" />
+            </Grid>
+
+            {/* ================= EMPLOYMENT DETAILS ================= */}
+            <Section title="Employment Details" />
+            <Grid>
+              <Field label="Employee ID" name="employeeId" />
+              <Field label="RFID" name="rfid" />
+              <Field label="Joining Date" name="joiningDate" type="date" />
+              <Field label="Designation" name="designation" />
+              <Field label="Department" name="department" />
+              <Field label="Section" name="section" />
+              <Field label="Shift" name="shift" />
+              <Field label="Employment Type" name="employmentType" />
+              <SelectField label="Role" name="role" options={["employee", "admin", "hr"]} />
+              <SelectField label="Status" name="status" options={["Active", "Inactive"]} />
+            </Grid>
+
+            {/* ================= BANK DETAILS ================= */}
+            <Section title="Bank Details" />
+            <Grid>
+              <Field label="Aadhar Number" name="bankDetails.aadharcardnumber" />
+              <Field label="PAN Card" name="bankDetails.pancard" />
+              <Field label="Account Number" name="bankDetails.accountNumber" />
+              <Field label="IFSC Code" name="bankDetails.ifscCode" />
+            </Grid>
+
+            {/* SUBMIT */}
+            <div className="mt-8 flex justify-end">
+              <button
+                type="submit"
+                className="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 add-employee-submit-button"
+              >
+                Submit
+              </button>
+            </div>
+
+            {formError && (
+              <div className="text-red-600 text-sm mt-4">{formError}</div>
+            )}
+          </form>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -220,6 +195,10 @@ const Section = ({ title }) => (
   <h3 className="text-base font-semibold text-gray-800 mt-8 mb-4">
     {title}
   </h3>
+);
+
+const Grid = ({ children }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{children}</div>
 );
 
 const Field = ({ label, name, type = "text" }) => (
@@ -237,16 +216,11 @@ const Field = ({ label, name, type = "text" }) => (
 
 const SelectField = ({ label, name, options }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-    </label>
-    <select
-      name={name}
-      className="w-full h-[42px] border border-gray-300 rounded-md px-3 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-    >
+    <label className="text-sm font-medium mb-1 block">{label}</label>
+    <select name={name} className="w-full border rounded-md px-3 h-[42px]">
       <option value=""></option>
-      {options.map((opt) => (
-        <option key={opt}>{opt}</option>
+      {options.map((o) => (
+        <option key={o}>{o}</option>
       ))}
     </select>
   </div>

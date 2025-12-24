@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { putData } from "../../../Helpers/api.js";
 
+
 const EditUserForm = ({ user }) => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
@@ -110,7 +111,7 @@ const EditUserForm = ({ user }) => {
         {/* MODAL */}
         <div
           className={`
-            relative w-full max-w-4xl mx-4
+            relative w-full max-w-3xl mx-4
             bg-white rounded-xl shadow-2xl
             max-h-[90vh] overflow-y-auto
             transform transition-all duration-300
@@ -129,7 +130,7 @@ const EditUserForm = ({ user }) => {
             <h2 className="text-xl font-semibold mb-6">Edit Employee</h2>
 
             {/* ================= PROFILE SECTION ================= */}
-            <div className="flex items-center gap-6 mb-8">
+            <div className="flex items-center gap-6 mb-8 employee-editform-userprofile">
               <div className="w-[120px] h-[150px] border rounded-md overflow-hidden bg-gray-100">
                 <img
                   src={
@@ -153,7 +154,7 @@ const EditUserForm = ({ user }) => {
                 <button
                   type="button"
                   onClick={() => fileRef.current.click()}
-                  className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md"
+                  className="px-3 py-2 !text-sm bg-blue-600 text-white rounded-md"
                 >
                   {profileFile ? "Change Image" : "Choose Image"}
                 </button>
@@ -162,7 +163,7 @@ const EditUserForm = ({ user }) => {
                   <button
                     type="button"
                     onClick={cancelProfileChange}
-                    className="px-3 py-2 text-sm border border-gray-400 rounded-md hover:bg-gray-100"
+                    className="px-3 py-2 !text-sm border border-gray-400 rounded-md hover:bg-gray-100"
                   >
                     Cancel
                   </button>
@@ -213,7 +214,7 @@ const Field = ({ label, name, value, onChange }) => (
       name={name}
       value={value || ""}
       onChange={onChange}
-      className="w-full border rounded-md px-3 py-2 focus:ring-1 focus:ring-blue-500"
+      className="w-full border-solid border-1 border-gray-400 rounded-md !px-3 !py-2 focus:ring-1 focus:ring-blue-500"
     />
   </div>
 );

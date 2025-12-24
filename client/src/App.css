@@ -4206,9 +4206,11 @@ body {
     }
 }
 .add-employee-submit-button{
-      width: 40%;
-      padding: 12px 0px;
-      border-radius: 10px;
+         width: 31%;
+    padding: 14px 0px;
+    border-radius: 10px;
+    margin: 0;
+    margin-top: 15px;
 }
 @media (min-width: 320px) and (max-width: 768px){
  .add-employee-submit-button{
@@ -5782,6 +5784,9 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   .reset-btn {
     padding: 12px;
     font-size: 14px;
+  }
+  .employee-editform-userprofile{
+    flex-direction: column;
   }
 }
 @media (min-width: 768px) {
