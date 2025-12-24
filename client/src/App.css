@@ -4226,6 +4226,14 @@ margin: 0;
 
 }
 
+@media (max-width: 639px) {
+.location-update-cancel-button{
+  flex-direction: column;
+  gap: 10px;
+}
+}
+
+
 /* /.............min-width: 0px) and (max-width: 420px................./  */
 @media (min-width: 0px) and (max-width: 430px){
   .status-select-option-dropdown.first-left.form-item {
@@ -4279,10 +4287,6 @@ margin: 20px 0px;
 }
 .location-list-heading {
   flex-direction: column;
-}
-.location-update-cancel-button{
-  flex-direction: column;
-  gap: 10px;
 }
 }
 
