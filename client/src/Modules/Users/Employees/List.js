@@ -564,29 +564,11 @@ const Employeepage = () => {
 
               {/* MAIN MODAL */}
               <div
-                className="
-          bg-white 
-          rounded-2xl 
-          shadow-2xl 
-          w-[75%] 
-          max-w-[1100px] 
-          max-h-[90vh] 
-          overflow-y-auto 
-          p-8 
-          relative 
-          animate-zoomIn
-        "
+                className="bg-white rounded-2xl shadow-2xl w-[75%] max-w-[1000px] max-h-[90vh] overflow-y-auto p-8 relative animate-zoomIn"
               >
                 {/* CLOSE BUTTON */}
                 <button
-                  className="
-            absolute top-5 right-5
-            bg-red-500 text-white 
-            w-9 h-9 
-            flex items-center justify-center 
-            rounded-full shadow-lg
-          "
-                  onClick={toggleAddUserForm}
+                  className="  absolute top-5 right-5 bg-red-500 text-white w-9 h-9 flex items-center justify-center rounded-full shadow-lg " onClick={toggleAddUserForm}
                 >
                   ✕
                 </button>

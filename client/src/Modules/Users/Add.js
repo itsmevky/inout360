@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -592,9 +593,183 @@ const AddUserForm = ({ onSuccess }) => {
             ) : null}
           </div>
         </form>
-      </div>
-    </div>
-  );
+=======
+import React from "react";
+
+const AddUserForm = () => {
+  return (
+        <div className="adduser-outer-section min-h-screen bg-[#f4f7fe] py-6 px-3 sm:px-6 lg:px-8">
+          <div className="adduser-inner-section max-w-6xl mx-auto">
+            <form
+              className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100"
+              noValidate
+            >
+              {/* Form Header */}
+              <div className="bg-gradient-to-r from-blue-600 text-white to-indigo-700 px-6 py-4">
+                <h2 className="text-xl font-bold !text-white">Add New Employee</h2>
+                <p className="text-blue-100 text-sm">Please fill in all the required fields</p>
+              </div>
+
+              <div className="p-6 lg:p-10">
+                {/* Grid Wrapper */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+
+                  {/* --- PROFILE PHOTO SECTION --- */}
+                  <div className="col-span-1 md:col-span-2 lg:col-span-3 flex flex-col sm:flex-row items-center gap-6 mb-10 p-5 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                    <div className="relative group">
+                      <div className="w-32 h-40 border-2 border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm transition group-hover:border-blue-400">
+                        <img
+                          src="https://via.placeholder.com/132x170.png?text=Photo"
+                          alt="Profile"
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 text-center sm:text-left">
+                      <h3 className="text-gray-800 font-semibold mb-1 pl-3.5">Employee Photo</h3>
+                      <p className="text-sm text-gray-500 mb-3 pl-3">Format: JPG, PNG. Max size 2MB</p>
+                      <input
+                        type="file"
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* --- PERSONAL INFORMATION --- */}
+                  <div className="col-span-full border-l-4 border-blue-600 pl-3 mb-4 mt-2">
+                    <h3 className="text-lg font-bold text-gray-800">Personal Information</h3>
+                  </div>
+
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                    <label className="AJ-floating-label">First Name *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                    <label className="AJ-floating-label">Last Name *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <select className="AJ-floating-input w-full">
+                      <option value="" disabled hidden></option>
+                      <option>Male</option>
+                      <option>Female</option>
+                    </select>
+                    <label className="AJ-floating-label">Gender *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="date" className="AJ-floating-input w-full" />
+                    <label className="AJ-floating-label">DOB *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="email" className="AJ-floating-input w-full" placeholder=" " />
+                    <label className="AJ-floating-label">Email *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                    <label className="AJ-floating-label">Phone *</label>
+                  </div>
+
+                  {/* --- ADDRESS SECTIONS (2 Columns layout for Desktop) --- */}
+                  <div className="col-span-full grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+                    {/* Current Address */}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-blue-800 border-b pb-1 mb-4">Current Address</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 !mt-5">
+                        <div className="AJ-floating-label-wrapper sm:col-span-2">
+                          <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                          <label className="AJ-floating-label">Street Address *</label>
+                        </div>
+                        <div className="AJ-floating-label-wrapper">
+                          <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                          <label className="AJ-floating-label">City *</label>
+                        </div>
+                        <div className="AJ-floating-label-wrapper">
+                          <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                          <label className="AJ-floating-label">Pincode *</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Permanent Address */}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-blue-800 border-b pb-1 mb-4">Permanent Address</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 !mt-5">
+                        <div className="AJ-floating-label-wrapper sm:col-span-2">
+                          <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                          <label className="AJ-floating-label">Street Address *</label>
+                        </div>
+                        <div className="AJ-floating-label-wrapper">
+                          <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                          <label className="AJ-floating-label">City *</label>
+                        </div>
+                        <div className="AJ-floating-label-wrapper">
+                          <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                          <label className="AJ-floating-label">Pincode *</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* --- PROFESSIONAL DETAILS --- */}
+                  <div className="col-span-full border-l-4 border-blue-600 pl-3 mb-4 mt-10">
+                    <h3 className="text-lg font-bold text-gray-800">Professional Information</h3>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                    <label className="AJ-floating-label">Employee ID *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <input type="text" className="AJ-floating-input w-full" placeholder=" " />
+                    <label className="AJ-floating-label">Designation *</label>
+                  </div>
+                  <div className="AJ-floating-label-wrapper mb-6">
+                    <select className="AJ-floating-input w-full">
+                      <option>Admin</option>
+                      <option>HR</option>
+                      <option>Developer</option>
+                    </select>
+                    <label className="AJ-floating-label">Role *</label>
+                  </div>
+
+                  {/* --- SYSTEM ACCESS (Checkbox Section) --- */}
+                  <div className="col-span-full bg-blue-50 py-3 px-0 rounded-xl mt-4 grid grid-cols-3 sm:grid-cols-1 md:grid-cols-2  gap-4">
+                    <label className="relative !flex gap-2 items-center p-3 rounded-lg bg-white shadow-sm cursor-pointer hover:bg-blue-100 transition">
+                      <input type="checkbox" className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                      <span className="ml-3 text-sm font-medium text-gray-700">Login Enabled</span>
+                    </label>
+                    <label className="relative !flex gap-2 items-center p-3 rounded-lg bg-white shadow-sm cursor-pointer hover:bg-blue-100 transition">
+                      <input type="checkbox" className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                      <span className="ml-3 text-sm font-medium text-gray-700">Email Verified</span>
+                    </label>
+                    <label className="relative !flex gap-2 items-center p-3 rounded-lg bg-white shadow-sm cursor-pointer hover:bg-blue-100 transition">
+                      <input type="checkbox" className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                      <span className="ml-3 text-sm font-medium text-gray-700">Remote Access</span>
+                    </label>
+                  </div>
+
+                </div>
+
+                {/* --- FORM ACTIONS --- */}
+                <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-12 pt-8 border-t border-gray-100">
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto px-8 py-3 text-gray-600 font-semibold hover:text-gray-800 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-10 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-none transition-all active:scale-95"
+                  >
+                    Save Employee Details
+                  </button>
+                </div>
+              </div>
+            </form>
+>>>>>>> Stashed changes
+          </div>
+        </div>
+        );
 };
 
-export default AddUserForm;
+        export default AddUserForm;
