@@ -7,6 +7,12 @@ const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { UPLOAD_ROOT } = require("../../middleware/upload");
 
+const getDotValue = (data, key) => {
+  if (!data) return undefined;
+  if (Object.prototype.hasOwnProperty.call(data, key)) return data[key];
+  return key.split(".").reduce((acc, part) => (acc ? acc[part] : undefined), data);
+};
+
 const normalizePayload = (data) => {
   const toDate = (v) => (v ? new Date(v) : v);
   const nameInput = data.name || data.fullName || data.full_name || "";
@@ -38,21 +44,25 @@ const normalizePayload = (data) => {
     currentAddress: {
       street:
         data.currentAddress?.street ||
+        getDotValue(data, "currentAddress.street") ||
         data.currentStreet ||
         data.current_address_street ||
         data.currentaddress,
       city:
         data.currentAddress?.city ||
+        getDotValue(data, "currentAddress.city") ||
         data.currentCity ||
         data.current_address_city ||
         data.city,
       state:
         data.currentAddress?.state ||
+        getDotValue(data, "currentAddress.state") ||
         data.currentState ||
         data.current_address_state ||
         data.state,
       pincode:
         data.currentAddress?.pincode ||
+        getDotValue(data, "currentAddress.pincode") ||
         data.currentPincode ||
         data.current_address_pincode ||
         data.pincode,
@@ -60,23 +70,27 @@ const normalizePayload = (data) => {
     permanentAddress: {
       street:
         data.permanentAddress?.street ||
+        getDotValue(data, "permanentAddress.street") ||
         data.permanentStreet ||
         data.permanent_address_street ||
         data.permanentaddress,
       city:
         data.permanentAddress?.city ||
+        getDotValue(data, "permanentAddress.city") ||
         data.permanentCity ||
         data.permanent_address_city ||
         data.permanentCity ||
         data.city,
       state:
         data.permanentAddress?.state ||
+        getDotValue(data, "permanentAddress.state") ||
         data.permanentState ||
         data.permanent_address_state ||
         data.permanentState ||
         data.state,
       pincode:
         data.permanentAddress?.pincode ||
+        getDotValue(data, "permanentAddress.pincode") ||
         data.permanentPincode ||
         data.permanent_address_pincode ||
         data.permanentPincode ||
@@ -89,26 +103,46 @@ const normalizePayload = (data) => {
     role: data.role || "employee",
     bankDetails: {
       aadharcardnumber:
-        data.bankDetails?.aadharcardnumber || data.aadharcardnumber,
-      pancard: data.bankDetails?.pancard || data.pancard,
-      accountNumber: data.bankDetails?.accountNumber || data.accountNumber,
-      ifscCode: data.bankDetails?.ifscCode || data.ifscCode,
-      bankName: data.bankDetails?.bankName || data.bankName,
-      branch: data.bankDetails?.branch || data.branch,
+        data.bankDetails?.aadharcardnumber ||
+        getDotValue(data, "bankDetails.aadharcardnumber") ||
+        data.aadharcardnumber,
+      pancard:
+        data.bankDetails?.pancard ||
+        getDotValue(data, "bankDetails.pancard") ||
+        data.pancard,
+      accountNumber:
+        data.bankDetails?.accountNumber ||
+        getDotValue(data, "bankDetails.accountNumber") ||
+        data.accountNumber,
+      ifscCode:
+        data.bankDetails?.ifscCode ||
+        getDotValue(data, "bankDetails.ifscCode") ||
+        data.ifscCode,
+      bankName:
+        data.bankDetails?.bankName ||
+        getDotValue(data, "bankDetails.bankName") ||
+        data.bankName,
+      branch:
+        data.bankDetails?.branch ||
+        getDotValue(data, "bankDetails.branch") ||
+        data.branch,
     },
     emergencyContact: {
       name:
         data.emergencyContact?.name ||
+        getDotValue(data, "emergencyContact.name") ||
         data.emergencyName ||
         data.emergency_contact_name ||
         data.emergency_contact,
       relation:
         data.emergencyContact?.relation ||
+        getDotValue(data, "emergencyContact.relation") ||
         data.emergencyRelation ||
         data.emergency_contact_relation ||
         data.emergency_relation,
       phone:
         data.emergencyContact?.phone ||
+        getDotValue(data, "emergencyContact.phone") ||
         data.emergencyPhone ||
         data.emergency_contact_phone,
     },
@@ -156,9 +190,6 @@ const validateEmployeeData = async (data) => {
     "bankDetails.accountNumber": "required|string",
     "bankDetails.ifscCode": "required|string",
 
-    "emergencyContact.name": "required|string",
-    "emergencyContact.relation": "required|string",
-    "emergencyContact.phone": "required|string",
   };
   const validator = new Validator(data, rules);
   await validator.validate();

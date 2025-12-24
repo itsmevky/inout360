@@ -18,9 +18,9 @@ const bankSchema = {
 };
 
 const emergencySchema = {
-  name: { type: String, required: true, trim: true },
-  relation: { type: String, required: true, trim: true },
-  phone: { type: String, required: true, trim: true },
+  name: { type: String, trim: true },
+  relation: { type: String, trim: true },
+  phone: { type: String, trim: true },
 };
 
 const systemAccessSchema = {
