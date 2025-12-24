@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { API } from "../../Helpers/api.js";
 
-const AddUserForm = ({ onSuccess }) => {
+const AddUserForm = ({ onSuccess, onClose }) => {
   const [formError, setFormError] = useState("");
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState("");
   const navigate = useNavigate();
 
+  /* ================= REQUIRED FIELDS ================= */
   const requiredFields = [
     "firstName",
     "lastName",
@@ -20,25 +21,6 @@ const AddUserForm = ({ onSuccess }) => {
     "city",
     "state",
     "pincode",
-    "permanentaddress",
-    "permanentCity",
-    "permanentState",
-    "permanentPincode",
-    "employeeId",
-    "rfid",
-    "joiningDate",
-    "designation",
-    "department",
-    "section",
-    "shift",
-    "role",
-    "aadharcardnumber",
-    "pancard",
-    "accountNumber",
-    "ifscCode",
-    "emergencyName",
-    "emergencyRelation",
-    "emergencyPhone",
   ];
 
   const fieldLabel = {
@@ -48,553 +30,207 @@ const AddUserForm = ({ onSuccess }) => {
     dob: "Date of Birth",
     email: "Email",
     phone: "Phone",
-    currentaddress: "Current Address Street",
-    city: "Current Address City",
-    state: "Current Address State",
-    pincode: "Current Address Pincode",
-    permanentaddress: "Permanent Address Street",
-    permanentCity: "Permanent Address City",
-    permanentState: "Permanent Address State",
-    permanentPincode: "Permanent Address Pincode",
-    employeeId: "Employee ID",
-    rfid: "RFID",
-    joiningDate: "Joining Date",
-    designation: "Designation",
-    department: "Department",
-    section: "Section",
-    shift: "Shift",
-    role: "Role",
-    aadharcardnumber: "Aadhar Card Number",
-    pancard: "PAN Card",
-    accountNumber: "Account Number",
-    ifscCode: "IFSC Code",
-    emergencyName: "Emergency Contact Name",
-    emergencyRelation: "Emergency Contact Relation",
-    emergencyPhone: "Emergency Contact Phone",
+    currentaddress: "Street",
+    city: "City",
+    state: "State",
+    pincode: "Pincode",
   };
 
-  const normalizeValue = (value) => String(value || "").trim();
+  const normalizeValue = (v) => String(v || "").trim();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  /* ================= SUBMIT ================= */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setFormError("");
 
-    const form = event.currentTarget;
+    const form = e.currentTarget;
     const formData = new FormData(form);
     const payload = {};
 
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) continue;
-      payload[key] = typeof value === "string" ? value.trim() : value;
+    for (const [k, v] of formData.entries()) {
+      if (v instanceof File) continue;
+      payload[k] = typeof v === "string" ? v.trim() : v;
     }
 
-    payload.name = [payload.firstName, payload.lastName].filter(Boolean).join(" ");
-    payload.emailVerified = form.elements.emailVerified?.checked || false;
-    payload.phoneVerified = form.elements.phoneVerified?.checked || false;
-    payload.loginEnabled = form.elements.loginEnabled?.checked || false;
+    payload.name = `${payload.firstName || ""} ${payload.lastName || ""}`.trim();
     formData.set("name", payload.name);
-    formData.set("emailVerified", String(payload.emailVerified));
-    formData.set("phoneVerified", String(payload.phoneVerified));
-    formData.set("loginEnabled", String(payload.loginEnabled));
 
-    const missing = requiredFields.find(
-      (key) => !normalizeValue(payload[key])
-    );
+    const missing = requiredFields.find((k) => !normalizeValue(payload[k]));
     if (missing) {
-      const message = `${fieldLabel[missing] || missing} is required.`;
-      setFormError(message);
-      toast.error(message);
+      const msg = `${fieldLabel[missing]} is required`;
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
     try {
-      const result = await API.add(
+      const res = await API.add(
         "employees/add",
         profileImageFile ? formData : payload
       );
-      if (result.status === true || result.success === true) {
-        toast.success(result.message || "✅ Employee created successfully!");
+
+      if (res?.status || res?.success) {
+        toast.success(res.message || "Employee created successfully");
         form.reset();
         setProfileImageFile(null);
         setProfileImagePreview("");
-        if (typeof onSuccess === "function") {
-          onSuccess(result);
-          return;
-        }
+
+        if (onSuccess) return onSuccess(res);
         navigate("/dashboard/users/employees", { replace: true });
       } else {
-        const message = result.message || "❌ Failed to create employee.";
-        setFormError(message);
-        toast.error(message);
+        toast.error(res.message || "Failed to create employee");
       }
-    } catch (error) {
-      setFormError("An error occurred. Please try again.");
-      toast.error("An error occurred. Please try again.");
+    } catch {
+      toast.error("Something went wrong");
     }
   };
+
+  /* ================= IMAGE PREVIEW ================= */
   useEffect(() => {
-    if (!profileImageFile) {
-      setProfileImagePreview("");
-      return;
-    }
-    const objectUrl = URL.createObjectURL(profileImageFile);
-    setProfileImagePreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
+    if (!profileImageFile) return setProfileImagePreview("");
+    const url = URL.createObjectURL(profileImageFile);
+    setProfileImagePreview(url);
+    return () => URL.revokeObjectURL(url);
   }, [profileImageFile]);
 
-  const handleProfileImageChange = (event) => {
-    const file = event.target.files?.[0] || null;
-    setProfileImageFile(file);
+  const handleProfileImageChange = (e) => {
+    setProfileImageFile(e.target.files?.[0] || null);
   };
+
   return (
-    <div className="adduser-outer-section">
-      <div className="adduser-inner-section">
-        <form
-          className="w-full max-w-5xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-md addnew-employe-popup-form"
-          noValidate
-          onSubmit={handleSubmit}
+    /* ===== OVERLAY ===== */
+    <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start overflow-y-auto px-4 py-10">
+
+      {/* ===== MODAL ===== */}
+      <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-xl">
+
+        {/* ===== CLOSE BUTTON (FIXED TOP RIGHT) ===== */}
+        <button
+          type="button"
+          onClick={() => (onClose ? onClose() : navigate(-1))}
+          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
         >
-          <h2 className="text-lg font-semibold mb-6 text-gray-800">
+          ✕
+        </button>
+
+        {/* ===== CONTENT ===== */}
+        <div className="p-6">
+
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">
             Add New Employee
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            {/* ================= PROFILE PHOTO ================= */}
-            <div className="flex items-center space-x-4 col-span-2 mb-4">
-              <div className="w-[132px] h-[170px] border rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+          <form onSubmit={handleSubmit} noValidate>
+
+            {/* ===== PROFILE ===== */}
+            <div className="flex flex-col sm:flex-row gap-6 mb-8 addemployee-profile-page-box">
+              <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
                 <img
                   src={
                     profileImagePreview ||
-                    "https://via.placeholder.com/132x170.png?text=Photo"
+                    "https://via.placeholder.com/120x150?text=Profile"
                   }
+                  className="w-full h-full object-cover"
                   alt="Profile"
-                  className="object-cover w-full h-full"
                 />
               </div>
+
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 !p-6">
+                <p className="text-sm font-medium text-gray-700 mb-2 !mx-0">
                   Upload Profile Image
-                </label>
+                </p>
                 <input
                   type="file"
-                  name="profileImage"
                   accept="image/*"
                   onChange={handleProfileImageChange}
-                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  style={{ paddingTop: "10px", paddingBottom: "10px" }} />
+                  className="text-sm !px-0"
+                />
               </div>
             </div>
 
-            {/* ================= PERSONAL INFORMATION ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">
-                Personal Information
-              </h2>
-            </div>
+            {/* ===== PERSONAL INFO ===== */}
+            <Section title="Personal Information" />
 
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="firstName"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="First Name *" name="firstName" />
+              <Field label="Last Name *" name="lastName" />
+              <SelectField
+                label="Gender *"
+                name="gender"
+                options={["Male", "Female", "Other"]}
               />
-              <label className="AJ-floating-label">First Name *</label>
+              <Field label="Date of Birth *" name="dob" type="date" />
+              <Field label="Email *" name="email" type="email" />
+              <Field label="Phone *" name="phone" />
+              {/* <Field label="Password *" name="password" type="password" full /> */}
             </div>
 
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="lastName"
-              />
-              <label className="AJ-floating-label">Last Name *</label>
+            {/* ===== ADDRESS ===== */}
+            <Section title="Current Address" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="Street *" name="currentaddress" />
+              <Field label="City *" name="city" />
+              <Field label="State *" name="state" />
+              <Field label="Pincode *" name="pincode" type="number" />
             </div>
 
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select className="AJ-floating-input" name="gender">
-                <option value="" disabled hidden></option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-              <label className="AJ-floating-label">Gender *</label>
+            {/* ===== SUBMIT ===== */}
+            <div className="mt-8 flex justify-end">
+              <button
+                type="submit"
+                className="px-8 py-2 !mt-5 bg-blue-600 text-white rounded-md hover:bg-blue-700 add-employee-submit-button"
+              >
+                Submit
+              </button>
             </div>
 
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input type="date" className="AJ-floating-input" name="dob" />
-              <label className="AJ-floating-label">Date of Birth *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="email"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="email"
-              />
-              <label className="AJ-floating-label">Email *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="phone"
-              />
-              <label className="AJ-floating-label">Phone *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="password"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="password"
-              />
-              <label className="AJ-floating-label">Password *</label>
-            </div>
-
-            {/* ================= CURRENT ADDRESS ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">Current Address</h2>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="currentaddress"
-              />
-              <label className="AJ-floating-label">Street *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="city"
-              />
-              <label className="AJ-floating-label">City *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="state"
-              />
-              <label className="AJ-floating-label">State *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="number"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="pincode"
-              />
-              <label className="AJ-floating-label">Pincode *</label>
-            </div>
-
-            {/* ================= PERMANENT ADDRESS ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">Permanent Address</h2>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="permanentaddress"
-              />
-              <label className="AJ-floating-label">Street *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="permanentCity"
-              />
-              <label className="AJ-floating-label">City *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="permanentState"
-              />
-              <label className="AJ-floating-label">State *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="number"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="permanentPincode"
-              />
-              <label className="AJ-floating-label">Pincode *</label>
-            </div>
-
-            {/* ================= PROFESSIONAL INFORMATION ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">
-                Professional Information
-              </h2>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="employeeId"
-              />
-              <label className="AJ-floating-label">Employee ID *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="rfid"
-              />
-              <label className="AJ-floating-label">RFID *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input type="date" className="AJ-floating-input" name="joiningDate" />
-              <label className="AJ-floating-label">Joining Date *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="designation"
-              />
-              <label className="AJ-floating-label">Designation *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="department"
-              />
-              <label className="AJ-floating-label">Department *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="section"
-              />
-              <label className="AJ-floating-label">Section *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="shift"
-              />
-              <label className="AJ-floating-label">Shift *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select className="AJ-floating-input" name="employmentType">
-                <option value="" disabled hidden></option>
-                <option>Full-time</option>
-                <option>Part-time</option>
-                <option>Contract</option>
-                <option>Intern</option>
-              </select>
-              <label className="AJ-floating-label">Employment Type *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select className="AJ-floating-input" name="role">
-                <option value="" disabled hidden></option>
-                <option value="superadmin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="hr">HR</option>
-                <option value="employee">Employee</option>
-                <option value="manager">Manager</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="contractor">Contractor</option>
-                <option value="visitor">Visitor</option>
-              </select>
-              <label className="AJ-floating-label">Role *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <select className="AJ-floating-input" name="status">
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-              <label className="AJ-floating-label">Status *</label>
-            </div>
-
-            {/* ================= BANK DETAILS ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">Bank Details</h2>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="aadharcardnumber"
-              />
-              <label className="AJ-floating-label">Aadhar Card Number *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="pancard"
-              />
-              <label className="AJ-floating-label">PAN Card *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="accountNumber"
-              />
-              <label className="AJ-floating-label">Account Number *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="ifscCode"
-              />
-              <label className="AJ-floating-label">IFSC Code *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="bankName"
-              />
-              <label className="AJ-floating-label">Bank Name *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="branch"
-              />
-              <label className="AJ-floating-label">Branch *</label>
-            </div>
-
-            {/* ================= EMERGENCY CONTACT ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2">Emergency Contact</h2>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="emergencyName"
-              />
-              <label className="AJ-floating-label">Name *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="emergencyRelation"
-              />
-              <label className="AJ-floating-label">Relation *</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6">
-              <input
-                type="text"
-                className="AJ-floating-input"
-                placeholder=" "
-                name="emergencyPhone"
-              />
-              <label className="AJ-floating-label">Phone *</label>
-            </div>
-
-            {/* ================= SYSTEM ACCESS ================= */}
-            <div className="col-span-2">
-              <h2 className="text-lg font-semibold mb-2 !m-0">System Access</h2>
-            </div>
-
-            <div className="flex items-center space-x-2 mb-3 gap-2">
-              <input type="checkbox" className="w-4 h-4" name="emailVerified" />
-              <label className="text-sm text-gray-700 !m-0">Email Verified</label>
-            </div>
-
-            <div className="flex items-center space-x-2 mb-3 gap-2">
-              <input type="checkbox" className="w-4 h-4" name="phoneVerified" />
-              <label className="text-sm text-gray-700 !m-0">Phone Verified</label>
-            </div>
-
-            <div className="flex items-center space-x-2 mb-3 gap-2">
-              <input type="checkbox" className="w-4 h-4" name="loginEnabled" />
-              <label className="text-sm text-gray-700 !m-0">Login Enabled</label>
-            </div>
-
-            <div className="AJ-floating-label-wrapper mb-6 col-span-2">
-              <input type="datetime-local" className="AJ-floating-input" name="lastLogin" />
-              <label className="AJ-floating-label">Last Login</label>
-            </div>
-          </div>
-
-          {/* ================= SUBMIT BUTTON ================= */}
-          <div className="AJ-crm-save w-full md:col-span-2 mt-6">
-            <button
-              type="submit"
-              className="button-section w-full md:w-auto rounded"
-            >
-              Submit
-            </button>
-            {formError ? (
-              <div className="text-red-600 text-sm mt-2">{formError}</div>
-            ) : null}
-          </div>
-        </form>
+            {formError && (
+              <div className="text-red-600 text-sm mt-3">{formError}</div>
+            )}
+          </form>
+        </div>
       </div>
     </div>
   );
 };
+
+/* ================= SMALL COMPONENTS ================= */
+
+const Section = ({ title }) => (
+  <h3 className="text-base font-semibold text-gray-800 mt-8 mb-4">
+    {title}
+  </h3>
+);
+
+const Field = ({ label, name, type = "text", full }) => (
+  <div className={full ? "md:col-span-2" : ""}>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <input
+      type={type}
+      name={name}
+      className="w-full h-[42px] border border-gray-300 rounded-md px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+    />
+  </div>
+);
+
+const SelectField = ({ label, name, options }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <select
+      name={name}
+      className="w-full h-[42px] border border-gray-300 rounded-md px-3 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+    >
+      <option value=""></option>
+      {options.map((opt) => (
+        <option key={opt}>{opt}</option>
+      ))}
+    </select>
+  </div>
+);
 
 export default AddUserForm;

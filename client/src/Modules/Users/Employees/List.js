@@ -55,8 +55,8 @@ const Employeepage = () => {
         setData(response.employees);
         setTotalRows(
           response.total ??
-            response.pagination?.totalrecords ??
-            response.employees.length
+          response.pagination?.totalrecords ??
+          response.employees.length
         );
       } else {
         setError("No employee data found");
@@ -555,23 +555,19 @@ const Employeepage = () => {
 
             {/* CENTER WRAPPER */}
             <div
-              className="
-        fixed inset-0 
-        flex items-center justify-center 
-        z-50
-      "
+              className="fixed inset-0 flex items-center justify-center z-50"
             >
 
               {/* MAIN MODAL */}
               <div
-                className="bg-white rounded-2xl shadow-2xl w-[75%] max-w-[1000px] max-h-[90vh] overflow-y-auto p-8 relative animate-zoomIn"
+              // className="bg-white rounded-2xl shadow-2xl w-[70%] max-w-[1000px] max-h-[90vh] overflow-y-auto p-8 relative animate-zoomIn"
               >
                 {/* CLOSE BUTTON */}
-                <button
+                {/* <button
                   className="  absolute top-5 right-5 bg-red-500 text-white w-9 h-9 flex items-center justify-center rounded-full shadow-lg " onClick={toggleAddUserForm}
                 >
                   ✕
-                </button>
+                </button> */}
 
                 {/* FORM CONTENT */}
                 <AddUserForm

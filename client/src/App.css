@@ -2216,6 +2216,7 @@ align-items: flex-start;
   padding: 12px 15px;
   background: #22374e;
   border-radius: 8px;
+  margin: 0;
 }
 
 .last-section {
@@ -2237,10 +2238,45 @@ align-items: flex-start;
 }
 
 .form-justification {
-  width: 100%;
-  text-align: -webkit-center;
+width: 45%;
+    text-align: -webkit-center;
 }
 
+@media (min-width: 520px) and (max-width: 768px) {
+  .form-justification {
+    width: 70%;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+   .form-justification {
+    width: 70%;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1350px) {
+   .form-justification {
+    width: 70%;
+  }
+}
+
+@media (max-width: 520px) {
+  .form-justification {
+    width: 90%;
+  }
+  .remember-me-container,
+  .forgot-password{
+font-size: 13px;
+  }
+}
+.remember-me-container{
+  margin: 0;
+}
+.side-section{
+  display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 10px 0px;
+}
 .checkbox {
   width: 16px;
   height: 16px;
@@ -3999,7 +4035,8 @@ button:hover svg {
 .AJ-floating-label {
   position: absolute;
   left: 0.75rem;
-  top: 0.5rem;
+      top: -1px;
+
   color: #22374e;
   font-size: 0.875rem;
   /* transform: translateY(-50%); */
@@ -4168,7 +4205,24 @@ body {
         display: block;
     }
 }
+.add-employee-submit-button{
+      width: 40%;
+      padding: 12px 0px;
+      border-radius: 10px;
+}
+@media (min-width: 320px) and (max-width: 768px){
+ .add-employee-submit-button{
+      width: 100% !important;
+} 
+.employe-form-inner-page,
+.employe-form-main-page{
+margin: 0;
+}
+}
 
+.employe-form-inner-page{
+
+}
 
 /* /.............min-width: 0px) and (max-width: 420px................./  */
 @media (min-width: 0px) and (max-width: 430px){
@@ -5577,3 +5631,176 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     max-width: 440px;
   }
 }
+/* ================= RESET PASSWORD RESPONSIVE UI ================= */
+
+.reset-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+}
+
+.reset-card {
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Heading */
+.reset-card h2 {
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+/* Form Fields */
+.field {
+  margin-bottom: 18px;
+}
+
+.field label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #374151;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.field input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.field input.error {
+  border-color: #ef4444;
+}
+
+/* Error text */
+.error-text {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Button */
+.reset-btn {
+  width: 100%;
+  padding: 13px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.reset-btn:hover {
+  background: #4f46e5;
+}
+
+.reset-btn:active {
+  transform: scale(0.98);
+}
+
+/* Info / API Message */
+.info-text {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #dc2626;
+}
+.toggle-icon, 
+.confirm-toggle-icon {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+}
+.password-input{
+  position: relative;
+}
+
+/* ================= MOBILE (<= 480px) ================= */
+@media (max-width: 480px) {
+  .reset-card {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+
+  .reset-card h2 {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .field input {
+    padding: 11px 12px;
+    font-size: 13px;
+  }
+
+  .reset-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
+
+/* ================= TABLET (481px - 768px) ================= */
+@media (min-width: 481px) and (max-width: 768px) {
+  .reset-card {
+    max-width: 420px;
+    padding: 26px;
+  }
+}
+
+/* ================= DESKTOP (>= 1024px) ================= */
+@media (min-width: 1024px) {
+  .reset-card {
+    max-width: 420px;
+  }
+}
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 42px;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.password-toggle-icon:hover {
+  color: #4f46e5;
+}
+

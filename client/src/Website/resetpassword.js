@@ -2,155 +2,157 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API, postData } from "../Helpers/api.js";
 import { toast } from "react-toastify";
+import { Eye, EyeOff } from "lucide-react"; // 👁 icons
 
 const ResetPassword = () => {
+  const navigate = useNavigate();
+  const email = sessionStorage.getItem("resetEmail") || "";
+
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: "",
   });
+
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
-  const [resetComplete, setResetComplete] = useState(false);
-  const navigate = useNavigate();
-  const email = sessionStorage.getItem("resetEmail") || "";
+
+  // 👁 show/hide state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    if (!email && !resetComplete) {
-      navigate("/forgotpassword");
-    }
-  }, [email, navigate, resetComplete]);
+    if (!email) navigate("/forgotpassword");
+  }, [email, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // 🔹 confirm password match 
+      if (
+        name === "confirmPassword" &&
+        updated.newPassword === value
+      ) {
+        setErrors((prevErr) => ({ ...prevErr, confirmPassword: "" }));
+      }
+
+      // 🔹 new password confirm error  
+      if (
+        name === "newPassword" &&
+        updated.confirmPassword &&
+        updated.confirmPassword === value
+      ) {
+        setErrors((prevErr) => ({ ...prevErr, confirmPassword: "" }));
+      }
+
+      return updated;
+    });
   };
 
+
   const validate = () => {
-    const nextErrors = {};
+    const err = {};
     if (!formData.newPassword) {
-      nextErrors.newPassword = "New password is required.";
+      err.newPassword = "New password is required";
     } else if (formData.newPassword.length < 6) {
-      nextErrors.newPassword = "Password must be at least 6 characters.";
+      err.newPassword = "Minimum 6 characters required";
     }
 
     if (!formData.confirmPassword) {
-      nextErrors.confirmPassword = "Confirm password is required.";
+      err.confirmPassword = "Confirm password is required";
     } else if (formData.confirmPassword !== formData.newPassword) {
-      nextErrors.confirmPassword = "Passwords do not match.";
+      err.confirmPassword = "Passwords do not match";
     }
-    return nextErrors;
+    return err;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
-    const nextErrors = validate();
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length) return;
 
     try {
-      const result = await postData(API.auth.resetPassword, {
+      const res = await postData(API.auth.resetPassword, {
         email,
         newPassword: formData.newPassword,
       });
 
-      if (result && result.status === true) {
-        const successMessage =
-          result.message || "Password reset successful. Please login.";
-        setMessage(successMessage);
-        toast.success(successMessage);
-        setResetComplete(true);
+      if (res?.status) {
+        toast.success(res.message || "Password reset successful");
         sessionStorage.removeItem("resetEmail");
         navigate("/login", { replace: true });
-        setTimeout(() => {
-          if (window.location.pathname !== "/login") {
-            window.location.assign("/login");
-          }
-        }, 0);
       } else {
-        setMessage(result.message || "Failed to reset password.");
+        setMessage(res?.message || "Reset failed");
       }
-    } catch (err) {
-      console.error("Reset password error:", err);
-      setMessage("An error occurred. Please try again.");
+    } catch {
+      setMessage("Something went wrong. Try again.");
     }
   };
 
   return (
-    <div className="main-inner">
-      <div className="sections">
-        <div className="left-section"></div>
-        <div className="right-section">
-          <div className="form-justification">
-            <form onSubmit={handleSubmit}>
-              <div className="inside-form">
-                <h2>Reset Your Password Here</h2>
+    <div className="reset-wrapper">
+      <div className="reset-card">
+        <h2>Reset Password</h2>
+        <p className="subtitle">Create a new secure password</p>
 
-                <div className="email-section">
-                  <div className="mid-section">
-                    <label className="email" htmlFor="newPassword">
-                      New Password
-                    </label>
-                    <br />
-                  </div>
-                  <input
-                    type="password"
-                    id="newPassword"
-                    name="newPassword"
-                    required
-                    onChange={handleChange}
-                    value={formData.newPassword}
-                    className={`input-field ${
-                      errors.newPassword ? "error-border" : ""
-                    }`}
-                  />
-                  <div>
-                    {errors.newPassword && (
-                      <span className="error-message">
-                        {errors.newPassword}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="email-section">
-                  <div className="mid-section">
-                    <label className="email" htmlFor="confirmPassword">
-                      Confirm Password
-                    </label>
-                    <br />
-                  </div>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    required
-                    onChange={handleChange}
-                    value={formData.confirmPassword}
-                    className={`input-field ${
-                      errors.confirmPassword ? "error-border" : ""
-                    }`}
-                  />
-                  <div>
-                    {errors.confirmPassword && (
-                      <span className="error-message">
-                        {errors.confirmPassword}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="last-section">
-                  <div className="button-section">
-                    <button type="submit">Reset Password</button>
-                  </div>
-                </div>
-
-                {message && <div className="message-section">{message}</div>}
-              </div>
-            </form>
+        <form onSubmit={handleSubmit}>
+          {/* New Password */}
+          <div className="field password-field">
+            <label>New Password</label>
+            <div className="password-input">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                className={errors.newPassword ? "error" : ""}
+              />
+              <span
+                className="toggle-icon"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </span>
+            </div>
+            {errors.newPassword && (
+              <span className="error-text">{errors.newPassword}</span>
+            )}
           </div>
-        </div>
+
+          {/* Confirm Password */}
+          <div className="field password-field">
+            <label>Confirm Password</label>
+            <div className="password-input">
+              <input
+                type={showConfirm ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={errors.confirmPassword ? "error" : ""}
+              />
+              <span
+                className="confirm-toggle-icon"
+                onClick={() => setShowConfirm(!showConfirm)}
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </span>
+            </div>
+            {errors.confirmPassword && (
+              <span className="error-text">{errors.confirmPassword}</span>
+            )}
+          </div>
+
+          <button type="submit" className="reset-btn">
+            Reset Password
+          </button>
+
+          {message && <div className="info-text">{message}</div>}
+        </form>
       </div>
     </div>
   );

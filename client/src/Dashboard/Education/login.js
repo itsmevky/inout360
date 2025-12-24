@@ -1,26 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { encryptData } from "../../Helpers/encryptionHelper";
 import { API, postData } from "../../Helpers/api";
 import Validator from "../../Helpers/validators.js";
-import { ToastContainer, toast } from "react-toastify"; // Import Toastify
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import securelogin from "../../Images/secure-login.png";
 import { useUser } from "../../Helpers/Context/UserContext.js";
-import pidilitelogo from "../../Images/pidilitelogo.png"
+import pidilitelogo from "../../Images/pidilitelogo.png";
+import { Eye, EyeOff } from "lucide-react";
+
 const LoginComponent = () => {
   const { setUser } = useUser();
+  const navigate = useNavigate();
 
   const [userData, setUserdata] = useState({
     email: "",
     password: "",
-    rememberMe: false, // Add rememberMe field
+    rememberMe: false,
   });
 
-  const navigate = useNavigate();
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
+
+  // 👁 Show / Hide password
+  const [showPassword, setShowPassword] = useState(false);
+
+  /* ================= VALIDATION ================= */
   const rules = {
     email: {
       required: true,
@@ -33,38 +40,44 @@ const LoginComponent = () => {
       errorMessage: "Password is required.",
     },
   };
+
   const validator = new Validator(rules);
+
   const validateFormField = async (name, value) => {
     const fieldRule = { [name]: rules[name] };
     const fieldData = { [name]: value };
-
-    const validationErrors = await validator.validate(fieldData, fieldRule);
-    return validationErrors;
+    return await validator.validate(fieldData, fieldRule);
   };
+
   const validateform = async (formData) => {
     const validationErrors = await validator.validate(formData, rules);
     if (Object.keys(validationErrors).length > 0) {
-      console.log(validationErrors);
       setErrors(validationErrors);
-
       return true;
     }
-    setErrors(validationErrors);
-    return;
+    setErrors({});
+    return false;
   };
 
-  const [touched, setTouched] = useState({ email: false, password: false });
-
+  /* ================= HANDLERS ================= */
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setUserdata({
       ...userData,
-      [name]: type === "checkbox" ? checked : value, // Handle checkbox for rememberMe
+      [name]: type === "checkbox" ? checked : value,
     });
+
+    // 🔹 live error clear
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
+
   const handleBlur = async (e) => {
     const { name, value } = e.target;
     setTouched({ ...touched, [name]: true });
+
     const fieldErrors = await validateFormField(name, value);
     setErrors((prevErrors) => ({
       ...prevErrors,
@@ -72,201 +85,158 @@ const LoginComponent = () => {
     }));
   };
 
-  const getFieldClassName = (fieldName) => {
-    return errors[fieldName] ? "field-error" : "field";
-  };
-  const encodeData = (data) => {
-    return btoa(JSON.stringify(data)); // Convert data to Base64 after JSON.stringify
-  };
+  const getFieldClassName = (fieldName) =>
+    errors[fieldName] ? "field-error" : "field";
+
+  const encodeData = (data) => btoa(JSON.stringify(data));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const validationErrors = await validateform(userData);
-      if (validationErrors) {
-        setLoading(false);
-        return;
-      }
-      const response = await sendData(userData);
+
+    const hasErrors = await validateform(userData);
+    if (hasErrors) {
       setLoading(false);
-    } catch (error) {
-      console.error("Form submission error:", error);
-      toast.error(error.message);
-      setLoading(false);
+      return;
     }
+
+    await sendData(userData);
+    setLoading(false);
   };
+
   const sendData = async (userData) => {
     try {
       const response = await postData(API.auth.login, userData);
-      console.log("response", response);
 
-      // Case: response itself is the user data (not wrapped in .data or has .status)
       if (response?.accessToken) {
         const accessToken = response.accessToken;
 
-        // Save tokens and user data
         localStorage.setItem("accesstoken", accessToken);
         Cookies.set("accesstoken", accessToken);
 
-        const encodedUserDetails = encodeData(response);
-        Cookies.set("userdetail", encodedUserDetails);
+        Cookies.set("userdetail", encodeData(response));
+        setUser(response);
 
-        // Handle "Remember Me"
+        // Remember Me
         if (userData.rememberMe) {
           localStorage.setItem("email", userData.email);
-          localStorage.setItem("password", userData.password); // ⚠️ Avoid in production
+          localStorage.setItem("password", userData.password);
         } else {
           localStorage.removeItem("email");
           localStorage.removeItem("password");
         }
 
-        // toast.success("Login successful!");
-
-        setUser(response);
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500);
+        navigate("/dashboard");
       } else {
-        // If it's not a success
-        toast.error(response.message || "Login error. Please try again.");
+        toast.error(response.message || "Login failed");
       }
     } catch (error) {
-      console.error("Login error:", error);
       toast.error("An error occurred. Please try again.");
     }
   };
 
-  // On Component load, check if credentials are saved in localStorage
+  /* ================= ON LOAD ================= */
   useEffect(() => {
     const savedEmail = localStorage.getItem("email");
     const savedPassword = localStorage.getItem("password");
 
     if (savedEmail && savedPassword) {
-      setUserdata((prevState) => ({
-        ...prevState,
+      setUserdata({
         email: savedEmail,
         password: savedPassword,
-        rememberMe: true, // Set the checkbox as checked if data is found
-      }));
+        rememberMe: true,
+      });
     }
+
     const accessToken =
       localStorage.getItem("accesstoken") || Cookies.get("accesstoken");
 
-    if (accessToken) {
-      // If user is already logged in, redirect to dashboard
-      navigate("/dashboard");
-    }
+    if (accessToken) navigate("/dashboard");
   }, [navigate]);
 
+  /* ================= UI ================= */
   return (
     <>
       <div className="main-inner login-page">
         <div className="sections">
           <div className="left-section">
-            <div className="left-section-inner">
-              <img width="100%" src={securelogin} alt="" />
-            </div>
+            <img width="100%" src={securelogin} alt="Secure Login" />
           </div>
-          <div className="right-section ">
-            <div className="form-justification AJ-section ">
+
+          <div className="right-section">
+            <div className="form-justification AJ-section">
               <form onSubmit={handleSubmit} className="login-form">
-                <div className="mb-4 ">
-                  <img className="login-page-logo" width={200} src={pidilitelogo} />
+                <img
+                  className="login-page-logo"
+                  width={200}
+                  src={pidilitelogo}
+                  alt="Logo"
+                />
+
+                <h2>Login Here</h2>
+
+                {/* Email */}
+                <div className="AJ-floating-label-wrapper">
+                  <input
+                    type="text"
+                    name="email"
+                    value={userData.email}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className={`${getFieldClassName("email")} AJ-floating-input`}
+                  />
+                  <label className="AJ-floating-label">Email</label>
                 </div>
-                <div className="inside-form">
-                  <h2>Login Here</h2>
-                  <div className="login-section AJ-login-Form-block">
-                    <div className="form">
-                      <div className="AJ-floating-label-wrapper ">
-                        <input
-                          type="text"
-                          name="email"
-                          value={userData.email}
-                          autoComplete="off"
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          className={`${getFieldClassName(
-                            "email"
-                          )} AJ-floating-input`}
-                        />
 
-                        <label className="AJ-floating-label">Email</label>
-                      </div>
-
-                      <div className="AJ-floating-label-wrapper ">
-                        <input
-                          type="password"
-                          name="password"
-                          id="password"
-                          value={userData.password}
-                          placeholder=""
-                          autoComplete="off"
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          className={`${getFieldClassName(
-                            "password"
-                          )} AJ-floating-input`}
-                        />
-
-                        <label className="AJ-floating-label">Password</label>
-                      </div>
-
-                      <div className="side-section">
-                        <div className="remember-me-container">
-                          <div>
-                            <input
-                              type="checkbox"
-                              name="rememberMe"
-                              checked={userData.rememberMe}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                          <div>Remember Me</div>
-                        </div>
-
-                        <div className="forgot-section">
-                          <a href="/forgotpassword" className="forgot-password">
-                            Forgot Password?
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="last-section ">
-                        <button className="button-section" type="submit">
-                          Login
-                        </button>
-                      </div>
-                      {/* <div className="divider">
-                        <span className="line"></span>
-                        <span className="text">OR</span>
-                        <span className="line"></span>
-                      </div> */}
-                      {/* <div className="last-section">
-                        <div className="last-line">
-                          Don't have an account? &nbsp;
-                        </div>
-                        <div className="alphabet">
-                          <a href="register" className="forgot-password">
-                            Register
-                          </a>
-                        </div>
-                      </div> */}
-                    </div>
-
-                    <div></div>
-                  </div>
+                {/* Password */}
+                <div className="AJ-floating-label-wrapper password-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={userData.password}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className={`${getFieldClassName(
+                      "password"
+                    )} AJ-floating-input`}
+                  />
+                  <span
+                    className="password-toggle-icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </span>
+                  <label className="AJ-floating-label">Password</label>
                 </div>
+
+                {/* Remember / Forgot */}
+                <div className="side-section">
+                  <label className="remember-me-container">
+                    <input
+                      type="checkbox"
+                      name="rememberMe"
+                      checked={userData.rememberMe}
+                      onChange={handleInputChange}
+                    />
+                    Remember Me
+                  </label>
+
+                  <a href="/forgotpassword" className="forgot-password">
+                    Forgot Password?
+                  </a>
+                </div>
+
+                <button className="button-section" type="submit">
+                  Login
+                </button>
               </form>
             </div>
           </div>
         </div>
 
-        <div>
-          {/* Add the ToastContainer to render the toast messages */}
-          <ToastContainer position="top-right" autoClose={3000} />
-        </div>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
+
       {loading && (
         <div className="loader-wrapper">
           <div className="loader"></div>
