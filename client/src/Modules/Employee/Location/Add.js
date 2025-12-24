@@ -35,42 +35,62 @@ const LocationAdd = () => {
   };
 
   return (
-    <div className="p-6 flex justify-center">
-      <div className="bg-white shadow-xl rounded-lg p-6 w-full  border border-gray-200">
-        {/* Heading */}
-        <div className="flex items-center mb-6 justify-between grid sm:grid-cols-2 gap-2">
-          <div className="flex gap-3">
-            <MdAddLocationAlt className="text-blue-600" size={30} />
-            <h2 className="text-xl font-semibold ml-2">Add New Location</h2>
+    <div className="p-4 sm:p-6 flex justify-center ">
+      <div className="bg-white shadow-xl rounded-lg p-4 sm:p-6 w-full max-w-7xl border border-gray-200 Addnew-location-page">
+
+        {/* ===== HEADER ===== */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+
+          {/* Title */}
+          <div className="flex items-center gap-3">
+            <MdAddLocationAlt className="text-blue-600" size={28} />
+            <h2 className="text-lg sm:text-xl font-semibold">
+              Add New Location
+            </h2>
           </div>
-          <div className="mt-8 flex gap-2.5 justify-end">
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
             <button
               onClick={save}
-              className=" py-2 px-2 rounded-lg bg-[#018DD4] text-white hover:bg-blue-700 transition shadow-md  min-w-[140px]"
+              className="py-2 px-4 rounded-lg bg-[#018DD4] text-white hover:bg-blue-700 transition shadow-md min-w-[140px] w-full sm:w-auto"
             >
               Save Location
             </button>
             <button
               onClick={() => navigate("/dashboard/users/location")}
-              className=" py-2 rounded-lg border border-gray-400 hover:bg-gray-100 transition min-w-[140px]"
+              className="py-2 px-4 rounded-lg border border-gray-400 hover:bg-gray-100 transition min-w-[140px] w-full sm:w-auto"
             >
               Cancel
             </button>
           </div>
         </div>
 
-        {error ? <div className="text-red-600 mb-2">{error}</div> : null}
+        {/* ===== ERROR ===== */}
+        {error && (
+          <div className="text-red-600 mb-4 text-sm">{error}</div>
+        )}
 
-        {/* Form Inputs */}
-        <div className="space-y-5  grid lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2  md:gap-2 gap-4 items-end">
-          {/* Name */}
-          <div className="">
+        {/* ===== FORM GRID ===== */}
+        <div
+          className="
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        md:grid-cols-3
+        lg:grid-cols-5
+        gap-4
+        items-end
+      "
+        >
+          {/* Location Name */}
+          <div className="lg:col-span-2">
             <label className="block text-gray-600 mb-1 font-medium">
               Location Name
             </label>
             <input
               type="text"
-              className="border rounded-lg p-3 md:p-2 w-full outline-none"
+              className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g., Office Entry Gate"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -78,11 +98,11 @@ const LocationAdd = () => {
           </div>
 
           {/* Latitude */}
-          <div className="">
+          <div>
             <label className="block text-gray-600 mb-1 font-medium">Lat</label>
             <input
               type="text"
-              className="border rounded-lg p-3 md:p-2 w-full outline-none"
+              className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Enter Lat"
               value={form.lat}
               onChange={(e) => setForm({ ...form, lat: e.target.value })}
@@ -90,11 +110,11 @@ const LocationAdd = () => {
           </div>
 
           {/* Longitude */}
-          <div className="">
+          <div>
             <label className="block text-gray-600 mb-1 font-medium">Long</label>
             <input
               type="text"
-              className="border rounded-lg p-3 md:p-2 w-full outline-none"
+              className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Enter Long"
               value={form.long}
               onChange={(e) => setForm({ ...form, long: e.target.value })}
@@ -102,22 +122,22 @@ const LocationAdd = () => {
           </div>
 
           {/* Radius */}
-          <div className="">
+          <div>
             <label className="block text-gray-600 mb-1 font-medium">
               Radius (in meters)
             </label>
             <input
               type="text"
-              className="border rounded-lg p-3 md:p-2 w-full outline-none"
+              className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g., 20"
               value={form.radius}
               onChange={(e) => setForm({ ...form, radius: e.target.value })}
             />
           </div>
-          {/* Buttons */}
         </div>
       </div>
     </div>
+
   );
 };
 

@@ -63,92 +63,112 @@ const LocationEdit = () => {
   };
 
   return (
-    <div className="p-6 flex justify-center">
-      <div className="bg-white shadow-xl rounded-lg p-6 w-full border border-gray-200">
-        {/* Heading */}
-        <div className="flex items-center mb-6 justify-between">
-          <div className="flex items-center">
-            <MdEditLocationAlt className="text-orange-600" size={30} />
-            <h2 className="text-2xl font-semibold ml-2">Edit Location</h2>
+    <div className="p-4 sm:p-6 flex justify-center">
+      <div className="bg-white shadow-xl rounded-lg p-4 sm:p-6 w-full max-w-7xl border border-gray-200 location-update-page">
+
+        {/* ===== HEADER ===== */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+
+          {/* LEFT: Icon + Title */}
+          <div className="flex items-center gap-3">
+            <MdEditLocationAlt className="text-orange-600" size={26} />
+            <h2 className="text-xl font-semibold text-gray-800">
+              Edit Location
+            </h2>
           </div>
 
-          {/* Buttons */}
-          <div className="mt-8 flex gap-3">
+          {/* RIGHT: Buttons */}
+          <div className="flex gap-3 sm:justify-end location-update-cancel-button">
             <button
               onClick={update}
-              className="py-3 rounded-lg bg-[#018DD4] text-white hover:bg-blue-700 transition shadow-md min-w-[120px]"
+              className="px-6 py-2 rounded-lg bg-[#018DD4] text-white hover:bg-blue-700 transition shadow-md min-w-[120px]"
             >
               Update
             </button>
+
             <button
               onClick={() => navigate("/dashboard/users/location")}
-              className="py-3 rounded-lg border border-gray-400 hover:bg-gray-100 transition min-w-[120px]"
+              className="px-6 py-2 rounded-lg border border-gray-400 hover:bg-gray-100 transition min-w-[120px]"
             >
               Cancel
             </button>
           </div>
+
         </div>
 
-        {error ? <div className="text-red-600 mb-2">{error}</div> : null}
 
+        {/* ===== ERROR ===== */}
+        {error && (
+          <div className="text-red-600 mb-4 text-sm">{error}</div>
+        )}
+
+        {/* ===== CONTENT ===== */}
         {loading ? (
-          <div>Loading...</div>
+          <div className="py-10 text-center">Loading...</div>
         ) : (
-        <>
-        {/* Form Inputs */}
-        <div className="grid grid-cols-5 gap-4 items-end">
-          {/* Name */}
-          <div>
-            <label className="block text-gray-600 mb-1 font-medium">
-              Location Name
-            </label>
-            <input
-              type="text"
-              className="border rounded-lg p-3 w-full outline-none"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
+          <div
+            className="
+          grid
+          grid-cols-1
+          sm:grid-cols-2
+          md:grid-cols-3
+          lg:grid-cols-5
+          gap-4
+          items-end
+        "
+          >
+            {/* Location Name */}
+            <div className="lg:col-span-2">
+              <label className="block text-gray-600 mb-1 font-medium">
+                Location Name
+              </label>
+              <input
+                type="text"
+                className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
 
-          {/* Latitude */}
-          <div>
-            <label className="block text-gray-600 mb-1 font-medium">Lat</label>
-            <input
-              type="text"
-              className="border rounded-lg p-3 w-full outline-none"
-              value={form.lat}
-              onChange={(e) => setForm({ ...form, lat: e.target.value })}
-            />
-          </div>
+            {/* Latitude */}
+            <div>
+              <label className="block text-gray-600 mb-1 font-medium">Lat</label>
+              <input
+                type="text"
+                className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
+                value={form.lat}
+                onChange={(e) => setForm({ ...form, lat: e.target.value })}
+              />
+            </div>
 
-          {/* Longitude */}
-          <div>
-            <label className="block text-gray-600 mb-1 font-medium">Long</label>
-            <input
-              type="text"
-              className="border rounded-lg p-3 w-full outline-none"
-              value={form.long}
-              onChange={(e) => setForm({ ...form, long: e.target.value })}
-            />
-          </div>
+            {/* Longitude */}
+            <div>
+              <label className="block text-gray-600 mb-1 font-medium">Long</label>
+              <input
+                type="text"
+                className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
+                value={form.long}
+                onChange={(e) => setForm({ ...form, long: e.target.value })}
+              />
+            </div>
 
-          {/* Radius */}
-          <div>
-            <label className="block text-gray-600 mb-1 font-medium">
-              Radius (in meters)
-            </label>
-            <input
-              type="text"
-              className="border rounded-lg p-3 w-full outline-none"
-              value={form.radius}
-              onChange={(e) => setForm({ ...form, radius: e.target.value })}
-            />
+            {/* Radius */}
+            <div>
+              <label className="block text-gray-600 mb-1 font-medium">
+                Radius (in meters)
+              </label>
+              <input
+                type="text"
+                className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500"
+                value={form.radius}
+                onChange={(e) => setForm({ ...form, radius: e.target.value })}
+              />
+            </div>
           </div>
-        </div>
-        </>
         )}
       </div>
     </div>
+
   );
 };
 

@@ -4278,6 +4278,10 @@ margin: 20px 0px;
 .location-list-heading {
   flex-direction: column;
 }
+.location-update-cancel-button{
+  flex-direction: column;
+  gap: 10px;
+}
 }
 
 /* /////////@media (max-width: 415px)//////////////  */
@@ -4354,7 +4358,13 @@ margin: 20px 0px;
   .sidebar.collapsed {
     transform: translateX(-100%);
   }
+.location-list-heading,
+.Addnew-location-page,
+.location-update-page  {
+  margin-top: 85px;
 }
+}
+
 
 
 
@@ -5503,8 +5513,8 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 /* Floating Label */
 .form-item label {
   position: absolute;
-  top: 15%;
-  left: 14px;
+     top: 10px;
+    left: 12px;
   transform: translateY(-50%);
   font-size: 14px;
   color: #363636;
@@ -5708,7 +5718,7 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 .reset-btn {
   width: 100%;
   padding: 13px;
-  background: #6366f1;
+ background: #22374e;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -5719,7 +5729,7 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 }
 
 .reset-btn:hover {
-  background: #4f46e5;
+  background: #314254;
 }
 
 .reset-btn:active {
@@ -5768,7 +5778,11 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     font-size: 14px;
   }
 }
-
+@media (min-width: 768px) {
+.Addnew-location-page{
+  margin-top: 85px;
+}
+}
 /* ================= TABLET (481px - 768px) ================= */
 @media (min-width: 481px) and (max-width: 768px) {
   .reset-card {
