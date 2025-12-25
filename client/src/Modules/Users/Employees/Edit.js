@@ -187,6 +187,7 @@ const EditUserForm = ({ user, onClose }) => {
               {/* ✅ DROPDOWNS */}
               <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={["employee", "admin", "hr"]} />
               <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} options={["Active", "Inactive"]} />
+              <SelectField label="Location" name="location" value={formData.location} onChange={handleChange} options={["Location 1", "Location 2", "Location 3"]} />
             </Grid>
 
             <Section title="Bank Details" />

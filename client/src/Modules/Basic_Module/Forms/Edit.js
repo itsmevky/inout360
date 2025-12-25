@@ -31,17 +31,17 @@ const EditForm = () => {
         if (res.status === true) {
           const data = res.data; // This is the array of objects
           const names = data.map((item) => item.name);
-          console.log("names------",names);
-          const  business_types =  data.map((item) => item.business_type);
-          console.log("business_types------",business_types);
-          const  moduless =  data.map((item) => item.module);
-          console.log("module------",moduless);
+          console.log("names------", names);
+          const business_types = data.map((item) => item.business_type);
+          console.log("business_types------", business_types);
+          const moduless = data.map((item) => item.module);
+          console.log("module------", moduless);
 
 
           // Set default structure to avoid undefined values
           setFormData({
-            name:names || "",
-            business_type:business_types || "",
+            name: names || "",
+            business_type: business_types || "",
             module: moduless || "",
             fields: Array.isArray(data?.fields) ? data.fields : [],
           });
@@ -74,27 +74,27 @@ const EditForm = () => {
   };
 
   // Handle form submit
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const res = await API.Updateform(id, formData); // ✅ Pass formData here
-    console.log("res------>", res);
-    if (res.status) {
-      toast.success("Form updated successfully!");
-    } else {
-      toast.error(res.message || "Failed to update form.");
+    try {
+      const res = await API.Updateform(id, formData); // ✅ Pass formData here
+      console.log("res------>", res);
+      if (res.status) {
+        toast.success("Form updated successfully!");
+      } else {
+        toast.error(res.message || "Failed to update form.");
+      }
+    } catch (err) {
+      console.error("❌ FULL ERROR OBJECT:", err);
+      console.error("❌ ERROR RESPONSE:", err?.response?.data);
+      console.error("❌ ERROR MESSAGE:", err.message);
+      toast.error("An error occurred while updating the form.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-  console.error("❌ FULL ERROR OBJECT:", err);
-  console.error("❌ ERROR RESPONSE:", err?.response?.data);
-  console.error("❌ ERROR MESSAGE:", err.message);    
-  toast.error("An error occurred while updating the form.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
 
@@ -180,24 +180,24 @@ const EditForm = () => {
               field.type === "multiselect" ||
               field.type === "radio" ||
               field.type === "checkbox") && (
-              <div className="AJ-floating-label-wrapper">
-                <input
-                  type="text"
-                  name="options"
-                  value={
-                    Array.isArray(field.options)
-                      ? field.options.join(", ")
-                      : field.options
-                  }
-                  onChange={(e) => handleChange(e, i)}
-                  className="AJ-floating-input"
-                  placeholder=" "
-                />
-                <label className="AJ-floating-label">
-                  Options (comma-separated)
-                </label>
-              </div>
-            )}
+                <div className="AJ-floating-label-wrapper">
+                  <input
+                    type="text"
+                    name="options"
+                    value={
+                      Array.isArray(field.options)
+                        ? field.options.join(", ")
+                        : field.options
+                    }
+                    onChange={(e) => handleChange(e, i)}
+                    className="AJ-floating-input"
+                    placeholder=" "
+                  />
+                  <label className="AJ-floating-label">
+                    Options (comma-separated)
+                  </label>
+                </div>
+              )}
           </div>
         ))}
 

@@ -13,10 +13,10 @@
         .qr-page {
           min-height: 100vh;
           width: 100%;
-          padding: 32px 20px 64px;
+          padding: 32px 20px 25px;
           font-family: "Space Grotesk", sans-serif;
           color: var(--qr-ink);
-       background: linear-gradient(#f1f3ff, #cbd4ff);
+          background: linear-gradient(#f1f3ff, #cbd4ff);
           position: relative;
           overflow: hidden;
           display: flex;
@@ -117,7 +117,7 @@
           color: var(--qr-ink);
         }
         .qr-location button {
-background: #22374e;
+          background: #22374e;
           color: #fff;
           border: none;
           padding: 10px 16px;
@@ -239,13 +239,13 @@ background: #22374e;
           pointer-events: none;
         }
         .qr-meta {
-   display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 9px;
-    background: var(--qr-mist);
-    border-radius: 14px;
-    padding: 5px 15px;
-    border: 1px solid #8080804f;
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+         gap: 9px;
+         background: var(--qr-mist);
+         border-radius: 10px;
+         padding: 5px 15px;
+         border: 1px solid #8080804f;
         }
         .qr-meta-label {
           display: block;
@@ -257,6 +257,7 @@ background: #22374e;
         .qr-meta-value {
           font-size: 13px;
           font-family: "IBM Plex Mono", monospace;
+          color: green;
         }
         @keyframes qr-fade {
           from {
