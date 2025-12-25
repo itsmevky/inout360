@@ -5383,7 +5383,13 @@ margin: 0;
    }
 }
 
-
+@media (max-width: 475px){
+.settingpage-save-cancel-button{
+  flex-direction: column-reverse;
+  gap: 8px;
+  margin-top: 20px;
+}
+}
 
 
 /* Only mobile */
@@ -5889,6 +5895,4 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 .password-toggle-icon:hover {
   color: #4f46e5;
 }
-
-
 

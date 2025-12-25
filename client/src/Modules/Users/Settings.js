@@ -55,21 +55,24 @@ const Settings = () => {
     const handleSave = async () => {
         try {
             const payload = new FormData();
+
             payload.append("apiEndpointUrl", systemConfig.apiEndpointUrl || "");
             payload.append("unitLocation", systemConfig.unitLocation || "");
             payload.append("deviceControls", JSON.stringify(deviceSettings));
             payload.append("alerts", JSON.stringify(alerts));
 
-            if (systemConfig.apkFile) {
-                payload.append("apkFile", systemConfig.apkFile);
-            }
-            if (systemConfig.logoFile) {
-                payload.append("companyLogo", systemConfig.logoFile);
-            }
+            // ✅ NEW
+            payload.append("otpEmail", systemConfig.otpEmail || "");
+            payload.append("otpExpirySeconds", systemConfig.otpExpirySeconds || 0);
+
+            if (systemConfig.apkFile) payload.append("apkFile", systemConfig.apkFile);
+            if (systemConfig.logoFile) payload.append("companyLogo", systemConfig.logoFile);
 
             const response = await putData("/settings", payload);
+
             if (response?.status) {
                 const data = response?.data || {};
+
                 const nextSystem = {
                     apiEndpointUrl: data.apiEndpointUrl || "",
                     unitLocation: data.unitLocation || "",
@@ -77,21 +80,24 @@ const Settings = () => {
                     logoFile: null,
                     apkFileUrl: data.apkFileUrl || "",
                     companyLogoUrl: data.companyLogoUrl || "",
+
+                    otpEmail: data.otpEmail || "",
+                    otpExpirySeconds: data.otpExpirySeconds || "",
                 };
-                const nextDevice = data.deviceControls || defaultDevice;
-                const nextAlerts = data.alerts || defaultAlerts;
+
                 setSystemConfig(nextSystem);
-                setDeviceSettings(nextDevice);
-                setAlerts(nextAlerts);
                 setInitialSystem(nextSystem);
-                setInitialDevice(nextDevice);
-                setInitialAlerts(nextAlerts);
+                setInitialDevice(data.deviceControls || defaultDevice);
+                setInitialAlerts(data.alerts || defaultAlerts);
+                setDeviceSettings(data.deviceControls || defaultDevice);
+                setAlerts(data.alerts || defaultAlerts);
                 setIsChanged(false);
+
                 toast.success(response.message || "Changes saved successfully!");
             } else {
                 toast.error(response?.message || "Failed to save settings.");
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to save settings.");
         }
     };
@@ -182,6 +188,7 @@ const Settings = () => {
                                 </select>
                             </div>
 
+
                             {/* APK Upload */}
                             <div>
                                 <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
@@ -225,6 +232,42 @@ const Settings = () => {
                                     />
                                 )}
                             </div>
+
+                            {/* ✅ OTP Email */}
+                            <div>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">
+                                    OTP Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={systemConfig.otpEmail}
+                                    onChange={(e) => handleConfigChange("otpEmail", e.target.value)}
+                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+
+                            {/* ✅ QR Code Expiry */}
+                            <div>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">
+                                    QR Code Expiry Time
+                                </label>
+
+                                <div className="mt-2">
+                                    <select
+                                        value={systemConfig.otpExpirySeconds}
+                                        onChange={(e) => handleConfigChange("otpExpirySeconds", e.target.value)}
+                                        className="w-full mt-2 border p-3 border-gray-400 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    >
+                                        <option value="">Select Seconds</option>
+                                        <option value="30">30 seconds</option>
+                                        <option value="45">45 seconds</option>
+                                        <option value="60">60 seconds</option>
+                                        <option value="90">90 seconds</option>
+                                        <option value="120">120 seconds</option>
+                                    </select>
+                                </div>
+                            </div>
+
 
                         </div>
                     </div>
@@ -302,7 +345,7 @@ const Settings = () => {
 
                     {/* ========= SAVE / CANCEL BUTTONS ========= */}
                     {isChanged && !loading && (
-                        <div className="mt-8 flex gap-4 justify-end">
+                        <div className="mt-8 flex gap-4 justify-end settingpage-save-cancel-button">
                             <button
                                 onClick={handleCancel}
                                 className="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-100 transition"
