@@ -64,10 +64,10 @@ const LocationEdit = () => {
 
   return (
     <div className="p-4 sm:p-6 flex justify-center">
-      <div className="bg-white shadow-xl rounded-lg p-4 sm:p-6 w-full max-w-7xl border border-gray-200 location-update-page">
+      <div className="bg-white shadow-xl rounded-lg p-4 sm:p-6 w-full  border border-gray-200 location-update-page">
 
         {/* ===== HEADER ===== */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
 
           {/* LEFT: Icon + Title */}
           <div className="flex items-center gap-3">

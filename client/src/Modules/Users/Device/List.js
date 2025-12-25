@@ -107,7 +107,7 @@ const Device = () => {
       </div>
 
       {/* ========================= DEVICE TABLE ========================= */}
-      <div className="mt-6">
+      <div className="mt-6 m-0">
         {loading ? (
           <div className="bg-white p-5 rounded-xl shadow text-gray-600">
             Loading devices...
@@ -177,7 +177,7 @@ const Device = () => {
           {deviceList.map((device) => (
             <div
               key={device.id}
-              className="bg-white rounded-xl border shadow p-2 !mt-2 !mb-2"
+              className="bg-white rounded-xl border shadow p-2 !mt-2 !mb-2 !mr-0 !ml-0"
             >
               {/* CHECKBOX ROW */}
               {/* <div className="flex justify-between items-center mb-3">

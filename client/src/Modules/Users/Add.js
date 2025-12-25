@@ -47,7 +47,7 @@ const AddUserForm = ({ onSuccess, onClose }) => {
       const res = await API.add("employees/add", formData);
       if (res?.success || res?.status) {
         toast.success("Employee created successfully");
-        onSuccess ? onSuccess(res) : navigate("/dashboard/users");
+        onSuccess ? onSuccess(res) : navigate("/dashboard/users/employees");
       } else {
         toast.error(res.message || "Failed to create employee");
       }
@@ -65,15 +65,15 @@ const AddUserForm = ({ onSuccess, onClose }) => {
 
   /* ================= UI ================= */
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center !m-auto">
+    <div className="fixed inset-0 z-[9999] bg-black/20 flex items-center justify-center !m-auto">
       <div
-        className={`relative w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300
+        className={`add-newemployee-popup-form relative w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300
           ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
         {/* CLOSE BUTTON */}
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
+          className="absolute top-4 right-4 w-9 h-9 !mr-0 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
         >
           ✕
         </button>

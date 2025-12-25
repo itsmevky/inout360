@@ -11,14 +11,14 @@ const Home = () => {
       <div className="flex flex-col justify-center bg-gradient-to-br from-blue-50 to-white text-gray-800">
         {/* Navigation Bar */}
         <nav
-          className="w-full p-5 flex justify-between items-center shadow bg-white"
+          className="w-full p-5 flex justify-between items-center shadow bg-white gap-2"
           style={{ padding: "10px" }}
         >
           <h1 className="text-2xl font-bold text-blue-700">Inout360</h1>
-          <div className="flex space-x-4 gap-5">
+          <div className="flex space-x-4 gap-3">
             <button
               onClick={() => navigate("/qr")}
-              className="border border-blue-600 text-blue-600 rounded hover:bg-blue-100 transition"
+              className="border border-blue-600 text-blue-600 rounded hover:bg-blue-100 transition !mr-0 !py-1.5 !px-5"
               style={{ padding: "6px" }}
             >
               QR
@@ -32,8 +32,8 @@ const Home = () => {
                 Cookies.remove("refreshtoken");
                 navigate("/login");
               }}
-              className="bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-              style={{ padding: "6px" }}
+              className="bg-blue-600 text-white rounded hover:bg-blue-700 transition !py-1.5 !px-5 !m-0"
+            // style={{ padding: "6px" }}
             >
               Login
             </button>
@@ -61,10 +61,10 @@ const Home = () => {
               students, teachers, parents, finances, and more—all from a single
               platform.
             </p>
-            <div className="Designation-section flex gap-5 !px-0">
+            <div className="Designation-section flex gap-5 !px-0 !mt-5 homepage-getstart-learnmore-button">
               <button
                 onClick={() => navigate("/login")}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white !px-5 py-3 rounded-lg hover:bg-blue-700 transition"
                 style={{ padding: "6px" }}
               >
                 Get Started
