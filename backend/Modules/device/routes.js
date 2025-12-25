@@ -8,6 +8,7 @@ router.get("/:id", Controller.getById);
 router.post("/register", Controller.register);
 router.post("/verify-token", Controller.verifyRegisterToken);
 router.post("/add", Controller.add);
+router.post("/status", Controller.deviceStatus);
 router.post("/track", Controller.track);
 router.post("/:id/policy", Controller.setDevicePolicy);
 router.get("/:id/policy", Controller.getDevicePolicy);

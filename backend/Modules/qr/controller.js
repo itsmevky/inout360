@@ -5,7 +5,6 @@ const qrcode = require("qrcode");
 const User = require("../user/model");
 const DeviceModel = require("../device/model");
 const UserSession = require("../userSessions/model");
-const QrToken = require("./model");
 const AttendanceModel = require("../attendance/model");
 const EmployeeModel = require("../employees/model");
 const SettingsModel = require("../settings/model");
@@ -206,29 +205,6 @@ const createQrToken = async (payload) => {
     }
   }
 
-  const now = new Date();
-  const normalizedLocation = normalizeLocation(location);
-  const reuseFilter = {
-    action,
-    location: normalizedLocation,
-    usedAt: { $exists: false },
-    expiresAt: { $gt: now },
-  };
-
-  const existing = await QrToken.findOne(reuseFilter).sort({ createdAt: -1 }).lean();
-  if (existing) {
-    const token = jwt.sign(
-      { jti: existing.tokenId, action, location },
-      JWT_SECRET,
-      {
-        expiresIn: Math.max(
-          1,
-          Math.floor((existing.expiresAt.getTime() - Date.now()) / 1000)
-        ),
-      }
-    );
-    return { token, expiresAt: existing.expiresAt, action, location, reused: true };
-  }
   const tokenId = randomUUID();
   const token = jwt.sign(
     { jti: tokenId, action, location },
@@ -237,14 +213,6 @@ const createQrToken = async (payload) => {
   );
 
   const expiresAtDate = new Date(Date.now() + expirationMs);
-  await QrToken.create({
-    tokenId,
-    action,
-    location,
-    expiresAt: expiresAtDate,
-    raw: payload,
-  });
-
   return { token, expiresAt: expiresAtDate, action, location, reused: false };
 };
 
@@ -324,24 +292,31 @@ exports.getStatus = async (req, res) => {
       return res.status(400).json({ message: "tokenId missing in token" });
     }
 
-    const qrRecord = await QrToken.findOne({ tokenId: resolvedTokenId }).lean();
-    if (!qrRecord) {
-      return res.status(404).json({ message: "QR token not found" });
+    let decoded = null;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        decoded = jwt.decode(token);
+      } else {
+        return res.status(400).json({ message: "token is invalid" });
+      }
     }
 
-    const now = new Date();
-    const expired = qrRecord.expiresAt ? qrRecord.expiresAt < now : false;
+    const expMs = decoded?.exp ? decoded.exp * 1000 : null;
+    const expiresAt = expMs ? new Date(expMs) : null;
+    const expired = expMs ? expMs < Date.now() : false;
 
     return res.status(200).json({
       status: true,
       data: {
-        tokenId: qrRecord.tokenId,
-        action: qrRecord.action,
-        location: qrRecord.location,
-        expiresAt: qrRecord.expiresAt,
-        usedAt: qrRecord.usedAt,
+        tokenId: decoded?.jti || resolvedTokenId,
+        action: decoded?.action,
+        location: decoded?.location,
+        expiresAt,
+        usedAt: null,
         expired,
-        used: !!qrRecord.usedAt,
+        used: false,
       },
     });
   } catch (error) {
@@ -378,11 +353,8 @@ exports.consumeQr = async (req, res) => {
       return res.status(400).json({ message: "token action is invalid" });
     }
 
-    const qrRecord = await QrToken.findOne({ tokenId });
-    if (!qrRecord) {
-      return res.status(400).json({ message: "QR token not found" });
-    }
-    if (qrRecord.expiresAt && qrRecord.expiresAt < new Date()) {
+    const expMs = decoded?.exp ? decoded.exp * 1000 : null;
+    if (expMs && expMs < Date.now()) {
       return res.status(400).json({ message: "QR expired" });
     }
 
@@ -478,6 +450,15 @@ exports.consumeQr = async (req, res) => {
       });
     }
 
+    let loginToken = null;
+    if (action === "login" && sessionDeviceId) {
+      loginToken = randomUUID();
+      await DeviceModel.updateOne(
+        { deviceId: sessionDeviceId },
+        { $set: { loginToken } }
+      );
+    }
+
     const deviceRecord = sessionDeviceId
       ? await DeviceModel.findOne({ deviceId: sessionDeviceId }).lean()
       : null;
@@ -486,13 +467,12 @@ exports.consumeQr = async (req, res) => {
           deviceStatus: deviceRecord.deviceStatus,
           cameraDisabled: deviceRecord.devicePolicyState?.cameraDisabled ?? false,
           uninstallBlocked: deviceRecord.devicePolicyState?.uninstallBlocked ?? false,
-          cameraAllowed: deviceRecord.cameraAllowed ?? true,
           locationAllowed: deviceRecord.locationAllowed ?? true,
           devicePolicyState: deviceRecord.devicePolicyState || {},
         }
       : null;
 
-    return res.status(200).json({
+    const responsePayload = {
       message: action === "login" ? "Logged in successfully" : "Logged out successfully",
       userId: user ? user._id : employee._id,
       employeeId: employee.employeeId,
@@ -500,11 +480,20 @@ exports.consumeQr = async (req, res) => {
       location,
       deviceLocation,
       deviceSettings,
-      tokenId,
       action,
-      expiresAt: qrRecord.expiresAt,
-      redirectUrl: `${process.env.CLIENT_URL || "http://localhost:3000"}/login-success`,
-    });
+    };
+
+    if (action === "login") {
+      responsePayload.loginToken = loginToken;
+    }
+
+    if (tokenId && !expMs) {
+      console.warn("QR consume: missing exp on token");
+    }
+
+    responsePayload.expiresAt = expMs ? new Date(expMs) : null;
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res.status(400).json({ message: "QR expired" });

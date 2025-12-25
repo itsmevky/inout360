@@ -4,6 +4,7 @@ const DeviceModel = require("./model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const PolicyModel = require("../policy/model");
+const VisitorModel = require("../visitor/model");
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
@@ -12,6 +13,19 @@ const normalizeStatus = (value) => {
 };
 
 const normalizeDeviceId = (value) => String(value || "").trim();
+const padVisitorId = (seq) => `VIS-${String(seq).padStart(5, "0")}`;
+
+const getNextVisitorId = async () => {
+  const counters = mongoose.connection.collection("counters");
+  const result = await counters.findOneAndUpdate(
+    { _id: "visitor" },
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: "after" }
+  );
+  const seq = result?.value?.seq || 1;
+  return padVisitorId(seq);
+};
+
 
 const boolOrDefault = (value, defaultValue) =>
   typeof value === "boolean" ? value : defaultValue;
@@ -53,7 +67,6 @@ const formatDevice = (doc) => {
     deviceStatus: d.deviceStatus,
     cameraDisabled: d.devicePolicyState?.cameraDisabled ?? false,
     uninstallBlocked: d.devicePolicyState?.uninstallBlocked ?? false,
-    cameraAllowed: d.cameraAllowed ?? true,
     androidVersion: d.osVersion,
     appVer: d.appVersion,
     verified: !!d.verified,
@@ -80,7 +93,6 @@ const upsertDevice = async (payload) => {
     devicePolicyState,
     status,
     deviceOwner,
-    cameraAllowed,
     locationAllowed,
     lastScreenshotAt,
     enrollmentDate,
@@ -138,7 +150,6 @@ const upsertDevice = async (payload) => {
     lastSeen: toValidDate(lastSeen),
     deviceLocation,
     deviceOwner,
-    cameraAllowed: boolOrDefault(cameraAllowed, true),
     locationAllowed: boolOrDefault(locationAllowed, true),
     lastScreenshotAt: toValidDate(lastScreenshotAt),
     metadata,
@@ -236,33 +247,55 @@ exports.register = async (req, res) => {
       deviceOwner,
     } = req.body;
 
-    if (!name || !employeeId || !deviceId) {
+    if (!name || !deviceId) {
       return res.status(400).json({
         status: false,
-        message: "name, employeeId and deviceId are required",
+        message: "name and deviceId are required",
       });
     }
 
-    const employee = await EmployeeModel.findOne({ employeeId });
-    if (!employee) {
-      return res.status(400).json({ status: false, message: "Employee not found" });
-    }
-    const user = employee.userId
-      ? await UserModel.findById(employee.userId)
-      : await UserModel.findOne({ employeeId });
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found for this employee" });
-    }
-    const normalizedName = String(name).trim().toLowerCase();
-    const employeeName = (employee.name ||
-      `${employee.firstName || ""} ${employee.lastName || ""}`)
-      .trim()
-      .toLowerCase();
-    if (normalizedName !== employeeName) {
-      return res.status(400).json({
-        status: false,
-        message: "Name does not match the employeeId",
-      });
+    let user = null;
+    let effectiveEmployeeId = employeeId;
+    let isVisitor = false;
+    let visitor = null;
+
+    if (employeeId) {
+      const employee = await EmployeeModel.findOne({ employeeId });
+      if (!employee) {
+        return res.status(400).json({ status: false, message: "Employee not found" });
+      }
+      user = employee.userId
+        ? await UserModel.findById(employee.userId)
+        : await UserModel.findOne({ employeeId });
+      if (!user) {
+        return res.status(404).json({ status: false, message: "User not found for this employee" });
+      }
+      const normalizedName = String(name).trim().toLowerCase();
+      const employeeName = (employee.name ||
+        `${employee.firstName || ""} ${employee.lastName || ""}`)
+        .trim()
+        .toLowerCase();
+      if (normalizedName !== employeeName) {
+        return res.status(400).json({
+          status: false,
+          message: "Name does not match the employeeId",
+        });
+      }
+    } else {
+      isVisitor = true;
+      const normalizedDeviceId = normalizeDeviceId(deviceId);
+      visitor = await VisitorModel.findOne({ deviceId: normalizedDeviceId });
+      if (!visitor) {
+        const visitorEmployeeId = await getNextVisitorId();
+        visitor = await VisitorModel.create({
+          name: String(name).trim(),
+          employeeId: visitorEmployeeId,
+          deviceId: normalizedDeviceId,
+          role: "visitor",
+        });
+      }
+      user = visitor;
+      effectiveEmployeeId = visitor.employeeId;
     }
 
     // Prevent assigning a new device if the user already has an Active device
@@ -281,9 +314,30 @@ exports.register = async (req, res) => {
       });
     }
 
+    if (deviceId) {
+      const normalizedDeviceId = normalizeDeviceId(deviceId);
+      const existingDevice = await DeviceModel.findOne({
+        $or: [
+          { deviceId: new RegExp(`^${normalizedDeviceId}$`, "i") },
+          ...(mongoose.isValidObjectId(deviceId) ? [{ _id: deviceId }] : []),
+        ],
+      });
+      if (
+        existingDevice &&
+        existingDevice.userId &&
+        existingDevice.userId.toString() !== user._id.toString() &&
+        existingDevice.deviceStatus === "Active"
+      ) {
+        return res.status(409).json({
+          status: false,
+          message: "Device already assigned to another user",
+        });
+      }
+    }
+
     const device = await upsertDevice({
       userId: user._id,
-      employeeId,
+      employeeId: effectiveEmployeeId,
       deviceId,
       deviceName: deviceName || deviceId,
       name,
@@ -313,9 +367,13 @@ exports.register = async (req, res) => {
 
     return res.status(200).json({
       status: true,
-      message: "Device registered successfully. Proceed to send OTP.",
+      message: isVisitor
+        ? "Visitor device registered successfully. Proceed to send OTP."
+        : "Device registered successfully. Proceed to send OTP.",
       deviceId: device._id,
       userId: user._id,
+      employeeId: effectiveEmployeeId,
+      verified: !!device.verified,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
@@ -354,6 +412,94 @@ exports.verifyRegisterToken = async (req, res) => {
         employeeId: device.employeeId,
         userId: device.userId,
         verified: !!device.verified,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Get or update device status/settings for a user/device pair
+exports.deviceStatus = async (req, res) => {
+  try {
+    const { userId, deviceId, deviceLocation, deviceSettings } = req.body || {};
+    if (!userId || !deviceId) {
+      return res.status(400).json({
+        status: false,
+        message: "userId and deviceId are required",
+      });
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ status: false, message: "userId must be valid" });
+    }
+
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
+    const orFilters = [
+      { deviceId: new RegExp(`^${escapeRegExp(normalizedDeviceId)}$`, "i") },
+    ];
+    if (mongoose.isValidObjectId(deviceId)) {
+      orFilters.push({ _id: deviceId });
+    }
+
+    const device = await DeviceModel.findOne({ userId, $or: orFilters });
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    const updateSet = {};
+    if (deviceLocation !== undefined) {
+      updateSet.deviceLocation = deviceLocation;
+    }
+
+    if (deviceSettings && typeof deviceSettings === "object") {
+      if (deviceSettings.deviceStatus !== undefined) {
+        updateSet.deviceStatus = deviceSettings.deviceStatus;
+      }
+      if (deviceSettings.locationAllowed !== undefined) {
+        updateSet.locationAllowed = deviceSettings.locationAllowed;
+      }
+
+      const policyUpdate = {};
+      if (deviceSettings.devicePolicyState && typeof deviceSettings.devicePolicyState === "object") {
+        Object.assign(policyUpdate, deviceSettings.devicePolicyState);
+      }
+      if (deviceSettings.cameraDisabled !== undefined) {
+        policyUpdate.cameraDisabled = deviceSettings.cameraDisabled;
+      }
+      if (deviceSettings.uninstallBlocked !== undefined) {
+        policyUpdate.uninstallBlocked = deviceSettings.uninstallBlocked;
+      }
+      if (Object.keys(policyUpdate).length) {
+        updateSet.devicePolicyState = {
+          ...(device.devicePolicyState || {}),
+          ...policyUpdate,
+        };
+      }
+    }
+
+    const updatedDevice =
+      Object.keys(updateSet).length > 0
+        ? await DeviceModel.findOneAndUpdate(
+            { _id: device._id },
+            { $set: updateSet },
+            { new: true }
+          ).lean()
+        : device.toObject?.() || device;
+
+    return res.status(200).json({
+      status: true,
+      message: "Device status fetched",
+      data: {
+        userId: updatedDevice.userId,
+        deviceId: updatedDevice.deviceId || updatedDevice._id,
+        deviceLocation: updatedDevice.deviceLocation || null,
+        deviceSettings: {
+          deviceStatus: updatedDevice.deviceStatus,
+          cameraDisabled: updatedDevice.devicePolicyState?.cameraDisabled ?? false,
+          uninstallBlocked: updatedDevice.devicePolicyState?.uninstallBlocked ?? false,
+          locationAllowed: updatedDevice.locationAllowed ?? true,
+          devicePolicyState: updatedDevice.devicePolicyState || {},
+        },
       },
     });
   } catch (error) {

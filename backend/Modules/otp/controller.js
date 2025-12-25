@@ -4,6 +4,7 @@ const { randomUUID } = require("crypto");
 const DeviceModel = require("../device/model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
+const VisitorModel = require("../visitor/model");
 const DeviceOtp = require("./otpModel");
 const OtpEmailConfig = require("./otpEmailModel");
 const SettingsModel = require("../settings/model");
@@ -25,16 +26,25 @@ exports.sendOtp = async (req, res) => {
     // Resolve user by user collection; if missing, fall back to employee collection
     let user = await UserModel.findById(userId);
     let employee = null;
+    let visitor = null;
     if (!user) {
       employee =
         (mongoose.isValidObjectId(userId) && (await EmployeeModel.findById(userId))) ||
         (employeeIdBody && (await EmployeeModel.findOne({ employeeId: employeeIdBody }))) ||
         (await EmployeeModel.findOne({ employeeId: userId }));
       if (!employee) {
-        return res.status(404).json({ status: false, message: "User not found" });
+        visitor =
+          (mongoose.isValidObjectId(userId) && (await VisitorModel.findById(userId))) ||
+          (employeeIdBody && (await VisitorModel.findOne({ employeeId: employeeIdBody }))) ||
+          (await VisitorModel.findOne({ employeeId: userId }));
+        if (!visitor) {
+          return res.status(404).json({ status: false, message: "User not found" });
+        }
       }
       // Try to locate linked user by employeeId, but allow proceeding with employee only
-      user = await UserModel.findOne({ employeeId: employee.employeeId });
+      if (employee?.employeeId) {
+        user = await UserModel.findOne({ employeeId: employee.employeeId });
+      }
     } else if (user.employeeId) {
       employee =
         (await EmployeeModel.findOne({ employeeId: user.employeeId })) ||
@@ -43,8 +53,9 @@ exports.sendOtp = async (req, res) => {
       employee = await EmployeeModel.findOne({ employeeId: employeeIdBody });
     }
 
-    const resolvedUserId = user?._id || employee?._id;
-    const resolvedEmployeeId = user?.employeeId || employee?.employeeId;
+    const resolvedUserId = user?._id || employee?._id || visitor?._id;
+    const resolvedEmployeeId =
+      user?.employeeId || employee?.employeeId || visitor?.employeeId;
     if (!resolvedUserId) {
       return res.status(404).json({ status: false, message: "User not found" });
     }
@@ -104,7 +115,7 @@ exports.sendOtp = async (req, res) => {
       return res.status(400).json({ status: false, message: "OTP email not configured" });
     }
 
-    const resolvedUserName = user?.name || employee?.name || "User";
+    const resolvedUserName = user?.name || employee?.name || visitor?.name || "User";
     const displayEmployeeId = resolvedEmployeeId || "N/A";
     await sendOtpEmail(
       otpEmail,
