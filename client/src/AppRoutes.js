@@ -8,6 +8,7 @@ import DashboardLayout from "./Dashboardlayout/Dashboardlayout.js";
 import Homepage from "./Website/Home.js";
 import Loginpage from "./Website/login.js";
 import EducationLoginpage from "./Dashboard/Education/login.js";
+import QrLoginpage from "./Dashboard/Education/qrlogin.js";
 import Registerpage from "./Website/registerform.js";
 import Forgotpassword from "./Website/forgotpassword.js";
 import Getotp from "./Website/getotp.js";
@@ -50,7 +51,10 @@ const AppRoutes = () => {
       <Route path="/forgotpassword" element={<Forgotpassword />} />
       <Route path="/getotp" element={<Getotp />} />
       <Route path="/resetpassword" element={<Resetpassword />} />
+      <Route path="/qr-login" element={<QrLoginpage />} />
       <Route path="/qr" element={<QrPage />} />
+      <Route path="/LoginQr" element={<QrPage singleAction="login" />} />
+      <Route path="/LogoutQr" element={<QrPage singleAction="logout" />} />
       <Route path="/login-success" element={<LoginSuccess />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />

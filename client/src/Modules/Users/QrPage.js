@@ -12,12 +12,23 @@ const QrCard = ({
   expiresAt,
   remainingSeconds,
   loading,
+  onTitleClick,
 }) => (
   <div className="qr-card">
     <div className="qr-card-head">
       <div>
         <p className="qr-eyebrow">Secure Access</p>
-        <h3 className="qr-title">{title}</h3>
+        {onTitleClick ? (
+          <button
+            type="button"
+            className="qr-title-button"
+            onClick={onTitleClick}
+          >
+            {title}
+          </button>
+        ) : (
+          <h3 className="qr-title">{title}</h3>
+        )}
       </div>
       <span className={`qr-pill ${loading ? "is-loading" : ""}`}>
         {loading ? "Refreshing..." : "Auto refresh on expiry"}
@@ -50,7 +61,7 @@ const QrCard = ({
   </div>
 );
 
-const QrPage = () => {
+const QrPage = ({ singleAction = null }) => {
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [loginState, setLoginState] = useState({
     token: "",
@@ -67,6 +78,9 @@ const QrPage = () => {
   const [loginRemaining, setLoginRemaining] = useState(null);
   const [logoutRemaining, setLogoutRemaining] = useState(null);
   const navigate = useNavigate();
+
+  const isLoginOnly = singleAction === "login";
+  const isLogoutOnly = singleAction === "logout";
 
   const loginRefreshRef = useRef(null);
   const logoutRefreshRef = useRef(null);
@@ -93,6 +107,18 @@ const QrPage = () => {
     if (src) {
       URL.revokeObjectURL(src);
     }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("qr_access_token");
+    if (!token) {
+      navigate("/qr-login");
+    }
+  }, [navigate]);
+
+  const handleQrLogout = () => {
+    localStorage.removeItem("qr_access_token");
+    navigate("/qr-login");
   };
 
   const fetchQrPng = useCallback(
@@ -204,8 +230,12 @@ const QrPage = () => {
   }, [fetchQrPng]);
 
   useEffect(() => {
-    fetchQrPng("login", setLoginState);
-    fetchQrPng("logout", setLogoutState);
+    if (!isLogoutOnly) {
+      fetchQrPng("login", setLoginState);
+    }
+    if (!isLoginOnly) {
+      fetchQrPng("logout", setLogoutState);
+    }
     return () => {
       clearTimer(loginRefreshRef);
       clearTimer(logoutRefreshRef);
@@ -214,9 +244,10 @@ const QrPage = () => {
       clearIntervalRef(loginTimerRef);
       clearIntervalRef(logoutTimerRef);
     };
-  }, [fetchQrPng]);
+  }, [fetchQrPng, isLoginOnly, isLogoutOnly]);
 
   useEffect(() => {
+    if (isLogoutOnly) return;
     if (loginState.expiresAt) {
       scheduleRefresh(loginState.expiresAt, "login");
       startCountdown(loginState.expiresAt, "login");
@@ -224,9 +255,17 @@ const QrPage = () => {
     if (loginState.token) {
       startStatusPolling(loginState.token, "login");
     }
-  }, [loginState.expiresAt, loginState.token, scheduleRefresh, startStatusPolling, startCountdown]);
+  }, [
+    loginState.expiresAt,
+    loginState.token,
+    scheduleRefresh,
+    startStatusPolling,
+    startCountdown,
+    isLogoutOnly,
+  ]);
 
   useEffect(() => {
+    if (isLoginOnly) return;
     if (logoutState.expiresAt) {
       scheduleRefresh(logoutState.expiresAt, "logout");
       startCountdown(logoutState.expiresAt, "logout");
@@ -234,13 +273,33 @@ const QrPage = () => {
     if (logoutState.token) {
       startStatusPolling(logoutState.token, "logout");
     }
-  }, [logoutState.expiresAt, logoutState.token, scheduleRefresh, startStatusPolling, startCountdown]);
+  }, [
+    logoutState.expiresAt,
+    logoutState.token,
+    scheduleRefresh,
+    startStatusPolling,
+    startCountdown,
+    isLoginOnly,
+  ]);
 
   const handleLocationSubmit = (event) => {
     event.preventDefault();
-    fetchQrPng("login", setLoginState);
-    fetchQrPng("logout", setLogoutState);
+    if (!isLogoutOnly) {
+      fetchQrPng("login", setLoginState);
+    }
+    if (!isLoginOnly) {
+      fetchQrPng("logout", setLogoutState);
+    }
   };
+
+  const headerTitle = isLoginOnly
+    ? "Login QR"
+    : isLogoutOnly
+      ? "Logout QR"
+      : "QR Login / Logout";
+  const headerSubtitle = isLoginOnly || isLogoutOnly
+    ? "One QR per action, reusable until expiry. Auto-refresh on expiry only."
+    : "One QR per action, reusable until expiry. Auto-refresh on expiry only.";
 
   return (
     <div className="qr-page">
@@ -374,6 +433,20 @@ const QrPage = () => {
           transform: translateY(-1px);
           box-shadow: 0 10px 20px rgba(13, 27, 42, 0.2);
         }
+        .qr-location .qr-logout {
+          border: 1px solid rgba(13, 27, 42, 0.12);
+          background: #ffffff;
+          color: var(--qr-ink);
+          padding: 10px 16px;
+          border-radius: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .qr-location .qr-logout:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 10px 20px rgba(13, 27, 42, 0.2);
+        }
         .qr-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -407,6 +480,19 @@ const QrPage = () => {
         }
         .qr-card .qr-title {
           font-size: 22px;
+        }
+        .qr-title-button {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          font-size: 22px;
+          font-weight: 700;
+          color: var(--qr-ink);
+          font-family: "Space Grotesk", sans-serif;
+        }
+        .qr-title-button:hover {
+          text-decoration: underline;
         }
         .qr-pill {
           font-size: 11px;
@@ -545,46 +631,59 @@ const QrPage = () => {
         }
       `}</style>
       <div className="qr-shell">
-        <div className="qr-header">
-          <div className="qr-header-left">
-            <button className="qr-back" type="button" onClick={() => navigate("/")}>
-              ← Back to Home
-            </button>
-            <div>
-              <h2 className="qr-title">QR Login / Logout</h2>
-              <p className="qr-subtitle">
-                One QR per action, reusable until expiry. Auto-refresh on expiry only.
-              </p>
+        {!singleAction && (
+          <div className="qr-header">
+            <div className="qr-header-left">
+              <button className="qr-back" type="button" onClick={() => navigate("/")}>
+                ← Back to Home
+              </button>
+              <div>
+                <h2 className="qr-title">{headerTitle}</h2>
+                <p className="qr-subtitle">{headerSubtitle}</p>
+              </div>
             </div>
+            <form className="qr-location" onSubmit={handleLocationSubmit}>
+              <label htmlFor="qr-location-input">Location</label>
+              <input
+                id="qr-location-input"
+                type="text"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder="Gate-1"
+              />
+              <button type="submit">Update</button>
+              <button className="qr-logout" type="button" onClick={handleQrLogout}>
+                Logout
+              </button>
+            </form>
           </div>
-          <form className="qr-location" onSubmit={handleLocationSubmit}>
-            <label htmlFor="qr-location-input">Location</label>
-            <input
-              id="qr-location-input"
-              type="text"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="Gate-1"
-            />
-            <button type="submit">Update</button>
-          </form>
-        </div>
+        )}
 
         <div className="qr-grid">
-          <QrCard
-            title="Login QR"
-            imageSrc={loginState.imageSrc}
-            expiresAt={loginState.expiresAt}
-            loading={loginState.loading}
-            remainingSeconds={loginRemaining}
-          />
-          <QrCard
-            title="Logout QR"
-            imageSrc={logoutState.imageSrc}
-            expiresAt={logoutState.expiresAt}
-            loading={logoutState.loading}
-            remainingSeconds={logoutRemaining}
-          />
+          {!isLogoutOnly && (
+            <QrCard
+              title="Login QR"
+              imageSrc={loginState.imageSrc}
+              expiresAt={loginState.expiresAt}
+              loading={loginState.loading}
+              remainingSeconds={loginRemaining}
+              onTitleClick={
+                isLoginOnly ? undefined : () => navigate("/LoginQr")
+              }
+            />
+          )}
+          {!isLoginOnly && (
+            <QrCard
+              title="Logout QR"
+              imageSrc={logoutState.imageSrc}
+              expiresAt={logoutState.expiresAt}
+              loading={logoutState.loading}
+              remainingSeconds={logoutRemaining}
+              onTitleClick={
+                isLogoutOnly ? undefined : () => navigate("/LogoutQr")
+              }
+            />
+          )}
         </div>
       </div>
     </div>

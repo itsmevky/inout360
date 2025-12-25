@@ -17,7 +17,7 @@ const Home = () => {
           <h1 className="text-2xl font-bold text-blue-700">Inout360</h1>
           <div className="flex space-x-4 gap-3">
             <button
-              onClick={() => navigate("/qr")}
+               onClick={() => navigate("/qr-login")}
               className="border border-blue-600 text-blue-600 rounded hover:bg-blue-100 transition !mr-0 !py-1.5 !px-5"
               style={{ padding: "6px" }}
             >

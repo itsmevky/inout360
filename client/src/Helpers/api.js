@@ -123,6 +123,7 @@ const deleteData = (url, data = {}, headers = {}) =>
 const API = {
   auth: {
     login: "/auth/login",
+    qrLogin: "/auth/qr-login",
     forgotPassword: "/auth/forgot-password",
     verifyOtp: "/auth/verify-otp",
     resetPassword: "/auth/reset-password",
