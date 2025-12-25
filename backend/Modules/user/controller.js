@@ -22,6 +22,12 @@ const generateRefreshToken = (user) =>
     expiresIn: "7d",
   });
 
+const generateQrAccessToken = (user) =>
+  jwt.sign(
+    { userId: user._id, role: user.role, scope: "qr_access" },
+    JWT_SECRET
+  );
+
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
@@ -167,6 +173,58 @@ exports.loginUser = async (req, res) => {
 };
 
 /* ---------------------------------
+   QR Login User (no expiry, limited scope)
+---------------------------------- */
+exports.qrLoginUser = async (req, res) => {
+  const email = req.body.email?.toLowerCase().trim();
+  const password = req.body.password;
+
+  try {
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "email and password are required",
+      });
+    }
+
+    const validator = new Validator(
+      { email, password },
+      { email: "required|email", password: "required" }
+    );
+    await validator.validate();
+
+    const user = await User.findOne({ email }).select("+password");
+    if (!user || !user.password) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const allowedRoles = ["superadmin", "admin", "manager"];
+    if (!allowedRoles.includes(String(user.role || "").toLowerCase())) {
+      return res.status(403).json({ message: "You are not authorized" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const accessToken = generateQrAccessToken(user);
+
+    res.status(200).json({
+      id: user._id,
+      name: user.name,
+      role: user.role,
+      accessToken,
+    });
+  } catch (error) {
+    console.error("QR Login Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+/* ---------------------------------
    Forgot Password - Send OTP
 ---------------------------------- */
 exports.forgotPassword = async (req, res) => {
@@ -188,7 +246,7 @@ exports.forgotPassword = async (req, res) => {
         message: "Email not found",
       });
     }
-    if (user.role !== "superadmin") {
+    if (["employee", "contractor", "visitor"].includes(user.role)) {
       return res.status(403).json({
         status: false,
         message: "You are not authorized",
