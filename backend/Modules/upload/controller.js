@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const uploadsModel = require("./model.js");
 const UserModel = require("../user/model.js");
+const { resolveSubdir } = require("./middleware");
 
 // ✅ Upload file and store in DB
 exports.upload = async (req, res) => {
@@ -10,7 +11,7 @@ exports.upload = async (req, res) => {
       return res.status(400).json({ status: false, message: "No file uploaded" });
     }
 
-    const folder = req.params.folder || "general";
+    const folder = resolveSubdir(req, req.file);
     const fileUrl = `/uploads/${folder}/${req.file.filename}`;
 
     // Save upload record in DB

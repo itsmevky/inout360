@@ -33,6 +33,7 @@ const uploadController = require("./controller");
 const { upload } = require("./middleware");
 
 // ✅ Routes
+router.post("/", upload.single("file"), uploadController.upload);
 router.post("/:folder", upload.single("file"), uploadController.upload);
 router.get("/:folder/:filename", uploadController.getFile);
 

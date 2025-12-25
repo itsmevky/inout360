@@ -575,6 +575,9 @@ const Employeepage = () => {
                     toggleAddUserForm();
                     fetchemployees();
                   }}
+                  onClose={() => {
+                    toggleAddUserForm();
+                  }}
                 />
               </div>
 
@@ -620,6 +623,10 @@ const Employeepage = () => {
                 {/* FORM */}
                 <EditUserForm
                   user={selectedUser}
+                  onClose={() => {
+                    setIsEditUserFormVisible(false);
+                    setSelectedUser(null);
+                  }}
                   onSuccess={() => {
                     setIsEditUserFormVisible(false);
                     setSelectedUser(null);

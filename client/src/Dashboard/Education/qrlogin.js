@@ -103,6 +103,9 @@ const QrLoginComponent = () => {
 
       if (token) {
         localStorage.setItem("qr_access_token", token);
+        if (response?.location) {
+          localStorage.setItem("qr_location", response.location);
+        }
 
         if (formData.rememberMe) {
           localStorage.setItem("qr_email", formData.email);

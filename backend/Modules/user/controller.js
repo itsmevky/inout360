@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const Validator = require("../../helpers/validators");
 const User = require("./model");
+const EmployeeModel = require("../employees/model");
 const { sendEmail } = require("../../helpers/sendemail");
 
 /* ---------------------------------
@@ -208,11 +209,17 @@ exports.qrLoginUser = async (req, res) => {
     }
 
     const accessToken = generateQrAccessToken(user);
+    let location = user.location || "";
+    if (!location && user.employeeId) {
+      const employee = await EmployeeModel.findOne({ employeeId: user.employeeId }).lean();
+      location = employee?.location || "";
+    }
 
     res.status(200).json({
       id: user._id,
       name: user.name,
       role: user.role,
+      location,
       accessToken,
     });
   } catch (error) {

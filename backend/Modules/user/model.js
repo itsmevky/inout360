@@ -48,6 +48,7 @@ const userSchemaDefinition = {
     ],
     default: "employee",
   },
+  location: { type: String, trim: true, default: "" },
 };
 
 const userTransform = (ret) => ({
@@ -57,6 +58,7 @@ const userTransform = (ret) => ({
   employeeId: ret.employeeId,
   sessionStatus: ret.sessionStatus,
   role: ret.role,
+  location: ret.location,
   createdAt: ret.createdAt,
   updatedAt: ret.updatedAt,
 });

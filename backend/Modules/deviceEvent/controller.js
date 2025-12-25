@@ -8,7 +8,7 @@ const DeviceModel = require("../device/model");
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
 const SERVICE_ACCOUNT_PATH =
   process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-  path.join(__dirname, "..", "..", "service-account.json");
+  path.join(__dirname, "..", "..", "config", "serviceAccountKey.json")
 
 const normalizeDeviceId = (value) => String(value || "").trim();
 
@@ -99,6 +99,14 @@ exports.storeEvent = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
+    const normalizedTimestamp = timestamp
+      ? new Date(String(timestamp).replace(/(\.\d{3})\d+/, "$1"))
+      : new Date();
+
+    if (timestamp && isNaN(normalizedTimestamp.getTime())) {
+      return res.status(400).json({ status: false, message: "timestamp is invalid" });
+    }
+
     const savedEvent = await DeviceEvent.create({
       deviceId: device._id,
       event,
@@ -107,19 +115,23 @@ exports.storeEvent = async (req, res) => {
       name,
       employeeId: employeeId || employee_id,
       codeId,
-      timestamp: timestamp ? new Date(timestamp) : new Date(),
+      timestamp: normalizedTimestamp,
       metadata: metadata || {},
       raw: req.body,
     });
 
-    await sendAdminNotification(
-      device,
-      event,
-      cameraStatus,
-      name,
-      employeeId || employee_id,
-      imagePath
-    );
+    try {
+      await sendAdminNotification(
+        device,
+        event,
+        cameraStatus,
+        name,
+        employeeId || employee_id,
+        imagePath
+      );
+    } catch (notifyError) {
+      console.warn("⚠️ Device event notification failed:", notifyError.message);
+    }
 
     return res.status(200).json({
       status: true,

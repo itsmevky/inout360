@@ -6,6 +6,10 @@ import { domainpath } from "../../Helpers/api.js";
 import "../../Styles/qrpage.css";
 
 const DEFAULT_LOCATION = "Gate-1";
+const getStoredLocation = () => {
+  if (typeof window === "undefined") return DEFAULT_LOCATION;
+  return localStorage.getItem("qr_location") || DEFAULT_LOCATION;
+};
 
 const QrCard = ({
   title,
@@ -63,7 +67,7 @@ const QrCard = ({
 );
 
 const QrPage = ({ singleAction = null }) => {
-  const [location, setLocation] = useState(DEFAULT_LOCATION);
+  const [location, setLocation] = useState(getStoredLocation());
   const [loginState, setLoginState] = useState({
     token: "",
     imageSrc: "",

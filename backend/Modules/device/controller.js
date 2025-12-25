@@ -422,7 +422,7 @@ exports.verifyRegisterToken = async (req, res) => {
 // Get or update device status/settings for a user/device pair
 exports.deviceStatus = async (req, res) => {
   try {
-    const { userId, deviceId, deviceLocation, deviceSettings } = req.body || {};
+    const { userId, deviceId } = req.query || {};
     if (!userId || !deviceId) {
       return res.status(400).json({
         status: false,
@@ -446,45 +446,7 @@ exports.deviceStatus = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
-    const updateSet = {};
-    if (deviceLocation !== undefined) {
-      updateSet.deviceLocation = deviceLocation;
-    }
-
-    if (deviceSettings && typeof deviceSettings === "object") {
-      if (deviceSettings.deviceStatus !== undefined) {
-        updateSet.deviceStatus = deviceSettings.deviceStatus;
-      }
-      if (deviceSettings.locationAllowed !== undefined) {
-        updateSet.locationAllowed = deviceSettings.locationAllowed;
-      }
-
-      const policyUpdate = {};
-      if (deviceSettings.devicePolicyState && typeof deviceSettings.devicePolicyState === "object") {
-        Object.assign(policyUpdate, deviceSettings.devicePolicyState);
-      }
-      if (deviceSettings.cameraDisabled !== undefined) {
-        policyUpdate.cameraDisabled = deviceSettings.cameraDisabled;
-      }
-      if (deviceSettings.uninstallBlocked !== undefined) {
-        policyUpdate.uninstallBlocked = deviceSettings.uninstallBlocked;
-      }
-      if (Object.keys(policyUpdate).length) {
-        updateSet.devicePolicyState = {
-          ...(device.devicePolicyState || {}),
-          ...policyUpdate,
-        };
-      }
-    }
-
-    const updatedDevice =
-      Object.keys(updateSet).length > 0
-        ? await DeviceModel.findOneAndUpdate(
-            { _id: device._id },
-            { $set: updateSet },
-            { new: true }
-          ).lean()
-        : device.toObject?.() || device;
+    const updatedDevice = device.toObject?.() || device;
 
     return res.status(200).json({
       status: true,

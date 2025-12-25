@@ -101,6 +101,7 @@ const normalizePayload = (data) => {
     employmentType: data.employmentType || data.employment_type || "Full-time",
     status: data.status || "Active",
     role: data.role || "employee",
+    location: data.location || data.locationName || "",
     bankDetails: {
       aadharcardnumber:
         data.bankDetails?.aadharcardnumber ||
@@ -223,6 +224,7 @@ exports.add = async (req, res) => {
         email: normalized.email,
         password: null,
         role: normalized.role || "employee",
+        location: normalized.location || "",
       });
     }
 
@@ -372,6 +374,11 @@ exports.update = async (req, res) => {
     });
     if (!updated) {
       return res.status(404).json({ status: false, message: "Not found" });
+    }
+    if (updated.userId) {
+      await UserModel.findByIdAndUpdate(updated.userId, {
+        location: updated.location || "",
+      });
     }
     if (req.file && previous?.profileImage) {
       const oldPath = previous.profileImage;

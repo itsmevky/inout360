@@ -16,8 +16,17 @@ const resolveSubdir = (req, file) => {
     return "settings";
   }
   if (file?.fieldname === "profileImage") return "employees";
-  if (file?.fieldname === "file") return "general";
-  return "misc";
+
+  const ext = path.extname(file?.originalname || "").toLowerCase();
+  const mime = String(file?.mimetype || "").toLowerCase();
+  const isApk = ext === ".apk" || mime === "application/vnd.android.package-archive";
+  if (isApk) return "apk";
+  if (mime.startsWith("image/")) return "image";
+  if (ext && [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif"].includes(ext)) {
+    return "image";
+  }
+
+  return "other";
 };
 
 const storage = multer.diskStorage({

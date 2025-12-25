@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import { putData } from "../../../Helpers/api.js";
+import { getData, putData } from "../../../Helpers/api.js";
 
 const EditUserForm = ({ user, onClose }) => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ const EditUserForm = ({ user, onClose }) => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [locations, setLocations] = useState([]);
 
   const [profileFile, setProfileFile] = useState(null);
   const [profilePreview, setProfilePreview] = useState("");
@@ -49,8 +50,9 @@ const EditUserForm = ({ user, onClose }) => {
       employmentType: user.employmentType || "",
       role: user.role || "",
       status: user.status || "",
+      location: user.location || "",
 
-      aadhar: user.bankDetails?.aadharcardnumber || "",
+      aadharcardnumber: user.bankDetails?.aadharcardnumber || "",
       pancard: user.bankDetails?.pancard || "",
       accountNumber: user.bankDetails?.accountNumber || "",
       ifscCode: user.bankDetails?.ifscCode || "",
@@ -62,6 +64,18 @@ const EditUserForm = ({ user, onClose }) => {
 
     return () => (document.body.style.overflow = "auto");
   }, [user]);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await getData("/location");
+        setLocations((res?.locations || []).map((loc) => loc.name).filter(Boolean));
+      } catch (_err) {
+        setLocations([]);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   /* ================= HANDLERS ================= */
   const handleChange = (e) =>
@@ -82,7 +96,11 @@ const EditUserForm = ({ user, onClose }) => {
 
   const handleClose = () => {
     setOpen(false);
-    setTimeout(() => navigate("/dashboard"), 200);
+    if (onClose) {
+      setTimeout(() => onClose(), 200);
+      return;
+    }
+    setTimeout(() => navigate("/dashboard/users/employees"), 200);
   };
 
   const handleSubmit = async (e) => {
@@ -187,12 +205,12 @@ const EditUserForm = ({ user, onClose }) => {
               {/* ✅ DROPDOWNS */}
               <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={["employee", "admin", "hr"]} />
               <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} options={["Active", "Inactive"]} />
-              <SelectField label="Location" name="location" value={formData.location} onChange={handleChange} options={["Location 1", "Location 2", "Location 3"]} />
+              <SelectField label="Location" name="location" value={formData.location} onChange={handleChange} options={locations} />
             </Grid>
 
             <Section title="Bank Details" />
             <Grid>
-              <Field label="Aadhar Number" name="aadhar" value={formData.aadhar} onChange={handleChange} />
+              <Field label="Aadhar Number" name="aadharcardnumber" value={formData.aadharcardnumber} onChange={handleChange} />
               <Field label="PAN Card" name="pancard" value={formData.pancard} onChange={handleChange} />
               <Field label="Account Number" name="accountNumber" value={formData.accountNumber} onChange={handleChange} />
               <Field label="IFSC Code" name="ifscCode" value={formData.ifscCode} onChange={handleChange} />

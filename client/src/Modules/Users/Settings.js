@@ -63,7 +63,7 @@ const Settings = () => {
 
             // ✅ NEW
             payload.append("otpEmail", systemConfig.otpEmail || "");
-            payload.append("otpExpirySeconds", systemConfig.otpExpirySeconds || 0);
+            payload.append("qrExpirySeconds", systemConfig.otpExpirySeconds || 0);
 
             if (systemConfig.apkFile) payload.append("apkFile", systemConfig.apkFile);
             if (systemConfig.logoFile) payload.append("companyLogo", systemConfig.logoFile);
@@ -82,7 +82,7 @@ const Settings = () => {
                     companyLogoUrl: data.companyLogoUrl || "",
 
                     otpEmail: data.otpEmail || "",
-                    otpExpirySeconds: data.otpExpirySeconds || "",
+                    otpExpirySeconds: data.qrExpirySeconds || "",
                 };
 
                 setSystemConfig(nextSystem);
@@ -122,6 +122,8 @@ const Settings = () => {
                     logoFile: null,
                     apkFileUrl: data.apkFileUrl || "",
                     companyLogoUrl: data.companyLogoUrl || "",
+                    otpEmail: data.otpEmail || "",
+                    otpExpirySeconds: data.qrExpirySeconds || "",
                 };
                 const nextDevice = data.deviceControls || defaultDevice;
                 const nextAlerts = data.alerts || defaultAlerts;

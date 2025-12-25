@@ -156,10 +156,10 @@ const AddUserForm = ({ onSuccess, onClose }) => {
             {/* ================= BANK DETAILS ================= */}
             <Section title="Bank Details" />
             <Grid>
-              <Field label="Aadhar Number" name="bankDetails.aadharcardnumber" />
-              <Field label="PAN Card" name="bankDetails.pancard" />
-              <Field label="Account Number" name="bankDetails.accountNumber" />
-              <Field label="IFSC Code" name="bankDetails.ifscCode" />
+              <Field label="Aadhar Number" name="aadharcardnumber" />
+              <Field label="PAN Card" name="pancard" />
+              <Field label="Account Number" name="accountNumber" />
+              <Field label="IFSC Code" name="ifscCode" />
             </Grid>
 
             {/* SUBMIT */}
