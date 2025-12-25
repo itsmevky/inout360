@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { putData } from "../../../Helpers/api.js";
 
-
-const EditUserForm = ({ user }) => {
+const EditUserForm = ({ user, onClose }) => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
 
@@ -23,28 +22,38 @@ const EditUserForm = ({ user }) => {
     const [firstName = "", ...rest] = fullName.split(" ");
 
     setFormData({
-      firstName: user.firstName || firstName,
-      lastName: user.lastName || rest.join(" "),
+      firstName,
+      lastName: rest.join(" "),
       gender: user.gender || "",
       dob: user.dob ? user.dob.split("T")[0] : "",
       email: user.email || "",
       phone: user.phone || "",
-      currentaddress: user.currentaddress || "",
-      permanentaddress: user.permanentaddress || "",
-      state: user.state || "",
-      city: user.city || "",
-      pincode: user.pincode || "",
+
+      currentStreet: user.currentAddress?.street || "",
+      currentCity: user.currentAddress?.city || "",
+      currentState: user.currentAddress?.state || "",
+      currentPincode: user.currentAddress?.pincode || "",
+
+      permanentStreet: user.permanentAddress?.street || "",
+      permanentCity: user.permanentAddress?.city || "",
+      permanentState: user.permanentAddress?.state || "",
+      permanentPincode: user.permanentAddress?.pincode || "",
+
+      employeeId: user.employeeId || "",
+      rfid: user.rfid || "",
       joiningDate: user.joiningDate ? user.joiningDate.split("T")[0] : "",
       designation: user.designation || "",
-      shift: user.shift || "",
       department: user.department || "",
       section: user.section || "",
-      rfid: user.rfid || "",
+      shift: user.shift || "",
+      employmentType: user.employmentType || "",
       role: user.role || "",
-      aadharcardnumber: user.aadharcardnumber || "",
-      pancard: user.pancard || "",
-      accountNumber: user.accountNumber || "",
-      ifscCode: user.ifscCode || "",
+      status: user.status || "",
+
+      aadhar: user.bankDetails?.aadharcardnumber || "",
+      pancard: user.bankDetails?.pancard || "",
+      accountNumber: user.bankDetails?.accountNumber || "",
+      ifscCode: user.bankDetails?.ifscCode || "",
     });
 
     setProfilePreview(user?.photo || "");
@@ -54,11 +63,13 @@ const EditUserForm = ({ user }) => {
     return () => (document.body.style.overflow = "auto");
   }, [user]);
 
-  /* ================= IMAGE HANDLERS ================= */
+  /* ================= HANDLERS ================= */
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
   const handleProfileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setProfileFile(file);
     setProfilePreview(URL.createObjectURL(file));
   };
@@ -69,13 +80,9 @@ const EditUserForm = ({ user }) => {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  /* ================= FORM HANDLERS ================= */
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-
   const handleClose = () => {
     setOpen(false);
-    setTimeout(() => navigate("/dashboard/users"), 200);
+    setTimeout(() => navigate("/dashboard"), 200);
   };
 
   const handleSubmit = async (e) => {
@@ -84,18 +91,14 @@ const EditUserForm = ({ user }) => {
 
     try {
       const payload = new FormData();
-
       Object.entries(formData).forEach(([k, v]) => payload.append(k, v));
       if (profileFile) payload.append("profileImage", profileFile);
 
       const res = await putData(`/employee/${user?._id}`, payload);
-
       if (res?.success || res?.status === 200) {
         toast.success("Employee updated successfully");
         handleClose();
-      } else {
-        toast.error(res.message || "Update failed");
-      }
+      } else toast.error(res.message || "Update failed");
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -106,22 +109,15 @@ const EditUserForm = ({ user }) => {
   /* ================= UI ================= */
   return (
     <>
-      {/* OVERLAY */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm !m-0">
-        {/* MODAL */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div
-          className={`
-            relative w-full max-w-3xl mx-4
-            bg-white rounded-xl shadow-2xl
-            max-h-[90vh] overflow-y-auto
-            transform transition-all duration-300
-            ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}
-          `}
+          className={`relative w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl
+          max-h-[90vh] overflow-y-auto transform transition-all duration-300
+          ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
         >
-          {/* CLOSE */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 text-red-500 text-2xl font-bold employee-editpopup-cut-button"
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
           >
             ✕
           </button>
@@ -129,68 +125,80 @@ const EditUserForm = ({ user }) => {
           <form onSubmit={handleSubmit} className="p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-6">Edit Employee</h2>
 
-            {/* ================= PROFILE SECTION ================= */}
+            {/* PROFILE */}
             <div className="flex items-center gap-6 mb-8 employee-editform-userprofile">
               <div className="w-[120px] h-[150px] border rounded-md overflow-hidden bg-gray-100">
                 <img
-                  src={
-                    profilePreview ||
-                    "https://via.placeholder.com/120x150?text=Profile"
-                  }
+                  src={profilePreview || "https://via.placeholder.com/120x150"}
                   className="w-full h-full object-cover"
-                  alt="Profile"
+                  alt=""
                 />
               </div>
-
               <div className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRef}
-                  onChange={handleProfileSelect}
-                  className="hidden"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => fileRef.current.click()}
-                  className="px-3 py-2 !text-sm bg-blue-600 text-white rounded-md"
-                >
-                  {profileFile ? "Change Image" : "Choose Image"}
+                <input type="file" ref={fileRef} className="hidden" onChange={handleProfileSelect} />
+                <button type="button" onClick={() => fileRef.current.click()} className="px-3 py-2 bg-blue-600 text-white rounded-md">
+                  Choose Image
                 </button>
-
                 {profileFile && (
-                  <button
-                    type="button"
-                    onClick={cancelProfileChange}
-                    className="px-3 py-2 !text-sm border border-gray-400 rounded-md hover:bg-gray-100"
-                  >
+                  <button type="button" onClick={cancelProfileChange} className="px-3 py-2 border rounded-md">
                     Cancel
                   </button>
                 )}
               </div>
             </div>
 
-            {/* ================= FORM FIELDS ================= */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(formData).map(([key, value]) => (
-                <Field
-                  key={key}
-                  label={key.replace(/([A-Z])/g, " $1")}
-                  name={key}
-                  value={value}
-                  onChange={handleChange}
-                />
-              ))}
-            </div>
+            <Section title="Personal Information" />
+            <Grid>
+              <Field label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} />
+              <Field label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} />
+              <SelectField label="Gender" name="gender" value={formData.gender} onChange={handleChange} options={["Male", "Female", "Other"]} />
+              <Field label="Date of Birth" type="date" name="dob" value={formData.dob} onChange={handleChange} />
+              <Field label="Email" name="email" value={formData.email} onChange={handleChange} />
+              <Field label="Phone" name="phone" value={formData.phone} onChange={handleChange} />
+            </Grid>
 
-            {/* ACTIONS */}
-            <div className="mt-8 flex justify-end">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-8 py-2 bg-blue-600 text-white rounded-md"
-              >
+            <Section title="Current Address" />
+            <Grid>
+              <Field label="Street" name="currentStreet" value={formData.currentStreet} onChange={handleChange} />
+              <Field label="City" name="currentCity" value={formData.currentCity} onChange={handleChange} />
+              <Field label="State" name="currentState" value={formData.currentState} onChange={handleChange} />
+              <Field label="Pincode" name="currentPincode" value={formData.currentPincode} onChange={handleChange} />
+            </Grid>
+
+            <Section title="Permanent Address" />
+            <Grid>
+              <Field label="Street" name="permanentStreet" value={formData.permanentStreet} onChange={handleChange} />
+              <Field label="City" name="permanentCity" value={formData.permanentCity} onChange={handleChange} />
+              <Field label="State" name="permanentState" value={formData.permanentState} onChange={handleChange} />
+              <Field label="Pincode" name="permanentPincode" value={formData.permanentPincode} onChange={handleChange} />
+            </Grid>
+
+            <Section title="Employment Details" />
+            <Grid>
+              <Field label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleChange} />
+              <Field label="RFID" name="rfid" value={formData.rfid} onChange={handleChange} />
+              <Field label="Joining Date" type="date" name="joiningDate" value={formData.joiningDate} onChange={handleChange} />
+              <Field label="Designation" name="designation" value={formData.designation} onChange={handleChange} />
+              <Field label="Department" name="department" value={formData.department} onChange={handleChange} />
+              <Field label="Section" name="section" value={formData.section} onChange={handleChange} />
+              <Field label="Shift" name="shift" value={formData.shift} onChange={handleChange} />
+              <Field label="Employment Type" name="employmentType" value={formData.employmentType} onChange={handleChange} />
+
+              {/* ✅ DROPDOWNS */}
+              <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={["employee", "admin", "hr"]} />
+              <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} options={["Active", "Inactive"]} />
+            </Grid>
+
+            <Section title="Bank Details" />
+            <Grid>
+              <Field label="Aadhar Number" name="aadhar" value={formData.aadhar} onChange={handleChange} />
+              <Field label="PAN Card" name="pancard" value={formData.pancard} onChange={handleChange} />
+              <Field label="Account Number" name="accountNumber" value={formData.accountNumber} onChange={handleChange} />
+              <Field label="IFSC Code" name="ifscCode" value={formData.ifscCode} onChange={handleChange} />
+            </Grid>
+
+            <div className="mt-8 flex justify-end w-full">
+              <button type="submit" disabled={loading} className="px-8 py-2 !mt-4 bg-blue-600 text-white rounded-md employe-editform-update-button">
                 {loading ? "Updating..." : "Update"}
               </button>
             </div>
@@ -203,19 +211,43 @@ const EditUserForm = ({ user }) => {
   );
 };
 
-/* ================= FIELD ================= */
-const Field = ({ label, name, value, onChange }) => (
+/* ================= HELPERS ================= */
+
+const Section = ({ title }) => (
+  <h3 className="text-base font-semibold mt-8 mb-4">{title}</h3>
+);
+
+const Grid = ({ children }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
+);
+
+const Field = ({ label, name, value, onChange, type = "text" }) => (
   <div>
-    <label className="block text-sm font-medium mb-1 capitalize">
-      {label}
-    </label>
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
     <input
-      type="text"
+      type={type}
       name={name}
       value={value || ""}
       onChange={onChange}
-      className="w-full border-solid border-1 border-gray-400 rounded-md !px-3 !py-2 focus:ring-1 focus:ring-blue-500"
+      className="w-full border rounded-md !px-2 !py-2 border border-gray-500"
     />
+  </div>
+);
+
+const SelectField = ({ label, name, value, onChange, options }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <select
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      className="w-full border rounded-md !px-2 !py-2 border border-gray-500 bg-white"
+    >
+      <option value=""></option>
+      {options.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
   </div>
 );
 

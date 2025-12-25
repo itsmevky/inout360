@@ -4310,6 +4310,9 @@ margin: 20px 0px;
     .export-section button{
         margin-bottom: 8px !important;
     }
+    .employe-editform-update-button{
+      width: 100% !important;
+    }
 }
 @media (max-width: 768px){
 .addnew-employe-popup-form{
