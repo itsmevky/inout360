@@ -20,6 +20,7 @@ const activitySchemaDefinition = {
   activityType: { type: String, trim: true },
   title: { type: String, trim: true },
   description: { type: String, trim: true },
+  name: { type: String, trim: true },
   media: { type: [mediaSubSchema], default: [] },
   occurredAt: { type: Date, default: Date.now },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },

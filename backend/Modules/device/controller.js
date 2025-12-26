@@ -635,3 +635,57 @@ exports.getDevicePolicy = async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 };
+
+// Uninstall device (deactivate) by deviceId + userId validation
+exports.uninstallDevice = async (req, res) => {
+  try {
+    const { deviceId, userId, employeeId, action } = req.body || {};
+
+    if (!deviceId || !userId) {
+      return res.status(400).json({
+        status: false,
+        message: "deviceId and userId are required",
+      });
+    }
+    if (action && String(action).toLowerCase() !== "uninstall") {
+      return res.status(400).json({ status: false, message: "Invalid action" });
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ status: false, message: "userId must be valid" });
+    }
+
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
+    const orFilters = [
+      { deviceId: new RegExp(`^${escapeRegExp(normalizedDeviceId)}$`, "i") },
+    ];
+    if (mongoose.isValidObjectId(deviceId)) {
+      orFilters.push({ _id: deviceId });
+    }
+
+    const device = await DeviceModel.findOne({ $or: orFilters });
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    if (String(device.userId) !== String(userId)) {
+      return res.status(403).json({ status: false, message: "User not authorized for this device" });
+    }
+    if (employeeId && String(device.employeeId || "") !== String(employeeId)) {
+      return res.status(403).json({ status: false, message: "Employee not authorized for this device" });
+    }
+
+    device.deviceStatus = "Disable";
+    await device.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Device deactivated successfully",
+      data: {
+        deviceId: device.deviceId || device._id,
+        deviceStatus: device.deviceStatus,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};

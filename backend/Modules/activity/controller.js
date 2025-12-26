@@ -1,5 +1,70 @@
 const ActivityModel = require("./model");
+const DeviceEventModel = require("../deviceEvent/model");
 const paginate = require("../../helpers/limitoffset");
+
+const resolveCategory = (eventType) => {
+  const value = String(eventType || "").toLowerCase();
+  if (value.includes("app_install")) return "app_install";
+  if (value.includes("app_uninstall")) return "app_uninstall";
+  if (value.includes("screenshot")) return "screenshot";
+  if (value.includes("video")) return "video";
+  if (value.includes("camera")) return "camera";
+  return "other";
+};
+
+const resolveActivityType = (eventType) => {
+  const value = String(eventType || "").toLowerCase();
+  if (value.includes("app_install")) return "app_install";
+  if (value.includes("app_uninstall")) return "app_uninstall";
+  if (value.includes("screenshot")) return "screenshot";
+  if (value.includes("video")) return "video";
+  if (value.includes("camera")) return "take_picture";
+  return eventType;
+};
+
+const resolveMediaType = (eventType) => {
+  const value = String(eventType || "").toLowerCase();
+  if (value.includes("video")) return "video";
+  if (value.includes("screenshot")) return "screenshot";
+  if (value.includes("camera")) return "photo";
+  return "file";
+};
+
+const buildEventFilter = ({ userId, employeeId, deviceId, category, search }) => {
+  const filter = {};
+  if (employeeId) filter.employeeId = employeeId;
+  if (deviceId) filter.deviceId = deviceId;
+
+  if (category) {
+    const value = String(category).toLowerCase();
+    if (value === "camera") {
+      filter.event = { $regex: "camera|screenshot|video", $options: "i" };
+    } else if (value === "app_install") {
+      filter.event = { $regex: "app[_-]?install", $options: "i" };
+    } else if (value === "app_uninstall") {
+      filter.event = { $regex: "app[_-]?uninstall", $options: "i" };
+    } else {
+      filter.event = { $regex: value, $options: "i" };
+    }
+  }
+
+  if (userId) {
+    filter.$or = [{ name: userId }, { employeeId: userId }];
+  }
+
+  if (search) {
+    const regex = new RegExp(String(search), "i");
+    filter.$or = [
+      ...(filter.$or || []),
+      { event: regex },
+      { name: regex },
+      { employeeId: regex },
+      { codeId: regex },
+    ];
+  }
+
+  return filter;
+};
 
 exports.add = async (req, res) => {
   try {
@@ -13,23 +78,22 @@ exports.add = async (req, res) => {
 // Summary counts for dashboard cards
 exports.getSummary = async (_req, res) => {
   try {
-    const categories = {
-      camera: ["camera", "screenshot","video"],
-      app_install: ["app_install"],
-      app_uninstall: ["app_uninstall"],
-    };
-
-    const results = {};
-    for (const [key, catList] of Object.entries(categories)) {
-      results[key] = await ActivityModel.countDocuments({ category: { $in: catList } });
-    }
+    const cameraCount = await DeviceEventModel.countDocuments({
+      event: { $regex: "camera|screenshot|video", $options: "i" },
+    });
+    const installCount = await DeviceEventModel.countDocuments({
+      event: { $regex: "app[_-]?install", $options: "i" },
+    });
+    const uninstallCount = await DeviceEventModel.countDocuments({
+      event: { $regex: "app[_-]?uninstall", $options: "i" },
+    });
 
     return res.status(200).json({
       status: true,
       data: {
-        camera: results.camera || 0,
-        app_install: results.app_install || 0,
-        app_uninstall: results.app_uninstall || 0,
+        camera: cameraCount || 0,
+        app_install: installCount || 0,
+        app_uninstall: uninstallCount || 0,
       },
     });
   } catch (error) {
@@ -41,24 +105,52 @@ exports.getAll = async (req, res) => {
   try {
     const { userId, employeeId, deviceId, category, search, page, limit } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
-    const filter = {};
-    if (userId) filter.userId = userId;
-    if (employeeId) filter.employeeId = employeeId;
-    if (deviceId) filter.deviceId = deviceId;
-    if (category) filter.category = category;
+    const filter = buildEventFilter({ userId, employeeId, deviceId, category, search });
 
     const result = await paginate(
-      ActivityModel,
+      DeviceEventModel,
       filter,
       pageNumber,
       limit,
       [],
-      ["activityType", "title", "description", "deviceId", "employeeId"],
-      search
+      ["event", "name", "employeeId", "codeId"],
+      null
     );
     const dataWithId = result.data.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
-      return { ...plain, id: plain._id?.toString?.() || plain.id };
+      const categoryResolved = resolveCategory(plain.event);
+      const activityTypeResolved = resolveActivityType(plain.event);
+      const mediaUrl = plain.imagePath || plain.metadata?.mediaUrl || "";
+      const resolvedDeviceId =
+        plain.raw?.deviceId || plain.metadata?.deviceId || plain.deviceId || "";
+      const media = mediaUrl
+        ? [
+            {
+              url: mediaUrl,
+              type: resolveMediaType(plain.event),
+              capturedAt: plain.timestamp || plain.createdAt,
+            },
+          ]
+        : [];
+
+      return {
+        id: plain._id?.toString?.() || plain.id,
+        userName: plain.name || "",
+        name: plain.name || "",
+        activityType: activityTypeResolved,
+        title: activityTypeResolved,
+        description: plain.metadata?.description || plain.event,
+        category: categoryResolved,
+        deviceId: String(resolvedDeviceId),
+        employeeId: plain.employeeId || "",
+        occurredAt: plain.timestamp || plain.createdAt,
+        media,
+        metadata: {
+          ...(plain.metadata || {}),
+          mediaUrl,
+          originalEvent: plain.event,
+        },
+      };
     });
     res.status(200).json(dataWithId);
   } catch (error) {
@@ -72,7 +164,7 @@ exports.getById = async (req, res) => {
     if (!id || id === "undefined") {
       return res.status(400).json({ status: false, message: "Activity id is required" });
     }
-    const record = await ActivityModel.findById(id);
+    const record = await DeviceEventModel.findById(id);
     if (!record) return res.status(404).json({ status: false, message: "Not found" });
     res.status(200).json({ status: true, data: record });
   } catch (error) {
@@ -88,7 +180,7 @@ exports.deleteMany = async (req, res) => {
       return res.status(400).json({ status: false, message: "recordId required" });
     }
     if (typeof ids === "string") ids = [ids];
-    const result = await ActivityModel.deleteMany({ _id: { $in: ids } });
+    const result = await DeviceEventModel.deleteMany({ _id: { $in: ids } });
     res
       .status(200)
       .json({ status: true, message: `${result.deletedCount} record(s) deleted` });

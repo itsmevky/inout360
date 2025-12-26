@@ -4,17 +4,53 @@ const axios = require("axios");
 const { GoogleAuth } = require("google-auth-library");
 const DeviceEvent = require("./model");
 const DeviceModel = require("../device/model");
+const ActivityModel = require("../activity/model");
+const UserModel = require("../user/model");
+const EmployeeModel = require("../employees/model");
+const VisitorModel = require("../visitor/model");
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
-const SERVICE_ACCOUNT_PATH =
-  process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-  path.join(__dirname, "..", "..", "config", "serviceAccountKey.json")
+const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
+  process.cwd(),
+  "config",
+  "serviceAccountKey.json"
+);
+const resolveServiceAccountPath = () => {
+  const envPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  if (!envPath) {
+    return DEFAULT_SERVICE_ACCOUNT_PATH;
+  }
+  return path.isAbsolute(envPath) ? envPath : path.join(process.cwd(), envPath);
+};
 
 const normalizeDeviceId = (value) => String(value || "").trim();
+const resolveActivityCategory = (eventType) => {
+  const value = String(eventType || "").toLowerCase();
+  if (value.includes("camera")) return "camera";
+  if (value.includes("screenshot")) return "screenshot";
+  if (value.includes("video")) return "video";
+  return "other";
+};
+
+const resolveActorName = async ({ userId, employeeId, fallbackName }) => {
+  if (employeeId) {
+    const employee = await EmployeeModel.findOne({ employeeId }).lean();
+    if (employee?.name) return employee.name;
+    const visitor = await VisitorModel.findOne({ employeeId }).lean();
+    if (visitor?.name) return visitor.name;
+  }
+
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const user = await UserModel.findById(userId).lean();
+    if (user?.name) return user.name;
+  }
+
+  return fallbackName || "";
+};
 
 const getAccessToken = async () => {
   const auth = new GoogleAuth({
-    keyFile: SERVICE_ACCOUNT_PATH,
+    keyFile: resolveServiceAccountPath(),
     scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
   });
 
@@ -117,6 +153,31 @@ exports.storeEvent = async (req, res) => {
       codeId,
       timestamp: normalizedTimestamp,
       metadata: metadata || {},
+      raw: req.body,
+    });
+
+    const actorName = await resolveActorName({
+      userId: device.userId,
+      employeeId: employeeId || employee_id || device.employeeId,
+      fallbackName: name || device.ownerName,
+    });
+
+    await ActivityModel.create({
+      userId: device.userId,
+      employeeId: employeeId || employee_id || device.employeeId || "",
+      deviceId: String(device.deviceId || device._id || ""),
+      category: resolveActivityCategory(event),
+      activityType: event,
+      title: "Device event",
+      description: `Event ${event} reported by ${actorName || device.deviceId}`,
+      name: actorName,
+      occurredAt: normalizedTimestamp,
+      metadata: {
+        cameraStatus,
+        imagePath,
+        codeId,
+        ...metadata,
+      },
       raw: req.body,
     });
 
