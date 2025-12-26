@@ -80,8 +80,5 @@ const employeeSchema = {
 };
 
 const employeeModel = new ajModel("Employee", employeeSchema);
-employeeModel.schema.index({ email: 1 }, { unique: true });
-employeeModel.schema.index({ rfid: 1 }, { unique: true });
-employeeModel.schema.index({ employeeId: 1 }, { unique: true });
 
 module.exports = employeeModel.getModel();

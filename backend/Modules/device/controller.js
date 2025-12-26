@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const paginate = require("../../helpers/limitoffset");
 const DeviceModel = require("./model");
-const DeviceEventModel = require("../deviceEvent/model");
+const DeviceEventModel = require("./deviceEventModel");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
-const PolicyModel = require("../policy/model");
-const VisitorModel = require("../visitor/model");
+const PolicyModel = require("./policyModel");
+const VisitorModel = require("../user/visitorModel");
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();

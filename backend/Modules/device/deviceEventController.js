@@ -2,12 +2,12 @@ const mongoose = require("mongoose");
 const path = require("path");
 const axios = require("axios");
 const { GoogleAuth } = require("google-auth-library");
-const DeviceEvent = require("./model");
-const DeviceModel = require("../device/model");
+const DeviceEvent = require("./deviceEventModel");
+const DeviceModel = require("./model");
 const ActivityModel = require("../activity/model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
-const VisitorModel = require("../visitor/model");
+const VisitorModel = require("../user/visitorModel");
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(

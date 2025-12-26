@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 const DeviceModel = require("../device/model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
-const VisitorModel = require("../visitor/model");
+const VisitorModel = require("../user/visitorModel");
 const DeviceOtp = require("./otpModel");
 const OtpEmailConfig = require("./otpEmailModel");
 const SettingsModel = require("../settings/model");
@@ -253,7 +253,6 @@ const sendOtpEmail = async (to, otp, deviceName, userName, employeeId) => {
   const resolvedDeviceName = deviceName || "device";
   const resolvedUserName = userName || "User";
   const resolvedEmployeeId = employeeId || "N/A";
-  console.log(`[OTP LOG] To: ${to || "N/A"} Device: ${resolvedDeviceName} OTP: ${otp}`);
   await sendEmail("pidilitetemplate.html", to, {
     USER_NAME: resolvedUserName,
     EMPLOYEE_ID: resolvedEmployeeId,

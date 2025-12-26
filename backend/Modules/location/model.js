@@ -9,6 +9,5 @@ const locationSchemaDefinition = {
 };
 
 const locationModel = new ajModel("Location", locationSchemaDefinition);
-locationModel.schema.index({ name: 1 });
 
 module.exports = locationModel.getModel();

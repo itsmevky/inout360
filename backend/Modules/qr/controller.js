@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 const qrcode = require("qrcode");
 const User = require("../user/model");
 const DeviceModel = require("../device/model");
-const UserSession = require("../userSessions/model");
+const UserSession = require("../user/userSessionsModel");
 const AttendanceModel = require("../attendance/model");
 const EmployeeModel = require("../employees/model");
 const SettingsModel = require("../settings/model");
@@ -296,64 +296,6 @@ exports.generateQrPng = async (req, res) => {
   }
 };
 
-exports.getStatus = async (req, res) => {
-  try {
-    const { token, tokenId } = req.query;
-    if (!token && !tokenId) {
-      return res.status(400).json({ message: "token or tokenId is required" });
-    }
-
-    let resolvedTokenId = tokenId;
-    if (token) {
-      let decoded = null;
-      try {
-        decoded = jwt.verify(token, JWT_SECRET);
-      } catch (error) {
-        if (error.name === "TokenExpiredError") {
-          decoded = jwt.decode(token);
-        } else {
-          return res.status(400).json({ message: "token is invalid" });
-        }
-      }
-      resolvedTokenId = decoded?.jti;
-    }
-
-    if (!resolvedTokenId) {
-      return res.status(400).json({ message: "tokenId missing in token" });
-    }
-
-    let decoded = null;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch (error) {
-      if (error.name === "TokenExpiredError") {
-        decoded = jwt.decode(token);
-      } else {
-        return res.status(400).json({ message: "token is invalid" });
-      }
-    }
-
-    const expMs = decoded?.exp ? decoded.exp * 1000 : null;
-    const expiresAt = expMs ? new Date(expMs) : null;
-    const expired = expMs ? expMs < Date.now() : false;
-
-    return res.status(200).json({
-      status: true,
-      data: {
-        tokenId: decoded?.jti || resolvedTokenId,
-        action: decoded?.action,
-        location: decoded?.location,
-        expiresAt,
-        usedAt: null,
-        expired,
-        used: false,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
 exports.consumeQr = async (req, res) => {
   const { token, userId, deviceId, location, deviceLocation } = req.body;
 
@@ -517,9 +459,7 @@ exports.consumeQr = async (req, res) => {
       responsePayload.loginToken = loginToken;
     }
 
-    if (tokenId && !expMs) {
-      console.warn("QR consume: missing exp on token");
-    }
+    void tokenId;
 
     responsePayload.expiresAt = expMs ? new Date(expMs) : null;
 

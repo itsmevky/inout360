@@ -1,5 +1,5 @@
 const ActivityModel = require("./model");
-const DeviceEventModel = require("../deviceEvent/model");
+const DeviceEventModel = require("../device/deviceEventModel");
 const paginate = require("../../helpers/limitoffset");
 
 const resolveCategory = (eventType) => {

@@ -55,6 +55,5 @@ const deviceSchemaDefinition = {
 
 const deviceModel = new ajModel("Device", deviceSchemaDefinition);
 deviceModel.schema.index({ userId: 1, type: 1 });
-deviceModel.schema.index({ employeeId: 1 });
 
 module.exports = deviceModel.getModel();

@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("./controller");
 const OtpController = require("../otp/controller");
-const DeviceEventController = require("../deviceEvent/controller");
+const DeviceEventController = require("./deviceEventController");
 router.get("/", Controller.getAll);
 router.get("/status", Controller.deviceStatus);
 router.get("/:id", Controller.getById);
