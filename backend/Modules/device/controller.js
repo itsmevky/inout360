@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const paginate = require("../../helpers/limitoffset");
 const DeviceModel = require("./model");
+const DeviceEventModel = require("../deviceEvent/model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const PolicyModel = require("../policy/model");
@@ -676,6 +677,33 @@ exports.uninstallDevice = async (req, res) => {
 
     device.deviceStatus = "Disable";
     await device.save();
+
+    const user = await UserModel.findById(userId).lean();
+    const employee =
+      employeeId
+        ? await EmployeeModel.findOne({ employeeId }).lean()
+        : await EmployeeModel.findOne({ userId }).lean();
+    const policyVoilation = !!device.devicePolicyState?.uninstallBlocked;
+
+    await DeviceEventModel.create({
+      deviceId: device._id,
+      event: "app_uninstall",
+      name: user?.name || device.ownerName || "",
+      employeeId: employee?.employeeId || device.employeeId || employeeId || "",
+      timestamp: new Date(),
+      policyVoilation,
+      metadata: {
+        policyVoilation,
+        deviceId: device.deviceId || device._id,
+        action: "uninstall",
+      },
+      raw: {
+        deviceId,
+        userId,
+        employeeId,
+        action,
+      },
+    });
 
     return res.status(200).json({
       status: true,
