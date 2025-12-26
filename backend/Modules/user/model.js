@@ -49,6 +49,7 @@ const userSchemaDefinition = {
     default: "employee",
   },
   location: { type: String, trim: true, default: "" },
+  profileImage: { type: String, trim: true, default: "" },
 };
 
 const userTransform = (ret) => ({
@@ -59,6 +60,7 @@ const userTransform = (ret) => ({
   sessionStatus: ret.sessionStatus,
   role: ret.role,
   location: ret.location,
+  profileImage: ret.profileImage,
   createdAt: ret.createdAt,
   updatedAt: ret.updatedAt,
 });

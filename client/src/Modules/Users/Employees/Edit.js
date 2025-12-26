@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import { getData, putData } from "../../../Helpers/api.js";
+import { getData, putData, domainpath } from "../../../Helpers/api.js";
 
 const EditUserForm = ({ user, onClose }) => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
+  const backendBase = domainpath.replace(/\/api\/?$/, "");
+  const resolveImageUrl = (value) => {
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    if (value.startsWith("/uploads/")) return `${backendBase}${value}`;
+    return value;
+  };
 
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
@@ -58,7 +65,9 @@ const EditUserForm = ({ user, onClose }) => {
       ifscCode: user.bankDetails?.ifscCode || "",
     });
 
-    setProfilePreview(user?.photo || "");
+    setProfilePreview(
+      resolveImageUrl(user?.profileImage || user?.profile_image || user?.photo || "")
+    );
     document.body.style.overflow = "hidden";
     setTimeout(() => setOpen(true), 50);
 
@@ -90,7 +99,9 @@ const EditUserForm = ({ user, onClose }) => {
 
   const cancelProfileChange = () => {
     setProfileFile(null);
-    setProfilePreview(user?.photo || "");
+    setProfilePreview(
+      resolveImageUrl(user?.profileImage || user?.profile_image || user?.photo || "")
+    );
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -113,9 +124,9 @@ const EditUserForm = ({ user, onClose }) => {
       if (profileFile) payload.append("profileImage", profileFile);
 
       const res = await putData(`/employee/${user?._id}`, payload);
-      if (res?.success || res?.status === 200) {
+      if (res?.success || res?.status === true || res?.status === 200) {
         toast.success("Employee updated successfully");
-        handleClose();
+        navigate("/dashboard/users/employees");
       } else toast.error(res.message || "Update failed");
     } catch {
       toast.error("Something went wrong");

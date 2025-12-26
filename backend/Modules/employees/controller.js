@@ -225,6 +225,11 @@ exports.add = async (req, res) => {
         password: null,
         role: normalized.role || "employee",
         location: normalized.location || "",
+        profileImage: normalized.profileImage || "",
+      });
+    } else if (normalized.profileImage) {
+      await UserModel.findByIdAndUpdate(user._id, {
+        profileImage: normalized.profileImage,
       });
     }
 
@@ -361,6 +366,9 @@ exports.update = async (req, res) => {
     const previous = req.file
       ? await EmployeeModel.findById(req.params.id).select("profileImage")
       : null;
+    if (!req.file && !req.body.profileImage && !req.body.profile_image) {
+      delete updates.profileImage;
+    }
     if (req.file) {
       updates.profileImage = `/uploads/employees/${req.file.filename}`;
     }
@@ -376,9 +384,19 @@ exports.update = async (req, res) => {
       return res.status(404).json({ status: false, message: "Not found" });
     }
     if (updated.userId) {
-      await UserModel.findByIdAndUpdate(updated.userId, {
+      const userUpdates = {
         location: updated.location || "",
-      });
+        firstName: updated.firstName || "",
+        lastName: updated.lastName || "",
+        name: updated.name || `${updated.firstName || ""} ${updated.lastName || ""}`.trim(),
+        email: updated.email || "",
+        role: updated.role || "employee",
+        employeeId: updated.employeeId || "",
+      };
+      if (updates.profileImage) {
+        userUpdates.profileImage = updates.profileImage;
+      }
+      await UserModel.findByIdAndUpdate(updated.userId, userUpdates);
     }
     if (req.file && previous?.profileImage) {
       const oldPath = previous.profileImage;
