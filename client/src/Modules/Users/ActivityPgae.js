@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { getData } from "../../Helpers/api.js";
+import { domainpath, getData } from "../../Helpers/api.js";
 
 const ActivityPage = () => {
 
     // ============================================================
     // STATIC CAMERA & APP ACTIVITY DATA
     // ============================================================
-    const [activityData, setActivityData] = useState([]);
+    const [activityGroups, setActivityGroups] = useState([]);
 
     const [summary, setSummary] = useState({
         camera: 0,
@@ -15,7 +15,6 @@ const ActivityPage = () => {
         app_uninstall: 0,
     });
     const [loading, setLoading] = useState(true);
-    console.log("activityData", activityData);
     // ============================================================
     // COLUMN WIDTH CONFIG
     // ============================================================
@@ -30,15 +29,14 @@ const ActivityPage = () => {
     };
 
 
-    const getRandomCameraImage = () => {
-        const imgs = [
-            "https://picsum.photos/300/200?random=11",
-            "https://picsum.photos/300/200?random=12",
-            "https://picsum.photos/300/200?random=13",
-            "https://picsum.photos/300/200?random=14",
-            "https://picsum.photos/300/200?random=15",
-        ];
-        return imgs[Math.floor(Math.random() * imgs.length)];
+    const resolveMediaUrl = (value) => {
+        if (!value) return "";
+        if (/^https?:\/\//i.test(value)) return value;
+        if (value.startsWith("/uploads/")) {
+            const base = domainpath.replace(/\/api\/?$/, "");
+            return `${base}${value}`;
+        }
+        return value;
     };
     // ============================================================
     // COUNTS
@@ -103,50 +101,80 @@ const ActivityPage = () => {
     // FILTER + SEARCH
     // ============================================================
     const filteredUsers = useMemo(() => {
-        let list = [];
         const cameraTypes = ["screenshot", "take_picture", "video"];
-
-        if (selectedType === "camera_activity") {
-            list = cameraFilter
-                ? activityData.filter(a => a.type === cameraFilter)
-                : activityData.filter(a =>
+        let list = activityGroups.filter((group) => {
+            const activities = group.activities || [];
+            if (selectedType === "camera_activity") {
+                if (cameraFilter) {
+                    return activities.some((a) => a.type === cameraFilter);
+                }
+                return activities.some((a) =>
                     cameraTypes.includes(a.type) ||
                     a.category === "camera" ||
                     ["screenshot", "video"].includes(a.category)
                 );
-        } else if (selectedType === "app_install" || selectedType === "app_uninstall") {
-            list = activityData.filter(a => a.category === selectedType);
-        } else if (selectedType) {
-            list = activityData.filter(a => a.type === selectedType);
-        }
+            }
+            if (selectedType === "app_install" || selectedType === "app_uninstall") {
+                return activities.some((a) => a.category === selectedType);
+            }
+            if (selectedType) {
+                return activities.some((a) => a.type === selectedType);
+            }
+            return true;
+        });
 
-        // Search filter (ADDED)
         if (searchTerm.trim() !== "") {
-            list = list.filter(item =>
+            list = list.filter((item) =>
                 String(item.user || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 String(item.deviceId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 String(item.employeeId || "").toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
-
-        // Date range filter (ADDED)
         if (fromDate || toDate) {
             const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
             const to = toDate ? new Date(toDate + "T23:59:59") : null;
 
             list = list.filter((item) => {
-                const t = item.timestamp ? new Date(item.timestamp) : null;
-                if (!t || Number.isNaN(t.getTime())) return false;
-
-                if (from && t < from) return false;
-                if (to && t > to) return false;
-                return true;
+                const activities = item.activities || [];
+                return activities.some((a) => {
+                    const t = a.timestamp ? new Date(a.timestamp) : null;
+                    if (!t || Number.isNaN(t.getTime())) return false;
+                    if (from && t < from) return false;
+                    if (to && t > to) return false;
+                    return true;
+                });
             });
         }
 
-        return list;
-    }, [activityData, cameraFilter, searchTerm, selectedType, fromDate, toDate]);
+        return list.map((item) => {
+            const activities = item.activities || [];
+            let relevant = activities;
+            if (selectedType === "camera_activity") {
+                if (cameraFilter) {
+                    relevant = activities.filter((a) => a.type === cameraFilter);
+                } else {
+                    relevant = activities.filter((a) =>
+                        cameraTypes.includes(a.type) ||
+                        a.category === "camera" ||
+                        ["screenshot", "video"].includes(a.category)
+                    );
+                }
+            } else if (selectedType === "app_install" || selectedType === "app_uninstall") {
+                relevant = activities.filter((a) => a.category === selectedType);
+            } else if (selectedType) {
+                relevant = activities.filter((a) => a.type === selectedType);
+            }
+
+            const latest = [...relevant].sort((a, b) => {
+                const ta = new Date(a.timestamp || 0).getTime();
+                const tb = new Date(b.timestamp || 0).getTime();
+                return tb - ta;
+            })[0];
+
+            return { ...item, latestActivity: latest };
+        });
+    }, [activityGroups, cameraFilter, searchTerm, selectedType, fromDate, toDate]);
 
     // PAGINATION LOGIC (ADDED)
     // ============================================================
@@ -158,44 +186,15 @@ const ActivityPage = () => {
         return filteredUsers.slice(startIndex, endIndex);
     }, [filteredUsers, currentPage]);
 
-    const uniqueUsersCount = useMemo(() => {
-        const set = new Set(filteredUsers.map(x => x.userKey));
-        return set.size;
-    }, [filteredUsers]);
+    const uniqueUsersCount = useMemo(() => filteredUsers.length, [filteredUsers]);
     // ============================================================
     // MODAL OPEN
     // ============================================================
     const openModal = (record) => {
-        let filtered = [];
-
-        // 👉 Camera Activity popup
-        if (selectedType === "camera_activity") {
-            filtered = activityData.filter(a =>
-                a.userKey === record.userKey &&
-                ["screenshot", "take_picture", "video"].includes(a.type)
-            );
-        }
-
-        // 👉 App Installed popup
-        else if (selectedType === "app_install") {
-            filtered = activityData.filter(a =>
-                a.userKey === record.userKey &&
-                a.category === "app_install"
-            );
-        }
-
-        // 👉 App Uninstalled popup
-        else if (selectedType === "app_uninstall") {
-            filtered = activityData.filter(a =>
-                a.userKey === record.userKey &&
-                a.category === "app_uninstall"
-            );
-        }
-        setModalCameraType("all"); // modal open hote hi default ALL
-
+        setModalCameraType("all");
         setModalUser({
             user: record.user,
-            activities: filtered,
+            activities: record.activities || [],
         });
     };
 
@@ -227,50 +226,46 @@ const ActivityPage = () => {
                     getData("/activity/summary"),
                     getData("/activity"),
                 ]);
-                console.log("summaryResponse", summaryResponse);
-
                 if (summaryResponse?.data) {
                     setSummary(summaryResponse.data);
                 }
                 const list = Array.isArray(listResponse) ? listResponse : [];
-                const normalized = list.map((item) => {
-                    const userName =
-                        item.userName ||
-                        item.metadata?.userName ||
-                        item.metadata?.name ||
-                        item.metadata?.user ||
-                        item.userId ||
-                        "-";
-                    const activityType =
-                        item.activityType || item.title || item.category || "-";
-                    const appName =
-                        item.metadata?.appName ||
-                        item.metadata?.app ||
-                        item.title ||
-                        "";
-                    const mediaUrl =
-                        item.media?.[0]?.url ||
-                        item.metadata?.mediaUrl ||
-                        item.metadata?.media ||
-                        "";
-                    const userKey = item.userId || userName;
+                const normalized = list.map((group) => {
+                    const activities = (group.activities || []).map((item) => {
+                        const activityType =
+                            item.activityType || item.title || item.category || "-";
+                        const appName =
+                            item.metadata?.appName ||
+                            item.metadata?.app ||
+                            item.title ||
+                            "";
+                        const mediaUrl =
+                            item.media?.[0]?.url ||
+                            item.metadata?.mediaUrl ||
+                            item.metadata?.media ||
+                            "";
+                        return {
+                            id: item.id || item._id,
+                            type: activityType,
+                            category: item.category,
+                            deviceId: item.deviceId,
+                            employeeId: item.employeeId,
+                            timestamp: item.occurredAt,
+                            appName,
+                            media: resolveMediaUrl(mediaUrl),
+                        };
+                    });
 
                     return {
-                        id: item.id || item._id,
-                        user: userName,
-                        userKey,
-                        type: activityType,
-                        category: item.category,
-                        deviceId: item.deviceId,
-                        employeeId: item.employeeId,
-                        timestamp: item.occurredAt,
-                        appName,
-                        media: mediaUrl,
+                        user: group.user || "-",
+                        userKey: group.userKey || group.user || "-",
+                        deviceId: group.deviceId || "",
+                        employeeId: group.employeeId || "",
+                        activities,
                     };
                 });
-                console.log("normalized", normalized);
 
-                setActivityData(normalized);
+                setActivityGroups(normalized);
             } catch (error) {
                 toast.error("Failed to load activity.");
             } finally {
@@ -430,15 +425,15 @@ const ActivityPage = () => {
 
                             <tbody>
                                 {paginatedUsers.map((item, index) => (
-                                    <tr key={item.id} className="hover:bg-gray-50">
+                                    <tr key={item.userKey || index} className="hover:bg-gray-50">
                                         <td className="p-3">
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
                                         <td className="p-3">{item.user}</td>
-                                        <td className="p-3">{(item.type || "-").replace("_", " ")}</td>
-                                        <td className="p-3">{item.deviceId}</td>
-                                        <td className="p-3">{item.employeeId}</td>
-                                        <td className="p-3">{formatTimestamp(item.timestamp)}</td>
+                                        <td className="p-3">{(item.latestActivity?.type || "-").replace("_", " ")}</td>
+                                        <td className="p-3">{item.latestActivity?.deviceId || item.deviceId}</td>
+                                        <td className="p-3">{item.latestActivity?.employeeId || item.employeeId}</td>
+                                        <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
 
                                         <td className="p-3">
                                             <div className="flex items-center gap-3 !p-0 !m-0">
@@ -612,7 +607,7 @@ const ActivityPage = () => {
                                             <div key={act.id} className="camera-card">
                                                 {act.media ? (
                                                     <img
-                                                        src={act.media || getRandomCameraImage()}
+                                                        src={act.media}
                                                         className="camera-img"
                                                         alt="camera activity"
                                                     />

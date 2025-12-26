@@ -103,20 +103,11 @@ exports.getSummary = async (_req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const { userId, employeeId, deviceId, category, search, page, limit } = req.query;
-    const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
+    const { userId, employeeId, deviceId, category, search } = req.query;
     const filter = buildEventFilter({ userId, employeeId, deviceId, category, search });
 
-    const result = await paginate(
-      DeviceEventModel,
-      filter,
-      pageNumber,
-      limit,
-      [],
-      ["event", "name", "employeeId", "codeId"],
-      null
-    );
-    const dataWithId = result.data.map((doc) => {
+    const events = await DeviceEventModel.find(filter).lean();
+    const dataWithId = events.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
       const categoryResolved = resolveCategory(plain.event);
       const activityTypeResolved = resolveActivityType(plain.event);
@@ -152,7 +143,30 @@ exports.getAll = async (req, res) => {
         },
       };
     });
-    res.status(200).json(dataWithId);
+    const grouped = new Map();
+    for (const item of dataWithId) {
+      const userKey = item.userName || item.employeeId || item.deviceId || item.id;
+      const existing = grouped.get(userKey);
+      if (!existing) {
+        grouped.set(userKey, {
+          user: item.userName || "-",
+          userKey,
+          deviceId: item.deviceId || "",
+          employeeId: item.employeeId || "",
+          activities: [item],
+        });
+        continue;
+      }
+      existing.activities.push(item);
+      if (!existing.deviceId && item.deviceId) {
+        existing.deviceId = item.deviceId;
+      }
+      if (!existing.employeeId && item.employeeId) {
+        existing.employeeId = item.employeeId;
+      }
+    }
+
+    res.status(200).json(Array.from(grouped.values()));
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
