@@ -102,6 +102,18 @@ const sendAdminNotification = async (
   });
 };
 
+const resolveDeviceById = async (deviceId) => {
+  if (!deviceId) return null;
+  const normalizedDeviceId = normalizeDeviceId(deviceId);
+  const deviceQuery = {
+    $or: [{ deviceId: new RegExp(`^${normalizedDeviceId}$`, "i") }],
+  };
+  if (mongoose.isValidObjectId(deviceId)) {
+    deviceQuery.$or.push({ _id: deviceId });
+  }
+  return DeviceModel.findOne(deviceQuery);
+};
+
 // Save device event (camera opened, etc.)
 exports.storeEvent = async (req, res) => {
   try {
@@ -125,12 +137,7 @@ exports.storeEvent = async (req, res) => {
       return res.status(400).json({ status: false, message: "event is required" });
     }
 
-    const normalizedDeviceId = normalizeDeviceId(deviceId);
-    const deviceQuery = { $or: [{ deviceId: new RegExp(`^${normalizedDeviceId}$`, "i") }] };
-    if (mongoose.isValidObjectId(deviceId)) {
-      deviceQuery.$or.push({ _id: deviceId });
-    }
-    const device = await DeviceModel.findOne(deviceQuery);
+    const device = await resolveDeviceById(deviceId);
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
@@ -198,6 +205,44 @@ exports.storeEvent = async (req, res) => {
       status: true,
       message: "Event saved successfully",
       data: savedEvent,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Latest screenshot event for a device
+exports.getLatestScreenshot = async (req, res) => {
+  try {
+    const { deviceId } = req.query || {};
+    if (!deviceId) {
+      return res.status(400).json({ status: false, message: "deviceId is required" });
+    }
+
+    const device = await resolveDeviceById(deviceId);
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    const event = await DeviceEvent.findOne({
+      deviceId: device._id,
+      imagePath: { $exists: true, $ne: "" },
+      event: { $regex: "screenshot|camera", $options: "i" },
+    })
+      .sort({ timestamp: -1 })
+      .lean();
+
+    if (!event) {
+      return res.status(200).json({ status: true, data: null });
+    }
+
+    return res.status(200).json({
+      status: true,
+      data: {
+        timestamp: event.timestamp,
+        imagePath: event.imagePath,
+        deviceId: event.raw?.deviceId || device.deviceId || device._id,
+      },
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

@@ -68,6 +68,24 @@ const Device = () => {
   const openDeviceModal = (device) => {
     setSelectedDevice(device);
     setShowModal(true);
+    fetchLatestScreenshot(device);
+  };
+
+  const fetchLatestScreenshot = async (device) => {
+    const deviceId = device?.id || device?.deviceId || device?._id;
+    if (!deviceId) return;
+    try {
+      const res = await getData("/device/device-event/latest-screenshot", {
+        deviceId,
+      });
+      if (res?.status && res?.data?.timestamp) {
+        setSelectedDevice((prev) =>
+          prev ? { ...prev, lastScreenshotAt: res.data.timestamp } : prev
+        );
+      }
+    } catch (_err) {
+      // ignore screenshot lookup errors
+    }
   };
 
   const applyDeviceUpdate = (updated) => {
@@ -271,7 +289,7 @@ const Device = () => {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Device Owner</h4>
                 <p className="text-sm">
-                  {selectedDevice.isDeviceOwner ? "Device Owner" : "Not Active"}
+                  {selectedDevice.userName || selectedDevice.userId?.name || "-"}
                 </p>
               </div>
 
@@ -297,16 +315,14 @@ const Device = () => {
               </div>
 
               <div className="p-4 bg-red-50 rounded-lg">
-                <h4 className="font-semibold text-sm">Battery</h4>
-                <p className="text-sm">
-                  {selectedDevice.battery ? `${selectedDevice.battery}%` : "-"}
-                </p>
+                <h4 className="font-semibold text-sm">Uninstall</h4>
+                {cameraBadge(!!selectedDevice.uninstallBlocked)}
               </div>
 
               <div className="p-4 bg-gray-100 rounded-lg">
                 <h4 className="font-semibold text-sm">Enrollment Date</h4>
                 <p className="text-sm">
-                  {formatDate(selectedDevice.enrollmentDate)}
+                  {formatDate(selectedDevice.enrollmentDate || selectedDevice.createdAt)}
                 </p>
               </div>
             </div>
