@@ -151,6 +151,7 @@ const AddUserForm = ({ onSuccess, onClose }) => {
               <Field label="Employment Type" name="employmentType" />
               <SelectField label="Role" name="role" options={["employee", "admin", "hr"]} />
               <SelectField label="Status" name="status" options={["Active", "Inactive"]} />
+              <SelectField label="Location" name="location" options={["Ajivainfotech", "Chandigarh", "Delhi"]} />
             </Grid>
 
             {/* ================= BANK DETAILS ================= */}
