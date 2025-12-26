@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("./controller");
 
+router.get("/coords", Controller.getCoords);
 router.get("/", Controller.getAll);
 router.get("/:id", Controller.getById);
 router.post("/add", Controller.add);

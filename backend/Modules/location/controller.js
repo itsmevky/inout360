@@ -70,6 +70,24 @@ exports.getAll = async (req, res) => {
   }
 };
 
+exports.getCoords = async (_req, res) => {
+  try {
+    const locations = await LocationModel.find({})
+      .select("name lat lng")
+      .lean();
+    return res.status(200).json({
+      status: true,
+      data: locations.map((loc) => ({
+        name: loc.name,
+        lat: loc.lat,
+        lng: loc.lng,
+      })),
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 exports.getById = async (req, res) => {
   try {
     const { id } = req.params;
