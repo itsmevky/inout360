@@ -13,6 +13,8 @@ const normalizeStatus = (value) => {
 };
 
 const normalizeDeviceId = (value) => String(value || "").trim();
+const escapeRegExp = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const padVisitorId = (seq) => `VIS-${String(seq).padStart(5, "0")}`;
 
 const getNextVisitorId = async () => {

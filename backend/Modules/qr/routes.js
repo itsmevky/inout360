@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const { generateQr, generateQrPng, consumeQr, getStatus } = require("./controller");
+const verifyToken = require("../../middleware/verifyToken");
 
-// No auth: QR generate/consume handled via separate flow
-router.post("/generate", generateQr);
-router.post("/generate-png", generateQrPng);
+// QR generate requires logged-in user to resolve location
+router.post("/generate", verifyToken, generateQr);
+router.post("/generate-png", verifyToken, generateQrPng);
 router.get("/status", getStatus);
 router.post("/consume", consumeQr);
 

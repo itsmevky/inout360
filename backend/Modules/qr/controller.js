@@ -30,6 +30,20 @@ const normalizeDeviceId = (value) =>
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const resolveUserLocation = async (user) => {
+  const directLocation = user?.location;
+  if (directLocation) {
+    return directLocation;
+  }
+
+  if (!user?._id) {
+    return "";
+  }
+
+  const employee = await EmployeeModel.findOne({ userId: user._id }).lean();
+  return employee?.location || "";
+};
+
 const resolveAssignedDeviceId = async (user, requestedDeviceId) => {
   const provided = String(requestedDeviceId || "").trim();
   const stored = String(user.deviceId || "").trim();
@@ -218,7 +232,15 @@ const createQrToken = async (payload) => {
 
 exports.generateQr = async (req, res) => {
   try {
-    const { token, expiresAt, action, location, reused } = await createQrToken(req.body);
+    const location = await resolveUserLocation(req.user);
+    if (!location) {
+      return res.status(400).json({ message: "location missing for user" });
+    }
+
+    const { token, expiresAt, action, reused } = await createQrToken({
+      ...req.body,
+      location,
+    });
 
     return res.status(201).json({
       message: "QR generated successfully",
@@ -238,7 +260,15 @@ exports.generateQr = async (req, res) => {
 
 exports.generateQrPng = async (req, res) => {
   try {
-    const { token, expiresAt, action, location, reused } = await createQrToken(req.body);
+    const location = await resolveUserLocation(req.user);
+    if (!location) {
+      return res.status(400).json({ message: "location missing for user" });
+    }
+
+    const { token, expiresAt, action, reused } = await createQrToken({
+      ...req.body,
+      location,
+    });
     const pngBuffer = await qrcode.toBuffer(token, {
       type: "png",
       errorCorrectionLevel: "M",

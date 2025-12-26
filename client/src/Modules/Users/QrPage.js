@@ -5,12 +5,6 @@ import QRCode from "qrcode";
 import { domainpath } from "../../Helpers/api.js";
 import "../../Styles/qrpage.css";
 
-const DEFAULT_LOCATION = "Gate-1";
-const getStoredLocation = () => {
-  if (typeof window === "undefined") return DEFAULT_LOCATION;
-  return localStorage.getItem("qr_location") || DEFAULT_LOCATION;
-};
-
 const QrCard = ({
   title,
   imageSrc,
@@ -67,7 +61,6 @@ const QrCard = ({
 );
 
 const QrPage = ({ singleAction = null }) => {
-  const [location, setLocation] = useState(getStoredLocation());
   const [loginState, setLoginState] = useState({
     token: "",
     imageSrc: "",
@@ -130,10 +123,16 @@ const QrPage = ({ singleAction = null }) => {
     async (action, setState) => {
       setState((prev) => ({ ...prev, loading: true }));
       try {
-        const response = await axios.post(`${domainpath}/qr/generate`, {
-          action,
-          location,
-        });
+        const accessToken = localStorage.getItem("qr_access_token");
+        const response = await axios.post(
+          `${domainpath}/qr/generate`,
+          { action },
+          {
+            headers: {
+              Authorization: accessToken ? `Bearer ${accessToken}` : "",
+            },
+          }
+        );
 
         const token = response?.data?.token || "";
         const expiresAt = response?.data?.expiresAt || null;
@@ -153,7 +152,7 @@ const QrPage = ({ singleAction = null }) => {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    [location]
+    []
   );
 
   const scheduleRefresh = useCallback((expiresAt, action) => {
@@ -287,16 +286,6 @@ const QrPage = ({ singleAction = null }) => {
     isLoginOnly,
   ]);
 
-  const handleLocationSubmit = (event) => {
-    event.preventDefault();
-    if (!isLogoutOnly) {
-      fetchQrPng("login", setLoginState);
-    }
-    if (!isLoginOnly) {
-      fetchQrPng("logout", setLogoutState);
-    }
-  };
-
   const headerTitle = isLoginOnly
     ? "Login QR"
     : isLogoutOnly
@@ -320,20 +309,9 @@ const QrPage = ({ singleAction = null }) => {
                 <p className="qr-subtitle">{headerSubtitle}</p>
               </div>
             </div>
-            <form className="qr-location" onSubmit={handleLocationSubmit}>
-              <label htmlFor="qr-location-input">Location</label>
-              <input
-                id="qr-location-input"
-                type="text"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="Gate-1"
-              />
-              <button type="submit">Update</button>
-              {/* <button className="qr-logout" type="button" onClick={handleQrLogout}>
-                Logout
-              </button> */}
-            </form>
+            <button className="qr-logout" type="button" onClick={handleQrLogout}>
+              Logout
+            </button>
           </div>
         )}
 
