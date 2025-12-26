@@ -24,7 +24,7 @@
     "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start": "set PORT=4001 && react-scripts start",
+    "dev": "cross-env PORT=4001 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.10"
   }
