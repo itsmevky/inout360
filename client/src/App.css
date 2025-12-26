@@ -1431,7 +1431,10 @@ box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
       .activity-table tr{
         padding: 10px;
       }
+
 }
+
+
 @media (min-width: 420px) and (max-width: 550px) {
   .activity-page-searchbar-dropdown{
 display: flex;
@@ -1511,6 +1514,7 @@ align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     /* margin-top: 8px; */
+    overflow: auto;
   }
 
   /* View button */
@@ -1518,9 +1522,15 @@ align-items: flex-start;
     /* padding: 6px 14px; */
     font-size: 13px;
   }
+        .activity-page-searchbar-dropdown div{
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+      }
 }
 
-
+.activity-page-select-option{
+  border-radius: 10px;
+}
 
 /* ================= OVERLAY ================= */
 .modal-overlay {

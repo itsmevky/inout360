@@ -138,7 +138,7 @@ const EditUserForm = ({ user, onClose }) => {
   /* ================= UI ================= */
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
         <div
           className={`relative w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl
           max-h-[90vh] overflow-y-auto transform transition-all duration-300
@@ -214,7 +214,7 @@ const EditUserForm = ({ user, onClose }) => {
               <Field label="Employment Type" name="employmentType" value={formData.employmentType} onChange={handleChange} />
 
               {/* ✅ DROPDOWNS */}
-              <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={["employee", "admin", "hr",,"manager","supervisor","contractor"]} />
+              <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={["employee", "admin", "hr", "manager", "supervisor", "contractor"]} />
               <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} options={["Active", "Inactive"]} />
               <SelectField label="Location" name="location" value={formData.location} onChange={handleChange} options={locations} />
             </Grid>
