@@ -8,13 +8,14 @@ const ActivityPage = () => {
     // STATIC CAMERA & APP ACTIVITY DATA
     // ============================================================
     const [activityData, setActivityData] = useState([]);
+    
     const [summary, setSummary] = useState({
         camera: 0,
         app_install: 0,
         app_uninstall: 0,
     });
     const [loading, setLoading] = useState(true);
-
+    console.log("activityData", activityData);
     // ============================================================
     // COLUMN WIDTH CONFIG
     // ============================================================
@@ -53,10 +54,21 @@ const ActivityPage = () => {
     const [modalUser, setModalUser] = useState(null);
 
     // ============================================================
+    // PAGINATION STATE (ADDED)
+    // ============================================================
+    const ITEMS_PER_PAGE = 15;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // ============================================================
     // 🔍 SEARCH STATE + HANDLER (ADDED)
     // ============================================================
     const [searchTerm, setSearchTerm] = useState("");
-
+    // ============================================================
+    // RESET PAGE WHEN FILTERS CHANGE (ADDED)
+    // ============================================================
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedType, cameraFilter, searchTerm]);
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
@@ -91,11 +103,19 @@ const ActivityPage = () => {
             );
         }
 
-        console.log("Filtered Users:vggggggggggggggggggggggg", list);
-
         return list;
-
     }, [activityData, cameraFilter, searchTerm, selectedType]);
+
+    // PAGINATION LOGIC (ADDED)
+    // ============================================================
+    const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+
+    const paginatedUsers = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        return filteredUsers.slice(startIndex, endIndex);
+    }, [filteredUsers, currentPage]);
+
 
     // ============================================================
     // MODAL OPEN
@@ -160,6 +180,8 @@ const ActivityPage = () => {
                     getData("/activity/summary"),
                     getData("/activity"),
                 ]);
+                console.log("summaryResponse", summaryResponse);
+
                 if (summaryResponse?.data) {
                     setSummary(summaryResponse.data);
                 }
@@ -199,6 +221,8 @@ const ActivityPage = () => {
                         media: mediaUrl,
                     };
                 });
+                console.log("normalized", normalized);
+
                 setActivityData(normalized);
             } catch (error) {
                 toast.error("Failed to load activity.");
@@ -317,9 +341,11 @@ const ActivityPage = () => {
                             </thead>
 
                             <tbody>
-                                {filteredUsers.map((item, index) => (
+                                {paginatedUsers.map((item, index) => (
                                     <tr key={item.id} className="hover:bg-gray-50">
-                                        <td className="p-3">{index + 1}</td>
+                                        <td className="p-3">
+                                            {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                                        </td>
                                         <td className="p-3">{item.user}</td>
                                         <td className="p-3">{(item.type || "-").replace("_", " ")}</td>
                                         <td className="p-3">{item.deviceId}</td>
@@ -360,6 +386,46 @@ const ActivityPage = () => {
                             </tbody>
                         </table>
                     </div>
+                    {/* ================= PAGINATION CONTROLS (ADDED) ================= */}
+                    <div className="flex justify-between items-center mt-4">
+
+                        <p className="text-sm text-gray-600">
+                            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
+                            {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of{" "}
+                            {filteredUsers.length}
+                        </p>
+
+                        <div className="flex gap-2 items-center">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                                className={`px-3 py-1 rounded border 
+        ${currentPage === 1
+                                        ? "bg-gray-200 cursor-not-allowed"
+                                        : "bg-white hover:bg-gray-100"
+                                    }`}
+                            >
+                                Previous
+                            </button>
+
+                            <span className="px-3 py-1 font-semibold">
+                                {currentPage} / {totalPages}
+                            </span>
+
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                                className={`px-3 py-1 rounded border 
+        ${currentPage === totalPages
+                                        ? "bg-gray-200 cursor-not-allowed"
+                                        : "bg-white hover:bg-gray-100"
+                                    }`}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             )}
 

@@ -1549,12 +1549,17 @@ align-items: flex-start;
 
 /* ================= CLOSE ================= */
 .modal-close-btn {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  font-size: 20px;
-  color: #6b7280;
-  cursor: pointer;
+position: absolute;
+    top: 12px;
+    right: 10px;
+    font-size: 20px;
+    /* color: #6b7280; */
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    background: #ff0000;
+    border-radius: 50px;
+    color: white;
 }
 
 /* ================= HEADER ================= */
