@@ -15,9 +15,11 @@ const getSubdomain = () => {
 
 const subdomain = getSubdomain();
 
-const domainpath = subdomain
-  ? `http://${subdomain}.localhost:5000/api`
-  : `http://localhost:5000/api`;
+const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
+console.log("domainpathUrl", domainpath);
+// const domainpath = subdomain
+//   ? `http://${subdomain}.localhost:5000/api`
+//   : `http://localhost:5000/api`;
 
 // ---------------- Token Expiry Handler ---------------- //
 const handleTokenExpiry = () => {

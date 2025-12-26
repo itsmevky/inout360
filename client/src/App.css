@@ -3360,6 +3360,13 @@ label {
   padding: 0px !important;
 }
 
+.activity-page-date-to,
+.activity-page-date-from {
+  background-color: #fff;
+    border-radius: 10px;
+    border: 1px solid gray;
+}
+
 .input-search-bar input {
   padding: 6px 20px;
   padding-right: 80px;
@@ -3368,13 +3375,13 @@ label {
   padding: 8px 10px !important;
   /* padding-right: 80px !important; */
   margin: 0;
-  width: 85%;
+  width: 90% !important;
   border: none;
 }
 .input-search-bar-activity-page{
   padding: 0 !important;
   position: relative;
-  width: 25%;
+  /* width: 25%; */
       background-color: #fff;
     border-radius: 10px;
     border: 1px solid gray;
@@ -3383,6 +3390,7 @@ label {
  padding: 0px 5px !important;
  height: 45px;
      border: 1px solid gray;
+     
 }
 
 .searching-log {

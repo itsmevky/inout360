@@ -8,7 +8,7 @@ const ActivityPage = () => {
     // STATIC CAMERA & APP ACTIVITY DATA
     // ============================================================
     const [activityData, setActivityData] = useState([]);
-    
+
     const [summary, setSummary] = useState({
         camera: 0,
         app_install: 0,
@@ -54,6 +54,13 @@ const ActivityPage = () => {
     const [modalUser, setModalUser] = useState(null);
 
     // ============================================================
+    // MODAL CAMERA FILTER (ADDED)
+    // ============================================================
+    const [modalCameraType, setModalCameraType] = useState("all");
+    // values: "all" | "take_picture" | "screenshot" | "video"
+
+
+    // ============================================================
     // PAGINATION STATE (ADDED)
     // ============================================================
     const ITEMS_PER_PAGE = 15;
@@ -64,15 +71,34 @@ const ActivityPage = () => {
     // ============================================================
     const [searchTerm, setSearchTerm] = useState("");
     // ============================================================
+
+    // ============================================================
+    // DATE RANGE FILTER STATE (ADDED)
+    // ============================================================
+    const [fromDate, setFromDate] = useState(""); // "YYYY-MM-DD"
+    const [toDate, setToDate] = useState("");     // "YYYY-MM-DD"
+
+
     // RESET PAGE WHEN FILTERS CHANGE (ADDED)
     // ============================================================
     useEffect(() => {
         setCurrentPage(1);
-    }, [selectedType, cameraFilter, searchTerm]);
+    }, [selectedType, cameraFilter, searchTerm, fromDate, toDate]);
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
+    const modalCameraActs = useMemo(() => {
+        if (!modalUser) return [];
 
+        return modalUser.activities.filter((a) => {
+            const type = a.type || a.category || "";
+            const isCamera = ["screenshot", "take_picture", "video"].includes(type);
+            if (!isCamera) return false;
+
+            if (modalCameraType === "all") return true;
+            return type === modalCameraType;
+        });
+    }, [modalUser, modalCameraType]);
     // ============================================================
     // FILTER + SEARCH
     // ============================================================
@@ -103,8 +129,24 @@ const ActivityPage = () => {
             );
         }
 
+
+        // Date range filter (ADDED)
+        if (fromDate || toDate) {
+            const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+            const to = toDate ? new Date(toDate + "T23:59:59") : null;
+
+            list = list.filter((item) => {
+                const t = item.timestamp ? new Date(item.timestamp) : null;
+                if (!t || Number.isNaN(t.getTime())) return false;
+
+                if (from && t < from) return false;
+                if (to && t > to) return false;
+                return true;
+            });
+        }
+
         return list;
-    }, [activityData, cameraFilter, searchTerm, selectedType]);
+    }, [activityData, cameraFilter, searchTerm, selectedType, fromDate, toDate]);
 
     // PAGINATION LOGIC (ADDED)
     // ============================================================
@@ -116,7 +158,10 @@ const ActivityPage = () => {
         return filteredUsers.slice(startIndex, endIndex);
     }, [filteredUsers, currentPage]);
 
-
+    const uniqueUsersCount = useMemo(() => {
+        const set = new Set(filteredUsers.map(x => x.userKey));
+        return set.size;
+    }, [filteredUsers]);
     // ============================================================
     // MODAL OPEN
     // ============================================================
@@ -146,6 +191,7 @@ const ActivityPage = () => {
                 a.category === "app_uninstall"
             );
         }
+        setModalCameraType("all"); // modal open hote hi default ALL
 
         setModalUser({
             user: record.user,
@@ -154,7 +200,8 @@ const ActivityPage = () => {
     };
 
 
-    const closeModal = () => setModalUser(null);
+
+    const closeModal = () => { setModalUser(null); setModalCameraType("all"); };
 
     // ============================================================
     // CARD CONFIG
@@ -279,38 +326,79 @@ const ActivityPage = () => {
 
             {/* ================= CAMERA FILTER ================= */}
             {selectedType === "camera_activity" && (
-                <div className="mt-6 flex gap-3 items-center activity-page-searchbar-dropdown">
-                    <div className="input-search-bar-activity-page flex ">
-                        <input
-                            type="text"
-                            id="search"
-                            name="search"
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                            placeholder="Search"
-                            className="border rounded p-2 "
-                        />
-                        <div
-                            className="searching-log-activity-page flex items-center">
-                            <svg
-                                fill="#blue"
-                                width="16"
-                                height="16"
-                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"></path></svg>
+                <div className="mt-6 flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between activity-page-searchbar-dropdown">
+
+                    {/* LEFT SIDE: SEARCH + CAMERA FILTER */}
+                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full lg:w-2/4">
+
+                        <div className="input-search-bar-activity-page flex w-full sm:w-2/4 md:w-2/4">
+                            <input
+                                type="text"
+                                id="search"
+                                name="search"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                placeholder="Search"
+                                className="border rounded p-2 w-full min-w-[180px]"
+                            />
+                            <div className="searching-log-activity-page flex items-center px-2">
+                                <svg
+                                    fill="#blue"
+                                    width="16"
+                                    height="16"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 512 512">
+                                    <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"></path>
+                                </svg>
+                            </div>
                         </div>
+
+                        <select
+                            className="p-2  bg-white activity-page-select-option w-full sm:w-auto"
+                            value={cameraFilter || ""}
+                            onChange={(e) => setCameraFilter(e.target.value)}
+                        >
+                            <option value="">All Camera Activity</option>
+                            <option value="screenshot">Screenshot</option>
+                            <option value="take_picture">Take Picture</option>
+                            <option value="video">Record Video</option>
+                        </select>
                     </div>
 
-                    <select
-                        className="p-2 border rounded-lg bg-white activity-page-select-option"
-                        value={cameraFilter || ""}
-                        onChange={(e) => setCameraFilter(e.target.value)}
-                    >
-                        <option value="">All Camera Activity</option>
-                        <option value="screenshot">Screenshot</option>
-                        <option value="take_picture">Take Picture</option>
-                        <option value="video">Record Video</option>
-                    </select>
+                    {/* RIGHT SIDE: DATE RANGE */}
+                    <div className="flex flex-wrap gap-2 items-center w-full lg:w-2/4 justify-start lg:justify-end !pt-0">
+
+                        <input
+                            type="date"
+                            value={fromDate}
+                            onChange={(e) => setFromDate(e.target.value)}
+                            className="border rounded p-2 activity-page-date-from w-full sm:w-auto"
+                            title="From Date"
+                        />
+
+                        <span className="text-gray-500 hidden sm:inline">to</span>
+
+                        <input
+                            type="date"
+                            value={toDate}
+                            onChange={(e) => setToDate(e.target.value)}
+                            className="border rounded p-2 activity-page-date-to w-full sm:w-auto"
+                            title="To Date"
+                        />
+
+                        {(fromDate || toDate) && (
+                            <button
+                                type="button"
+                                onClick={() => { setFromDate(""); setToDate(""); }}
+                                className="px-3 py-2 border rounded bg-white hover:bg-gray-100 w-full sm:w-auto"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+
                 </div>
+
             )}
 
             {/* ================= TABLE ================= */}
@@ -387,19 +475,21 @@ const ActivityPage = () => {
                         </table>
                     </div>
                     {/* ================= PAGINATION CONTROLS (ADDED) ================= */}
-                    <div className="flex justify-between items-center mt-4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
 
-                        <p className="text-sm text-gray-600">
+                        {/* LEFT TEXT */}
+                        <p className="text-sm text-gray-600 text-center sm:text-left">
                             Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
                             {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of{" "}
                             {filteredUsers.length}
                         </p>
 
-                        <div className="flex gap-2 items-center">
+                        {/* RIGHT CONTROLS */}
+                        <div className="flex gap-2 items-center justify-center sm:justify-end">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                                className={`px-3 py-1 rounded border 
+                                className={`px-3 py-1 rounded border text-sm
         ${currentPage === 1
                                         ? "bg-gray-200 cursor-not-allowed"
                                         : "bg-white hover:bg-gray-100"
@@ -408,14 +498,14 @@ const ActivityPage = () => {
                                 Previous
                             </button>
 
-                            <span className="px-3 py-1 font-semibold">
+                            <span className="px-3 py-1 font-semibold text-sm">
                                 {currentPage} / {totalPages}
                             </span>
 
                             <button
                                 disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                                className={`px-3 py-1 rounded border 
+                                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                                className={`px-3 py-1 rounded border text-sm
         ${currentPage === totalPages
                                         ? "bg-gray-200 cursor-not-allowed"
                                         : "bg-white hover:bg-gray-100"
@@ -424,6 +514,7 @@ const ActivityPage = () => {
                                 Next
                             </button>
                         </div>
+
                     </div>
 
                 </div>
@@ -474,16 +565,50 @@ const ActivityPage = () => {
                             </>
                         ) : (
                             <>
-                                <h3 className="modal-section-title">Camera Activity</h3>
 
-                                <div className="camera-grid">
-                                    {modalUser.activities
-                                        .filter(a =>
-                                            ["screenshot", "take_picture", "video"].includes(a.type) ||
-                                            a.category === "camera" ||
-                                            ["screenshot", "video"].includes(a.category)
-                                        )
-                                        .map((act) => (
+                                <div
+                                    className="flex flex-col lg:flex-row gap-3 lg:gap-5 py-1"
+                                    style={{ alignItems: "center" }}
+                                >
+                                    {/* TITLE */}
+                                    <h3 className="modal-section-title !m-0 text-center lg:text-left">
+                                        Camera Activity
+                                    </h3>
+
+                                    {/* CAMERA TYPE DROPDOWN */}
+                                    <div
+                                        className="flex items-center gap-2"
+                                        style={{
+                                            padding: "8px 8px",
+                                            border: "1px solid gray",
+                                            borderRadius: "10px",
+                                        }}
+                                    >
+                                        <label className="text-sm font-semibold text-gray-700 !m-0">
+                                            Filter:
+                                        </label>
+
+                                        <select
+                                            className="bg-white outline-none"
+                                            value={modalCameraType}
+                                            onChange={(e) => setModalCameraType(e.target.value)}
+                                        >
+                                            <option value="all">All</option>
+                                            <option value="take_picture">Take Picture</option>
+                                            <option value="screenshot">Screenshot</option>
+                                            <option value="video">Video</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+
+                                {modalCameraActs.length === 0 ? (
+                                    <p className="text-gray-500 text-sm">
+                                        No camera activity found for this filter.
+                                    </p>
+                                ) : (
+                                    <div className="camera-grid">
+                                        {modalCameraActs.map((act) => (
                                             <div key={act.id} className="camera-card">
                                                 {act.media ? (
                                                     <img
@@ -494,20 +619,28 @@ const ActivityPage = () => {
                                                 ) : (
                                                     <div className="camera-img camera-img--empty"></div>
                                                 )}
+
                                                 <p className="camera-type">
-                                                    {(act.type || act.category || "-").replace("_", " ").toUpperCase()}
+                                                    {(act.type || act.category || "-")
+                                                        .replace("_", " ")
+                                                        .toUpperCase()}
                                                 </p>
-                                                <p className="camera-time">{formatTimestamp(act.timestamp)}</p>
+                                                <p className="camera-time">
+                                                    {formatTimestamp(act.timestamp)}
+                                                </p>
                                             </div>
                                         ))}
-                                </div>
+                                    </div>
+                                )}
+
                             </>
                         )}
                     </div>
                 </div>
-            )}
+            )
+            }
 
-        </div>
+        </div >
     );
 };
 
