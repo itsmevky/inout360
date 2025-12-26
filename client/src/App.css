@@ -1179,7 +1179,7 @@ tbody tr:nth-child(even) {
 
 .Toastify__toast--success {
   background-color: #ffffff;
-  color: #37a02e;
+  color: #37a02e !important;
 }
 
 .Toastify__toast--error {
@@ -1425,6 +1425,12 @@ box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
   .camera-card{
     padding: 5px !important;
   }
+  .activity-table td{
+  font-size: 13px !important;
+  }
+      .activity-table tr{
+        padding: 10px;
+      }
 }
 @media (min-width: 420px) and (max-width: 550px) {
   .activity-page-searchbar-dropdown{
@@ -5319,6 +5325,8 @@ input:checked + .slider:before {
   }
   .layout-section-dashboard{
     margin-top: 20px;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
 }
 }
 

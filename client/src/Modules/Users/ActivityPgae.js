@@ -28,6 +28,17 @@ const ActivityPage = () => {
         action: "12%"
     };
 
+
+    const getRandomCameraImage = () => {
+        const imgs = [
+            "https://picsum.photos/300/200?random=11",
+            "https://picsum.photos/300/200?random=12",
+            "https://picsum.photos/300/200?random=13",
+            "https://picsum.photos/300/200?random=14",
+            "https://picsum.photos/300/200?random=15",
+        ];
+        return imgs[Math.floor(Math.random() * imgs.length)];
+    };
     // ============================================================
     // COUNTS
     // ============================================================
@@ -80,16 +91,48 @@ const ActivityPage = () => {
             );
         }
 
+        console.log("Filtered Users:vggggggggggggggggggggggg", list);
+
         return list;
+
     }, [activityData, cameraFilter, searchTerm, selectedType]);
 
     // ============================================================
     // MODAL OPEN
     // ============================================================
     const openModal = (record) => {
-        const all = activityData.filter(a => a.userKey === record.userKey);
-        setModalUser({ user: record.user, activities: all });
+        let filtered = [];
+
+        // 👉 Camera Activity popup
+        if (selectedType === "camera_activity") {
+            filtered = activityData.filter(a =>
+                a.userKey === record.userKey &&
+                ["screenshot", "take_picture", "video"].includes(a.type)
+            );
+        }
+
+        // 👉 App Installed popup
+        else if (selectedType === "app_install") {
+            filtered = activityData.filter(a =>
+                a.userKey === record.userKey &&
+                a.category === "app_install"
+            );
+        }
+
+        // 👉 App Uninstalled popup
+        else if (selectedType === "app_uninstall") {
+            filtered = activityData.filter(a =>
+                a.userKey === record.userKey &&
+                a.category === "app_uninstall"
+            );
+        }
+
+        setModalUser({
+            user: record.user,
+            activities: filtered,
+        });
     };
+
 
     const closeModal = () => setModalUser(null);
 
@@ -378,12 +421,12 @@ const ActivityPage = () => {
                                             <div key={act.id} className="camera-card">
                                                 {act.media ? (
                                                     <img
-                                                        src={act.media}
-                                                        alt="activity"
+                                                        src={act.media || getRandomCameraImage()}
                                                         className="camera-img"
+                                                        alt="camera activity"
                                                     />
                                                 ) : (
-                                                    <div className="camera-img camera-img--empty">No media</div>
+                                                    <div className="camera-img camera-img--empty"></div>
                                                 )}
                                                 <p className="camera-type">
                                                     {(act.type || act.category || "-").replace("_", " ").toUpperCase()}
