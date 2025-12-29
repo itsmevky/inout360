@@ -1528,8 +1528,8 @@ align-items: flex-start;
     font-size: 13px;
   }
         .activity-page-searchbar-dropdown div{
-        padding-left: 5px !important;
-        padding-right: 5px !important;
+        padding-left: 0px !important;
+        padding-right: 0px !important;
       }
 }
 
@@ -4308,6 +4308,18 @@ margin: 0;
   flex-direction: column;
   gap: 10px;
 }
+.activity-page-cards span{
+  font-size: 14px;
+}
+.activity-page-cards h2{
+font-size: 20px;
+}
+.activity-page-searchbar-dropdown{
+  gap: 5px;
+}
+.searching-log-activity-page{
+     margin-right: 15px !important;
+}
 }
 
 
@@ -4356,15 +4368,15 @@ justify-content: space-between;
   width: 100%;
 }
 .activity-page-cards p{
-      font-size: 16px;
+      font-size: 14px;
 }
 .location-list-heading h2{
 font-size: 16px !important;
 margin: 20px 0px;
 }
-.location-list-heading {
+/* .location-list-heading {
   flex-direction: column;
-}
+} */
 }
 
 /* /////////@media (max-width: 415px)//////////////  */
@@ -4400,6 +4412,9 @@ margin: 20px 0px;
 }
 .animate-zoomIn{
   padding: 1rem;
+}
+.sidebar-dashboard-page{
+  gap: 8px;
 }
 /* .add-newemployee-popup-form{
   max-width: 600px;
@@ -5389,10 +5404,14 @@ input:checked + .slider:before {
   .layout-section-dashboard{
     margin-top: 20px;
     padding-left: 10px !important;
-    padding-right: 10px !important;
+    padding-right: 10px !important; 
+    margin-bottom: 16px;
 }
 .Enquiries-page-card{
   padding: 10px !important;
+}
+.location-list-heading {
+  flex-direction: column;
 }
 
 }

@@ -31,7 +31,7 @@ const SuperAdminDashboard = () => {
   }, []);
   return (
     <>
-      <div className="layout-section-dashboard">
+      <div className="layout-section-dashboard pb-5">
         <div className="dashboar-option-inner-page w-full mx-auto p-2 m-0">
           {/* <!-- Dashboard Header --> */}
           <div className="bg-white p-4 py-8  rounded-lg text-gray-700 font-semibold text-xl dashboard-crm-box-shadow">

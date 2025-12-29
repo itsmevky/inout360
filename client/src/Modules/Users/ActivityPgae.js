@@ -367,7 +367,7 @@ const ActivityPage = () => {
                             </p>
 
                             <h2
-                                className={`text-3xl font-bold mt-2 ${isActive ? "text-[#018DD4]" : "text-black"
+                                className={`text-2xl font-bold mt-2 ${isActive ? "text-[#018DD4]" : "text-black"
                                     }`}
                             >
                                 {item.count}
@@ -389,9 +389,9 @@ const ActivityPage = () => {
                 <div className="mt-6 flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between activity-page-searchbar-dropdown">
 
                     {/* LEFT SIDE: SEARCH + CAMERA FILTER */}
-                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full lg:w-2/4">
+                    <div className="flex flex-col sm:flex-row gap-3 !pt-0 items-stretch sm:items-center w-full lg:w-2/4">
 
-                        <div className="input-search-bar-activity-page flex w-full sm:w-2/4 md:w-2/4">
+                        <div className="input-search-bar-activity-page flex w-full sm:w-2/4 md:w-2/4 !m-0">
                             <input
                                 type="text"
                                 id="search"
@@ -534,8 +534,8 @@ const ActivityPage = () => {
                             </tbody>
                         </table>
                     </div>
-                    {/* ================= PAGINATION CONTROLS (ADDED) ================= */}
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+                    {/* ================= PAGINATION CONTROLS ================= */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
 
                         {/* LEFT TEXT */}
                         <p className="text-sm text-gray-600 text-center sm:text-left">
@@ -545,37 +545,42 @@ const ActivityPage = () => {
                         </p>
 
                         {/* RIGHT CONTROLS */}
-                        <div className="flex gap-2 items-center justify-center sm:justify-end">
+                        <div className="flex flex-col sm:flex-row gap-2 items-center justify-center sm:justify-end w-full sm:w-auto">
+
+                            {/* Previous */}
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                                className={`px-3 py-1 rounded border text-sm
+                                className={`w-full sm:w-auto px-4 py-2 rounded border text-sm font-medium
         ${currentPage === 1
-                                        ? "bg-gray-200 cursor-not-allowed"
+                                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                         : "bg-white hover:bg-gray-100"
                                     }`}
                             >
-                                Previous
+                                ← Previous
                             </button>
 
-                            <span className="px-3 py-1 font-semibold text-sm">
-                                {currentPage} / {totalPages}
+                            {/* Page Info */}
+                            <span className="px-3 py-1 font-semibold text-sm whitespace-nowrap">
+                                Page {currentPage} / {totalPages}
                             </span>
 
+                            {/* Next */}
                             <button
                                 disabled={currentPage === totalPages}
                                 onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                                className={`px-3 py-1 rounded border text-sm
+                                className={`w-full sm:w-auto px-4 py-2 rounded border text-sm font-medium
         ${currentPage === totalPages
-                                        ? "bg-gray-200 cursor-not-allowed"
+                                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                         : "bg-white hover:bg-gray-100"
                                     }`}
                             >
-                                Next
+                                Next →
                             </button>
-                        </div>
 
+                        </div>
                     </div>
+
 
                 </div>
             )}
