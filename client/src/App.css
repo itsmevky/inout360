@@ -5394,9 +5394,15 @@ input:checked + .slider:before {
 .Enquiries-page-card{
   padding: 10px !important;
 }
+
 }
 
-
+@media (max-width: 400px){
+.enquiry-email-feild{
+  flex-direction: column;
+  align-items: self-start;
+}
+}
 
 @keyframes fadeIn {
   from { opacity: 0; }

@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const Validator = require("../../helpers/validators");
 const EnquiryModel = require("./model");
+const UserModel = require("../user/model");
+const EmployeeModel = require("../employees/model");
+const DeviceModel = require("../device/model");
 
 exports.create = async (req, res) => {
   try {
@@ -47,13 +50,91 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const enquiries = await EnquiryModel.find()
-      .sort({ createdAt: -1 })
-      .lean();
+    const enquiries = await EnquiryModel.find().sort({ createdAt: -1 }).lean();
+
+    const userIds = Array.from(
+      new Set(
+        enquiries
+          .map((item) => item.userId)
+          .filter((id) => mongoose.isValidObjectId(id))
+          .map((id) => String(id))
+      )
+    );
+    const employeeIds = Array.from(
+      new Set(
+        enquiries
+          .map((item) => String(item.employeeId || "").trim())
+          .filter((id) => id)
+      )
+    );
+
+    const [users, employees, devices] = await Promise.all([
+      userIds.length
+        ? UserModel.find({ _id: { $in: userIds } })
+            .select("name email employeeId")
+            .lean()
+        : [],
+      employeeIds.length
+        ? EmployeeModel.find({ employeeId: { $in: employeeIds } })
+            .select("name email phone employeeId")
+            .lean()
+        : [],
+      userIds.length
+        ? DeviceModel.find({ userId: { $in: userIds } })
+            .select("userId deviceId deviceStatus")
+            .lean()
+        : [],
+    ]);
+
+    const userMap = new Map();
+    users.forEach((user) => {
+      userMap.set(String(user._id), user);
+    });
+    const employeeMap = new Map();
+    employees.forEach((employee) => {
+      employeeMap.set(String(employee.employeeId), employee);
+    });
+    const deviceMap = new Map();
+    devices.forEach((device) => {
+      const key = String(device.userId || "");
+      if (!key) return;
+      const next = device.deviceId || "";
+      if (!next) return;
+      const existing = deviceMap.get(key);
+      if (!existing) {
+        deviceMap.set(key, { deviceId: next, deviceStatus: device.deviceStatus });
+        return;
+      }
+      if (existing.deviceStatus !== "Active" && device.deviceStatus === "Active") {
+        deviceMap.set(key, { deviceId: next, deviceStatus: device.deviceStatus });
+      }
+    });
+
+    const data = enquiries.map((item) => {
+      const user = userMap.get(String(item.userId)) || {};
+      const employee = employeeMap.get(String(item.employeeId || "").trim()) || {};
+      const device = deviceMap.get(String(item.userId)) || {};
+      const name = employee.name || user.name || "";
+      const email = employee.email || user.email || "";
+      const phone = employee.phone || "";
+      const deviceId = device.deviceId || "";
+
+      return {
+        _id: item._id,
+        userId: item.userId,
+        employeeId: item.employeeId,
+        deviceId,
+        name,
+        email,
+        phone,
+        message: item.message,
+        createdAt: item.createdAt,
+      };
+    });
 
     return res.status(200).json({
       status: true,
-      data: enquiries,
+      data,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

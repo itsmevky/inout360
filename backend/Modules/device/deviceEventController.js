@@ -11,7 +11,9 @@ const VisitorModel = require("../user/visitorModel");
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
-  process.cwd(),
+  __dirname,
+  "..",
+  "..",
   "config",
   "serviceAccountKey.json"
 );

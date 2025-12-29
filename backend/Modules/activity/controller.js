@@ -47,36 +47,34 @@ const resolvePolicyVoilation = async (payload) => {
   return user?.sessionStatus === "Logged In";
 };
 
-const buildEventFilter = ({ userId, employeeId, deviceId, category, search }) => {
-  const filter = {};
+const buildActivityFilter = ({ userId, employeeId, deviceId, category, search }) => {
+  const filter = { policyVoilation: true };
   if (employeeId) filter.employeeId = employeeId;
   if (deviceId) filter.deviceId = deviceId;
 
   if (category) {
-    const value = String(category).toLowerCase();
-    if (value === "camera") {
-      filter.event = { $regex: "camera|screenshot|video", $options: "i" };
-    } else if (value === "app_install") {
-      filter.event = { $regex: "app[_-]?install", $options: "i" };
-    } else if (value === "app_uninstall") {
-      filter.event = { $regex: "app[_-]?uninstall", $options: "i" };
-    } else {
-      filter.event = { $regex: value, $options: "i" };
-    }
+    filter.category = String(category).toLowerCase();
   }
 
   if (userId) {
-    filter.$or = [{ name: userId }, { employeeId: userId }];
+    if (mongoose.isValidObjectId(userId)) {
+      filter.userId = userId;
+    } else {
+      filter.$or = [{ name: userId }, { employeeId: userId }];
+    }
   }
 
   if (search) {
     const regex = new RegExp(String(search), "i");
     filter.$or = [
       ...(filter.$or || []),
-      { event: regex },
+      { activityType: regex },
+      { title: regex },
+      { description: regex },
       { name: regex },
       { employeeId: regex },
-      { codeId: regex },
+      { deviceId: regex },
+      { "metadata.codeId": regex },
     ];
   }
 
@@ -125,43 +123,50 @@ exports.getSummary = async (_req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const { userId, employeeId, deviceId, category, search } = req.query;
-    const filter = buildEventFilter({ userId, employeeId, deviceId, category, search });
+    const filter = buildActivityFilter({
+      userId,
+      employeeId,
+      deviceId,
+      category,
+      search,
+    });
 
-    const events = await DeviceEventModel.find(filter).lean();
-    const dataWithId = events.map((doc) => {
+    const records = await ActivityModel.find(filter)
+      .sort({ occurredAt: -1, createdAt: -1 })
+      .lean();
+
+    const dataWithId = records.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
-      const categoryResolved = resolveCategory(plain.event);
-      const activityTypeResolved = resolveActivityType(plain.event);
-      const mediaUrl = plain.imagePath || plain.metadata?.mediaUrl || "";
-      const resolvedDeviceId =
-        plain.raw?.deviceId || plain.metadata?.deviceId || plain.deviceId || "";
-      const media = mediaUrl
-        ? [
-            {
-              url: mediaUrl,
-              type: resolveMediaType(plain.event),
-              capturedAt: plain.timestamp || plain.createdAt,
-            },
-          ]
-        : [];
-
+      const baseType = plain.activityType || plain.title || plain.category || "";
+      const activityTypeResolved = resolveActivityType(baseType);
+      const categoryResolved = plain.category || resolveCategory(baseType);
+      const media = Array.isArray(plain.media) ? plain.media : [];
+      const mediaUrl =
+        media[0]?.url ||
+        plain.metadata?.mediaUrl ||
+        plain.metadata?.media ||
+        "";
       return {
         id: plain._id?.toString?.() || plain.id,
         userName: plain.name || "",
         name: plain.name || "",
         activityType: activityTypeResolved,
-        title: activityTypeResolved,
-        description: plain.metadata?.description || plain.event,
+        title: plain.title || activityTypeResolved,
+        description:
+          plain.description ||
+          plain.metadata?.description ||
+          activityTypeResolved ||
+          "Activity detected",
         category: categoryResolved,
-        deviceId: String(resolvedDeviceId),
+        deviceId: String(plain.deviceId || ""),
         employeeId: plain.employeeId || "",
-        occurredAt: plain.timestamp || plain.createdAt,
+        occurredAt: plain.occurredAt || plain.createdAt,
         policyVoilation: !!plain.policyVoilation,
         media,
         metadata: {
           ...(plain.metadata || {}),
           mediaUrl,
-          originalEvent: plain.event,
+          originalEvent: baseType,
         },
       };
     });

@@ -1,20 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getData } from "../../Helpers/api";
 
-/* =======================
-🧪 DUMMY ENQUIRIES
-======================= */
-const DUMMY_ENQUIRIES = Array.from({ length: 45 }).map((_, i) => ({
-    _id: String(i + 1),
-    name: `User ${i + 1}`,
-    email: `user${i + 1}@example.com`,
-    phone: `9${Math.floor(100000000 + Math.random() * 900000000)}`,
-    subject: `Enquiry subject ${i + 1}`,
-    message:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. User has an enquiry related to device/app.",
-    createdAt: new Date(Date.now() - i * 86400000).toISOString(), // different dates
-}));
-
 const ITEMS_PER_PAGE = 20;
 
 const EnquiriesPage = () => {
@@ -34,10 +20,27 @@ const EnquiriesPage = () => {
 
     const fetchEnquiries = async () => {
         try {
-            const res = await getData("/enquiries");
-            setEnquiries(Array.isArray(res) && res.length ? res : DUMMY_ENQUIRIES);
+            const res = await getData("/enquiry");
+            const list = Array.isArray(res?.data) ? res.data : [];
+            const normalized = list.map((item) => {
+                const message = item.message || "";
+                const employeeId =
+                    item.employeeId || "";
+                    const deviceId= item.deviceId || "";
+                return {
+                    _id: item._id,
+                    name: item.name || "-",
+                    email: item.email || "-",
+                    phone: item.phone || "-",
+                    employeeId,
+                    deviceId,
+                    message,
+                    createdAt: item.createdAt,
+                };
+            });
+            setEnquiries(normalized);
         } catch {
-            setEnquiries(DUMMY_ENQUIRIES);
+            setEnquiries([]);
         } finally {
             setLoading(false);
         }
@@ -165,7 +168,7 @@ const EnquiriesPage = () => {
                                         <th className="p-3">Name</th>
                                         <th className="p-3">Email</th>
                                         <th className="p-3">Phone</th>
-                                        <th className="p-3">Subject</th>
+                                        <th className="p-3">Employee Id</th>
                                         <th className="p-3">Created</th>
                                         <th className="p-3">Action</th>
                                     </tr>
@@ -180,7 +183,7 @@ const EnquiriesPage = () => {
                                             <td className="p-3">{e.name}</td>
                                             <td className="p-3">{e.email}</td>
                                             <td className="p-3">{e.phone}</td>
-                                            <td className="p-3">{e.subject}</td>
+                                            <td className="p-3">{e.employeeId}</td>
                                             <td className="p-3">
                                                 {new Date(e.createdAt).toLocaleString()}
                                             </td>
@@ -218,15 +221,17 @@ const EnquiriesPage = () => {
                                         <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Name:</span> {e.name}
                                         </p>
-                                        <p className="flex justify-between items-center !my-1 !px-0">
-                                            <span className="font-semibold">Email:</span> {e.email}
+                                          <p className="flex justify-between items-center !my-1 !px-0">
+                                            <span className="font-semibold">Employee Id:</span> {e.employeeId}
                                         </p>
-                                        <p className="flex justify-between items-center !my-1 !px-0">
+                                         <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Phone:</span> {e.phone}
                                         </p>
-                                        <p className="flex justify-between items-center !my-1 !px-0">
-                                            <span className="font-semibold">Subject:</span> {e.subject}
+                                        <p className="flex justify-between items-center !my-1 !px-0 enquiry-email-feild">
+                                            <span className="font-semibold">Email:</span> {e.email}
                                         </p>
+                                       
+                                      
                                     </div>
 
                                     <button
@@ -249,31 +254,33 @@ const EnquiriesPage = () => {
                         {filteredEnquiries.length}
                     </p>
 
-                    <div className="flex gap-2">
+                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 !p-0">
+                        {/* Previous */}
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className={`px-3 py-1 border rounded ${currentPage === 1
-                                ? "bg-gray-200 cursor-not-allowed"
-                                : "bg-white hover:bg-gray-100"
+                            className={`w-full sm:w-auto px-4 py-2 border rounded text-sm font-medium
+                            ${currentPage === 1
+                                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                    : "bg-white hover:bg-gray-100"
                                 }`}
                         >
-                            Previous
+                            ← Previous
                         </button>
-
-                        <span className="px-3 py-1 font-semibold">
-                            {currentPage} / {totalPages}
+                        {/* Page Info */}
+                        <span className="text-center text-sm font-semibold text-gray-700">
+                            Page {currentPage} of {totalPages}
                         </span>
-
+                        {/* Next */}
                         <button
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            className={`px-3 py-1 border rounded ${currentPage === totalPages
-                                ? "bg-gray-200 cursor-not-allowed"
-                                : "bg-white hover:bg-gray-100"
-                                }`}
-                        >
-                            Next
+                            className={`w-full sm:w-auto px-4 py-2 border rounded text-sm font-medium !m-0
+                              ${currentPage === totalPages
+                                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                    : "bg-white hover:bg-gray-100"
+                                }`}>
+                            Next →
                         </button>
                     </div>
                 </div>
@@ -286,27 +293,29 @@ const EnquiriesPage = () => {
                     <div className="modal-container max-w-xl p-6 rounded-xl shadow-lg bg-white relative">
                         <button
                             onClick={() => setSelectedEnquiry(null)}
-                            className="absolute top-3 right-3 text-xl text-gray-500 hover:text-black"
+                            className="absolute top-4 right-4 w-9 h-9 !mr-0 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
                         >
                             ✕
                         </button>
 
-                        <h2 className="text-2xl font-bold mb-4 text-blue-700">
+                        {/* <h2 className="text-2xl font-bold mb-4 text-blue-700">
                             {selectedEnquiry.subject}
-                        </h2>
+                        </h2> */}
 
                         <p><strong>Name:</strong> {selectedEnquiry.name}</p>
-                        <p><strong>Email:</strong> {selectedEnquiry.email}</p>
                         <p><strong>Phone:</strong> {selectedEnquiry.phone}</p>
+                        <p><strong>Employee Id:</strong> {selectedEnquiry.employeeId}</p>   
+                        <p><strong>Device Id:</strong> {selectedEnquiry.deviceId}</p>
+                        
+                        <p><strong>Email:</strong> {selectedEnquiry.email}</p>
 
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <p className="font-semibold mb-1">Message</p>
+                        <div className="mt-4 py-3 px-2 bg-gray-50 rounded-lg">
+                            <p className="font-semibold mb-1 ">Message</p>
                             <p className="text-gray-700">{selectedEnquiry.message}</p>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };
