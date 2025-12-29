@@ -52,9 +52,11 @@ const normalizePayload = (body = {}) => {
   };
 };
 
-exports.get = async (_req, res) => {
+exports.get = async (req, res) => {
   try {
-    const record = await SettingsModel.findOne();
+    const unitLocation = req.query?.unitLocation;
+    const filter = unitLocation ? { unitLocation } : {};
+    const record = await SettingsModel.findOne(filter);
     res.status(200).json({ status: true, data: record || {} });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
@@ -64,6 +66,7 @@ exports.get = async (_req, res) => {
 exports.update = async (req, res) => {
   try {
     const payload = normalizePayload(req.body);
+    const unitLocation = payload.unitLocation || "";
     const apkFile = req.files?.apkFile?.[0];
     const companyLogo = req.files?.companyLogo?.[0];
 
@@ -73,11 +76,15 @@ exports.update = async (req, res) => {
     if (companyLogo) {
       payload.companyLogoUrl = `/uploads/settings/${companyLogo.filename}`;
     }
-    const record = await SettingsModel.findOneAndUpdate({}, payload, {
+    const record = await SettingsModel.findOneAndUpdate(
+      { unitLocation },
+      payload,
+      {
       new: true,
       upsert: true,
       setDefaultsOnInsert: true,
-    });
+      }
+    );
     res.status(200).json({ status: true, message: "Settings saved", data: record });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });

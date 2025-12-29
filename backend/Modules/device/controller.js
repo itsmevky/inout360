@@ -175,6 +175,10 @@ const sendDeviceNotification = async (device, title, body, data = {}) => {
       Authorization: `Bearer ${accessToken}`,
     },
   });
+  console.log("✅ Device notification sent:", {
+    deviceId: device.deviceId || device._id,
+    title,
+  });
 };
 
 const sendAuthorizationEmail = async (userId, actionMessage) => {
@@ -806,6 +810,43 @@ exports.toggleDevicePolicy = async (req, res) => {
       data: formatDevice(device),
     });
   } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Send a test push notification to a device
+exports.sendTestNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, message } = req.body || {};
+
+    const query = mongoose.isValidObjectId(id)
+      ? { _id: id }
+      : { deviceId: new RegExp(`^${escapeRegExp(normalizeDeviceId(id))}$`, "i") };
+    const device = await DeviceModel.findOne(query);
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+    if (!device.fcmToken) {
+      return res.status(400).json({ status: false, message: "Device FCM token missing" });
+    }
+
+    await sendDeviceNotification(
+      device,
+      title || "Test Notification",
+      message || "This is a test notification."
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Test notification sent",
+      data: {
+        deviceId: device.deviceId || device._id,
+        fcmTokenLast4: device.fcmToken ? device.fcmToken.slice(-4) : null,
+      },
+    });
+  } catch (error) {
+    console.error("Test notification failed:", error.message);
     return res.status(500).json({ status: false, message: error.message });
   }
 };

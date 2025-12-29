@@ -14,6 +14,7 @@ router.post("/track", Controller.track);
 router.post("/:id/policy", Controller.setDevicePolicy);
 router.get("/:id/policy", Controller.getDevicePolicy);
 router.put("/:id/policy/toggle", Controller.toggleDevicePolicy);
+router.post("/:id/test-notification", Controller.sendTestNotification);
 router.post("/device-event", DeviceEventController.storeEvent);
 router.get("/device-event/latest-screenshot", DeviceEventController.getLatestScreenshot);
 router.post("/send-otp", OtpController.sendOtp);

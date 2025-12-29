@@ -39,6 +39,7 @@ const Settings = () => {
     const [initialSystem, setInitialSystem] = useState(defaultSystem);
     const [isChanged, setIsChanged] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [locations, setLocations] = useState([]);
 
     const baseUrl = useMemo(() => domainpath.replace(/\/api\/?$/, ""), []);
 
@@ -50,6 +51,39 @@ const Settings = () => {
     const handleConfigChange = (key, value) => {
         setIsChanged(true);
         setSystemConfig((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const loadSettings = async (locationName = "") => {
+        setLoading(true);
+        try {
+            const response = await getData("/settings", {
+                unitLocation: locationName,
+            });
+            const data = response?.data || {};
+            const nextSystem = {
+                apiEndpointUrl: data.apiEndpointUrl || "",
+                unitLocation: data.unitLocation || locationName || "",
+                apkFile: null,
+                logoFile: null,
+                apkFileUrl: data.apkFileUrl || "",
+                companyLogoUrl: data.companyLogoUrl || "",
+                otpEmail: data.otpEmail || "",
+                otpExpirySeconds: data.qrExpirySeconds || "",
+            };
+            const nextDevice = data.deviceControls || defaultDevice;
+            const nextAlerts = data.alerts || defaultAlerts;
+            setSystemConfig(nextSystem);
+            setDeviceSettings(nextDevice);
+            setAlerts(nextAlerts);
+            setInitialSystem(nextSystem);
+            setInitialDevice(nextDevice);
+            setInitialAlerts(nextAlerts);
+            setIsChanged(false);
+        } catch (error) {
+            toast.error("Failed to load settings.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSave = async () => {
@@ -110,36 +144,17 @@ const Settings = () => {
     };
 
     useEffect(() => {
-        const fetchSettings = async () => {
-            setLoading(true);
+        const fetchLocations = async () => {
             try {
-                const response = await getData("/settings");
-                const data = response?.data || {};
-                const nextSystem = {
-                    apiEndpointUrl: data.apiEndpointUrl || "",
-                    unitLocation: data.unitLocation || "",
-                    apkFile: null,
-                    logoFile: null,
-                    apkFileUrl: data.apkFileUrl || "",
-                    companyLogoUrl: data.companyLogoUrl || "",
-                    otpEmail: data.otpEmail || "",
-                    otpExpirySeconds: data.qrExpirySeconds || "",
-                };
-                const nextDevice = data.deviceControls || defaultDevice;
-                const nextAlerts = data.alerts || defaultAlerts;
-                setSystemConfig(nextSystem);
-                setDeviceSettings(nextDevice);
-                setAlerts(nextAlerts);
-                setInitialSystem(nextSystem);
-                setInitialDevice(nextDevice);
-                setInitialAlerts(nextAlerts);
+                const response = await getData("/location", { page: 1, limit: 1000 });
+                setLocations(response?.locations || []);
             } catch (error) {
-                toast.error("Failed to load settings.");
-            } finally {
-                setLoading(false);
+                toast.error("Failed to load locations.");
             }
         };
-        fetchSettings();
+
+        fetchLocations();
+        loadSettings("");
     }, []);
 
     return (
@@ -179,14 +194,15 @@ const Settings = () => {
                                 <label className="setting-System-Configuration text-gray-700 font-semibold">Unit Location</label>
                                 <select
                                     value={systemConfig.unitLocation}
-                                    onChange={(e) => handleConfigChange("unitLocation", e.target.value)}
+                                    onChange={(e) => loadSettings(e.target.value)}
                                     className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                 >
                                     <option value="">Select Unit</option>
-                                    <option>Mumbai</option>
-                                    <option>Delhi</option>
-                                    <option>Pune</option>
-                                    <option>Bangalore</option>
+                                    {locations.map((loc) => (
+                                        <option key={loc.id || loc.name} value={loc.name}>
+                                            {loc.name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
