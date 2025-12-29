@@ -4,6 +4,7 @@ import { useUser } from "./Helpers/Context/UserContext.js";
 import ProtectedRoute from "./Layouts/ProtectedRoute.js";
 import DashboardLayout from "./Dashboardlayout/Dashboardlayout.js";
 
+
 // Public pages
 import Homepage from "./Website/Home.js";
 import Loginpage from "./Website/login.js";
@@ -17,6 +18,7 @@ import NotFound from "./Website/NotFound.js";
 import Unauthorized from "./Website/Unauthorized.js";
 import QrPage from "./Modules/Users/QrPage.js";
 import LoginSuccess from "./Website/LoginSuccess.js";
+
 
 const AppRoutes = () => {
   const { user } = useUser();
@@ -43,6 +45,7 @@ const AppRoutes = () => {
         }
       />
 
+
       {/* Public Routes */}
       <Route path="/" element={<Homepage />} />
       <Route path="/login" element={<EducationLoginpage />} />
@@ -58,6 +61,7 @@ const AppRoutes = () => {
       <Route path="/login-success" element={<LoginSuccess />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
+
     </Routes>
   );
 };

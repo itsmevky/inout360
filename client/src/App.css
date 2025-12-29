@@ -4188,21 +4188,40 @@ body {
  .list-user-title,
     .setting-list-heading,
     .device-list-heading,
-    .activity-list-heading
-    {
+    .activity-list-heading{
     margin-top: 70px;
     margin-right: 0px;
     margin-left: 0;
     }
-     .dashboard-crm-box-shadow{
+     .dashboard-crm-box-shadow,
+     .notification-heading-title-box{
        margin-top: 90px;
+       margin-left: 0px;
+       margin-right: 0px;
      }
      .location-update-page {
       margin-top: 85px !important;
      }
-      
+     .notification-titel{
+font-size: 16px;
+     }
+      .notification-heading-title-box{
+  padding: 10px;
+      }
+      .notification-list{
+           margin-right: 0px;
+    margin-left: 0;
+      }
+      .notification-page{
+        padding: 15px 10px !important;
+      }
+      .notification-card{
+        padding: 10px !important;
+      }
 }
-
+ .notification-heading-title-box{
+  box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
+ }
 
 @media (min-width: 420px) and (max-width: 768px){
   .status-select-option-dropdown.first-left.form-item {
@@ -4787,7 +4806,7 @@ li .nav-link:hover {
 }
 
 .AJ-crm-right-profile-section {
-  gap: 0px;
+  gap: 10px;
 }
 
 .device-page-popup-cut-button{
@@ -5927,3 +5946,66 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   color: #4f46e5;
 }
 
+/* ================= NOTIFICATIONS PAGE ================= */
+
+.notification-page {
+  padding: 15px;
+}
+
+.notification-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-card {
+  display: flex;
+  gap: 14px;
+  padding: 10px 14px;
+  margin: 1px 0px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.notification-icon {
+  font-size: 28px;
+}
+
+.notification-message {
+  font-size: 15px;
+  margin: 0;
+}
+
+.notification-meta {
+  font-size: 13px;
+color: #475161;
+    font-weight: 500;
+    margin: 4px 0px;
+}
+
+.notification-time {
+  font-size: 13px;
+color: #475161;
+  font-weight: 500;
+  margin: 4px 0px;
+}
+
+.notification-loading,
+.notification-empty {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .notification-card {
+    flex-direction: column;
+  }
+}

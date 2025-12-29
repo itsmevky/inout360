@@ -23,6 +23,7 @@ import LocationList from "../Modules/Employee/Location/List.js";
 import LocationAdd from "../Modules/Employee/Location/Add.js";
 import LocationEdit from "../Modules/Employee/Location/Edit.js";
 import Settings from "../Modules/Users/Settings.js";
+import NotificationsPage from "../Modules/Notifications/NotificationsPage.js";
 
 
 
@@ -88,6 +89,9 @@ function DashboardLayout({ userRole }) {
                 path="users/location/edit/:id"
                 element={<LocationEdit />}
               />
+
+              {/* 🔔 Notifications (FIXED PATH) */}
+              <Route path="notifications" element={<NotificationsPage />} />
 
               {/* ✅ Settings */}
               <Route path="settings/fields" element={<Fields />} />

@@ -48,6 +48,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Activity", icon: "timeline", path: `${basePath}/activity` },
     { label: "Settings", icon: "settings", path: `${basePath}/settings` },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
+    { label: "Notifications", icon: "notifications", path: `${basePath}/notifications` },
 
   ];
 
