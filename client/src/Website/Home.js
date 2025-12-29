@@ -21,7 +21,7 @@ const Home = () => {
               className="border border-blue-600 text-blue-600 rounded hover:bg-blue-100 transition !mr-0 !py-1.5 !px-5"
               style={{ padding: "6px" }}
             >
-              App
+              App Download QR
             </button>
             <button
               onClick={() => navigate("/qr-login")}

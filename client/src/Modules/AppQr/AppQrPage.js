@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import logo from "../../Images/pidilite-logo-13.png";
 
 const TARGET_URL = "https://pidiliteapp.ajivainfotech.com/";
 
@@ -34,25 +35,27 @@ const AppQrPage = () => {
   }, []);
 
   return (
-    <div className="layout-section-dashboard p-4">
-      <div className="bg-white p-4 rounded-lg font-semibold text-xl flex items-center gap-2 app-qr-title">
-        📲 App QR
-        <span className="text-gray-500 text-base">Scan to open the app</span>
-      </div>
+    <div className="app-qr-page">
+      <div className="app-qr-shell">
+        <div className="app-qr-card">
+          <div className="app-qr-brand">
+            <img src={logo} alt="Pidilite" className="app-qr-logo" />
+            <h1 className="app-qr-title">Download Our App</h1>
+            <p className="app-qr-subtitle">
+              Scan the QR to open the app download page.
+            </p>
+          </div>
 
-      <div className="mt-5">
-        <div className="bg-white rounded-xl p-5 shadow-sm app-qr-preview">
-          <h3 className="text-lg font-semibold mb-4">Preview</h3>
           <div className="app-qr-frame">
             {qrSrc ? (
               <img src={qrSrc} alt="QR code" className="app-qr-image" />
             ) : (
-              <div className="app-qr-empty">Generate QR to preview</div>
+              <div className="app-qr-empty">
+                {isGenerating ? "Generating QR..." : error || "QR unavailable"}
+              </div>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-3">
-            {isGenerating ? "Generating QR..." : `Scan this QR to open: ${TARGET_URL}`}
-          </p>
+
         </div>
       </div>
     </div>

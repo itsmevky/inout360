@@ -6066,3 +6066,147 @@ color: #475161;
 }
 
 
+/* App QR page */
+.app-qr-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.app-qr-frame {
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 28px;
+  min-height: 360px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.app-qr-image {
+  width: 280px;
+  height: 280px;
+  object-fit: contain;
+}
+
+.app-qr-empty {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* App QR page - download card */
+.app-qr-page {
+  min-height: 100vh;
+  padding: 32px 16px;
+  background: linear-gradient(180deg, #eef2ff 0%, #dbe7ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-qr-shell {
+  width: 100%;
+  max-width: 520px;
+}
+
+.app-qr-card {
+  background: #f5f7fb;
+  border-radius: 18px;
+  padding: 28px 26px 30px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  text-align: center;
+}
+
+.app-qr-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-qr-logo {
+  width: 140px;
+  height: auto;
+}
+
+.app-qr-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 6px 0 0;
+}
+
+.app-qr-subtitle {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 16px;
+}
+
+.app-qr-frame {
+  margin: 12px auto 18px;
+  padding: 18px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-qr-image {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+}
+
+.app-qr-empty {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.app-qr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.app-qr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-qr-btn--android {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.app-qr-btn--ios {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .app-qr-card {
+    padding: 24px 18px 26px;
+  }
+
+  .app-qr-logo {
+    width: 120px;
+  }
+
+  .app-qr-image {
+    width: 200px;
+    height: 200px;
+  }
+}
