@@ -49,6 +49,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Settings", icon: "settings", path: `${basePath}/settings` },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
     { label: "Notifications", icon: "notifications", path: `${basePath}/notifications` },
+    { label: "Enquiries", icon: "mail", path: "/dashboard/enquiries" }
 
   ];
 
@@ -65,6 +66,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Settings",
       "Location",
       "Activity",
+      "Enquiries",
     ],
     admin: [
       "Dashboard",
@@ -76,6 +78,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Settings",
       "Location",
       "Activity",
+      "Enquiries",
     ],
     hr: ["Dashboard", "Employees"],
     employee: ["Dashboard"],

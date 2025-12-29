@@ -24,7 +24,7 @@ import LocationAdd from "../Modules/Employee/Location/Add.js";
 import LocationEdit from "../Modules/Employee/Location/Edit.js";
 import Settings from "../Modules/Users/Settings.js";
 import NotificationsPage from "../Modules/Notifications/NotificationsPage.js";
-
+import EnquiriesPage from "../Modules/Enquiries/EnquiriesPage";
 
 
 function DashboardLayout({ userRole }) {
@@ -84,17 +84,22 @@ function DashboardLayout({ userRole }) {
               <Route path="users/activity" element={<ActivityPgae />} />
               <Route path="users/settings" element={<Settings />} />
 
+
               <Route path="users/location/add" element={<LocationAdd />} />
               <Route
                 path="users/location/edit/:id"
                 element={<LocationEdit />}
               />
 
-              {/* 🔔 Notifications (FIXED PATH) */}
-              <Route path="notifications" element={<NotificationsPage />} />
+
 
               {/* ✅ Settings */}
               <Route path="settings/fields" element={<Fields />} />
+
+              {/* 🔔 Notifications (FIXED PATH) */}
+              <Route path="notifications" element={<NotificationsPage />} />
+              {/* 📩 Enquiries (FIXED PATH) */}
+              <Route path="enquiries" element={<EnquiriesPage />} />
 
               {/* ✅ Default fallback */}
               <Route path="*" element={<Dashboard />} />

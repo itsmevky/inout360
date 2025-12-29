@@ -38,6 +38,19 @@ const ActivityPage = () => {
         }
         return value;
     };
+
+    const isToday = (dateValue) => {
+        if (!dateValue) return false;
+        const d = new Date(dateValue);
+        if (Number.isNaN(d.getTime())) return false;
+
+        const now = new Date();
+        return (
+            d.getDate() === now.getDate() &&
+            d.getMonth() === now.getMonth() &&
+            d.getFullYear() === now.getFullYear()
+        );
+    };
     // ============================================================
     // COUNTS
     // ============================================================
@@ -46,6 +59,34 @@ const ActivityPage = () => {
         install: summary.app_install || 0,
         uninstall: summary.app_uninstall || 0,
     };
+
+
+    const todayCounts = useMemo(() => {
+        const cameraTypes = ["screenshot", "take_picture", "video"];
+
+        let cameraToday = 0;
+        let installToday = 0;
+        let uninstallToday = 0;
+
+        for (const group of activityGroups) {
+            const acts = group.activities || [];
+            for (const a of acts) {
+                if (!isToday(a.timestamp)) continue;
+
+                const t = a.type || a.category || "";
+
+                if (cameraTypes.includes(t) || a.category === "camera") cameraToday++;
+                if (a.category === "app_install") installToday++;
+                if (a.category === "app_uninstall") uninstallToday++;
+            }
+        }
+
+        return {
+            cameraToday,
+            installToday,
+            uninstallToday,
+        };
+    }, [activityGroups]);
 
     const [selectedType, setSelectedType] = useState(null);
     const [cameraFilter, setCameraFilter] = useState(null);
@@ -206,9 +247,24 @@ const ActivityPage = () => {
     // CARD CONFIG
     // ============================================================
     const cardConfig = [
-        { title: "Cam Activity", type: "camera_activity", count: counts.cameraTotal },
-        { title: "App Installed", type: "app_install", count: counts.install },
-        { title: "App Uninstalled", type: "app_uninstall", count: counts.uninstall },
+        {
+            title: "Cam Activity",
+            type: "camera_activity",
+            count: counts.cameraTotal,
+            today: todayCounts.cameraToday,
+        },
+        {
+            title: "App Installed",
+            type: "app_install",
+            count: counts.install,
+            today: todayCounts.installToday,
+        },
+        {
+            title: "App Uninstalled",
+            type: "app_uninstall",
+            count: counts.uninstall,
+            today: todayCounts.uninstallToday,
+        },
     ];
 
     const formatTimestamp = (value) => {
@@ -217,6 +273,9 @@ const ActivityPage = () => {
         if (Number.isNaN(date.getTime())) return value;
         return date.toLocaleString();
     };
+
+
+
 
     useEffect(() => {
         const fetchActivity = async () => {
@@ -307,8 +366,14 @@ const ActivityPage = () => {
                                 {item.title}
                             </p>
 
-                            <h2 className={`text-3xl font-bold mt-2 ${isActive ? "text-[#018DD4]" : "text-black"}`}>
+                            <h2
+                                className={`text-3xl font-bold mt-2 ${isActive ? "text-[#018DD4]" : "text-black"
+                                    }`}
+                            >
                                 {item.count}
+                                <span className="text-base font-semibold text-gray-500">
+                                    {" "} / {item.today} Today
+                                </span>
                             </h2>
 
                             <p className="text-gray-500 text-sm">

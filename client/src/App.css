@@ -1468,6 +1468,11 @@ align-items: flex-start;
     width: 100%;
   }
 
+.enquiries-page-search-date-box{
+  padding: 0px !important;
+  margin: 0px !important;
+}
+  
   /* Hide header */
   .activity-table thead {
     display: none;
@@ -3371,11 +3376,18 @@ label {
 }
 
 .activity-page-date-to,
-.activity-page-date-from {
+.activity-page-date-from,
+.enquiries-page-date-to,
+.enquiries-page-date-from,
+.enquiries-page-date-clear-button {
   background-color: #fff;
     border-radius: 10px;
     border: 1px solid gray;
 }
+
+
+
+
 
 .input-search-bar input {
   padding: 6px 20px;
@@ -4154,6 +4166,12 @@ button:hover svg {
   width: 94%;
 }
 
+
+ .enquiries-page-title-box{
+   box-shadow: rgb(96 75 75 / 21%) 0px 0px 10px 2px;
+ }
+   
+
 /* Importing Google Fonts - Poppins */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
 
@@ -4188,35 +4206,38 @@ body {
  .list-user-title,
     .setting-list-heading,
     .device-list-heading,
-    .activity-list-heading{
+    .activity-list-heading,
+    .enquiries-page-title-box{
     margin-top: 70px;
     margin-right: 0px;
     margin-left: 0;
     }
-     .dashboard-crm-box-shadow,
+     .dashboard-crm-box-shadow{
+      margin-top: 90px;
+     }
      .notification-heading-title-box{
-       margin-top: 90px;
+       margin-top: 75px;
        margin-left: 0px;
        margin-right: 0px;
      }
      .location-update-page {
-      margin-top: 85px !important;
+      margin-top: 80px !important;
      }
      .notification-titel{
-font-size: 16px;
+     font-size: 16px;
      }
       .notification-heading-title-box{
-  padding: 10px;
+      padding: 16px 10px;
       }
       .notification-list{
-           margin-right: 0px;
-    margin-left: 0;
+      margin-right: 0px;
+      margin-left: 0;
       }
       .notification-page{
-        padding: 15px 10px !important;
+      padding: 15px 10px !important;
       }
       .notification-card{
-        padding: 10px !important;
+      padding: 10px !important;
       }
 }
  .notification-heading-title-box{
@@ -5370,6 +5391,9 @@ input:checked + .slider:before {
     padding-left: 10px !important;
     padding-right: 10px !important;
 }
+.Enquiries-page-card{
+  padding: 10px !important;
+}
 }
 
 
@@ -5453,6 +5477,9 @@ margin: 0;
   }
   .System-Settings-main-page{
     padding: 20px 10px;
+  }
+  .Enquiries-page-cards-mobile-view{
+    padding: 10px 10px !important ;
   }
 }
 
@@ -5924,6 +5951,9 @@ box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   .reset-card {
     max-width: 420px;
   }
+  .enquiries-page-search-date-box{
+  
+}
 }
 .password-wrapper {
   position: relative;
@@ -6009,3 +6039,5 @@ color: #475161;
     flex-direction: column;
   }
 }
+
+
