@@ -204,6 +204,9 @@ exports.storeEvent = async (req, res) => {
       fallbackName: name || device.ownerName,
     });
 
+    const resolvedImagePath =
+      imagePath || metadata?.imagePath || req.body?.imagePath || "";
+
     await ActivityModel.create({
       userId: device.userId,
       employeeId: resolvedEmployeeId,
@@ -213,11 +216,12 @@ exports.storeEvent = async (req, res) => {
       title: "Device event",
       description: `Event ${event} reported by ${actorName || device.deviceId}`,
       name: actorName,
+      imagePath: resolvedImagePath,
       occurredAt: normalizedTimestamp,
       policyVoilation,
       metadata: {
         cameraStatus,
-        imagePath,
+        imagePath: resolvedImagePath,
         codeId,
         ...metadata,
       },

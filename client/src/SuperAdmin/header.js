@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import Notify from "../Images/Notification .gif";
 import { useUser } from "../Helpers/Context/UserContext";
-import { getData } from "../Helpers/api";
+import { getData, domainpath } from "../Helpers/api";
 import logo from "../Images/pidilite-logo-13.png"; // Adjust path
 const Header = () => {
   const { setUser } = useUser(); // Destructure setUser from useUser
@@ -22,6 +22,16 @@ const Header = () => {
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
   const [notificationCount, setNotificationCount] = useState(0);
+
+  const resolveImageUrl = (value) => {
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    if (value.startsWith("/uploads/")) {
+      const base = domainpath.replace(/\/api\/?$/, "");
+      return `${base}${value}`;
+    }
+    return value;
+  };
 
   useEffect(() => {
     const accessToken =
@@ -54,7 +64,7 @@ const Header = () => {
           userDetails.avatar ||
           userDetails.image ||
           "";
-        setUserAvatar(resolvedAvatar);
+        setUserAvatar(resolveImageUrl(resolvedAvatar));
       } catch (error) {
         console.error("Error decoding user details:", error);
         setUserName("User"); // Default fallback

@@ -84,6 +84,10 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
 exports.add = async (req, res) => {
   try {
     const payload = { ...req.body };
+    if (!payload.imagePath) {
+      payload.imagePath =
+        payload.metadata?.imagePath || payload.raw?.imagePath || "";
+    }
     if (payload.policyVoilation === undefined) {
       payload.policyVoilation = await resolvePolicyVoilation(payload);
     }
@@ -135,16 +139,29 @@ exports.getAll = async (req, res) => {
       .sort({ occurredAt: -1, createdAt: -1 })
       .lean();
 
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
     const dataWithId = records.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
       const baseType = plain.activityType || plain.title || plain.category || "";
       const activityTypeResolved = resolveActivityType(baseType);
       const categoryResolved = plain.category || resolveCategory(baseType);
       const media = Array.isArray(plain.media) ? plain.media : [];
-      const mediaUrl =
+      const mediaUrlCandidate =
+        plain.imagePath ||
         media[0]?.url ||
         plain.metadata?.mediaUrl ||
         plain.metadata?.media ||
+        plain.metadata?.imagePath ||
+        plain.raw?.imagePath ||
+        "";
+      const mediaUrl =
+        mediaUrlCandidate.startsWith("/uploads/")
+          ? `${baseUrl}${mediaUrlCandidate}`
+          : mediaUrlCandidate;
+      const imagePath =
+        plain.imagePath ||
+        plain.metadata?.imagePath ||
+        plain.raw?.imagePath ||
         "";
       return {
         id: plain._id?.toString?.() || plain.id,
@@ -162,6 +179,8 @@ exports.getAll = async (req, res) => {
         employeeId: plain.employeeId || "",
         occurredAt: plain.occurredAt || plain.createdAt,
         policyVoilation: !!plain.policyVoilation,
+        imagePath,
+        mediaUrl,
         media,
         metadata: {
           ...(plain.metadata || {}),

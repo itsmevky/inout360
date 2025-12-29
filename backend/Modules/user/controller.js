@@ -160,6 +160,9 @@ exports.loginUser = async (req, res) => {
     res.status(200).json({
       id: user._id,
       name: user.name,
+      profileImage: user.profileImage || "",
+      employeeId: user.employeeId || "",
+      email: user.email || "",
       role: user.role,
       accessToken,
       refreshToken,
@@ -218,6 +221,9 @@ exports.qrLoginUser = async (req, res) => {
     res.status(200).json({
       id: user._id,
       name: user.name,
+      profileImage: user.profileImage || "",
+      employeeId: user.employeeId || "",
+      email: user.email || "",
       role: user.role,
       location,
       accessToken,

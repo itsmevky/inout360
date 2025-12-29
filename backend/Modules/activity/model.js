@@ -21,6 +21,7 @@ const activitySchemaDefinition = {
   title: { type: String, trim: true },
   description: { type: String, trim: true },
   name: { type: String, trim: true },
+  imagePath: { type: String, trim: true },
   media: { type: [mediaSubSchema], default: [] },
   occurredAt: { type: Date, default: Date.now },
   policyVoilation: { type: Boolean, default: false },

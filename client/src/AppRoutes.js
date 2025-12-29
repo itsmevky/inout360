@@ -18,6 +18,7 @@ import NotFound from "./Website/NotFound.js";
 import Unauthorized from "./Website/Unauthorized.js";
 import QrPage from "./Modules/Users/QrPage.js";
 import LoginSuccess from "./Website/LoginSuccess.js";
+import AppQrPage from "./Modules/AppQr/AppQrPage.js";
 
 
 const AppRoutes = () => {
@@ -56,6 +57,7 @@ const AppRoutes = () => {
       <Route path="/resetpassword" element={<Resetpassword />} />
       <Route path="/qr-login" element={<QrLoginpage />} />
       <Route path="/qr" element={<QrPage />} />
+      <Route path="/app-qr" element={<AppQrPage />} />
       <Route path="/LoginQr" element={<QrPage singleAction="login" />} />
       <Route path="/LogoutQr" element={<QrPage singleAction="logout" />} />
       <Route path="/login-success" element={<LoginSuccess />} />

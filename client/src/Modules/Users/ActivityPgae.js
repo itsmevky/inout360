@@ -299,9 +299,12 @@ const ActivityPage = () => {
                             item.title ||
                             "";
                         const mediaUrl =
+                            item.imagePath ||
+                            item.mediaUrl ||
                             item.media?.[0]?.url ||
                             item.metadata?.mediaUrl ||
                             item.metadata?.media ||
+                            item.metadata?.imagePath ||
                             "";
                         return {
                             id: item.id || item._id,
