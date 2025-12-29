@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import Notify from "../Images/Notification .gif";
 import { useUser } from "../Helpers/Context/UserContext";
+import { getData } from "../Helpers/api";
 import logo from "../Images/pidilite-logo-13.png"; // Adjust path
 const Header = () => {
   const { setUser } = useUser(); // Destructure setUser from useUser
@@ -20,6 +21,7 @@ const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     const accessToken =
@@ -60,6 +62,34 @@ const Header = () => {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    let intervalId;
+    const fetchCount = async () => {
+      try {
+        const res = await getData("/activity/notifications/unread-count");
+        if (res?.status) {
+          setNotificationCount(Number(res.count) || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notification count");
+      }
+    };
+
+    fetchCount();
+    intervalId = setInterval(fetchCount, 30000);
+
+    const handleRead = () => setNotificationCount(0);
+    const handleFocus = () => fetchCount();
+    window.addEventListener("notifications-read", handleRead);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("notifications-read", handleRead);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
   return (
     <div style={{ boxShadow: "0px 0px 10px 2px rgba(96, 75, 75, 0.21)" }}>
       <header className="flex justify-between items-center px-7 py-1 bg-white header">
@@ -74,11 +104,15 @@ const Header = () => {
 
         {/* Right Section: User Profile */}
         <div className="AJ-crm-right-profile-section flex items-center ">
-          <div className="AJ-crm-notification-section" onClick={() => navigate("/dashboard/notifications")}>
+          <div
+            className="AJ-crm-notification-section"
+            style={{ position: "relative" }}
+            onClick={() => navigate("/dashboard/notifications")}
+          >
             <svg
               fill="#22374e"
-              width={30}
-              height={30}
+              width={28}
+              height={28}
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 448 512"
             >
@@ -87,6 +121,24 @@ const Header = () => {
              92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"
               />
             </svg>
+            {notificationCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  background: "#e11d48",
+                  color: "#fff",
+                  borderRadius: "999px",
+                  padding: "2px 6px",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  lineHeight: 1,
+                }}
+              >
+                {notificationCount}
+              </span>
+            )}
             {/* <img src={Notify} /> */}
           </div>
           <div

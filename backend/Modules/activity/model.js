@@ -23,6 +23,7 @@ const activitySchemaDefinition = {
   name: { type: String, trim: true },
   media: { type: [mediaSubSchema], default: [] },
   occurredAt: { type: Date, default: Date.now },
+  policyVoilation: { type: Boolean, default: false },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
   status: { type: String, enum: ["ACTIVE", "ARCHIVED"], default: "ACTIVE" },

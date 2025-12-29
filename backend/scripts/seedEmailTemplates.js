@@ -17,6 +17,11 @@ const templates = [
     file: "resetpassword.html",
     subject: "Pidilite Password Reset OTP",
   },
+  {
+    name: "authorization.html",
+    file: "authorization.html",
+    subject: "Pidilite Authorization Notice",
+  },
 ];
 
 const run = async () => {

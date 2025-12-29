@@ -36,6 +36,27 @@ router.get(
 );
 
 router.get(
+  "/notifications",
+  verifyToken,
+  checkAuthorization(allRoles, "activity"),
+  Controller.getNotifications
+);
+
+router.get(
+  "/notifications/unread-count",
+  verifyToken,
+  checkAuthorization(allRoles, "activity"),
+  Controller.getNotificationCount
+);
+
+router.post(
+  "/notifications/mark-read",
+  verifyToken,
+  checkAuthorization(allRoles, "activity", "read"),
+  Controller.markNotificationsRead
+);
+
+router.get(
   "/:id",
   verifyToken,
   checkAuthorization(allRoles, "activity"),

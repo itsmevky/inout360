@@ -10,6 +10,10 @@ const userSchemaDefinition = {
     enum: ["Logged In", "Logout"],
     default: "Logout",
   },
+  notificationsSeenAt: {
+    type: Date,
+    default: null,
+  },
 
   email: {
     type: String,

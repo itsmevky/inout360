@@ -32,6 +32,31 @@ const resolveActivityCategory = (eventType) => {
   return "other";
 };
 
+const isCameraEvent = (eventType) =>
+  /camera|screenshot|video/i.test(String(eventType || ""));
+
+const resolveUserSessionStatus = async ({ userId, employeeId }) => {
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const user = await UserModel.findById(userId)
+      .select("sessionStatus")
+      .lean();
+    if (user) return user.sessionStatus;
+  }
+  if (employeeId) {
+    const user = await UserModel.findOne({ employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (user) return user.sessionStatus;
+  }
+  return null;
+};
+
+const resolvePolicyVoilation = async ({ eventType, userId, employeeId }) => {
+  if (!isCameraEvent(eventType)) return false;
+  const status = await resolveUserSessionStatus({ userId, employeeId });
+  return status === "Logged In";
+};
+
 const resolveActorName = async ({ userId, employeeId, fallbackName }) => {
   if (employeeId) {
     const employee = await EmployeeModel.findOne({ employeeId }).lean();
@@ -142,6 +167,13 @@ exports.storeEvent = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
+    const resolvedEmployeeId = employeeId || employee_id || device.employeeId || "";
+    const policyVoilation = await resolvePolicyVoilation({
+      eventType: event,
+      userId: device.userId,
+      employeeId: resolvedEmployeeId,
+    });
+
     const normalizedTimestamp = timestamp
       ? new Date(String(timestamp).replace(/(\.\d{3})\d+/, "$1"))
       : new Date();
@@ -156,8 +188,9 @@ exports.storeEvent = async (req, res) => {
       cameraStatus,
       imagePath,
       name,
-      employeeId: employeeId || employee_id,
+      employeeId: resolvedEmployeeId,
       codeId,
+      policyVoilation,
       timestamp: normalizedTimestamp,
       metadata: metadata || {},
       raw: req.body,
@@ -171,7 +204,7 @@ exports.storeEvent = async (req, res) => {
 
     await ActivityModel.create({
       userId: device.userId,
-      employeeId: employeeId || employee_id || device.employeeId || "",
+      employeeId: resolvedEmployeeId,
       deviceId: String(device.deviceId || device._id || ""),
       category: resolveActivityCategory(event),
       activityType: event,
@@ -179,6 +212,7 @@ exports.storeEvent = async (req, res) => {
       description: `Event ${event} reported by ${actorName || device.deviceId}`,
       name: actorName,
       occurredAt: normalizedTimestamp,
+      policyVoilation,
       metadata: {
         cameraStatus,
         imagePath,

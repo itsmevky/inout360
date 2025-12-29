@@ -6,6 +6,11 @@ const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const PolicyModel = require("./policyModel");
 const VisitorModel = require("../user/visitorModel");
+const { sendEmail } = require("../../helpers/sendemail");
+const PermissionLogModel = require("../permissions/permissionLogModel");
+const axios = require("axios");
+const path = require("path");
+const { GoogleAuth } = require("google-auth-library");
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
@@ -17,6 +22,19 @@ const normalizeDeviceId = (value) => String(value || "").trim();
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const padVisitorId = (seq) => `VIS-${String(seq).padStart(5, "0")}`;
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
+const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
+  process.cwd(),
+  "config",
+  "serviceAccountKey.json"
+);
+const resolveServiceAccountPath = () => {
+  const envPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  if (!envPath) {
+    return DEFAULT_SERVICE_ACCOUNT_PATH;
+  }
+  return path.isAbsolute(envPath) ? envPath : path.join(process.cwd(), envPath);
+};
 
 const getNextVisitorId = async () => {
   const counters = mongoose.connection.collection("counters");
@@ -27,6 +45,55 @@ const getNextVisitorId = async () => {
   );
   const seq = result?.value?.seq || 1;
   return padVisitorId(seq);
+};
+
+const getMaxVisitorSeq = async () => {
+  const doc = await VisitorModel.findOne({
+    employeeId: /^VIS-\d{5}$/,
+  })
+    .sort({ employeeId: -1 })
+    .select("employeeId")
+    .lean();
+  if (!doc?.employeeId) return 0;
+  const match = String(doc.employeeId).match(/^VIS-(\d{5})$/);
+  return match ? Number(match[1]) : 0;
+};
+
+const ensureVisitorCounterUpToDate = async () => {
+  const maxSeq = await getMaxVisitorSeq();
+  const counters = mongoose.connection.collection("counters");
+  await counters.findOneAndUpdate(
+    { _id: "visitor" },
+    { $max: { seq: maxSeq } },
+    { upsert: true }
+  );
+};
+
+const createVisitorWithRetry = async ({ name, deviceId }, maxAttempts = 5) => {
+  let syncedCounter = false;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const visitorEmployeeId = await getNextVisitorId();
+    try {
+      return await VisitorModel.create({
+        name: String(name).trim(),
+        employeeId: visitorEmployeeId,
+        deviceId,
+        role: "visitor",
+      });
+    } catch (error) {
+      const isDuplicate =
+        error?.code === 11000 &&
+        (error?.keyPattern?.employeeId || /employeeId/.test(String(error?.message)));
+      if (!isDuplicate || attempt === maxAttempts) {
+        throw error;
+      }
+      if (!syncedCounter) {
+        await ensureVisitorCounterUpToDate();
+        syncedCounter = true;
+      }
+    }
+  }
+  return null;
 };
 
 
@@ -74,6 +141,60 @@ const formatDevice = (doc) => {
     appVer: d.appVersion,
     verified: !!d.verified,
   };
+};
+
+const getAccessToken = async () => {
+  const auth = new GoogleAuth({
+    keyFile: resolveServiceAccountPath(),
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+  });
+
+  const client = await auth.getClient();
+  const tokenObj = await client.getAccessToken();
+  if (!tokenObj || !tokenObj.token) {
+    throw new Error("No access token returned from GoogleAuth");
+  }
+  return tokenObj.token;
+};
+
+const sendDeviceNotification = async (device, title, body, data = {}) => {
+  if (!device?.fcmToken) return;
+  const url = `https://fcm.googleapis.com/v1/projects/${PROJECT_ID}/messages:send`;
+  const message = {
+    message: {
+      token: device.fcmToken,
+      notification: { title, body },
+      data,
+    },
+  };
+
+  const accessToken = await getAccessToken();
+  await axios.post(url, message, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
+
+const sendAuthorizationEmail = async (userId, actionMessage) => {
+  if (!userId) return;
+  const user = await UserModel.findById(userId).lean();
+  if (!user?.email) return;
+  await sendEmail("authorization.html", user.email, {
+    USER_NAME: user.name || "User",
+    ACTION_MESSAGE: actionMessage,
+  });
+};
+
+const logPermission = async ({ userId, employeeId, adminId, permission }) => {
+  if (!userId || !adminId || !permission) return;
+  await PermissionLogModel.create({
+    userId,
+    employeeId: employeeId || "",
+    adminId,
+    permission,
+  });
 };
 
 const upsertDevice = async (payload) => {
@@ -289,12 +410,9 @@ exports.register = async (req, res) => {
       const normalizedDeviceId = normalizeDeviceId(deviceId);
       visitor = await VisitorModel.findOne({ deviceId: normalizedDeviceId });
       if (!visitor) {
-        const visitorEmployeeId = await getNextVisitorId();
-        visitor = await VisitorModel.create({
-          name: String(name).trim(),
-          employeeId: visitorEmployeeId,
+        visitor = await createVisitorWithRetry({
+          name,
           deviceId: normalizedDeviceId,
-          role: "visitor",
         });
       }
       user = visitor;
@@ -544,6 +662,8 @@ exports.setDevicePolicy = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
+    const previousState = { ...(device.devicePolicyState || {}) };
+
     let policy;
     if (device.policyId) {
       policy = await PolicyModel.findByIdAndUpdate(
@@ -561,6 +681,52 @@ exports.setDevicePolicy = async (req, res) => {
 
     device.devicePolicyState = { ...policyData };
     await device.save();
+
+    const shouldAuthorizeUninstall =
+      previousState.uninstallBlocked === true && policyData.uninstallBlocked === false;
+    const shouldAuthorizeCamera =
+      previousState.cameraDisabled === true && policyData.cameraDisabled === false;
+
+    try {
+      if (shouldAuthorizeUninstall) {
+        await sendAuthorizationEmail(
+          device.userId,
+          "You are authorized to uninstall the app."
+        );
+        await sendDeviceNotification(
+          device,
+          "App Uninstall Authorized",
+          "You are authorized to uninstall the app.",
+          { permission: "app_uninstall" }
+        );
+        await logPermission({
+          userId: device.userId,
+          employeeId: device.employeeId,
+          adminId: req.user?._id,
+          permission: "app_uninstall",
+        });
+      }
+      if (shouldAuthorizeCamera) {
+        await sendAuthorizationEmail(
+          device.userId,
+          "You are authorized to access the camera."
+        );
+        await sendDeviceNotification(
+          device,
+          "Camera Access Authorized",
+          "You are authorized to access the camera.",
+          { permission: "camera_access" }
+        );
+        await logPermission({
+          userId: device.userId,
+          employeeId: device.employeeId,
+          adminId: req.user?._id,
+          permission: "camera_access",
+        });
+      }
+    } catch (error) {
+      console.warn("Authorization email failed:", error.message);
+    }
 
     return res.status(200).json({
       status: true,
@@ -595,6 +761,36 @@ exports.toggleDevicePolicy = async (req, res) => {
       [field]: nextValue,
     };
     await device.save();
+
+    if (current === true && nextValue === false) {
+      try {
+        const actionMessage =
+          field === "uninstallBlocked"
+            ? "You are authorized to uninstall the app."
+            : "You are authorized to access the camera.";
+        await sendAuthorizationEmail(device.userId, actionMessage);
+        await sendDeviceNotification(
+          device,
+          field === "uninstallBlocked"
+            ? "App Uninstall Authorized"
+            : "Camera Access Authorized",
+          actionMessage,
+          {
+            permission:
+              field === "uninstallBlocked" ? "app_uninstall" : "camera_access",
+          }
+        );
+        await logPermission({
+          userId: device.userId,
+          employeeId: device.employeeId,
+          adminId: req.user?._id,
+          permission:
+            field === "uninstallBlocked" ? "app_uninstall" : "camera_access",
+        });
+      } catch (error) {
+        console.warn("Authorization email failed:", error.message);
+      }
+    }
 
     if (device.policyId) {
       await PolicyModel.findByIdAndUpdate(

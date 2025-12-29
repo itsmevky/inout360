@@ -1,6 +1,6 @@
 // src/Modules/Notifications/NotificationsPage.js
 import React, { useEffect, useState } from "react";
-import { getData } from "../../Helpers/api";
+import { getData, postData } from "../../Helpers/api";
 import {
     FaCamera,
     FaCameraRetro,
@@ -16,6 +16,26 @@ const iconMap = {
     APP_INSTALL: <FaMobileAlt />,
     APP_UNINSTALL: <FaTrashAlt />,
 };
+
+const resolveType = ({ activityType, category }) => {
+    const value = String(activityType || category || "").toLowerCase();
+    if (value.includes("app_install")) return "APP_INSTALL";
+    if (value.includes("app_uninstall")) return "APP_UNINSTALL";
+    if (value.includes("video")) return "VIDEO";
+    if (value.includes("screenshot")) return "TAKE_PICTURE";
+    if (value.includes("camera")) return "CAMERA_ON";
+    return value.toUpperCase() || "CAMERA_ON";
+};
+
+const toNotification = (item) => ({
+    _id: item.id || item._id,
+    type: resolveType(item),
+    employeeName: item.name || "",
+    employeeId: item.employeeId || "",
+    deviceId: item.deviceId || "",
+    message: item.description || item.activityType || "Activity detected",
+    createdAt: item.occurredAt || item.createdAt || new Date(),
+});
 
 /* ================= DUMMY NOTIFICATIONS ================= */
 const dummyNotifications = [
@@ -71,15 +91,28 @@ const NotificationsPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        markNotificationsRead();
         fetchNotifications();
     }, []);
 
+    const markNotificationsRead = async () => {
+        try {
+            await postData("/activity/notifications/mark-read");
+            window.dispatchEvent(new CustomEvent("notifications-read"));
+        } catch (err) {
+            console.error("Failed to mark notifications as read");
+        }
+    };
+
     const fetchNotifications = async () => {
         try {
-            const res = await getData("/notifications"); // backend API
+            const res = await getData("/activity/notifications", {
+                page: 0,
+                limit: 50,
+            });
 
-            if (Array.isArray(res) && res.length > 0) {
-                setNotifications(res);
+            if (res?.status && Array.isArray(res.data) && res.data.length > 0) {
+                setNotifications(res.data.map(toNotification));
             } else {
                 // fallback to dummy
                 setNotifications(dummyNotifications);
@@ -112,8 +145,8 @@ const NotificationsPage = () => {
                     <span className="mr-2 flex items-center gap-4 space-x-2 notification-titel">
                         <svg
                             fill="#22374e"
-                            width={28}
-                            height={28}
+                            width={26}
+                            height={26}
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 640 640"
                         >

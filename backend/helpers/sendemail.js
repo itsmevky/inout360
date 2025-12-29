@@ -38,7 +38,8 @@ const loadTemplateFromFile = async (templateName) => {
 const getTemplateAttachments = (templateName) => {
   if (
     templateName === "pidilitetemplate.html" ||
-    templateName === "resetpassword.html"
+    templateName === "resetpassword.html" ||
+    templateName === "authorization.html"
   ) {
     return [
       {
