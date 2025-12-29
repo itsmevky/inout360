@@ -26,7 +26,7 @@ const EnquiriesPage = () => {
                 const message = item.message || "";
                 const employeeId =
                     item.employeeId || "";
-                    const deviceId= item.deviceId || "";
+                const deviceId = item.deviceId || "";
                 return {
                     _id: item._id,
                     name: item.name || "-",
@@ -103,7 +103,7 @@ const EnquiriesPage = () => {
             </div>
 
             {/* ===== SEARCH + DATE FILTER (RESPONSIVE & FIXED WIDTH) ===== */}
-            <div className="!py-2 !px-5 mt-5 rounded-lg flex flex-col lg:flex-row gap-1 lg:items-center lg:justify-between enquiries-page-search-date-box">
+            <div className="!py-2 !px-5 mt-5 rounded-lg flex flex-col lg:flex-row gap-1 lg:items-center lg:justify-between enquiries-page-search-date-box items-center">
 
                 {/* 🔍 SEARCH (WIDTH FIXED) */}
                 <div className="w-full lg:max-w-[600px] input-search-bar">
@@ -221,17 +221,17 @@ const EnquiriesPage = () => {
                                         <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Name:</span> {e.name}
                                         </p>
-                                          <p className="flex justify-between items-center !my-1 !px-0">
+                                        <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Employee Id:</span> {e.employeeId}
                                         </p>
-                                         <p className="flex justify-between items-center !my-1 !px-0">
+                                        <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Phone:</span> {e.phone}
                                         </p>
                                         <p className="flex justify-between items-center !my-1 !px-0 enquiry-email-feild">
                                             <span className="font-semibold">Email:</span> {e.email}
                                         </p>
-                                       
-                                      
+
+
                                     </div>
 
                                     <button
@@ -254,7 +254,7 @@ const EnquiriesPage = () => {
                         {filteredEnquiries.length}
                     </p>
 
-                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 !p-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 !p-0">
                         {/* Previous */}
                         <button
                             disabled={currentPage === 1}
@@ -304,9 +304,9 @@ const EnquiriesPage = () => {
 
                         <p><strong>Name:</strong> {selectedEnquiry.name}</p>
                         <p><strong>Phone:</strong> {selectedEnquiry.phone}</p>
-                        <p><strong>Employee Id:</strong> {selectedEnquiry.employeeId}</p>   
+                        <p><strong>Employee Id:</strong> {selectedEnquiry.employeeId}</p>
                         <p><strong>Device Id:</strong> {selectedEnquiry.deviceId}</p>
-                        
+
                         <p><strong>Email:</strong> {selectedEnquiry.email}</p>
 
                         <div className="mt-4 py-3 px-2 bg-gray-50 rounded-lg">

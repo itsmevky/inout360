@@ -19,7 +19,7 @@ import Unauthorized from "./Website/Unauthorized.js";
 import QrPage from "./Modules/Users/QrPage.js";
 import LoginSuccess from "./Website/LoginSuccess.js";
 import AppQrPage from "./Modules/AppQr/AppQrPage.js";
-
+import QrDownload from "../src/Components/Website/DownloadApp.js";
 
 const AppRoutes = () => {
   const { user } = useUser();
@@ -50,6 +50,8 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/" element={<Homepage />} />
       <Route path="/login" element={<EducationLoginpage />} />
+      <Route path="/qrdownload" element={<QrDownload />} />
+
       <Route path="/platform" element={<Loginpage />} />
       <Route path="/register" element={<Registerpage />} />
       <Route path="/forgotpassword" element={<Forgotpassword />} />
