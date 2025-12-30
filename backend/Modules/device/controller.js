@@ -30,11 +30,10 @@ const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
   "config",
   "serviceAccountKey.json"
 );
+
 const resolveServiceAccountPath = () => {
   const envPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-  if (!envPath) {
-    return DEFAULT_SERVICE_ACCOUNT_PATH;
-  }
+  if (!envPath) return DEFAULT_SERVICE_ACCOUNT_PATH;
   return path.isAbsolute(envPath) ? envPath : path.join(process.cwd(), envPath);
 };
 
@@ -171,16 +170,27 @@ const sendDeviceNotification = async (device, title, body, data = {}) => {
   };
 
   const accessToken = await getAccessToken();
-  await axios.post(url, message, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  console.log("✅ Device notification sent:", {
-    deviceId: device.deviceId || device._id,
-    title,
-  });
+  try {
+    const response = await axios.post(url, message, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Device notification sent:", {
+        deviceId: device.deviceId || device._id,
+        title,
+        fcmName: response?.data?.name,
+      });
+    }
+    return response?.data;
+  } catch (error) {
+    const fcmError =
+      error?.response?.data || error?.message || "Unknown FCM error";
+    console.warn("❌ Device notification failed:", fcmError);
+    throw error;
+  }
 };
 
 const sendAuthorizationEmail = async (userId, actionMessage) => {
@@ -390,26 +400,46 @@ exports.register = async (req, res) => {
     let visitor = null;
 
     if (employeeId) {
-      const employee = await EmployeeModel.findOne({ employeeId });
+      const normalizedName = String(name).trim();
+      let employee = await EmployeeModel.findOne({ employeeId });
       if (!employee) {
-        return res.status(400).json({ status: false, message: "Employee not found" });
-      }
-      user = employee.userId
-        ? await UserModel.findById(employee.userId)
-        : await UserModel.findOne({ employeeId });
-      if (!user) {
-        return res.status(404).json({ status: false, message: "User not found for this employee" });
-      }
-      const normalizedName = String(name).trim().toLowerCase();
-      const employeeName = (employee.name ||
-        `${employee.firstName || ""} ${employee.lastName || ""}`)
-        .trim()
-        .toLowerCase();
-      if (normalizedName !== employeeName) {
-        return res.status(400).json({
-          status: false,
-          message: "Name does not match the employeeId",
+        user = await UserModel.create({
+          name: normalizedName,
+          employeeId,
+          email: null,
         });
+        employee = await EmployeeModel.create({
+          name: normalizedName,
+          employeeId,
+          userId: user._id,
+          email: null,
+        });
+      } else {
+        user = employee.userId
+          ? await UserModel.findById(employee.userId)
+          : await UserModel.findOne({ employeeId });
+        if (!user) {
+          user = await UserModel.create({
+            name: normalizedName || employee.name,
+            employeeId,
+            email: null,
+          });
+          await EmployeeModel.updateOne(
+            { _id: employee._id },
+            { $set: { userId: user._id } }
+          );
+        }
+        const normalizedNameLower = normalizedName.toLowerCase();
+        const employeeName = (employee.name ||
+          `${employee.firstName || ""} ${employee.lastName || ""}`)
+          .trim()
+          .toLowerCase();
+        if (normalizedNameLower !== employeeName) {
+          return res.status(400).json({
+            status: false,
+            message: "Name does not match the employeeId",
+          });
+        }
       }
     } else {
       isVisitor = true;
@@ -833,7 +863,7 @@ exports.sendTestNotification = async (req, res) => {
       return res.status(400).json({ status: false, message: "Device FCM token missing" });
     }
 
-    await sendDeviceNotification(
+    const fcmResponse = await sendDeviceNotification(
       device,
       title || "Test Notification",
       message || "This is a test notification."
@@ -845,6 +875,7 @@ exports.sendTestNotification = async (req, res) => {
       data: {
         deviceId: device.deviceId || device._id,
         fcmTokenLast4: device.fcmToken ? device.fcmToken.slice(-4) : null,
+        fcmResponse: fcmResponse || null,
       },
     });
   } catch (error) {

@@ -8,7 +8,6 @@ const ActivityModel = require("../activity/model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const VisitorModel = require("../user/visitorModel");
-
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
   __dirname,
@@ -17,14 +16,12 @@ const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
   "config",
   "serviceAccountKey.json"
 );
+
 const resolveServiceAccountPath = () => {
   const envPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-  if (!envPath) {
-    return DEFAULT_SERVICE_ACCOUNT_PATH;
-  }
+  if (!envPath) return DEFAULT_SERVICE_ACCOUNT_PATH;
   return path.isAbsolute(envPath) ? envPath : path.join(process.cwd(), envPath);
 };
-
 const normalizeDeviceId = (value) => String(value || "").trim();
 const resolveActivityCategory = (eventType) => {
   const value = String(eventType || "").toLowerCase();

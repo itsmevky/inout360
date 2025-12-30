@@ -17,10 +17,11 @@ const userSchemaDefinition = {
 
   email: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
     lowercase: true,
     trim: true,
+    default: null,
   },
   password: {
     type: String,
