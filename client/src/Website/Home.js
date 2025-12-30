@@ -11,11 +11,12 @@ const Home = () => {
       <div className="flex flex-col justify-center bg-gradient-to-br from-blue-50 to-white text-gray-800">
         {/* Navigation Bar */}
         <nav
-          className="w-full p-5 flex justify-between items-center shadow bg-white gap-2"
+          className="  w-full p-5 bg-white shadow gap-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 items-center !justify-between homepage-nav-bar"
           style={{ padding: "10px" }}
         >
-          <h1 className="text-2xl font-bold text-blue-700">Inout360</h1>
-          <div className="flex space-x-4 gap-3">
+          {/* <h1 className="text-2xl font-bold text-blue-700">Inout360</h1> */}
+          <img src="https://assets.pidilite.com/is/image/pidilite/pidilite-logo-1?ts=1717678989820&dpr=off" alt="Pidilite-logo" className="h-auto w-34" />
+          <div className="  flex flex-col gap-3 sm:flex-row sm:gap-4 justify-end homepage-nav-bar-login-register-button">
             <button
               onClick={() => navigate("/app-qr")}
               className="border border-blue-600 text-blue-600 rounded hover:bg-blue-100 transition !mr-0 !py-1.5 !px-5"
