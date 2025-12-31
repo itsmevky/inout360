@@ -4,55 +4,55 @@ import axios from "axios";
 import QRCode from "qrcode";
 import { domainpath } from "../../Helpers/api.js";
 import "../../Styles/qrpage.css";
+import logo from "../../Images/pidilite-logo-13.png";
 
 const QrCard = ({
   title,
+  subtitle,
   imageSrc,
   expiresAt,
   remainingSeconds,
   loading,
   onTitleClick,
 }) => (
-  <div className="qr-card">
-    <div className="qr-card-head">
-      <div>
-        <p className="qr-eyebrow">Secure Access</p>
-        {onTitleClick ? (
-          <button
-            type="button"
-            className="qr-title-button"
-            onClick={onTitleClick}
-          >
-            {title}
-          </button>
-        ) : (
-          <h3 className="qr-title">{title}</h3>
-        )}
-      </div>
-      <span className={`qr-pill ${loading ? "is-loading" : ""}`}>
+  <div className="qr-app-card">
+    <div className="qr-app-card-head">
+      <img src={logo} alt="Pidilite" className="qr-app-logo" />
+      {onTitleClick ? (
+        <button
+          type="button"
+          className="qr-app-title-button"
+          onClick={onTitleClick}
+        >
+          {title}
+        </button>
+      ) : (
+        <h3 className="qr-app-card-title">{title}</h3>
+      )}
+      <p className="qr-app-card-subtitle">{subtitle}</p>
+      <span className={`qr-app-pill ${loading ? "is-loading" : ""}`}>
         {loading ? "Refreshing..." : "Auto refresh on expiry"}
       </span>
     </div>
-    <div className="qr-frame">
-      <div className="qr-frame-inner">
-        {imageSrc ? (
-          <img src={imageSrc} alt={`${title} QR`} className="qr-image" />
-        ) : (
-          <span className="qr-empty">No QR generated</span>
-        )}
-      </div>
-      <div className="qr-glow" aria-hidden="true" />
+
+    <div className="qr-app-frame">
+      {imageSrc ? (
+        <img src={imageSrc} alt={`${title} QR`} className="qr-app-image" />
+      ) : (
+        <span className="qr-app-empty">No QR generated</span>
+      )}
     </div>
-    <div className="qr-meta">
-      <div>
-        <span className="qr-meta-label">Expires</span>
-        <span className="qr-meta-value">
+
+    <div className="qr-app-meta">
+      <div className="qr-app-meta-item">
+        <span className="qr-app-meta-label">Expires</span>
+        <span className="qr-app-meta-value">
           {expiresAt ? new Date(expiresAt).toLocaleString() : "—"}
         </span>
       </div>
-      <div>
-        <span className="qr-meta-label">Time left</span>
-        <span className="qr-meta-value">
+      <div className="qr-app-meta-item">
+        <span className="qr-app-meta-label">Time left</span>
+        <span className="qr-app-meta-value">
           {remainingSeconds !== null ? `${Math.max(0, remainingSeconds)}s` : "—"}
         </span>
       </div>
@@ -137,7 +137,14 @@ const QrPage = ({ singleAction = null }) => {
         const token = response?.data?.token || "";
         const expiresAt = response?.data?.expiresAt || null;
         const imageSrc = token
-          ? await QRCode.toDataURL(token, { width: 300, margin: 2 })
+          ? await QRCode.toDataURL(token, {
+              width: 260,
+              margin: 2,
+              color: {
+                dark: "#0f172a",
+                light: "#ffffff",
+              },
+            })
           : "";
 
         setState((prev) => {
@@ -296,29 +303,37 @@ const QrPage = ({ singleAction = null }) => {
     : "One QR per action, reusable until expiry. Auto-refresh on expiry only.";
 
   return (
-    <div className="qr-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0px', background: 'linear-gradient(#f1f3ff, #cbd4ff);' }}>
-      <div className="qr-shell">
+    <div className="qr-app-page">
+      <div className="qr-app-shell">
         {!singleAction && (
-          <div className="qr-header">
-            <div className="qr-header-left">
-              <button className="qr-back" type="button" onClick={() => navigate("/")}>
-                ← Back to Home
+          <div className="qr-app-header">
+            <img src={logo} alt="Pidilite" className="qr-app-logo-main" />
+            <h1 className="qr-app-title">{headerTitle}</h1>
+            <p className="qr-app-subtitle">{headerSubtitle}</p>
+            <div className="qr-app-actions">
+              <button
+                className="qr-app-btn qr-app-btn--ghost"
+                type="button"
+                onClick={() => navigate("/")}
+              >
+                Back to Home
               </button>
-              <div>
-                <h2 className="qr-title">{headerTitle}</h2>
-                <p className="qr-subtitle">{headerSubtitle}</p>
-              </div>
+              <button
+                className="qr-app-btn qr-app-btn--dark"
+                type="button"
+                onClick={handleQrLogout}
+              >
+                Logout
+              </button>
             </div>
-            <button className="qr-logout" type="button" onClick={handleQrLogout}>
-              Logout
-            </button>
           </div>
         )}
 
-        <div className="qr-grid">
+        <div className={`qr-app-grid ${singleAction ? "is-single" : ""}`}>
           {!isLogoutOnly && (
             <QrCard
               title="Login QR"
+              subtitle="Scan the QR to log in securely."
               imageSrc={loginState.imageSrc}
               expiresAt={loginState.expiresAt}
               loading={loginState.loading}
@@ -331,6 +346,7 @@ const QrPage = ({ singleAction = null }) => {
           {!isLoginOnly && (
             <QrCard
               title="Logout QR"
+              subtitle="Scan the QR to log out securely."
               imageSrc={logoutState.imageSrc}
               expiresAt={logoutState.expiresAt}
               loading={logoutState.loading}

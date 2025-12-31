@@ -332,3 +332,206 @@
                     gap: 5px;
           }
         }
+
+        /* App-style QR layout for login/logout */
+        .qr-app-page {
+          min-height: 100vh;
+          padding: 32px 16px;
+          background: linear-gradient(180deg, #eef2ff 0%, #dbe7ff 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: "Space Grotesk", sans-serif;
+          color: #0f172a;
+        }
+        .qr-app-shell {
+          width: 100%;
+          max-width: 1040px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .qr-app-header {
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+        .qr-app-logo-main {
+          width: 140px;
+          height: auto;
+        }
+        .qr-app-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 4px 0 0;
+        }
+        .qr-app-subtitle {
+          font-size: 13px;
+          color: #475569;
+          margin: 0 0 8px;
+        }
+        .qr-app-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          justify-content: center;
+          margin-top: 8px;
+        }
+        .qr-app-btn {
+          border-radius: 10px;
+          padding: 8px 14px;
+          font-size: 13px;
+          font-weight: 600;
+          border: 1px solid transparent;
+          cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .qr-app-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+        }
+        .qr-app-btn--ghost {
+          background: #ffffff;
+          border-color: #cbd5e1;
+          color: #0f172a;
+        }
+        .qr-app-btn--dark {
+          background: #0f172a;
+          color: #ffffff;
+        }
+        .qr-app-grid {
+          display: grid;
+          gap: 20px;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          align-items: start;
+        }
+        .qr-app-grid.is-single {
+          max-width: 520px;
+          width: 100%;
+          margin: 0 auto;
+        }
+        .qr-app-card {
+          background: #f5f7fb;
+          border-radius: 18px;
+          padding: 24px;
+          box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          width: 100%;
+        }
+        .qr-app-card-head {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+        .qr-app-logo {
+          width: 120px;
+          height: auto;
+        }
+        .qr-app-card-title {
+          font-size: 20px;
+          font-weight: 700;
+          margin: 0;
+          color: #0f172a;
+        }
+        .qr-app-title-button {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          font-size: 20px;
+          font-weight: 700;
+          color: #0f172a;
+        }
+        .qr-app-title-button:hover {
+          text-decoration: underline;
+        }
+        .qr-app-card-subtitle {
+          font-size: 13px;
+          color: #475569;
+          margin: 0;
+        }
+        .qr-app-pill {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #e8f0ff;
+          color: #2f4b7a;
+        }
+        .qr-app-pill.is-loading {
+          background: #ffd1b2;
+          color: #8a3b07;
+        }
+        .qr-app-frame {
+          margin: 8px auto 4px;
+          padding: 16px;
+          background: #ffffff;
+          border-radius: 14px;
+          border: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 260px;
+        }
+        .qr-app-image {
+          width: 220px;
+          height: 220px;
+          object-fit: contain;
+        }
+        .qr-app-empty {
+          color: #94a3b8;
+          font-size: 14px;
+        }
+        .qr-app-meta {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 8px;
+          background: #eef1f6;
+          border-radius: 10px;
+          padding: 8px 12px;
+          border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+        .qr-app-meta-item {
+          display: grid;
+          gap: 2px;
+        }
+        .qr-app-meta-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.14em;
+          color: #64748b;
+        }
+        .qr-app-meta-value {
+          font-size: 12px;
+          font-family: "IBM Plex Mono", monospace;
+          color: #0f172a;
+        }
+        @media (max-width: 640px) {
+          .qr-app-shell {
+            gap: 18px;
+          }
+          .qr-app-logo-main {
+            width: 120px;
+          }
+          .qr-app-card {
+            padding: 20px 16px;
+          }
+          .qr-app-logo {
+            width: 110px;
+          }
+          .qr-app-image {
+            width: 200px;
+            height: 200px;
+          }
+          .qr-app-frame {
+            min-height: 230px;
+          }
+        }
