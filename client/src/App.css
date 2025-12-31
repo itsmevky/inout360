@@ -5488,6 +5488,9 @@ margin: 0;
   gap: 8px;
   margin-top: 20px;
 }
+.device-page-popup-container{
+  padding-top: 30px;
+}
 }
 
 

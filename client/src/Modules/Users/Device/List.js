@@ -258,11 +258,11 @@ const Device = () => {
 
       {/* ========================= DEVICE DETAILS MODAL ========================= */}
       {showModal && selectedDevice && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center !m-0">
 
           {/* MODAL CONTAINER */}
           <div
-            className=" bg-white w-full sm:max-w-[800px] max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl shadow-xl p-4 sm:p-6 relative !m-5"
+            className=" bg-white w-full sm:max-w-[800px] max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl shadow-xl p-4 sm:p-6 relative !m-5 device-page-popup-container"
           >
             {/* DRAG INDICATOR (Mobile UX) */}
             <div className="sm:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3"></div>
