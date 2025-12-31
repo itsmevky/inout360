@@ -48,7 +48,6 @@ const employeeSchema = {
 
   // Professional info
   employeeId: { type: String, required: true, unique: true, trim: true },
-  rfid: { type: String, unique: true, sparse: true, trim: true, default: null },
   joiningDate: { type: Date, default: null },
   designation: { type: String, trim: true, default: null },
   department: { type: String, trim: true, default: null },

@@ -223,6 +223,49 @@ const logPermission = async ({ userId, employeeId, adminId, permission }) => {
   });
 };
 
+const getAuthorizationNotification = (field) => {
+  switch (field) {
+    case "uninstallBlocked":
+      return {
+        title: "App Uninstall Authorized",
+        message: "You are authorized to uninstall the app.",
+        permission: "app_uninstall",
+      };
+    case "cameraDisabled":
+      return {
+        title: "Camera Access Authorized",
+        message: "You are authorized to access the camera.",
+        permission: "camera_access",
+      };
+    case "facebookBlocked":
+      return {
+        title: "Facebook Access Authorized",
+        message: "You are authorized to access Facebook.",
+        permission: "facebook_access",
+      };
+    case "instagramBlocked":
+      return {
+        title: "Instagram Access Authorized",
+        message: "You are authorized to access Instagram.",
+        permission: "instagram_access",
+      };
+    case "youtubeBlocked":
+      return {
+        title: "YouTube Access Authorized",
+        message: "You are authorized to access YouTube.",
+        permission: "youtube_access",
+      };
+    case "whatsappBlocked":
+      return {
+        title: "WhatsApp Access Authorized",
+        message: "You are authorized to access WhatsApp.",
+        permission: "whatsapp_access",
+      };
+    default:
+      return null;
+  }
+};
+
 const upsertDevice = async (payload) => {
   const {
     deviceId,
@@ -758,54 +801,48 @@ exports.setDevicePolicy = async (req, res) => {
       previousState.uninstallBlocked === true && policyData.uninstallBlocked === false;
     const shouldAuthorizeCamera =
       previousState.cameraDisabled === true && policyData.cameraDisabled === false;
+    const shouldAuthorizeFacebook =
+      previousState.facebookBlocked === true && policyData.facebookBlocked === false;
+    const shouldAuthorizeInstagram =
+      previousState.instagramBlocked === true && policyData.instagramBlocked === false;
+    const shouldAuthorizeYoutube =
+      previousState.youtubeBlocked === true && policyData.youtubeBlocked === false;
+    const shouldAuthorizeWhatsapp =
+      previousState.whatsappBlocked === true && policyData.whatsappBlocked === false;
 
     try {
-      if (shouldAuthorizeUninstall) {
-        const actionMessage = "You are authorized to uninstall the app.";
-        const notifyTitle = "App Uninstall Authorized";
-        const notifyData = { permission: "app_uninstall" };
+      const fieldsToAuthorize = [];
+      if (shouldAuthorizeUninstall) fieldsToAuthorize.push("uninstallBlocked");
+      if (shouldAuthorizeCamera) fieldsToAuthorize.push("cameraDisabled");
+      if (shouldAuthorizeFacebook) fieldsToAuthorize.push("facebookBlocked");
+      if (shouldAuthorizeInstagram) fieldsToAuthorize.push("instagramBlocked");
+      if (shouldAuthorizeYoutube) fieldsToAuthorize.push("youtubeBlocked");
+      if (shouldAuthorizeWhatsapp) fieldsToAuthorize.push("whatsappBlocked");
+
+      for (const field of fieldsToAuthorize) {
+        const notification = getAuthorizationNotification(field);
+        if (!notification) continue;
         await Promise.allSettled([
-          sendAuthorizationEmail(device.userId, actionMessage).catch((error) => {
+          sendAuthorizationEmail(device.userId, notification.message).catch((error) => {
             console.warn("Authorization email failed:", error.message);
           }),
-          sendDeviceNotification(device, notifyTitle, actionMessage, notifyData).catch(
-            (error) => {
-              console.warn(
-                "Authorization notification failed:",
-                error?.response?.data || error.message
-              );
-            }
-          ),
+          sendDeviceNotification(
+            device,
+            notification.title,
+            notification.message,
+            { permission: notification.permission }
+          ).catch((error) => {
+            console.warn(
+              "Authorization notification failed:",
+              error?.response?.data || error.message
+            );
+          }),
         ]);
         await logPermission({
           userId: device.userId,
           employeeId: device.employeeId,
           adminId: req.user?._id,
-          permission: "app_uninstall",
-        });
-      }
-      if (shouldAuthorizeCamera) {
-        const actionMessage = "You are authorized to access the camera.";
-        const notifyTitle = "Camera Access Authorized";
-        const notifyData = { permission: "camera_access" };
-        await Promise.allSettled([
-          sendAuthorizationEmail(device.userId, actionMessage).catch((error) => {
-            console.warn("Authorization email failed:", error.message);
-          }),
-          sendDeviceNotification(device, notifyTitle, actionMessage, notifyData).catch(
-            (error) => {
-              console.warn(
-                "Authorization notification failed:",
-                error?.response?.data || error.message
-              );
-            }
-          ),
-        ]);
-        await logPermission({
-          userId: device.userId,
-          employeeId: device.employeeId,
-          adminId: req.user?._id,
-          permission: "camera_access",
+          permission: notification.permission,
         });
       }
     } catch (error) {
@@ -855,37 +892,33 @@ exports.toggleDevicePolicy = async (req, res) => {
 
     if (current === true && nextValue === false) {
       try {
-        const actionMessage =
-          field === "uninstallBlocked"
-            ? "You are authorized to uninstall the app."
-            : "You are authorized to access the camera.";
-        const notifyTitle =
-          field === "uninstallBlocked"
-            ? "App Uninstall Authorized"
-            : "Camera Access Authorized";
-        const notifyData = {
-          permission: field === "uninstallBlocked" ? "app_uninstall" : "camera_access",
-        };
-        await Promise.allSettled([
-          sendAuthorizationEmail(device.userId, actionMessage).catch((error) => {
-            console.warn("Authorization email failed:", error.message);
-          }),
-          sendDeviceNotification(device, notifyTitle, actionMessage, notifyData).catch(
-            (error) => {
+        const notification = getAuthorizationNotification(field);
+        if (notification) {
+          await Promise.allSettled([
+            sendAuthorizationEmail(device.userId, notification.message).catch(
+              (error) => {
+                console.warn("Authorization email failed:", error.message);
+              }
+            ),
+            sendDeviceNotification(
+              device,
+              notification.title,
+              notification.message,
+              { permission: notification.permission }
+            ).catch((error) => {
               console.warn(
                 "Authorization notification failed:",
                 error?.response?.data || error.message
               );
-            }
-          ),
-        ]);
-        await logPermission({
-          userId: device.userId,
-          employeeId: device.employeeId,
-          adminId: req.user?._id,
-          permission:
-            field === "uninstallBlocked" ? "app_uninstall" : "camera_access",
-        });
+            }),
+          ]);
+          await logPermission({
+            userId: device.userId,
+            employeeId: device.employeeId,
+            adminId: req.user?._id,
+            permission: notification.permission,
+          });
+        }
       } catch (error) {
         console.warn("Authorization delivery failed:", error.message);
       }

@@ -176,7 +176,6 @@ const validateEmployeeData = async (data) => {
     "permanentAddress.pincode": "required|string",
 
     employeeId: "required|string",
-    rfid: "required|string",
     joiningDate: "required|date",
     designation: "required|string",
     department: "required|string",
