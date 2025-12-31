@@ -442,6 +442,7 @@ exports.consumeQr = async (req, res) => {
           facebookBlocked: deviceRecord.devicePolicyState?.facebookBlocked ?? false,
           instagramBlocked: deviceRecord.devicePolicyState?.instagramBlocked ?? false,
           youtubeBlocked: deviceRecord.devicePolicyState?.youtubeBlocked ?? false,
+          whatsappBlocked: deviceRecord.devicePolicyState?.whatsappBlocked ?? false,
           locationAllowed: deviceRecord.locationAllowed ?? true,
           devicePolicyState: deviceRecord.devicePolicyState || {},
         }

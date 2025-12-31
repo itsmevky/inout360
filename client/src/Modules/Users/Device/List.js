@@ -60,6 +60,15 @@ const Device = () => {
     return d.toLocaleString();
   };
 
+  const getPolicyValue = (device, field) => {
+    if (!device) return false;
+    if (typeof device[field] === "boolean") return device[field];
+    if (typeof device?.devicePolicyState?.[field] === "boolean") {
+      return device.devicePolicyState[field];
+    }
+    return false;
+  };
+
   useEffect(() => {
     loadDevices();
   }, []);
@@ -333,14 +342,6 @@ const Device = () => {
             </h3>
 
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              <button className="w-full py-3 bg-black text-white rounded-lg">
-                Lock Device
-              </button>
-
-              <button className="w-full py-3 bg-orange-500 text-white rounded-lg">
-                Restart
-              </button>
-
               <button
                 onClick={() => togglePolicy("cameraDisabled")}
                 className="w-full py-3 bg-blue-500 text-white rounded-lg"
@@ -355,9 +356,45 @@ const Device = () => {
                 Disable Uninstall
               </button>
 
-              <button className="w-full py-3 bg-green-600 text-white rounded-lg">
-                Remote Command
-              </button>
+              {[
+                {
+                  field: "facebookBlocked",
+                  label: "Facebook",
+                  allowClass: "bg-blue-600 text-white",
+                  blockClass: "bg-blue-100 text-blue-800",
+                },
+                {
+                  field: "instagramBlocked",
+                  label: "Instagram",
+                  allowClass: "bg-purple-600 text-white",
+                  blockClass: "bg-purple-100 text-purple-800",
+                },
+                {
+                  field: "youtubeBlocked",
+                  label: "YouTube",
+                  allowClass: "bg-rose-600 text-white",
+                  blockClass: "bg-rose-100 text-rose-800",
+                },
+                {
+                  field: "whatsappBlocked",
+                  label: "WhatsApp",
+                  allowClass: "bg-green-600 text-white",
+                  blockClass: "bg-green-100 text-green-800",
+                },
+              ].map(({ field, label, allowClass, blockClass }) => {
+                const isBlocked = getPolicyValue(selectedDevice, field);
+                const buttonLabel = isBlocked ? `Allow ${label}` : `Block ${label}`;
+                const buttonClass = isBlocked ? allowClass : blockClass;
+                return (
+                  <button
+                    key={field}
+                    onClick={() => togglePolicy(field)}
+                    className={`w-full py-3 rounded-lg ${buttonClass}`}
+                  >
+                    {buttonLabel}
+                  </button>
+                );
+              })}
             </div>
 
             {/* ================= MORE ACTIONS ================= */}

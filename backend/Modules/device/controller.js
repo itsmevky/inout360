@@ -147,6 +147,7 @@ const formatDevice = (doc) => {
     facebookBlocked: d.devicePolicyState?.facebookBlocked ?? false,
     instagramBlocked: d.devicePolicyState?.instagramBlocked ?? false,
     youtubeBlocked: d.devicePolicyState?.youtubeBlocked ?? false,
+    whatsappBlocked: d.devicePolicyState?.whatsappBlocked ?? false,
     androidVersion: d.osVersion,
     appVer: d.appVersion,
     verified: !!d.verified,
@@ -650,6 +651,7 @@ exports.deviceStatus = async (req, res) => {
           facebookBlocked: updatedDevice.devicePolicyState?.facebookBlocked ?? false,
           instagramBlocked: updatedDevice.devicePolicyState?.instagramBlocked ?? false,
           youtubeBlocked: updatedDevice.devicePolicyState?.youtubeBlocked ?? false,
+          whatsappBlocked: updatedDevice.devicePolicyState?.whatsappBlocked ?? false,
           locationAllowed: updatedDevice.locationAllowed ?? true,
           devicePolicyState: updatedDevice.devicePolicyState || {},
         },
@@ -825,7 +827,14 @@ exports.toggleDevicePolicy = async (req, res) => {
   try {
     const { id } = req.params;
     const { field } = req.body || {};
-    const allowedFields = ["cameraDisabled", "uninstallBlocked"];
+    const allowedFields = [
+      "cameraDisabled",
+      "uninstallBlocked",
+      "facebookBlocked",
+      "instagramBlocked",
+      "youtubeBlocked",
+      "whatsappBlocked",
+    ];
 
     if (!allowedFields.includes(field)) {
       return res.status(400).json({ status: false, message: "Invalid policy field" });
