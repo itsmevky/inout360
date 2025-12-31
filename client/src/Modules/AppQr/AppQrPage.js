@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import logo from "../../Images/pidilite-logo-13.png";
 
-const TARGET_URL = "https://pidiliteapp.ajivainfotech.com/";
+const TARGET_URL = "https://pidiliteapp.ajivainfotech.com/qrdownload";
 
 const AppQrPage = () => {
   const [qrSrc, setQrSrc] = useState("");
