@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 const paginate = require("../../helpers/limitoffset");
 const DeviceModel = require("./model");
 const DeviceEventModel = require("./deviceEventModel");
@@ -11,6 +12,11 @@ const PermissionLogModel = require("../permissions/permissionLogModel");
 const axios = require("axios");
 const path = require("path");
 const { GoogleAuth } = require("google-auth-library");
+
+const JWT_SECRET =
+  process.env.SECRET_KEY ||
+  process.env.JWT_ACCESS_SECRET ||
+  process.env.JWT_SECRET;
 
 const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
@@ -521,6 +527,16 @@ exports.register = async (req, res) => {
     }
 
     console.log("Device register saved:", device._id.toString());
+    const deviceToken = jwt.sign(
+      {
+        deviceId: device.deviceId || device._id,
+        userId: user._id,
+        employeeId: effectiveEmployeeId,
+        fcmToken: fcmToken || device.fcmToken || null,
+      },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
 
     return res.status(200).json({
       status: true,
@@ -531,6 +547,7 @@ exports.register = async (req, res) => {
       userId: user._id,
       employeeId: effectiveEmployeeId,
       verified: !!device.verified,
+      deviceToken,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
@@ -604,6 +621,16 @@ exports.deviceStatus = async (req, res) => {
     }
 
     const updatedDevice = device.toObject?.() || device;
+    const deviceToken = jwt.sign(
+      {
+        deviceId: updatedDevice.deviceId || updatedDevice._id,
+        userId: updatedDevice.userId,
+        employeeId: updatedDevice.employeeId || null,
+        fcmToken: updatedDevice.fcmToken || null,
+      },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
 
     return res.status(200).json({
       status: true,
@@ -612,6 +639,7 @@ exports.deviceStatus = async (req, res) => {
         userId: updatedDevice.userId,
         deviceId: updatedDevice.deviceId || updatedDevice._id,
         deviceLocation: updatedDevice.deviceLocation || null,
+        deviceToken,
         deviceSettings: {
           deviceStatus: updatedDevice.deviceStatus,
           cameraDisabled: updatedDevice.devicePolicyState?.cameraDisabled ?? false,
