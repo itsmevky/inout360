@@ -439,6 +439,9 @@ exports.consumeQr = async (req, res) => {
           deviceStatus: deviceRecord.deviceStatus,
           cameraDisabled: deviceRecord.devicePolicyState?.cameraDisabled ?? false,
           uninstallBlocked: deviceRecord.devicePolicyState?.uninstallBlocked ?? false,
+          facebookBlocked: deviceRecord.devicePolicyState?.facebookBlocked ?? false,
+          instagramBlocked: deviceRecord.devicePolicyState?.instagramBlocked ?? false,
+          youtubeBlocked: deviceRecord.devicePolicyState?.youtubeBlocked ?? false,
           locationAllowed: deviceRecord.locationAllowed ?? true,
           devicePolicyState: deviceRecord.devicePolicyState || {},
         }

@@ -29,6 +29,9 @@ const deviceSchemaDefinition = {
   devicePolicyState: {
     cameraDisabled: { type: Boolean, default: false },
     uninstallBlocked: { type: Boolean, default: false },
+    facebookBlocked: { type: Boolean, default: false },
+    instagramBlocked: { type: Boolean, default: false },
+    youtubeBlocked: { type: Boolean, default: false },
     kioskMode: { type: Boolean, default: false },
     allowedApps: { type: [String], default: [] },
     blockedApps: { type: [String], default: [] },
