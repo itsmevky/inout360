@@ -4,12 +4,6 @@ const { ajModel, mongoose } = require("../../common/classes/Model");
    Attendance Schema Definition
 =========================== */
 const attendanceSchemaDefinition = {
-  contractorId: {
-    type: String, // accept contractor code (e.g., CTR-001)
-    required: true,
-    trim: true,
-  },
-
   rfidCardId: {
     type: String, // accept RFID uid (e.g., RFID-EMP-001)
     required: true,
@@ -76,7 +70,6 @@ const attendanceSchemaDefinition = {
 const attendanceTransform = (ret) => {
   return {
     id: ret._id,
-    contractorId: ret.contractorId,
     employeeId: ret.employeeId,
     userId: ret.userId,
     rfidCardId: ret.rfidCardId,

@@ -131,7 +131,6 @@ const markAttendance = async (employee, action, userId) => {
     }
 
     return AttendanceModel.create({
-      contractorId: employee.employeeId,
       rfidCardId: employee.rfid,
       employeeId: employee.employeeId,
       userId: userId || employee.userId || null,
@@ -156,17 +155,7 @@ const markAttendance = async (employee, action, userId) => {
       await existing.save();
       return existing;
     }
-
-    return AttendanceModel.create({
-      contractorId: employee.employeeId,
-      rfidCardId: employee.rfid,
-      employeeId: employee.employeeId,
-      userId: userId || employee.userId || null,
-      date: start,
-      exitGateOut: now,
-      sectionAssigned: employee.section,
-      status: "Present",
-    });
+    return null;
   }
 
   return null;

@@ -5,7 +5,6 @@ const Validator = require("../../helpers/validators");
 
 const validateAttendanceData = async (data) => {
   const rules = {
-    contractorId: "required|string",
     rfidCardId: "required|string",
     date: "required|date",
     sectionAssigned: "required|string",
@@ -38,7 +37,6 @@ exports.add = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const {
-      contractorId,
       sectionAssigned,
       status,
       page,
@@ -49,7 +47,6 @@ exports.getAll = async (req, res) => {
     // normalize to zero-based page
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const filter = {};
-    if (contractorId) filter.contractorId = contractorId;
     if (sectionAssigned) filter.sectionAssigned = sectionAssigned;
     if (date) filter.date = date;
     if (status === "approved") {
@@ -63,7 +60,7 @@ exports.getAll = async (req, res) => {
       pageNumber,
       limit,
       [],
-      ["contractorId", "sectionAssigned", "remarks", "rfidCardId"],
+      ["sectionAssigned", "remarks", "rfidCardId"],
       search
     );
     // Frontend expects an array response; add id alias for convenience
