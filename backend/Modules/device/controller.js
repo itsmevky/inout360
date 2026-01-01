@@ -9,6 +9,7 @@ const PolicyModel = require("./policyModel");
 const VisitorModel = require("../user/visitorModel");
 const { sendEmail } = require("../../helpers/sendemail");
 const PermissionLogModel = require("../permissions/permissionLogModel");
+const { randomUUID } = require("crypto");
 const axios = require("axios");
 const path = require("path");
 const { GoogleAuth } = require("google-auth-library");
@@ -22,6 +23,57 @@ const normalizeStatus = (value) => {
   const up = String(value || "").toUpperCase();
   if (["ONLINE", "OFFLINE", "BLOCKED"].includes(up)) return up;
   return "OFFLINE";
+};
+
+const buildDefaultRfid = (employeeId) => {
+  const cleanId = String(employeeId || "EMP").trim() || "EMP";
+  const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  return `RFID-${cleanId}-${suffix}`;
+};
+
+const generateUniqueRfid = async (employeeId, maxAttempts = 5) => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const candidate = buildDefaultRfid(employeeId);
+    const [employeeExists, visitorExists] = await Promise.all([
+      EmployeeModel.exists({ rfid: candidate }),
+      VisitorModel.exists({ rfid: candidate }),
+    ]);
+    if (!employeeExists && !visitorExists) return candidate;
+  }
+  throw new Error("Unable to generate a unique RFID");
+};
+
+const ensureEmployeeDefaults = async (employee, employeeId) => {
+  if (!employee?._id) return employee;
+  const updates = {};
+  if (!employee.rfid) {
+    updates.rfid = await generateUniqueRfid(employeeId);
+  }
+  if (!employee.section) {
+    updates.section = "General";
+  }
+  if (!Object.keys(updates).length) {
+    return employee;
+  }
+  const updated = await EmployeeModel.findByIdAndUpdate(employee._id, {
+    $set: updates,
+  }, { new: true });
+  return updated || employee;
+};
+
+const ensureVisitorDefaults = async (visitor, visitorEmployeeId) => {
+  if (!visitor?._id) return visitor;
+  const updates = {};
+  if (!visitor.rfid) {
+    updates.rfid = await generateUniqueRfid(visitorEmployeeId || visitor.employeeId);
+  }
+  if (!Object.keys(updates).length) {
+    return visitor;
+  }
+  const updated = await VisitorModel.findByIdAndUpdate(visitor._id, {
+    $set: updates,
+  }, { new: true });
+  return updated || visitor;
 };
 
 const normalizeDeviceId = (value) => String(value || "").trim();
@@ -81,9 +133,11 @@ const createVisitorWithRetry = async ({ name, deviceId }, maxAttempts = 5) => {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const visitorEmployeeId = await getNextVisitorId();
     try {
+      const rfid = await generateUniqueRfid(visitorEmployeeId);
       return await VisitorModel.create({
         name: String(name).trim(),
         employeeId: visitorEmployeeId,
+        rfid,
         deviceId,
         role: "visitor",
       });
@@ -97,6 +151,31 @@ const createVisitorWithRetry = async ({ name, deviceId }, maxAttempts = 5) => {
       if (!syncedCounter) {
         await ensureVisitorCounterUpToDate();
         syncedCounter = true;
+        continue;
+      }
+
+      const maxSeq = await getMaxVisitorSeq();
+      const fallbackEmployeeId = padVisitorId(maxSeq + 1);
+      try {
+        const rfid = await generateUniqueRfid(fallbackEmployeeId);
+        const created = await VisitorModel.create({
+          name: String(name).trim(),
+          employeeId: fallbackEmployeeId,
+          rfid,
+          deviceId,
+          role: "visitor",
+        });
+        const counters = mongoose.connection.collection("counters");
+        await counters.findOneAndUpdate(
+          { _id: "visitor" },
+          { $max: { seq: maxSeq + 1 } },
+          { upsert: true }
+        );
+        return created;
+      } catch (fallbackError) {
+        if (attempt === maxAttempts) {
+          throw fallbackError;
+        }
       }
     }
   }
@@ -448,25 +527,30 @@ exports.register = async (req, res) => {
     }
 
     let user = null;
+    let employee = null;
     let effectiveEmployeeId = employeeId;
     let isVisitor = false;
     let visitor = null;
 
     if (employeeId) {
       const normalizedName = String(name).trim();
-      let employee = await EmployeeModel.findOne({ employeeId });
+      employee = await EmployeeModel.findOne({ employeeId });
       if (!employee) {
         user = await UserModel.create({
           name: normalizedName,
           employeeId,
           email: null,
         });
+        const rfid = await generateUniqueRfid(employeeId);
         employee = await EmployeeModel.create({
           name: normalizedName,
           employeeId,
           userId: user._id,
           email: null,
+          rfid,
+          section: "General",
         });
+        employee = await ensureEmployeeDefaults(employee, employeeId);
       } else {
         user = employee.userId
           ? await UserModel.findById(employee.userId)
@@ -482,6 +566,7 @@ exports.register = async (req, res) => {
             { $set: { userId: user._id } }
           );
         }
+        employee = await ensureEmployeeDefaults(employee, employeeId);
         const normalizedNameLower = normalizedName.toLowerCase();
         const employeeName = (employee.name ||
           `${employee.firstName || ""} ${employee.lastName || ""}`)
@@ -504,6 +589,7 @@ exports.register = async (req, res) => {
           deviceId: normalizedDeviceId,
         });
       }
+      visitor = await ensureVisitorDefaults(visitor, visitor?.employeeId);
       user = visitor;
       effectiveEmployeeId = visitor.employeeId;
     }
@@ -566,6 +652,22 @@ exports.register = async (req, res) => {
       verified: false,
     });
 
+    if (employeeId) {
+      const latestEmployee = await EmployeeModel.findOne({ employeeId });
+      if (latestEmployee) {
+        employee = await ensureEmployeeDefaults(latestEmployee, employeeId);
+        if (!employee?.rfid) {
+          const fallbackRfid = await generateUniqueRfid(employeeId);
+          const updated = await EmployeeModel.findByIdAndUpdate(
+            latestEmployee._id,
+            { $set: { rfid: fallbackRfid } },
+            { new: true }
+          );
+          employee = updated || { ...latestEmployee.toObject?.(), rfid: fallbackRfid };
+        }
+      }
+    }
+
     if (!device || !device._id) {
       return res.status(500).json({
         status: false,
@@ -593,6 +695,7 @@ exports.register = async (req, res) => {
       deviceId: device._id,
       userId: user._id,
       employeeId: effectiveEmployeeId,
+      rfid: isVisitor ? (visitor?.rfid || null) : (employee?.rfid || null),
       verified: !!device.verified,
       deviceToken,
     });

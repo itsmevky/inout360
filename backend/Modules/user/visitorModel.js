@@ -4,6 +4,7 @@ const visitorSchemaDefinition = {
   name: { type: String, trim: true, required: true },
   employeeId: { type: String, trim: true, unique: true, index: true },
   role: { type: String, default: "visitor" },
+  rfid: { type: String, unique: true, sparse: true, trim: true, default: null },
   deviceId: { type: String, trim: true, index: true },
   metadata: { type: Object, default: {} },
 };
@@ -13,6 +14,7 @@ const visitorTransform = (ret) => ({
   name: ret.name,
   employeeId: ret.employeeId,
   role: ret.role,
+  rfid: ret.rfid,
   deviceId: ret.deviceId,
   createdAt: ret.createdAt,
   updatedAt: ret.updatedAt,

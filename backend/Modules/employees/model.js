@@ -40,6 +40,7 @@ const employeeSchema = {
   email: { type: String, unique: true, sparse: true, trim: true, default: null },
   phone: { type: String, trim: true, default: null },
   password: { type: String, default: null, select: false },
+  rfid: { type: String, unique: true, sparse: true, trim: true, default: null },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
 
   // Addresses
