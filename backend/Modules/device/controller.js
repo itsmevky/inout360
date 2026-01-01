@@ -1144,9 +1144,6 @@ exports.uninstallDevice = async (req, res) => {
       return res.status(403).json({ status: false, message: "Employee not authorized for this device" });
     }
 
-    device.deviceStatus = "Disable";
-    await device.save();
-
     const user = await UserModel.findById(userId).lean();
     const employee =
       employeeId
@@ -1174,12 +1171,13 @@ exports.uninstallDevice = async (req, res) => {
       },
     });
 
+    await DeviceModel.deleteOne({ _id: device._id });
+
     return res.status(200).json({
       status: true,
-      message: "Device deactivated successfully",
+      message: "Device removed successfully",
       data: {
         deviceId: device.deviceId || device._id,
-        deviceStatus: device.deviceStatus,
       },
     });
   } catch (error) {
