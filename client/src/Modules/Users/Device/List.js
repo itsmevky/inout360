@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getData, putData } from "../../../Helpers/api.js";
+import { getData, postData, putData } from "../../../Helpers/api.js";
 
 const Device = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -115,6 +115,38 @@ const Device = () => {
         applyDeviceUpdate(res.data);
       }
     } catch (err) {
+      // api helper already toasts
+    }
+  };
+
+  const resolveUserId = (device) => {
+    if (!device) return null;
+    if (typeof device.userId === "string") return device.userId;
+    return device.userId?._id || device.userId?.id || null;
+  };
+
+  const removeDevice = async () => {
+    if (!selectedDevice) return;
+    const userId = resolveUserId(selectedDevice);
+    const deviceId = selectedDevice.deviceId || selectedDevice.id || selectedDevice._id;
+    if (!userId || !deviceId) return;
+    const confirmed = window.confirm(
+      "Remove this device? The user will need to register again."
+    );
+    if (!confirmed) return;
+    try {
+      const res = await postData("/device/uninstall", {
+        deviceId,
+        userId,
+        employeeId: selectedDevice.employeeId || undefined,
+        action: "uninstall",
+      });
+      if (res?.status) {
+        await loadDevices();
+        setShowModal(false);
+        setSelectedDevice(null);
+      }
+    } catch (_err) {
       // api helper already toasts
     }
   };
@@ -415,7 +447,10 @@ const Device = () => {
                 View Location Timeline
               </button>
 
-              <button className="w-full py-3 bg-red-300 text-red-800 rounded-lg">
+              <button
+                onClick={removeDevice}
+                className="w-full py-3 bg-red-300 text-red-800 rounded-lg"
+              >
                 Remove Device
               </button>
             </div>

@@ -91,12 +91,11 @@ const ActivityPage = () => {
     const [selectedType, setSelectedType] = useState(null);
     const [cameraFilter, setCameraFilter] = useState(null);
     const [modalUser, setModalUser] = useState(null);
-
-    // ============================================================
-    // MODAL CAMERA FILTER (ADDED)
-    // ============================================================
-    const [modalCameraType, setModalCameraType] = useState("all");
-    // values: "all" | "take_picture" | "screenshot" | "video"
+    const [selectedActivity, setSelectedActivity] = useState(null);
+    const [mediaModalActivity, setMediaModalActivity] = useState(null);
+    const [modalFromDate, setModalFromDate] = useState("");
+    const [modalToDate, setModalToDate] = useState("");
+    const [modalTypeFilter, setModalTypeFilter] = useState("");
 
 
     // ============================================================
@@ -126,18 +125,32 @@ const ActivityPage = () => {
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
-    const modalCameraActs = useMemo(() => {
+    const modalActivities = useMemo(() => {
         if (!modalUser) return [];
-
-        return modalUser.activities.filter((a) => {
-            const type = a.type || a.category || "";
-            const isCamera = ["screenshot", "take_picture", "video"].includes(type);
-            if (!isCamera) return false;
-
-            if (modalCameraType === "all") return true;
-            return type === modalCameraType;
+        let list = [...(modalUser.activities || [])];
+        if (modalFromDate || modalToDate) {
+            const from = modalFromDate ? new Date(`${modalFromDate}T00:00:00`) : null;
+            const to = modalToDate ? new Date(`${modalToDate}T23:59:59`) : null;
+            list = list.filter((a) => {
+                const t = a.timestamp ? new Date(a.timestamp) : null;
+                if (!t || Number.isNaN(t.getTime())) return false;
+                if (from && t < from) return false;
+                if (to && t > to) return false;
+                return true;
+            });
+        }
+        if (modalTypeFilter) {
+            list = list.filter((a) => {
+                const type = String(a.type || a.category || "").toLowerCase();
+                return type === modalTypeFilter;
+            });
+        }
+        return list.sort((a, b) => {
+            const ta = new Date(a.timestamp || 0).getTime();
+            const tb = new Date(b.timestamp || 0).getTime();
+            return tb - ta;
         });
-    }, [modalUser, modalCameraType]);
+    }, [modalUser, modalFromDate, modalToDate, modalTypeFilter]);
     // ============================================================
     // FILTER + SEARCH
     // ============================================================
@@ -232,7 +245,11 @@ const ActivityPage = () => {
     // MODAL OPEN
     // ============================================================
     const openModal = (record) => {
-        setModalCameraType("all");
+        setSelectedActivity(null);
+        setMediaModalActivity(null);
+        setModalFromDate("");
+        setModalToDate("");
+        setModalTypeFilter("");
         setModalUser({
             user: record.user,
             activities: record.activities || [],
@@ -241,7 +258,14 @@ const ActivityPage = () => {
 
 
 
-    const closeModal = () => { setModalUser(null); setModalCameraType("all"); };
+    const closeModal = () => {
+        setModalUser(null);
+        setSelectedActivity(null);
+        setMediaModalActivity(null);
+        setModalFromDate("");
+        setModalToDate("");
+        setModalTypeFilter("");
+    };
 
     // ============================================================
     // CARD CONFIG
@@ -272,6 +296,16 @@ const ActivityPage = () => {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return value;
         return date.toLocaleString();
+    };
+
+    const resolveMediaType = (activity) => {
+        const type = String(activity?.type || activity?.category || "").toLowerCase();
+        const url = String(activity?.media || "").toLowerCase();
+        if (type === "video") return "video";
+        if (/\.(mp4|webm|ogg|mov)$/i.test(url)) return "video";
+        if (type === "screenshot" || type === "take_picture") return "image";
+        if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(url)) return "image";
+        return activity?.media ? "image" : "none";
     };
 
 
@@ -602,7 +636,7 @@ const ActivityPage = () => {
                             ✕
                         </button>
 
-                        <div className="modal-header">
+                        <div className="modal-header modal-header--compact">
                             <h2 className="modal-user-name">{modalUser.user}</h2>
                             <p className="modal-meta">
                                 Employee ID: {modalUser.activities[0]?.employeeId}
@@ -612,101 +646,151 @@ const ActivityPage = () => {
                             </p>
                         </div>
 
-                        {modalUser.activities.some(a =>
-                            ["app_install", "app_uninstall"].includes(a.category || a.type)
-                        ) ? (
-                            <>
-                                <h3 className="modal-section-title">App Activity</h3>
-
-                                {modalUser.activities
-                                    .filter(a =>
-                                        ["app_install", "app_uninstall"].includes(a.category || a.type)
-                                    )
-                                    .map((act) => (
-                                        <div key={act.id} className="app-log-card">
-                                            <p className="app-log-title">
-                                                {act.appName || "-"} — {(act.category || act.type) === "app_install" ? "Installed" : "Uninstalled"}
-                                            </p>
-                                            <p className="app-log-time">{formatTimestamp(act.timestamp)}</p>
-                                        </div>
-                                    ))}
-                            </>
-                        ) : (
-                            <>
-
-                                <div
-                                    className="flex flex-col lg:flex-row gap-3 lg:gap-5 py-1"
-                                    style={{ alignItems: "center" }}
-                                >
-                                    {/* TITLE */}
-                                    <h3 className="modal-section-title !m-0 text-center lg:text-left">
-                                        Camera Activity
-                                    </h3>
-
-                                    {/* CAMERA TYPE DROPDOWN */}
-                                    <div
-                                        className="flex items-center gap-2"
-                                        style={{
-                                            padding: "8px 8px",
-                                            border: "1px solid gray",
-                                            borderRadius: "10px",
-                                        }}
+                        <div className="modal-activity-filters modal-activity-filters--compact">
+                            <h3 className="modal-section-title !m-0">User Activities</h3>
+                            <div className="modal-activity-controls">
+                                {modalUser?.activities?.some((a) => {
+                                    const type = String(a.type || a.category || "").toLowerCase();
+                                    return ["screenshot", "take_picture", "video"].includes(type);
+                                }) ? (
+                                    <select
+                                        className="p-2 bg-white activity-page-select-option modal-filter-input"
+                                        value={modalTypeFilter}
+                                        onChange={(e) => setModalTypeFilter(e.target.value)}
                                     >
-                                        <label className="text-sm font-semibold text-gray-700 !m-0">
-                                            Filter:
-                                        </label>
-
-                                        <select
-                                            className="bg-white outline-none"
-                                            value={modalCameraType}
-                                            onChange={(e) => setModalCameraType(e.target.value)}
-                                        >
-                                            <option value="all">All</option>
-                                            <option value="take_picture">Take Picture</option>
-                                            <option value="screenshot">Screenshot</option>
-                                            <option value="video">Video</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-
-                                {modalCameraActs.length === 0 ? (
-                                    <p className="text-gray-500 text-sm">
-                                        No camera activity found for this filter.
-                                    </p>
-                                ) : (
-                                    <div className="camera-grid">
-                                        {modalCameraActs.map((act) => (
-                                            <div key={act.id} className="camera-card">
-                                                {act.media ? (
-                                                    <img
-                                                        src={act.media}
-                                                        className="camera-img"
-                                                        alt="camera activity"
-                                                    />
-                                                ) : (
-                                                    <div className="camera-img camera-img--empty"></div>
-                                                )}
-
-                                                <p className="camera-type">
-                                                    {(act.type || act.category || "-")
-                                                        .replace("_", " ")
-                                                        .toUpperCase()}
-                                                </p>
-                                                <p className="camera-time">
-                                                    {formatTimestamp(act.timestamp)}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
+                                        <option value="">All Camera Activity</option>
+                                        <option value="screenshot">Screenshot</option>
+                                        <option value="take_picture">Take Picture</option>
+                                        <option value="video">Video</option>
+                                    </select>
+                                ) : null}
+                                <input
+                                    type="date"
+                                    className="border rounded p-2 activity-page-date-from modal-filter-input"
+                                    value={modalFromDate}
+                                    onChange={(e) => setModalFromDate(e.target.value)}
+                                />
+                                <input
+                                    type="date"
+                                    className="border rounded p-2 activity-page-date-to modal-filter-input"
+                                    value={modalToDate}
+                                    onChange={(e) => setModalToDate(e.target.value)}
+                                />
+                                {(modalFromDate || modalToDate) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setModalFromDate("");
+                                            setModalToDate("");
+                                        }}
+                                        className="modal-filter-clear"
+                                    >
+                                        Clear
+                                    </button>
                                 )}
+                            </div>
+                        </div>
 
-                            </>
+                        {modalActivities.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No activity found for this user.</p>
+                        ) : (
+                            <div className="activity-table-scroll">
+                                <table className="w-full border-collapse activity-table">
+                                    <thead>
+                                        <tr className="bg-gray-100 text-left text-gray-700">
+                                            <th className="p-3">Activity</th>
+                                            <th className="p-3">Device ID</th>
+                                            <th className="p-3">Employee ID</th>
+                                            <th className="p-3">Time</th>
+                                            <th className="p-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {modalActivities.map((act, index) => (
+                                            <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
+                                                <td className="p-3">{(act.type || act.category || "-").replace("_", " ")}</td>
+                                                <td className="p-3">{act.deviceId || "-"}</td>
+                                                <td className="p-3">{act.employeeId || "-"}</td>
+                                                <td className="p-3">{formatTimestamp(act.timestamp)}</td>
+                                                <td className="p-3">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedActivity(act);
+                                                            const type = String(act.type || act.category || "").toLowerCase();
+                                                            if (["app_install", "app_uninstall"].includes(type)) {
+                                                                setMediaModalActivity({
+                                                                    ...act,
+                                                                    media: "",
+                                                                    mediaTypeOverride: "none",
+                                                                });
+                                                            } else {
+                                                                setMediaModalActivity(act);
+                                                            }
+                                                        }}
+                                                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800"
+                                                    >
+                                                        View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
                 </div>
             )
             }
+
+            {mediaModalActivity && (
+                <div className="modal-overlay">
+                    <div className="modal-container modal-container--media">
+                        <button
+                            onClick={() => setMediaModalActivity(null)}
+                            className="modal-close-btn"
+                        >
+                            ✕
+                        </button>
+                        <div className="modal-header">
+                            <h2 className="modal-user-name">
+                                {(mediaModalActivity.type || mediaModalActivity.category || "-")
+                                    .replace("_", " ")
+                                    .toUpperCase()}
+                            </h2>
+                            <p className="modal-meta">
+                                {formatTimestamp(mediaModalActivity.timestamp)}
+                            </p>
+                        </div>
+                        <div className="mt-2">
+                            {["app_install", "app_uninstall"].includes(
+                                String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase()
+                            ) ? (
+                                <div className="text-sm text-gray-700 space-y-2">
+                                    <div><strong>Event:</strong> {(mediaModalActivity.type || mediaModalActivity.category || "-").replace("_", " ")}</div>
+                                    <div><strong>App:</strong> {mediaModalActivity.appName || "-"}</div>
+                                    <div><strong>Device ID:</strong> {mediaModalActivity.deviceId || "-"}</div>
+                                    <div><strong>Employee ID:</strong> {mediaModalActivity.employeeId || "-"}</div>
+                                </div>
+                            ) : resolveMediaType(mediaModalActivity) === "video" ? (
+                                <video
+                                    src={mediaModalActivity.media}
+                                    controls
+                                    className="w-full rounded-lg"
+                                />
+                            ) : resolveMediaType(mediaModalActivity) === "image" ? (
+                                <img
+                                    src={mediaModalActivity.media}
+                                    alt="activity media"
+                                    className="w-full rounded-lg"
+                                />
+                            ) : (
+                                <div className="text-sm text-gray-500">No media available.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div >
     );

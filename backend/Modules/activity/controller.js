@@ -58,7 +58,7 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
 
   if (userId) {
     if (mongoose.isValidObjectId(userId)) {
-      filter.userId = userId;
+      filter["raw.userId"] = userId;
     } else {
       filter.$or = [{ name: userId }, { employeeId: userId }];
     }
@@ -68,13 +68,13 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
     const regex = new RegExp(String(search), "i");
     filter.$or = [
       ...(filter.$or || []),
-      { activityType: regex },
-      { title: regex },
-      { description: regex },
+      { event: regex },
       { name: regex },
       { employeeId: regex },
       { deviceId: regex },
-      { "metadata.codeId": regex },
+      { codeId: regex },
+      { "metadata.description": regex },
+      { "raw.deviceId": regex },
     ];
   }
 
@@ -102,12 +102,15 @@ exports.add = async (req, res) => {
 exports.getSummary = async (_req, res) => {
   try {
     const cameraCount = await DeviceEventModel.countDocuments({
+      policyVoilation: true,
       event: { $regex: "camera|screenshot|video", $options: "i" },
     });
     const installCount = await DeviceEventModel.countDocuments({
+      policyVoilation: true,
       event: { $regex: "app[_-]?install", $options: "i" },
     });
     const uninstallCount = await DeviceEventModel.countDocuments({
+      policyVoilation: true,
       event: { $regex: "app[_-]?uninstall", $options: "i" },
     });
 
@@ -135,17 +138,51 @@ exports.getAll = async (req, res) => {
       search,
     });
 
-    const records = await ActivityModel.find(filter)
-      .sort({ occurredAt: -1, createdAt: -1 })
+    const records = await DeviceEventModel.find(filter)
+      .sort({ timestamp: -1, createdAt: -1 })
       .lean();
+
+    const deviceIds = Array.from(
+      new Set(
+        records
+          .map((doc) => doc?.deviceId)
+          .filter((id) => mongoose.isValidObjectId(id))
+          .map((id) => String(id))
+      )
+    );
+    const deviceMap = new Map();
+    if (deviceIds.length > 0) {
+      const devices = await DeviceModel.find({ _id: { $in: deviceIds } })
+        .select("deviceId")
+        .lean();
+      devices.forEach((device) => {
+        deviceMap.set(String(device._id), device.deviceId || "");
+      });
+    }
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
     const dataWithId = records.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
-      const baseType = plain.activityType || plain.title || plain.category || "";
+      const baseType = plain.event || plain.category || "";
       const activityTypeResolved = resolveActivityType(baseType);
       const categoryResolved = plain.category || resolveCategory(baseType);
       const media = Array.isArray(plain.media) ? plain.media : [];
+      const rawDeviceId = plain.raw?.deviceId || plain.metadata?.deviceId || "";
+      let resolvedDeviceId = "";
+      if (rawDeviceId) {
+        if (mongoose.isValidObjectId(rawDeviceId)) {
+          resolvedDeviceId = deviceMap.get(String(rawDeviceId)) || "";
+        } else {
+          resolvedDeviceId = String(rawDeviceId);
+        }
+      } else if (
+        typeof plain.deviceId === "string" &&
+        !mongoose.isValidObjectId(plain.deviceId)
+      ) {
+        resolvedDeviceId = plain.deviceId;
+      } else {
+        resolvedDeviceId = deviceMap.get(String(plain.deviceId)) || "";
+      }
       const mediaUrlCandidate =
         plain.imagePath ||
         media[0]?.url ||
@@ -170,14 +207,11 @@ exports.getAll = async (req, res) => {
         activityType: activityTypeResolved,
         title: plain.title || activityTypeResolved,
         description:
-          plain.description ||
-          plain.metadata?.description ||
-          activityTypeResolved ||
-          "Activity detected",
+          plain.metadata?.description || activityTypeResolved || "Activity detected",
         category: categoryResolved,
-        deviceId: String(plain.deviceId || ""),
+        deviceId: String(resolvedDeviceId || ""),
         employeeId: plain.employeeId || "",
-        occurredAt: plain.occurredAt || plain.createdAt,
+        occurredAt: plain.timestamp || plain.createdAt,
         policyVoilation: !!plain.policyVoilation,
         imagePath,
         mediaUrl,

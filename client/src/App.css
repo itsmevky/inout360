@@ -1562,6 +1562,11 @@ align-items: flex-start;
   overflow-y: auto;
 }
 
+.modal-container--media {
+  width: 700px;
+  max-width: 90vw;
+}
+
 /* ================= CLOSE ================= */
 .modal-close-btn {
 position: absolute;
@@ -1582,6 +1587,10 @@ position: absolute;
   margin-bottom: 20px;
 }
 
+.modal-header--compact {
+  margin-bottom: 10px;
+}
+
 .modal-user-name {
   font-size: 22px;
   font-weight: 700;
@@ -1599,6 +1608,47 @@ position: absolute;
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 12px;
+}
+
+.modal-activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.modal-activity-filters--compact {
+  margin-top: -10px;
+  margin-bottom: 6px;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.modal-activity-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.modal-filter-input {
+  min-width: 160px;
+  max-width: 200px;
+}
+
+.modal-filter-clear {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+}
+
+.modal-filter-clear:hover {
+  background: #f3f4f6;
 }
 
 /* ================= CAMERA GRID ================= */
