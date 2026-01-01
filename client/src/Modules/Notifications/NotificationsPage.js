@@ -14,6 +14,7 @@ const iconMap = {
     TAKE_PICTURE: <FaCameraRetro />,
     VIDEO: <FaVideo />,
     APP_INSTALL: <FaMobileAlt />,
+    APP_ACCESS: <FaMobileAlt />,
     APP_UNINSTALL: <FaTrashAlt />,
 };
 
@@ -21,70 +22,32 @@ const resolveType = ({ activityType, category }) => {
     const value = String(activityType || category || "").toLowerCase();
     if (value.includes("app_install")) return "APP_INSTALL";
     if (value.includes("app_uninstall")) return "APP_UNINSTALL";
+    if (["youtube", "whatsapp", "instagram", "facebook"].some((app) => value.includes(app))) {
+        return "APP_ACCESS";
+    }
     if (value.includes("video")) return "VIDEO";
     if (value.includes("screenshot")) return "TAKE_PICTURE";
     if (value.includes("camera")) return "CAMERA_ON";
     return value.toUpperCase() || "CAMERA_ON";
 };
 
-const toNotification = (item) => ({
-    _id: item.id || item._id,
-    type: resolveType(item),
-    employeeName: item.name || "",
-    employeeId: item.employeeId || "",
-    deviceId: item.deviceId || "",
-    message: item.description || item.activityType || "Activity detected",
-    createdAt: item.occurredAt || item.createdAt || new Date(),
-});
-
-/* ================= DUMMY NOTIFICATIONS ================= */
-const dummyNotifications = [
-    {
-        _id: "1",
-        type: "CAMERA_ON",
-        employeeName: "Rohit Sharma",
-        employeeId: "EMP001",
-        deviceId: "DEV-AX92",
-        message: "Camera was turned ON",
-        createdAt: new Date(),
-    },
-    {
-        _id: "2",
-        type: "TAKE_PICTURE",
-        employeeName: "Anjali Verma",
-        employeeId: "EMP014",
-        deviceId: "DEV-BX77",
-        message: "Screenshot captured",
-        createdAt: new Date(Date.now() - 1000 * 60 * 10),
-    },
-    {
-        _id: "3",
-        type: "VIDEO",
-        employeeName: "Suresh Kumar",
-        employeeId: "EMP032",
-        deviceId: "DEV-CZ21",
-        message: "Video recording started",
-        createdAt: new Date(Date.now() - 1000 * 60 * 25),
-    },
-    {
-        _id: "4",
-        type: "APP_INSTALL",
-        employeeName: "Neha Singh",
-        employeeId: "EMP008",
-        deviceId: "DEV-DT11",
-        message: "New app installed on device",
-        createdAt: new Date(Date.now() - 1000 * 60 * 60),
-    },
-    {
-        _id: "5",
-        type: "APP_UNINSTALL",
-        employeeName: "Amit Patel",
-        employeeId: "EMP019",
-        deviceId: "DEV-ER99",
-        message: "App uninstalled from device",
-        createdAt: new Date(Date.now() - 1000 * 60 * 120),
-    },
-];
+const toNotification = (item) => {
+    const type = resolveType(item);
+    const baseMessage = item.description || item.activityType || "Activity detected";
+    const message =
+        type === "APP_ACCESS"
+            ? `${baseMessage} Opened`
+            : baseMessage;
+    return {
+        _id: item.id || item._id,
+        type,
+        employeeName: item.name || "",
+        employeeId: item.employeeId || "",
+        deviceId: item.deviceId || "",
+        message,
+        createdAt: item.occurredAt || item.createdAt || new Date(),
+    };
+};
 
 const NotificationsPage = () => {
     const [notifications, setNotifications] = useState([]);
@@ -114,12 +77,11 @@ const NotificationsPage = () => {
             if (res?.status && Array.isArray(res.data) && res.data.length > 0) {
                 setNotifications(res.data.map(toNotification));
             } else {
-                // fallback to dummy
-                setNotifications(dummyNotifications);
+                setNotifications([]);
             }
         } catch (err) {
-            console.error("Failed to load notifications, showing dummy data");
-            setNotifications(dummyNotifications);
+            console.error("Failed to load notifications");
+            setNotifications([]);
         } finally {
             setLoading(false);
         }

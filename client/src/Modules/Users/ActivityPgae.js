@@ -11,7 +11,7 @@ const ActivityPage = () => {
 
     const [summary, setSummary] = useState({
         camera: 0,
-        app_install: 0,
+        app_access: 0,
         app_uninstall: 0,
     });
     const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ const ActivityPage = () => {
     // ============================================================
     const counts = {
         cameraTotal: summary.camera || 0,
-        install: summary.app_install || 0,
+        access: summary.app_access || 0,
         uninstall: summary.app_uninstall || 0,
     };
 
@@ -65,7 +65,7 @@ const ActivityPage = () => {
         const cameraTypes = ["screenshot", "take_picture", "video"];
 
         let cameraToday = 0;
-        let installToday = 0;
+        let accessToday = 0;
         let uninstallToday = 0;
 
         for (const group of activityGroups) {
@@ -76,14 +76,14 @@ const ActivityPage = () => {
                 const t = a.type || a.category || "";
 
                 if (cameraTypes.includes(t) || a.category === "camera") cameraToday++;
-                if (a.category === "app_install") installToday++;
+                if (a.category === "app_access") accessToday++;
                 if (a.category === "app_uninstall") uninstallToday++;
             }
         }
 
         return {
             cameraToday,
-            installToday,
+            accessToday,
             uninstallToday,
         };
     }, [activityGroups]);
@@ -96,6 +96,7 @@ const ActivityPage = () => {
     const [modalFromDate, setModalFromDate] = useState("");
     const [modalToDate, setModalToDate] = useState("");
     const [modalTypeFilter, setModalTypeFilter] = useState("");
+    const [modalContextType, setModalContextType] = useState(null);
 
 
     // ============================================================
@@ -139,7 +140,16 @@ const ActivityPage = () => {
                 return true;
             });
         }
-        if (modalTypeFilter) {
+        if (modalContextType === "camera_activity") {
+            const cameraTypes = ["screenshot", "take_picture", "video"];
+            list = list.filter((a) => {
+                const type = String(a.type || a.category || "").toLowerCase();
+                if (modalTypeFilter) return type === modalTypeFilter;
+                return cameraTypes.includes(type) || a.category === "camera";
+            });
+        } else if (modalContextType === "app_access" || modalContextType === "app_uninstall") {
+            list = list.filter((a) => a.category === modalContextType);
+        } else if (modalTypeFilter) {
             list = list.filter((a) => {
                 const type = String(a.type || a.category || "").toLowerCase();
                 return type === modalTypeFilter;
@@ -150,7 +160,7 @@ const ActivityPage = () => {
             const tb = new Date(b.timestamp || 0).getTime();
             return tb - ta;
         });
-    }, [modalUser, modalFromDate, modalToDate, modalTypeFilter]);
+    }, [modalUser, modalFromDate, modalToDate, modalTypeFilter, modalContextType]);
     // ============================================================
     // FILTER + SEARCH
     // ============================================================
@@ -168,7 +178,7 @@ const ActivityPage = () => {
                     ["screenshot", "video"].includes(a.category)
                 );
             }
-            if (selectedType === "app_install" || selectedType === "app_uninstall") {
+            if (selectedType === "app_access" || selectedType === "app_uninstall") {
                 return activities.some((a) => a.category === selectedType);
             }
             if (selectedType) {
@@ -214,7 +224,7 @@ const ActivityPage = () => {
                         ["screenshot", "video"].includes(a.category)
                     );
                 }
-            } else if (selectedType === "app_install" || selectedType === "app_uninstall") {
+            } else if (selectedType === "app_access" || selectedType === "app_uninstall") {
                 relevant = activities.filter((a) => a.category === selectedType);
             } else if (selectedType) {
                 relevant = activities.filter((a) => a.type === selectedType);
@@ -250,6 +260,7 @@ const ActivityPage = () => {
         setModalFromDate("");
         setModalToDate("");
         setModalTypeFilter("");
+        setModalContextType(selectedType || null);
         setModalUser({
             user: record.user,
             activities: record.activities || [],
@@ -265,6 +276,7 @@ const ActivityPage = () => {
         setModalFromDate("");
         setModalToDate("");
         setModalTypeFilter("");
+        setModalContextType(null);
     };
 
     // ============================================================
@@ -278,10 +290,10 @@ const ActivityPage = () => {
             today: todayCounts.cameraToday,
         },
         {
-            title: "App Installed",
-            type: "app_install",
-            count: counts.install,
-            today: todayCounts.installToday,
+            title: "App Accessed",
+            type: "app_access",
+            count: counts.access,
+            today: todayCounts.accessToday,
         },
         {
             title: "App Uninstalled",
@@ -507,7 +519,9 @@ const ActivityPage = () => {
                                 ? (cameraFilter
                                     ? cameraFilter.replace("_", " ").toUpperCase()
                                     : "ALL CAMERA ACTIVITY")
-                                : selectedType.replace("_", " ").toUpperCase()
+                                : selectedType === "app_access"
+                                    ? "APP ACCESSED"
+                                    : selectedType.replace("_", " ").toUpperCase()
                         }
                     </h2>
 
@@ -649,7 +663,7 @@ const ActivityPage = () => {
                         <div className="modal-activity-filters modal-activity-filters--compact">
                             <h3 className="modal-section-title !m-0">User Activities</h3>
                             <div className="modal-activity-controls">
-                                {modalUser?.activities?.some((a) => {
+                                {modalContextType === "camera_activity" && modalUser?.activities?.some((a) => {
                                     const type = String(a.type || a.category || "").toLowerCase();
                                     return ["screenshot", "take_picture", "video"].includes(type);
                                 }) ? (
@@ -717,7 +731,7 @@ const ActivityPage = () => {
                                                         onClick={() => {
                                                             setSelectedActivity(act);
                                                             const type = String(act.type || act.category || "").toLowerCase();
-                                                            if (["app_install", "app_uninstall"].includes(type)) {
+                                                            if (["app_access", "app_uninstall"].includes(type)) {
                                                                 setMediaModalActivity({
                                                                     ...act,
                                                                     media: "",
@@ -763,9 +777,11 @@ const ActivityPage = () => {
                             </p>
                         </div>
                         <div className="mt-2">
-                            {["app_install", "app_uninstall"].includes(
-                                String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase()
-                            ) ? (
+                            {String(mediaModalActivity.category || mediaModalActivity.type || "").toLowerCase() === "app_access" ? (
+                                <div className="text-sm text-gray-700">
+                                    {`${(mediaModalActivity.appName || mediaModalActivity.type || "App").replace("_", " ")} accessed by ${mediaModalActivity.name || "user"}`}
+                                </div>
+                            ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase() === "app_uninstall" ? (
                                 <div className="text-sm text-gray-700 space-y-2">
                                     <div><strong>Event:</strong> {(mediaModalActivity.type || mediaModalActivity.category || "-").replace("_", " ")}</div>
                                     <div><strong>App:</strong> {mediaModalActivity.appName || "-"}</div>

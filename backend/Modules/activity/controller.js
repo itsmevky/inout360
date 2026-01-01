@@ -9,6 +9,10 @@ const resolveCategory = (eventType) => {
   const value = String(eventType || "").toLowerCase();
   if (value.includes("app_install")) return "app_install";
   if (value.includes("app_uninstall")) return "app_uninstall";
+  if (value.includes("youtube")) return "app_access";
+  if (value.includes("whatsapp")) return "app_access";
+  if (value.includes("instagram")) return "app_access";
+  if (value.includes("facebook")) return "app_access";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
   if (value.includes("camera")) return "camera";
@@ -113,6 +117,10 @@ exports.getSummary = async (_req, res) => {
       policyVoilation: true,
       event: { $regex: "app[_-]?uninstall", $options: "i" },
     });
+    const accessCount = await DeviceEventModel.countDocuments({
+      policyVoilation: true,
+      event: { $regex: "youtube|whatsapp|instagram|facebook", $options: "i" },
+    });
 
     return res.status(200).json({
       status: true,
@@ -120,6 +128,7 @@ exports.getSummary = async (_req, res) => {
         camera: cameraCount || 0,
         app_install: installCount || 0,
         app_uninstall: uninstallCount || 0,
+        app_access: accessCount || 0,
       },
     });
   } catch (error) {
