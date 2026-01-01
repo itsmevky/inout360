@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Validator from "../../../Helpers/validators.js";
 import { API } from "../../../Helpers/api.js";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { useParams } from "react-router-dom";
@@ -212,7 +212,6 @@ const Addfeilds = () => {
 
   return (
     <div className="bg-white rounded">
-      <ToastContainer />
       <form className="p-6">
         <div>
           {fields.map((field, i) => {

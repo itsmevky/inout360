@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import { getData, putData, domainpath } from "../../../Helpers/api.js";
 
 const EditUserForm = ({ user, onClose }) => {
@@ -208,10 +208,10 @@ const EditUserForm = ({ user, onClose }) => {
               <Field label="RFID" name="rfid" value={formData.rfid} onChange={handleChange} />
               <Field label="Joining Date" type="date" name="joiningDate" value={formData.joiningDate} onChange={handleChange} />
               <Field label="Designation" name="designation" value={formData.designation} onChange={handleChange} />
-              <Field label="Department" name="department" value={formData.department} onChange={handleChange} />
-              <Field label="Section" name="section" value={formData.section} onChange={handleChange} />
-              <Field label="Shift" name="shift" value={formData.shift} onChange={handleChange} />
-              <Field label="Employment Type" name="employmentType" value={formData.employmentType} onChange={handleChange} />
+              <SelectField label="Department" name="department" value={formData.department} onChange={handleChange} options={["Sales", "Marketing", "HR", "Finance", "IT", "Operations", "Manufacturing", "Art & Craft"]} />
+              <SelectField label="Section" name="section" value={formData.section} onChange={handleChange} options={["Welding", "Electrical", "Assembly"]} />
+              <SelectField label="Shift" name="shift" value={formData.shift} onChange={handleChange} options={["Morning", "Evening", "Night"]} />
+              <SelectField label="Employment Type" name="employmentType" value={formData.employmentType} onChange={handleChange} options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
 
               {/* ✅ DROPDOWNS */}
               <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={["employee", "admin", "hr", "manager", "supervisor", "contractor"]} />
@@ -235,8 +235,6 @@ const EditUserForm = ({ user, onClose }) => {
           </form>
         </div>
       </div>
-
-      <ToastContainer />
     </>
   );
 };

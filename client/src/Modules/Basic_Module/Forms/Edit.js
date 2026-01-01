@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import { API } from "../../../Helpers/api";
 import { useParams } from "react-router-dom";
 
@@ -100,7 +100,6 @@ const EditForm = () => {
 
   return (
     <div className="bg-white rounded p-4">
-      <ToastContainer />
       <form onSubmit={handleSubmit}>
         <h2 className="text-xl font-semibold mb-6 text-gray-800">Edit Form</h2>
 

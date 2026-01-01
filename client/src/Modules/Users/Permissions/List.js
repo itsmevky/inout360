@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "./Add.js";
 import EditUserForm from "../Users/Edit.js";
 import { API, getData, deleteData, putData } from "../../helpers/api.js";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../popup/Popup.js";
 import ConfirmDelete from "../../popup/conformationdelet.js";
@@ -513,7 +513,6 @@ const GetUsers = () => {
         </div>
       </div>
       {/* Toast Notifications */}
-      <ToastContainer />
       {/* Error message */}
       {error && <div className="text-red-500">{error}</div>}
 

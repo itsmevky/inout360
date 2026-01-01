@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { domainpath, getData, putData } from "../../Helpers/api.js";
 
@@ -382,7 +382,6 @@ const Settings = () => {
 
                 </div>
             </div>
-            <ToastContainer position="top-right" autoClose={3000} />
         </>
     );
 };

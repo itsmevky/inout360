@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Validator from "../../../Helpers/validators.js";
 import { API } from "../../../Helpers/api.js";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useParams } from "react-router-dom";
 import rules from "./Rules.js";
@@ -318,7 +318,6 @@ const Addfeilds = () => {
 
   return (
     <div className="bg-white rounded p-4">
-      <ToastContainer />
       <form className="p-6">
         <input type="hidden" name="module" value={selectedModule} />
         <input type="hidden" name="businessType" value={selectedBusinessType} />

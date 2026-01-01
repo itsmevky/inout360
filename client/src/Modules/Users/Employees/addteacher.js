@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { API } from "../../../helpers/api.js";
 import Validator from "../../../helpers/validators.js";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import rules from "../Rules.js";
 const TeacherForm = () => {
   const initialFormData = {
@@ -1090,7 +1090,6 @@ const TeacherForm = () => {
           </div>
         </div>
       </form>
-      <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">
           <div className="loader"></div>

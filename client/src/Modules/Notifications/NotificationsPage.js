@@ -34,9 +34,10 @@ const resolveType = ({ activityType, category }) => {
 const toNotification = (item) => {
     const type = resolveType(item);
     const baseMessage = item.description || item.activityType || "Activity detected";
+    const appLabel = item.activityType || item.description || "App";
     const message =
         type === "APP_ACCESS"
-            ? `${baseMessage} Opened`
+            ? `${appLabel} Opened`
             : baseMessage;
     return {
         _id: item.id || item._id,

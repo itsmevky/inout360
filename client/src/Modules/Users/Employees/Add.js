@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API } from "../../../Helpers/api.js";
 import Validator from "../../../Helpers/validators.js";
@@ -408,15 +408,18 @@ const AddUserForm = () => {
 
               {/* Shift */}
               <div className="AJ-floating-label-wrapper mb-6">
-                <input
-                  type="text"
+                <select
                   name="shift"
                   value={formData.shift}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={`${getFieldClassName("shift")} AJ-floating-input`}
-                  placeholder=" "
-                />
+                >
+                  <option value="" disabled hidden></option>
+                  <option value="Morning">Morning</option>
+                  <option value="Evening">Evening</option>
+                  <option value="Night">Night</option>
+                </select>
                 <label className="AJ-floating-label">Shift</label>
               </div>
 
@@ -432,9 +435,14 @@ const AddUserForm = () => {
                   )} AJ-floating-input`}
                 >
                   <option value="" disabled hidden></option>
-                  <option value="Plumber">Plumber</option>
-                  <option value="Assembler">Assembler</option>
-                  <option value="Welder">Welder</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="HR">HR</option>
+                  <option value="Finance">Finance</option>
+                  <option value="IT">IT</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Manufacturing">Manufacturing</option>
+                  <option value="Art & Craft">Art & Craft</option>
                 </select>
                 <label className="AJ-floating-label">Department</label>
               </div>
@@ -457,6 +465,26 @@ const AddUserForm = () => {
                   <option value="D"></option>
                 </select>
                 <label className="AJ-floating-label">Section</label>
+              </div>
+
+              {/* Employment Type */}
+              <div className="AJ-floating-label-wrapper mb-6">
+                <select
+                  name="employmentType"
+                  value={formData.employmentType}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${getFieldClassName(
+                    "employmentType"
+                  )} AJ-floating-input`}
+                >
+                  <option value="" disabled hidden></option>
+                  <option value="Full Time">Full Time</option>
+                  <option value="Part Time">Part Time</option>
+                  <option value="Intern">Intern</option>
+                  <option value="Contract Basis">Contract Basis</option>
+                </select>
+                <label className="AJ-floating-label">Employment Type</label>
               </div>
 
               <div className="AJ-floating-label-wrapper mb-6">
@@ -573,8 +601,6 @@ const AddUserForm = () => {
           </form>
         </div>
       </div>
-
-      <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">
           <div className="loader"></div>

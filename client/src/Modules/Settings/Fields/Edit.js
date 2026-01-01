@@ -5,7 +5,6 @@ import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 import Validator from "../../../Helpers/validators.js";
 import { getData, putData } from "../../../Helpers/api.js";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import rules from "../Fields/Rules.js";
@@ -245,7 +244,6 @@ const EditUserForm = ({ user }) => {
           </div>
         </div>
       )}
-      <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">
           <div className="loader"></div>

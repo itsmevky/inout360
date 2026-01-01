@@ -5,7 +5,7 @@ import AddUserForm from "./Add.js";
 import EditUserForm from "./Edit.js";
 import { usePopup } from "../../Helpers/PopupContext.js";
 import { API } from "../../Helpers/api.js";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../popup/Popup.js";
 import debounce from "lodash.debounce";
@@ -237,8 +237,6 @@ const GetUsers = () => {
       {(isAddUserFormVisible || isEditUserFormVisible) && (
         <div className="fixed inset-0 bg-black opacity-40 z-40"></div>
       )}
-
-      <ToastContainer />
     </div>
   );
 };

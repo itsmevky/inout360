@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API } from "../../Helpers/api.js";
 import Validator from "../../Helpers/validators.js";
@@ -523,8 +523,6 @@ const AddUserForm = () => {
         </div>
         
       </div>
-
-      <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">
           <div className="loader"></div>

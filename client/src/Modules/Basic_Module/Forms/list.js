@@ -13,7 +13,7 @@ import {
   extractFieldsFromResponse,
 } from "../../../Helpers/api.js";
 
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
@@ -640,9 +640,6 @@ const FormList = () => {
           </div>
         </div>
       </div>
-
-      <ToastContainer />
-
       {error && <div className="text-red-500">{error}</div>}
 
       {loading ? (

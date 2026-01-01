@@ -8,7 +8,7 @@ import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
 import { capitalizeFirstLetter } from "../../../Helpers/CapitalizeFirstLetter.js";
 import debounce from "lodash.debounce";
 
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
@@ -614,7 +614,6 @@ const GetUsers = () => {
         </div>
       </div>
       {/* Toast Notifications */}
-      <ToastContainer />
       {/* Error message */}
       {error && <div className="text-red-500">{error}</div>}
 

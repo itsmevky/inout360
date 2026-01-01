@@ -3,7 +3,7 @@ import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate } from "react-router-dom";
 import AddUserForm from "../Add.js";
 import EditUserForm from "./Edit.js";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
@@ -309,9 +309,6 @@ const Teachers = () => {
 
         </div>
       </div>
-
-      <ToastContainer />
-
       <CustomDataTable
         columns={columns}
         data={filteredData}

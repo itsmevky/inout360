@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { postData } from "../Helpers/api";
 import Validator from "../Helpers/validators.js";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Register from "../Images/register.jpg";
 
@@ -225,7 +225,6 @@ const Registerpage = () => {
             </div>
           </div>
         </div>
-        <ToastContainer position="top-right" autoClose={3000} />
       </div>
       {loading && (
         <div className="loader-wrapper">

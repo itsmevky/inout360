@@ -145,10 +145,10 @@ const AddUserForm = ({ onSuccess, onClose }) => {
               <Field label="RFID" name="rfid" />
               <Field label="Joining Date" name="joiningDate" type="date" />
               <Field label="Designation" name="designation" />
-              <Field label="Department" name="department" />
-              <Field label="Section" name="section" />
-              <Field label="Shift" name="shift" />
-              <Field label="Employment Type" name="employmentType" />
+              <SelectField label="Department" name="department" options={["Sales", "Marketing", "HR", "Finance", "IT", "Operations", "Manufacturing", "Art & Craft"]} />
+              <SelectField label="Section" name="section" options={["Welding", "Electrical", "Assembly"]} />
+              <SelectField label="Shift" name="shift" options={["Morning", "Evening", "Night"]} />
+              <SelectField label="Employment Type" name="employmentType" options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
               <SelectField label="Role" name="role" options={["employee", "admin", "hr"]} />
               <SelectField label="Status" name="status" options={["Active", "Inactive"]} />
               <SelectField label="Location" name="location" options={["Ajivainfotech", "Chandigarh", "Delhi"]} />

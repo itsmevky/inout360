@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { API } from "../Helpers/api.js";
 import Validator from "../Helpers/validators.js";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import securelogin from "../Images/secure-login.png";
 import { useUser } from "../Helpers/Context/UserContext.js";
@@ -265,8 +265,6 @@ const LoginComponent = () => {
             </div>
           </div>
         </div>
-
-        <ToastContainer position="top-right" autoClose={3000} />
       </div>
 
       {loading && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Validator from "../../Helpers/validators.js";
 import { putData } from "../../Helpers/api.js";
@@ -500,8 +500,6 @@ const EditUserForm = ({ user, onSuccess }) => {
           </div>
         </form>
       </div>
-
-      <ToastContainer position="top-right" autoClose={3000} />
       {loading && (
         <div className="loader-wrapper">
           <div className="loader"></div>

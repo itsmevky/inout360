@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import {toast} from "react-toastify";
 import { getData, putData } from "../../../Helpers/api.js";
 import Validator from "../../../Helpers/validators.js";
 import rules from "./Rules.js";
@@ -189,8 +189,6 @@ const EditRoleForm = ({ role }) => {
           <div className="AJ-loader"></div>
         </div>
       )}
-
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

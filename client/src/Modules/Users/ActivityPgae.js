@@ -320,6 +320,14 @@ const ActivityPage = () => {
         return activity?.media ? "image" : "none";
     };
 
+    const formatActivityLabel = (activity) => {
+        const raw = String(activity?.type || activity?.category || "-").replace("_", " ");
+        if (String(activity?.category || "").toLowerCase() === "app_access") {
+            return `${raw} accessed`;
+        }
+        return raw;
+    };
+
 
 
 
@@ -546,21 +554,13 @@ const ActivityPage = () => {
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
                                         <td className="p-3">{item.user}</td>
-                                        <td className="p-3">{(item.latestActivity?.type || "-").replace("_", " ")}</td>
+                                        <td className="p-3">{formatActivityLabel(item.latestActivity)}</td>
                                         <td className="p-3">{item.latestActivity?.deviceId || item.deviceId}</td>
                                         <td className="p-3">{item.latestActivity?.employeeId || item.employeeId}</td>
                                         <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
 
                                         <td className="p-3">
                                             <div className="flex items-center gap-3 !p-0 !m-0">
-
-                                                {/* VIEW BUTTON (existing) */}
-                                                <button
-                                                    onClick={() => openModal(item)}
-                                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 !m-0"
-                                                >
-                                                    View
-                                                </button>
 
                                                 {/* EYE ICON BUTTON (NEW) */}
                                                 <button
@@ -714,7 +714,6 @@ const ActivityPage = () => {
                                         <tr className="bg-gray-100 text-left text-gray-700">
                                             <th className="p-3">Activity</th>
                                             <th className="p-3">Device ID</th>
-                                            <th className="p-3">Employee ID</th>
                                             <th className="p-3">Time</th>
                                             <th className="p-3">Action</th>
                                         </tr>
@@ -722,9 +721,8 @@ const ActivityPage = () => {
                                     <tbody>
                                         {modalActivities.map((act, index) => (
                                             <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
-                                                <td className="p-3">{(act.type || act.category || "-").replace("_", " ")}</td>
+                                                <td className="p-3">{formatActivityLabel(act)}</td>
                                                 <td className="p-3">{act.deviceId || "-"}</td>
-                                                <td className="p-3">{act.employeeId || "-"}</td>
                                                 <td className="p-3">{formatTimestamp(act.timestamp)}</td>
                                                 <td className="p-3">
                                                     <button
@@ -741,9 +739,16 @@ const ActivityPage = () => {
                                                                 setMediaModalActivity(act);
                                                             }
                                                         }}
-                                                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800"
+                                                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+                                                        title="View Details"
                                                     >
-                                                        View
+                                                        <svg
+                                                            width={22}
+                                                            height={22}
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 576 512">
+                                                            <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+                                                        </svg>
                                                     </button>
                                                 </td>
                                             </tr>

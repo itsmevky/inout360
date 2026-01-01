@@ -13,7 +13,7 @@ import {
   putData,
   postData,
 } from "../../Helpers/api.js";
-import { ToastContainer, toast } from "react-toastify";
+import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../popup/Popup.js";
 import debounce from "lodash.debounce";
@@ -664,7 +664,6 @@ const GetUsers = () => {
         </div>
       </div>
       {/* Toast Notifications */}
-      <ToastContainer />
       {/* Error message */}
       {error && <div className="text-red-500">{error}</div>}
 
