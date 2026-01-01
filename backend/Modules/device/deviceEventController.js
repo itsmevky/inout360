@@ -50,10 +50,44 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
   return null;
 };
 
-const resolvePolicyVoilation = async ({ eventType, userId, employeeId }) => {
+const resolvePolicyVoilation = async ({ eventType, userId, employeeId, device, metadata, raw }) => {
+  const parts = [
+    eventType,
+    metadata?.appName,
+    metadata?.packageName,
+    metadata?.app,
+    metadata?.event,
+    raw?.appName,
+    raw?.packageName,
+    raw?.app,
+    raw?.event,
+  ];
+  const value = parts
+    .filter(Boolean)
+    .map((item) => String(item).trim().toLowerCase())
+    .join(" ");
+  const policy = device?.devicePolicyState || {};
+  const isBlocked = (flag) =>
+    flag === true || flag === "true" || flag === 1 || flag === "1";
+  if (value === "youtube" || value.includes("youtube")) return isBlocked(policy.youtubeBlocked);
+  if (value === "whatsapp" || value.includes("whatsapp")) return isBlocked(policy.whatsappBlocked);
+  if (value === "instagram" || value.includes("instagram")) return isBlocked(policy.instagramBlocked);
+  if (value === "facebook" || value.includes("facebook")) return isBlocked(policy.facebookBlocked);
   if (!isCameraEvent(eventType)) return false;
   const status = await resolveUserSessionStatus({ userId, employeeId });
   return status === "Logged In";
+};
+
+const resolveBlockedAppViolation = (eventType, device) => {
+  const value = String(eventType || "").trim().toLowerCase();
+  const policy = device?.devicePolicyState || {};
+  const isBlocked = (flag) =>
+    flag === true || flag === "true" || flag === 1 || flag === "1";
+  if (value.includes("youtube")) return isBlocked(policy.youtubeBlocked);
+  if (value.includes("whatsapp")) return isBlocked(policy.whatsappBlocked);
+  if (value.includes("instagram")) return isBlocked(policy.instagramBlocked);
+  if (value.includes("facebook")) return isBlocked(policy.facebookBlocked);
+  return null;
 };
 
 const resolveActorName = async ({ userId, employeeId, fallbackName }) => {
@@ -167,10 +201,23 @@ exports.storeEvent = async (req, res) => {
     }
 
     const resolvedEmployeeId = employeeId || employee_id || device.employeeId || "";
-    const policyVoilation = await resolvePolicyVoilation({
+    let policyVoilation = await resolvePolicyVoilation({
       eventType: event,
       userId: device.userId,
       employeeId: resolvedEmployeeId,
+      device,
+      metadata,
+      raw: req.body,
+    });
+    const blockedViolation = resolveBlockedAppViolation(event, device);
+    if (blockedViolation !== null) {
+      policyVoilation = blockedViolation;
+    }
+    console.log("device-event policy check", {
+      event,
+      blockedViolation,
+      policyState: device?.devicePolicyState || {},
+      finalPolicyVoilation: policyVoilation,
     });
 
     const normalizedTimestamp = timestamp
