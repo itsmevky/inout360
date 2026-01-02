@@ -638,7 +638,7 @@ const ActivityPage = () => {
                     </h2>
 
                     <div className="activity-table-scroll">
-                        <table className="w-full border-collapse activity-table">
+                        <table className="w-full border-collapse activity-table activity-table--main">
                             <thead>
                                 <tr className="bg-gray-100 text-left text-gray-700">
                                     <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
@@ -693,7 +693,7 @@ const ActivityPage = () => {
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
 
                         {/* LEFT TEXT */}
-                        <p className="text-sm text-gray-600 text-center sm:text-left">
+                        <p className="text-sm text-gray-600 text-center sm:text-left whitespace-nowrap">
                             Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
                             {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of{" "}
                             {filteredUsers.length}
@@ -831,14 +831,14 @@ const ActivityPage = () => {
                                     <tbody>
                                         {paginatedModalActivities.map((act, index) => (
                                             <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
-                                                <td className="p-3">
+                                                <td className="p-3" data-label="Activity">
                                                     {isAccessibilityEvent(act)
                                                         ? `${modalUser?.user || "User"} has turned off the accessibility settings of app`
                                                         : formatActivityLabel(act)}
                                                 </td>
-                                                <td className="p-3">{act.deviceId || "-"}</td>
-                                                <td className="p-3">{formatTimestamp(act.timestamp)}</td>
-                                                <td className="p-3">
+                                                <td className="p-3" data-label="Device ID">{act.deviceId || "-"}</td>
+                                                <td className="p-3" data-label="Time">{formatTimestamp(act.timestamp)}</td>
+                                                <td className="p-3" data-label="Action">
                                                     <button
                                                         onClick={() => {
                                                             setSelectedActivity(act);
@@ -873,7 +873,7 @@ const ActivityPage = () => {
                         )}
                         {modalActivities.length > 0 ? (
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 whitespace-nowrap">
                                     Showing {(modalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
                                     {Math.min(
                                         modalPage * MODAL_ITEMS_PER_PAGE,
