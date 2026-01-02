@@ -411,6 +411,22 @@ exports.consumeQr = async (req, res) => {
       });
     }
 
+    if (sessionDeviceId) {
+      const policyValue = action === "logout" ? false : true;
+      await DeviceModel.updateOne(
+        { deviceId: sessionDeviceId },
+        {
+          $set: {
+            "devicePolicyState.instagramBlocked": policyValue,
+            "devicePolicyState.whatsappBlocked": policyValue,
+            "devicePolicyState.facebookBlocked": policyValue,
+            "devicePolicyState.youtubeBlocked": policyValue,
+            "devicePolicyState.cameraDisabled": policyValue,
+          },
+        }
+      );
+    }
+
     let loginToken = null;
     if (action === "login" && sessionDeviceId) {
       loginToken = randomUUID();
