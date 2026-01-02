@@ -309,7 +309,10 @@ const EnquiriesPage = () => {
 
                 {/* ================= PAGINATION ================= */}
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6">
-                    <p className="text-sm text-gray-600">
+                    <p
+                        className="text-sm text-gray-600 whitespace-nowrap"
+                        style={{ whiteSpace: "nowrap" }}
+                    >
                         Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
                         {Math.min(currentPage * ITEMS_PER_PAGE, filteredEnquiries.length)} of{" "}
                         {filteredEnquiries.length}

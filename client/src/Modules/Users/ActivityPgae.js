@@ -8,6 +8,7 @@ const ActivityPage = () => {
     // STATIC CAMERA & APP ACTIVITY DATA
     // ============================================================
     const [activityGroups, setActivityGroups] = useState([]);
+    const [attendanceEntries, setAttendanceEntries] = useState([]);
 
     const [summary, setSummary] = useState({
         camera: 0,
@@ -62,6 +63,60 @@ const ActivityPage = () => {
         uninstall: summary.app_uninstall || 0,
     };
 
+    const resolveAttendanceAction = (entry) => {
+        const inTime = entry?.entryGateIn ? new Date(entry.entryGateIn).getTime() : null;
+        const outTime = entry?.exitGateOut ? new Date(entry.exitGateOut).getTime() : null;
+
+        if (inTime && outTime) return outTime >= inTime ? "Out" : "In";
+        if (outTime) return "Out";
+        if (inTime) return "In";
+
+        const action = String(entry?.metadata?.action || "").toLowerCase();
+        if (action === "login") return "In";
+        if (action === "logout") return "Out";
+        return "-";
+    };
+
+    const resolveAttendanceTime = (entry) => {
+        const inTime = entry?.entryGateIn ? new Date(entry.entryGateIn).getTime() : null;
+        const outTime = entry?.exitGateOut ? new Date(entry.exitGateOut).getTime() : null;
+
+        if (inTime && outTime) {
+            return outTime >= inTime ? entry?.exitGateOut : entry?.entryGateIn;
+        }
+        return entry?.exitGateOut || entry?.entryGateIn || entry?.updatedAt || null;
+    };
+
+    const attendanceCounts = useMemo(() => {
+        let totalIn = 0;
+        let totalOut = 0;
+        let todayIn = 0;
+        let todayOut = 0;
+
+        attendanceEntries.forEach((entry) => {
+            const inStamp = entry?.entryGateIn || null;
+            const outStamp = entry?.exitGateOut || null;
+
+            if (inStamp) totalIn += 1;
+            if (outStamp) totalOut += 1;
+            if (inStamp && isToday(inStamp)) todayIn += 1;
+            if (outStamp && isToday(outStamp)) todayOut += 1;
+
+            if (!inStamp && !outStamp) {
+                const action = resolveAttendanceAction(entry);
+                const stamp = entry?.updatedAt || null;
+                if (action === "In") totalIn += 1;
+                if (action === "Out") totalOut += 1;
+                if (isToday(stamp)) {
+                    if (action === "In") todayIn += 1;
+                    if (action === "Out") todayOut += 1;
+                }
+            }
+        });
+
+        return { totalIn, totalOut, todayIn, todayOut };
+    }, [attendanceEntries]);
+
 
     const todayCounts = useMemo(() => {
         const cameraTypes = ["screenshot", "take_picture", "video"];
@@ -70,6 +125,7 @@ const ActivityPage = () => {
         let accessToday = 0;
         let installToday = 0;
         let uninstallToday = 0;
+        let inOutToday = 0;
 
         for (const group of activityGroups) {
             const acts = group.activities || [];
@@ -90,6 +146,7 @@ const ActivityPage = () => {
             accessToday,
             installToday,
             uninstallToday,
+            inOutToday,
         };
     }, [activityGroups]);
 
@@ -98,6 +155,7 @@ const ActivityPage = () => {
     const [modalUser, setModalUser] = useState(null);
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [mediaModalActivity, setMediaModalActivity] = useState(null);
+    const [inOutModalUser, setInOutModalUser] = useState(null);
     const [modalFromDate, setModalFromDate] = useState("");
     const [modalToDate, setModalToDate] = useState("");
     const [modalTypeFilter, setModalTypeFilter] = useState("");
@@ -111,6 +169,7 @@ const ActivityPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const MODAL_ITEMS_PER_PAGE = 8;
     const [modalPage, setModalPage] = useState(1);
+    const [inOutModalPage, setInOutModalPage] = useState(1);
 
     // ============================================================
     // 🔍 SEARCH STATE + HANDLER (ADDED)
@@ -271,22 +330,228 @@ const ActivityPage = () => {
         });
     }, [activityGroups, cameraFilter, searchTerm, selectedType, fromDate, toDate]);
 
+    const attendanceLookup = useMemo(() => {
+        const byEmployeeId = new Map();
+        const byUserId = new Map();
+
+        activityGroups.forEach((group) => {
+            const record = {
+                userName: group.user || "-",
+                deviceId: group.deviceId || "",
+                employeeId: group.employeeId || "",
+                userKey: group.userKey || "",
+            };
+
+            if (record.employeeId) byEmployeeId.set(String(record.employeeId), record);
+            if (record.userKey) byUserId.set(String(record.userKey), record);
+        });
+
+        return { byEmployeeId, byUserId };
+    }, [activityGroups]);
+
+    const resolveAttendanceUserName = (entry) => {
+        const direct =
+            entry?.userName ||
+            entry?.name ||
+            entry?.user?.name ||
+            entry?.user?.fullName ||
+            entry?.user?.fullname ||
+            entry?.user?.username ||
+            entry?.employeeName ||
+            entry?.employee?.name ||
+            entry?.employee?.fullName ||
+            entry?.employee?.fullname;
+        if (direct) return direct;
+
+        const userIdKey = entry?.userId || entry?.user?._id || entry?.user?.id;
+        if (userIdKey && attendanceLookup.byUserId.has(String(userIdKey))) {
+            return attendanceLookup.byUserId.get(String(userIdKey)).userName;
+        }
+
+        const employeeIdKey = entry?.employeeId || entry?.employee?.employeeId;
+        if (employeeIdKey && attendanceLookup.byEmployeeId.has(String(employeeIdKey))) {
+            return attendanceLookup.byEmployeeId.get(String(employeeIdKey)).userName;
+        }
+
+        return "-";
+    };
+
+    const resolveAttendanceDeviceId = (entry) => {
+        const direct =
+            entry?.deviceId ||
+            entry?.device?.deviceId ||
+            entry?.device?.id ||
+            entry?.metadata?.deviceId;
+        if (direct) return direct;
+
+        const userIdKey = entry?.userId || entry?.user?._id || entry?.user?.id;
+        if (userIdKey && attendanceLookup.byUserId.has(String(userIdKey))) {
+            return attendanceLookup.byUserId.get(String(userIdKey)).deviceId || "-";
+        }
+
+        const employeeIdKey = entry?.employeeId || entry?.employee?.employeeId;
+        if (employeeIdKey && attendanceLookup.byEmployeeId.has(String(employeeIdKey))) {
+            return attendanceLookup.byEmployeeId.get(String(employeeIdKey)).deviceId || "-";
+        }
+
+        return "-";
+    };
+
+    const resolveAttendanceUserKey = (entry) => (
+        entry?.userId ||
+        entry?.user?._id ||
+        entry?.user?.id ||
+        entry?.employeeId ||
+        entry?.employee?._id ||
+        entry?.employee?.id ||
+        entry?._id ||
+        `${entry?.employeeId || "unknown"}-${entry?.deviceId || "device"}`
+    );
+
+    const filteredAttendance = useMemo(() => {
+        let list = [...attendanceEntries];
+        if (searchTerm.trim() !== "") {
+            const query = searchTerm.toLowerCase();
+            list = list.filter((item) =>
+                String(item.employeeId || "")
+                    .toLowerCase()
+                    .includes(query) ||
+                String(item.userId || item.user?._id || "")
+                    .toLowerCase()
+                    .includes(query) ||
+                String(resolveAttendanceUserName(item))
+                    .toLowerCase()
+                    .includes(query) ||
+                String(resolveAttendanceDeviceId(item))
+                    .toLowerCase()
+                    .includes(query)
+            );
+        }
+        if (fromDate || toDate) {
+            const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+            const to = toDate ? new Date(toDate + "T23:59:59") : null;
+            list = list.filter((item) => {
+                const stamp =
+                    item.entryGateIn || item.exitGateOut || item.updatedAt || null;
+                const t = stamp ? new Date(stamp) : null;
+                if (!t || Number.isNaN(t.getTime())) return false;
+                if (from && t < from) return false;
+                if (to && t > to) return false;
+                return true;
+            });
+        }
+        return list.sort((a, b) => {
+            const ta = new Date(a.entryGateIn || a.exitGateOut || 0).getTime();
+            const tb = new Date(b.entryGateIn || b.exitGateOut || 0).getTime();
+            return tb - ta;
+        });
+    }, [attendanceEntries, searchTerm, fromDate, toDate]);
+
+    const inOutModalEvents = useMemo(() => {
+        if (!inOutModalUser) return [];
+        const events = [];
+
+        (inOutModalUser.entries || []).forEach((entry) => {
+            if (entry?.entryGateIn) {
+                events.push({
+                    kind: "In",
+                    time: entry.entryGateIn,
+                    entry,
+                });
+            }
+            if (entry?.exitGateOut) {
+                events.push({
+                    kind: "Out",
+                    time: entry.exitGateOut,
+                    entry,
+                });
+            }
+
+            if (!entry?.entryGateIn && !entry?.exitGateOut) {
+                events.push({
+                    kind: resolveAttendanceAction(entry),
+                    time: resolveAttendanceTime(entry),
+                    entry,
+                });
+            }
+        });
+
+        return events.sort((a, b) => {
+            const ta = new Date(a.time || 0).getTime();
+            const tb = new Date(b.time || 0).getTime();
+            return tb - ta;
+        });
+    }, [inOutModalUser]);
+
+    const inOutUsers = useMemo(() => {
+        const grouped = new Map();
+
+        filteredAttendance.forEach((entry) => {
+            const key = resolveAttendanceUserKey(entry);
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    userKey: key,
+                    userId: entry?.userId || entry?.user?._id || entry?.user?.id || "",
+                    user: resolveAttendanceUserName(entry),
+                    deviceId: resolveAttendanceDeviceId(entry),
+                    employeeId: entry?.employeeId || entry?.employee?.employeeId || "",
+                    entries: [],
+                });
+            }
+            grouped.get(key).entries.push(entry);
+        });
+
+        const list = Array.from(grouped.values()).map((record) => {
+            const latest = [...record.entries].sort((a, b) => {
+                const ta = new Date(resolveAttendanceTime(a) || 0).getTime();
+                const tb = new Date(resolveAttendanceTime(b) || 0).getTime();
+                return tb - ta;
+            })[0];
+            return { ...record, latestEntry: latest };
+        });
+
+        return list.sort((a, b) => {
+            const ta = new Date(resolveAttendanceTime(a.latestEntry) || 0).getTime();
+            const tb = new Date(resolveAttendanceTime(b.latestEntry) || 0).getTime();
+            return tb - ta;
+        });
+    }, [filteredAttendance]);
+
     // PAGINATION LOGIC (ADDED)
     // ============================================================
     const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+    const attendanceTotalPages =
+        Math.ceil(inOutUsers.length / ITEMS_PER_PAGE) || 1;
     const modalTotalPages =
         Math.ceil(modalActivities.length / MODAL_ITEMS_PER_PAGE) || 1;
+    const inOutModalTotalPages =
+        Math.ceil(inOutModalEvents.length / MODAL_ITEMS_PER_PAGE) || 1;
 
     const paginatedUsers = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         const endIndex = startIndex + ITEMS_PER_PAGE;
         return filteredUsers.slice(startIndex, endIndex);
     }, [filteredUsers, currentPage]);
+    const paginatedAttendance = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        return filteredAttendance.slice(startIndex, endIndex);
+    }, [filteredAttendance, currentPage]);
+    const paginatedInOutUsers = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        return inOutUsers.slice(startIndex, endIndex);
+    }, [inOutUsers, currentPage]);
     const paginatedModalActivities = useMemo(() => {
         const startIndex = (modalPage - 1) * MODAL_ITEMS_PER_PAGE;
         const endIndex = startIndex + MODAL_ITEMS_PER_PAGE;
         return modalActivities.slice(startIndex, endIndex);
     }, [modalActivities, modalPage]);
+    const paginatedInOutModalEntries = useMemo(() => {
+        const startIndex = (inOutModalPage - 1) * MODAL_ITEMS_PER_PAGE;
+        const endIndex = startIndex + MODAL_ITEMS_PER_PAGE;
+        return inOutModalEvents.slice(startIndex, endIndex);
+    }, [inOutModalEvents, inOutModalPage]);
 
     const uniqueUsersCount = useMemo(() => filteredUsers.length, [filteredUsers]);
     // ============================================================
@@ -319,6 +584,22 @@ const ActivityPage = () => {
         setModalPage(1);
     };
 
+    const openInOutModal = (record) => {
+        setInOutModalUser({
+            userId: record.userId,
+            user: record.user,
+            employeeId: record.employeeId,
+            deviceId: record.deviceId,
+            entries: record.entries || [],
+        });
+        setInOutModalPage(1);
+    };
+
+    const closeInOutModal = () => {
+        setInOutModalUser(null);
+        setInOutModalPage(1);
+    };
+
     // ============================================================
     // CARD CONFIG
     // ============================================================
@@ -340,6 +621,13 @@ const ActivityPage = () => {
             type: "app_install_uninstall",
             count: counts.install + counts.uninstall,
             today: todayCounts.installToday + todayCounts.uninstallToday,
+        },
+        {
+            title: "In / Out",
+            type: "in_out",
+            count: attendanceCounts.totalIn + attendanceCounts.totalOut,
+            today: attendanceCounts.todayIn + attendanceCounts.todayOut,
+            meta: attendanceCounts,
         },
     ];
 
@@ -437,9 +725,10 @@ const ActivityPage = () => {
         const fetchActivity = async () => {
             setLoading(true);
             try {
-                const [summaryResponse, listResponse] = await Promise.all([
+                const [summaryResponse, listResponse, attendanceResponse] = await Promise.all([
                     getData("/activity/summary"),
                     getData("/activity"),
+                    getData("/attendance/all"),
                 ]);
                 if (summaryResponse?.data) {
                     setSummary(summaryResponse.data);
@@ -484,6 +773,7 @@ const ActivityPage = () => {
                 });
 
                 setActivityGroups(normalized);
+                setAttendanceEntries(Array.isArray(attendanceResponse) ? attendanceResponse : []);
             } catch (error) {
                 toast.error("Failed to load activity.");
             } finally {
@@ -529,11 +819,30 @@ const ActivityPage = () => {
                                 className={`text-2xl font-bold mt-2 ${isActive ? "text-[#018DD4]" : "text-black"
                                     }`}
                             >
-                                {item.count}
-                                <span className="text-base font-semibold text-gray-500">
-                                    {" "} / {item.today} Today
-                                </span>
+                                {item.type === "in_out" ? (
+                                    <span className="text-base font-semibold text-gray-700">
+                                        In {item.meta?.totalIn || 0}
+                                        <span className="text-gray-500">
+                                            {" "} / {item.meta?.todayIn || 0} Today
+                                        </span>
+                                    </span>
+                                ) : (
+                                    <>
+                                        {item.count}
+                                        <span className="text-base font-semibold text-gray-500">
+                                            {" "} / {item.today} Today
+                                        </span>
+                                    </>
+                                )}
                             </h2>
+                            {item.type === "in_out" && (
+                                <p className="text-base font-semibold text-gray-700 mt-1">
+                                    Out {item.meta?.totalOut || 0}
+                                    <span className="text-gray-500">
+                                        {" "} / {item.meta?.todayOut || 0} Today
+                                    </span>
+                                </p>
+                            )}
 
                             <p className="text-gray-500 text-sm">
                                 {item.count} activities detected
@@ -621,7 +930,104 @@ const ActivityPage = () => {
             )}
 
             {/* ================= TABLE ================= */}
-            {selectedType && (
+            {selectedType === "in_out" && (
+                <div className="mt-10 bg-white p-5 rounded-xl shadow activity-table-wrapper">
+                    <h2 className="text-xl font-bold mb-4">In / Out</h2>
+
+                    <div className="activity-table-scroll">
+                        <table className="w-full border-collapse activity-table activity-table--main">
+                            <thead>
+                                <tr className="bg-gray-100 text-left text-gray-700">
+                                    <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
+                                    <th style={{ width: columnWidths.user }} className="p-3">User</th>
+                                    <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
+                                    <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
+                                    <th style={{ width: columnWidths.emp }} className="p-3">Employee ID</th>
+                                    <th style={{ width: columnWidths.time }} className="p-3">Time</th>
+                                    <th style={{ width: columnWidths.action }} className="p-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {paginatedInOutUsers.map((record, index) => (
+                                    <tr key={record.userKey || index} className="hover:bg-gray-50">
+                                        <td className="p-3">
+                                            {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                                        </td>
+                                        <td className="p-3">{record.user || "-"}</td>
+                                        <td className="p-3">
+                                            {record.latestEntry ? resolveAttendanceAction(record.latestEntry) : "-"}
+                                        </td>
+                                        <td className="p-3">{record.deviceId || "-"}</td>
+                                        <td className="p-3">{record.employeeId || "-"}</td>
+                                        <td className="p-3">
+                                            {record.latestEntry
+                                                ? formatTimestamp(resolveAttendanceTime(record.latestEntry))
+                                                : "-"}
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-3 !p-0 !m-0">
+                                                <button
+                                                    onClick={() => openInOutModal(record)}
+                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 !m-0"
+                                                    title="View Details"
+                                                >
+                                                    <svg
+                                                        width={22}
+                                                        height={22}
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 576 512">
+                                                        <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
+                        <p
+                            className="text-sm text-gray-600 text-center sm:text-left whitespace-nowrap"
+                            style={{ whiteSpace: "nowrap" }}
+                        >
+                            Showing {inOutUsers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
+                            {Math.min(currentPage * ITEMS_PER_PAGE, inOutUsers.length)} of{" "}
+                            {inOutUsers.length}
+                        </p>
+                        <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                aria-label="Previous page"
+                            >
+                                ‹
+                            </button>
+                            <div className="flex flex-nowrap gap-2">
+                                {renderPaginationButtons(
+                                    currentPage,
+                                    attendanceTotalPages,
+                                    setCurrentPage
+                                )}
+                            </div>
+                            <button
+                                disabled={currentPage === attendanceTotalPages}
+                                onClick={() =>
+                                    setCurrentPage((p) => Math.min(p + 1, attendanceTotalPages))
+                                }
+                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                aria-label="Next page"
+                            >
+                                ›
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {selectedType && selectedType !== "in_out" && (
                 <div className="mt-10 bg-white p-5 rounded-xl shadow activity-table-wrapper">
                     <h2 className="text-xl font-bold mb-4">
                         User Activity — {
@@ -693,7 +1099,10 @@ const ActivityPage = () => {
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
 
                         {/* LEFT TEXT */}
-                        <p className="text-sm text-gray-600 text-center sm:text-left">
+                        <p
+                            className="text-sm text-gray-600 text-center sm:text-left whitespace-nowrap"
+                            style={{ whiteSpace: "nowrap" }}
+                        >
                             Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
                             {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of{" "}
                             {filteredUsers.length}
@@ -873,7 +1282,10 @@ const ActivityPage = () => {
                         )}
                         {modalActivities.length > 0 ? (
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
-                                <p className="text-sm text-gray-600">
+                                <p
+                                    className="text-sm text-gray-600 whitespace-nowrap"
+                                    style={{ whiteSpace: "nowrap" }}
+                                >
                                     Showing {(modalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
                                     {Math.min(
                                         modalPage * MODAL_ITEMS_PER_PAGE,
@@ -964,6 +1376,100 @@ const ActivityPage = () => {
                                 <div className="text-sm text-gray-500">No media available.</div>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {inOutModalUser && (
+                <div className="modal-overlay">
+                    <div className="modal-container">
+                        <button
+                            onClick={closeInOutModal}
+                            className="modal-close-btn"
+                        >
+                            ✕
+                        </button>
+                        <div className="modal-header modal-header--compact">
+                            <h2 className="modal-user-name">Name: {inOutModalUser.user || "-"}</h2>
+                            <p className="modal-meta">
+                                Employee ID: {inOutModalUser.employeeId || "-"}
+                            </p>
+                            <p className="modal-meta">
+                                Device ID: {inOutModalUser.deviceId || "-"}
+                            </p>
+                        </div>
+                        {paginatedInOutModalEntries.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No in/out activity found for this user.</p>
+                        ) : (
+                            <div className="activity-table-scroll">
+                                <table className="w-full border-collapse activity-table">
+                                    <thead>
+                                        <tr className="bg-gray-100 text-left text-gray-700">
+                                            <th className="p-3">Activity</th>
+                                            <th className="p-3">Device ID</th>
+                                            <th className="p-3">Employee ID</th>
+                                            <th className="p-3">Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {paginatedInOutModalEntries.map((event, index) => (
+                                            <tr key={event.entry?._id || event.entry?.id || index} className="hover:bg-gray-50">
+                                                <td className="p-3">{event.kind}</td>
+                                                <td className="p-3">{resolveAttendanceDeviceId(event.entry)}</td>
+                                                <td className="p-3">{event.entry?.employeeId || "-"}</td>
+                                                <td className="p-3">
+                                                    {formatTimestamp(event.time)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        {inOutModalEvents.length > 0 ? (
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+                                <p
+                                    className="text-sm text-gray-600 whitespace-nowrap"
+                                    style={{ whiteSpace: "nowrap" }}
+                                >
+                                    Showing {(inOutModalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
+                                    {Math.min(
+                                        inOutModalPage * MODAL_ITEMS_PER_PAGE,
+                                        inOutModalEvents.length
+                                    )}{" "}
+                                    of {inOutModalEvents.length}
+                                </p>
+                                <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+                                    <button
+                                        disabled={inOutModalPage === 1}
+                                        onClick={() => setInOutModalPage((p) => Math.max(p - 1, 1))}
+                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                        aria-label="Previous page"
+                                    >
+                                        ‹
+                                    </button>
+                                    <div className="flex flex-nowrap gap-2">
+                                        {renderPaginationButtons(
+                                            inOutModalPage,
+                                            inOutModalTotalPages,
+                                            setInOutModalPage
+                                        )}
+                                    </div>
+                                    <button
+                                        disabled={inOutModalPage === inOutModalTotalPages}
+                                        onClick={() =>
+                                            setInOutModalPage((p) =>
+                                                Math.min(p + 1, inOutModalTotalPages)
+                                            )
+                                        }
+                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                        aria-label="Next page"
+                                    >
+                                        ›
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             )}

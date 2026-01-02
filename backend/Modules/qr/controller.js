@@ -112,25 +112,9 @@ const getDayRange = (date) => {
 
 const markAttendance = async (employee, action, userId) => {
   const { start, end } = getDayRange(new Date());
-  const attendanceQuery = {
-    employeeId: employee.employeeId,
-    date: { $gte: start, $lte: end },
-  };
   const now = new Date();
 
   if (action === "login") {
-    const existing = await AttendanceModel.findOne({
-      ...attendanceQuery,
-      exitGateOut: { $exists: false },
-    });
-    if (existing) {
-      if (!existing.entryGateIn) {
-        existing.entryGateIn = now;
-        await existing.save();
-      }
-      return existing;
-    }
-
     return AttendanceModel.create({
       rfidCardId: employee.rfid,
       employeeId: employee.employeeId,
@@ -139,24 +123,39 @@ const markAttendance = async (employee, action, userId) => {
       entryGateIn: now,
       sectionAssigned: employee.section,
       status: "Present",
+      metadata: {
+        action: "login",
+      },
     });
   }
 
   if (action === "logout") {
-    const existing = await AttendanceModel.findOne({
-      ...attendanceQuery,
-      exitGateOut: { $exists: false },
-    }).sort({ createdAt: -1 });
-    if (existing) {
-      existing.exitGateOut = now;
-      if (existing.entryGateIn) {
-        const diffMs = now.getTime() - existing.entryGateIn.getTime();
-        existing.totalWorkHours = Math.max(0, diffMs / (1000 * 60 * 60));
-      }
-      await existing.save();
-      return existing;
+    const lastLogin = await AttendanceModel.findOne({
+      employeeId: employee.employeeId,
+      date: { $gte: start, $lte: end },
+      entryGateIn: { $exists: true },
+      "metadata.action": "login",
+    }).sort({ entryGateIn: -1, createdAt: -1 });
+    let totalWorkHours = null;
+    if (lastLogin?.entryGateIn) {
+      const diffMs = now.getTime() - lastLogin.entryGateIn.getTime();
+      totalWorkHours = Math.max(0, diffMs / (1000 * 60 * 60));
     }
-    return null;
+    return AttendanceModel.create({
+      rfidCardId: employee.rfid,
+      employeeId: employee.employeeId,
+      userId: userId || employee.userId || null,
+      date: start,
+      exitGateOut: now,
+      totalWorkHours,
+      sectionAssigned: employee.section,
+      status: "Present",
+      metadata: {
+        action: "logout",
+        entryGateIn: lastLogin?.entryGateIn || null,
+        entryId: lastLogin?._id || null,
+      },
+    });
   }
 
   return null;

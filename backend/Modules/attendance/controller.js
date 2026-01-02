@@ -6,8 +6,7 @@ const Validator = require("../../helpers/validators");
 const validateAttendanceData = async (data) => {
   const rules = {
     rfidCardId: "required|string",
-    date: "required|date",
-    sectionAssigned: "required|string",
+    date: "required|date"
   };
   const validator = new Validator(data, rules);
   await validator.validate();
