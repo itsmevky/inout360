@@ -34,13 +34,17 @@ const CustomDataTable = ({
     const btns = [];
     const start = Math.max(currentPage - 2, 1);
     const end = Math.min(currentPage + 2, totalPages);
+    const baseBtn =
+      "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
+    const activeBtn =
+      "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
 
     if (start > 1) {
       btns.push(
         <button
           key={1}
           onClick={() => handlePageClick(1)}
-          className="px-3 py-1 rounded-full text-sm bg-gray-200"
+          className={baseBtn}
         >
           1
         </button>
@@ -53,10 +57,17 @@ const CustomDataTable = ({
         <button
           key={i}
           onClick={() => handlePageClick(i)}
-          className={`px-3 py-1 rounded-full text-sm ${i === currentPage
-            ? "bg-yellow-400 text-white"
-            : "bg-gray-100"
-            }`}
+          className={`${baseBtn} ${i === currentPage ? activeBtn : ""}`}
+          style={
+            i === currentPage
+              ? {
+                  backgroundColor: "#2563eb",
+                  color: "#ffffff",
+                  borderColor: "#2563eb",
+                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+                }
+              : { backgroundColor: "#ffffff", color: "#374151" }
+          }
         >
           {i}
         </button>
@@ -70,7 +81,7 @@ const CustomDataTable = ({
         <button
           key={totalPages}
           onClick={() => handlePageClick(totalPages)}
-          className="px-3 py-1 rounded-full text-sm bg-gray-200"
+          className={baseBtn}
         >
           {totalPages}
         </button>
@@ -176,18 +187,18 @@ const CustomDataTable = ({
         </div>
 
         {/* Controls */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 justify-center w-full overflow-x-auto lg:overflow-visible">
           <button
             onClick={() =>
               handlePageClick(Math.max(currentPage - 1, 1))
             }
             disabled={currentPage === 1}
-            className="px-3 py-1 text-sm rounded bg-gray-100 disabled:opacity-50"
+            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
           >
-            Prev
+            ‹
           </button>
 
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-nowrap gap-2">
             {renderPaginationButtons()}
           </div>
 
@@ -198,9 +209,9 @@ const CustomDataTable = ({
               )
             }
             disabled={currentPage === totalPages}
-            className="px-3 py-1 text-sm rounded bg-gray-100 disabled:opacity-50"
+            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
           >
-            Next
+            ›
           </button>
         </div>
       </div>

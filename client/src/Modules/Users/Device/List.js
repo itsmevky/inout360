@@ -7,6 +7,8 @@ const Device = () => {
   const [deviceList, setDeviceList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const ITEMS_PER_PAGE = 15;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadDevices = async () => {
     setLoading(true);
@@ -72,6 +74,77 @@ const Device = () => {
   useEffect(() => {
     loadDevices();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deviceList]);
+
+  const totalPages = Math.ceil(deviceList.length / ITEMS_PER_PAGE) || 1;
+  const paginatedDeviceList = deviceList.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const renderPaginationButtons = () => {
+    const btns = [];
+    const start = Math.max(currentPage - 2, 1);
+    const end = Math.min(currentPage + 2, totalPages);
+    const baseBtn =
+      "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
+    const activeBtn =
+      "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
+
+    if (start > 1) {
+      btns.push(
+        <button
+          key={1}
+          onClick={() => setCurrentPage(1)}
+          className={baseBtn}
+        >
+          1
+        </button>
+      );
+      if (start > 2) btns.push(<span key="dots1">…</span>);
+    }
+
+    for (let i = start; i <= end; i += 1) {
+      btns.push(
+        <button
+          key={i}
+          onClick={() => setCurrentPage(i)}
+          className={`${baseBtn} ${i === currentPage ? activeBtn : ""}`}
+          style={
+            i === currentPage
+              ? {
+                  backgroundColor: "#2563eb",
+                  color: "#ffffff",
+                  borderColor: "#2563eb",
+                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+                }
+              : { backgroundColor: "#ffffff", color: "#374151" }
+          }
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (end < totalPages - 1) btns.push(<span key="dots2">…</span>);
+
+    if (end < totalPages) {
+      btns.push(
+        <button
+          key={totalPages}
+          onClick={() => setCurrentPage(totalPages)}
+          className={baseBtn}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return btns;
+  };
 
   // ========================= OPEN MODAL ========================= //
   const openDeviceModal = (device) => {
@@ -195,7 +268,7 @@ const Device = () => {
             </thead>
 
             <tbody>
-              {deviceList.map((device) => (
+              {paginatedDeviceList.map((device) => (
                 <tr key={device.id} className="border-b hover:bg-gray-50">
                   <td className="p-3 font-semibold">
                     {device.deviceName || device.deviceId || device.name || "-"}
@@ -278,8 +351,42 @@ const Device = () => {
                 <div className="text-gray-500 font-medium">Last Online</div>
                 <div className="text-right text-xs text-gray-600">
                   {formatDate(device.lastOnline || device.lastSeen)}
-                </div>
+        </div>
+
+        {!loading && deviceList.length > 0 ? (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4">
+            <p className="text-sm text-gray-600">
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
+              {Math.min(currentPage * ITEMS_PER_PAGE, deviceList.length)} of{" "}
+              {deviceList.length}
+            </p>
+
+            <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                aria-label="Previous page"
+              >
+                ‹
+              </button>
+              <div className="flex flex-nowrap gap-2">
+                {renderPaginationButtons()}
               </div>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                aria-label="Next page"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
               {/* ACTIONS */}
               <div className="flex justify-end gap-4 mt-4">

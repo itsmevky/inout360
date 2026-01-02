@@ -172,25 +172,39 @@ exports.getAll = async (req, res) => {
     const baseUrl = `${req.protocol}://${req.get("host")}`;
     const dataWithId = records.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
+      const rawDeviceCandidate =
+        plain.raw?.deviceId ||
+        plain.raw?.device_id ||
+        plain.raw?.device?.deviceId ||
+        plain.raw?.device?.id ||
+        plain.metadata?.deviceId ||
+        plain.metadata?.device_id ||
+        plain.metadata?.device?.deviceId ||
+        plain.metadata?.device?.id ||
+        "";
       const baseType = plain.event || plain.category || "";
       const activityTypeResolved = resolveActivityType(baseType);
       const categoryResolved = plain.category || resolveCategory(baseType);
       const media = Array.isArray(plain.media) ? plain.media : [];
-      const rawDeviceId = plain.raw?.deviceId || plain.metadata?.deviceId || "";
       let resolvedDeviceId = "";
-      if (rawDeviceId) {
-        if (mongoose.isValidObjectId(rawDeviceId)) {
-          resolvedDeviceId = deviceMap.get(String(rawDeviceId)) || "";
+      if (rawDeviceCandidate) {
+        if (mongoose.isValidObjectId(rawDeviceCandidate)) {
+          resolvedDeviceId =
+            deviceMap.get(String(rawDeviceCandidate)) || String(rawDeviceCandidate);
         } else {
-          resolvedDeviceId = String(rawDeviceId);
+          resolvedDeviceId = String(rawDeviceCandidate);
         }
-      } else if (
-        typeof plain.deviceId === "string" &&
-        !mongoose.isValidObjectId(plain.deviceId)
-      ) {
-        resolvedDeviceId = plain.deviceId;
-      } else {
-        resolvedDeviceId = deviceMap.get(String(plain.deviceId)) || "";
+      }
+      if (!resolvedDeviceId && plain.deviceId) {
+        if (
+          typeof plain.deviceId === "string" &&
+          !mongoose.isValidObjectId(plain.deviceId)
+        ) {
+          resolvedDeviceId = plain.deviceId;
+        } else if (mongoose.isValidObjectId(plain.deviceId)) {
+          resolvedDeviceId =
+            deviceMap.get(String(plain.deviceId)) || String(plain.deviceId);
+        }
       }
       const mediaUrlCandidate =
         plain.imagePath ||

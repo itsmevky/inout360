@@ -8,6 +8,7 @@ const UserSession = require("../user/userSessionsModel");
 const AttendanceModel = require("../attendance/model");
 const EmployeeModel = require("../employees/model");
 const SettingsModel = require("../settings/model");
+const VisitorModel = require("../user/visitorModel");
 
 const JWT_SECRET =
   process.env.SECRET_KEY ||
@@ -286,7 +287,7 @@ exports.generateQrPng = async (req, res) => {
 };
 
 exports.consumeQr = async (req, res) => {
-  const { token, userId, deviceId, location, deviceLocation } = req.body;
+    const { token, userId, deviceId, location, deviceLocation, employeeId } = req.body;
 
   try {
     if (!token) {
@@ -328,6 +329,8 @@ exports.consumeQr = async (req, res) => {
     // Resolve user/employee: accept userId as User _id or Employee _id/employeeId/userId
     let user = null;
     let employee = null;
+    let visitor = null;
+    let isVisitor = false;
 
     user = await User.findById(userId);
     if (!user) {
@@ -343,6 +346,23 @@ exports.consumeQr = async (req, res) => {
     }
 
     if (!employee && !user) {
+      visitor =
+        (await VisitorModel.findById(userId)) ||
+        (await VisitorModel.findOne({ employeeId: userId })) ||
+        (employeeId ? await VisitorModel.findOne({ employeeId }) : null) ||
+        (deviceId ? await VisitorModel.findOne({ deviceId }) : null);
+      if (visitor) {
+        isVisitor = true;
+        employee = {
+          employeeId: visitor.employeeId || String(visitor._id),
+          rfid: visitor.rfid || `VISITOR-${visitor.employeeId || visitor._id}`,
+          section: "Visitor",
+          userId: null,
+        };
+      }
+    }
+
+    if (!employee && !user && !visitor) {
       return res.status(404).json({ message: "User not found" });
     }
     if (!employee) {
@@ -350,16 +370,18 @@ exports.consumeQr = async (req, res) => {
     }
 
     let sessionDeviceId = deviceId;
-    if (user) {
-      const resolved = await resolveAssignedDeviceId(user, deviceId);
+    if (user || visitor) {
+      const resolved = await resolveAssignedDeviceId(user || visitor, deviceId);
       if (resolved.error) {
         return res.status(400).json({ message: resolved.error });
       }
       sessionDeviceId = resolved.deviceId;
       if (resolved.syncDeviceId) {
-        await User.findByIdAndUpdate(user._id, {
-          deviceId: resolved.syncDeviceId,
-        });
+        if (user) {
+          await User.findByIdAndUpdate(user._id, {
+            deviceId: resolved.syncDeviceId,
+          });
+        }
       }
     }
 
@@ -373,13 +395,14 @@ exports.consumeQr = async (req, res) => {
     }
 
     if (!employee.rfid || !employee.section) {
-      return res.status(400).json({ message: "Employee RFID/section missing for attendance" });
+      return res
+        .status(400)
+        .json({ message: "Employee RFID/section missing for attendance" });
     }
-
-    await markAttendance(employee, action, user?._id);
+    await markAttendance(employee, action, user?._id || visitor?._id);
 
     const sessionAction = action === "login" ? "Logged In" : "Logout";
-    const sessionUserId = employee?.userId || user?._id || employee._id;
+    const sessionUserId = employee?.userId || user?._id || visitor?._id || employee._id;
     const rawPayload = { ...req.body };
     delete rawPayload.token;
     delete rawPayload.userId;

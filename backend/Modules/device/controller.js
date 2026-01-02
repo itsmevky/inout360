@@ -25,6 +25,19 @@ const normalizeStatus = (value) => {
   return "OFFLINE";
 };
 
+const normalizeNameForCompare = (value) =>
+  String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const toDisplayName = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((part) =>
+      part ? `${part[0].toUpperCase()}${part.slice(1).toLowerCase()}` : ""
+    )
+    .join(" ");
+
 const buildDefaultRfid = (employeeId) => {
   const cleanId = String(employeeId || "EMP").trim() || "EMP";
   const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
@@ -534,16 +547,17 @@ exports.register = async (req, res) => {
 
     if (employeeId) {
       const normalizedName = String(name).trim();
+      const displayName = toDisplayName(normalizedName);
       employee = await EmployeeModel.findOne({ employeeId });
       if (!employee) {
         user = await UserModel.create({
-          name: normalizedName,
+          name: displayName,
           employeeId,
           email: null,
         });
         const rfid = await generateUniqueRfid(employeeId);
         employee = await EmployeeModel.create({
-          name: normalizedName,
+          name: displayName,
           employeeId,
           userId: user._id,
           email: null,
@@ -557,7 +571,7 @@ exports.register = async (req, res) => {
           : await UserModel.findOne({ employeeId });
         if (!user) {
           user = await UserModel.create({
-            name: normalizedName || employee.name,
+            name: displayName || employee.name,
             employeeId,
             email: null,
           });
@@ -567,11 +581,10 @@ exports.register = async (req, res) => {
           );
         }
         employee = await ensureEmployeeDefaults(employee, employeeId);
-        const normalizedNameLower = normalizedName.toLowerCase();
-        const employeeName = (employee.name ||
-          `${employee.firstName || ""} ${employee.lastName || ""}`)
-          .trim()
-          .toLowerCase();
+        const normalizedNameLower = normalizeNameForCompare(normalizedName);
+        const employeeName = normalizeNameForCompare(
+          employee.name || `${employee.firstName || ""} ${employee.lastName || ""}`
+        );
         if (normalizedNameLower !== employeeName) {
           return res.status(400).json({
             status: false,
@@ -585,9 +598,19 @@ exports.register = async (req, res) => {
       visitor = await VisitorModel.findOne({ deviceId: normalizedDeviceId });
       if (!visitor) {
         visitor = await createVisitorWithRetry({
-          name,
+          name: toDisplayName(name),
           deviceId: normalizedDeviceId,
         });
+      }
+      if (visitor?.name) {
+        const displayName = toDisplayName(visitor.name);
+        if (displayName && displayName !== visitor.name) {
+          visitor = await VisitorModel.findByIdAndUpdate(
+            visitor._id,
+            { $set: { name: displayName } },
+            { new: true }
+          );
+        }
       }
       visitor = await ensureVisitorDefaults(visitor, visitor?.employeeId);
       user = visitor;

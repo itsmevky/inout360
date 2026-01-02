@@ -109,6 +109,8 @@ const ActivityPage = () => {
     // ============================================================
     const ITEMS_PER_PAGE = 15;
     const [currentPage, setCurrentPage] = useState(1);
+    const MODAL_ITEMS_PER_PAGE = 8;
+    const [modalPage, setModalPage] = useState(1);
 
     // ============================================================
     // 🔍 SEARCH STATE + HANDLER (ADDED)
@@ -170,6 +172,9 @@ const ActivityPage = () => {
             return tb - ta;
         });
     }, [modalUser, modalFromDate, modalToDate, modalTypeFilter, modalContextType]);
+    useEffect(() => {
+        setModalPage(1);
+    }, [modalActivities]);
     const modalPolicyCounts = useMemo(() => {
         const acts = modalActivities || [];
         const today = acts.reduce((count, activity) => {
@@ -269,12 +274,19 @@ const ActivityPage = () => {
     // PAGINATION LOGIC (ADDED)
     // ============================================================
     const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+    const modalTotalPages =
+        Math.ceil(modalActivities.length / MODAL_ITEMS_PER_PAGE) || 1;
 
     const paginatedUsers = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         const endIndex = startIndex + ITEMS_PER_PAGE;
         return filteredUsers.slice(startIndex, endIndex);
     }, [filteredUsers, currentPage]);
+    const paginatedModalActivities = useMemo(() => {
+        const startIndex = (modalPage - 1) * MODAL_ITEMS_PER_PAGE;
+        const endIndex = startIndex + MODAL_ITEMS_PER_PAGE;
+        return modalActivities.slice(startIndex, endIndex);
+    }, [modalActivities, modalPage]);
 
     const uniqueUsersCount = useMemo(() => filteredUsers.length, [filteredUsers]);
     // ============================================================
@@ -287,6 +299,7 @@ const ActivityPage = () => {
         setModalToDate("");
         setModalTypeFilter("");
         setModalContextType(selectedType || null);
+        setModalPage(1);
         setModalUser({
             user: record.user,
             activities: record.activities || [],
@@ -303,6 +316,7 @@ const ActivityPage = () => {
         setModalToDate("");
         setModalTypeFilter("");
         setModalContextType(null);
+        setModalPage(1);
     };
 
     // ============================================================
@@ -352,6 +366,63 @@ const ActivityPage = () => {
             return `${raw} accessed`;
         }
         return raw;
+    };
+
+    const renderPaginationButtons = (current, total, onChange) => {
+        const btns = [];
+        const start = Math.max(current - 2, 1);
+        const end = Math.min(current + 2, total);
+        const baseBtn =
+            "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
+        const activeBtn =
+            "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
+
+        if (start > 1) {
+            btns.push(
+                <button key={1} onClick={() => onChange(1)} className={baseBtn}>
+                    1
+                </button>
+            );
+            if (start > 2) btns.push(<span key="dots1">…</span>);
+        }
+
+        for (let i = start; i <= end; i += 1) {
+            btns.push(
+                <button
+                    key={i}
+                    onClick={() => onChange(i)}
+                    className={`${baseBtn} ${i === current ? activeBtn : ""}`}
+                    style={
+                        i === current
+                            ? {
+                                backgroundColor: "#2563eb",
+                                color: "#ffffff",
+                                borderColor: "#2563eb",
+                                boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+                            }
+                            : { backgroundColor: "#ffffff", color: "#374151" }
+                    }
+                >
+                    {i}
+                </button>
+            );
+        }
+
+        if (end < total - 1) btns.push(<span key="dots2">…</span>);
+
+        if (end < total) {
+            btns.push(
+                <button
+                    key={total}
+                    onClick={() => onChange(total)}
+                    className={baseBtn}
+                >
+                    {total}
+                </button>
+            );
+        }
+
+        return btns;
     };
 
 
@@ -624,39 +695,28 @@ const ActivityPage = () => {
                         </p>
 
                         {/* RIGHT CONTROLS */}
-                        <div className="flex flex-col sm:flex-row gap-2 items-center justify-center sm:justify-end w-full sm:w-auto">
-
-                            {/* Previous */}
+                        <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                                className={`w-full sm:w-auto px-4 py-2 rounded border text-sm font-medium
-        ${currentPage === 1
-                                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                        : "bg-white hover:bg-gray-100"
-                                    }`}
+                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                aria-label="Previous page"
                             >
-                                ← Previous
+                                ‹
                             </button>
 
-                            {/* Page Info */}
-                            <span className="px-3 py-1 font-semibold text-sm whitespace-nowrap">
-                                Page {currentPage} / {totalPages}
-                            </span>
+                            <div className="flex flex-nowrap gap-2">
+                                {renderPaginationButtons(currentPage, totalPages, setCurrentPage)}
+                            </div>
 
-                            {/* Next */}
                             <button
                                 disabled={currentPage === totalPages}
                                 onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                                className={`w-full sm:w-auto px-4 py-2 rounded border text-sm font-medium
-        ${currentPage === totalPages
-                                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                        : "bg-white hover:bg-gray-100"
-                                    }`}
+                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                aria-label="Next page"
                             >
-                                Next →
+                                ›
                             </button>
-
                         </div>
                     </div>
 
@@ -750,7 +810,7 @@ const ActivityPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {modalActivities.map((act, index) => (
+                                        {paginatedModalActivities.map((act, index) => (
                                             <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
                                                 <td className="p-3">{formatActivityLabel(act)}</td>
                                                 <td className="p-3">{act.deviceId || "-"}</td>
@@ -788,6 +848,47 @@ const ActivityPage = () => {
                                 </table>
                             </div>
                         )}
+                        {modalActivities.length > 0 ? (
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+                                <p className="text-sm text-gray-600">
+                                    Showing {(modalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
+                                    {Math.min(
+                                        modalPage * MODAL_ITEMS_PER_PAGE,
+                                        modalActivities.length
+                                    )}{" "}
+                                    of {modalActivities.length}
+                                </p>
+                                <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+                                    <button
+                                        disabled={modalPage === 1}
+                                        onClick={() => setModalPage((p) => Math.max(p - 1, 1))}
+                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                        aria-label="Previous page"
+                                    >
+                                        ‹
+                                    </button>
+                                    <div className="flex flex-nowrap gap-2">
+                                        {renderPaginationButtons(
+                                            modalPage,
+                                            modalTotalPages,
+                                            setModalPage
+                                        )}
+                                    </div>
+                                    <button
+                                        disabled={modalPage === modalTotalPages}
+                                        onClick={() =>
+                                            setModalPage((p) =>
+                                                Math.min(p + 1, modalTotalPages)
+                                            )
+                                        }
+                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                        aria-label="Next page"
+                                    >
+                                        ›
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             )
