@@ -12,6 +12,7 @@ const ActivityPage = () => {
     const [summary, setSummary] = useState({
         camera: 0,
         app_access: 0,
+        app_install: 0,
         app_uninstall: 0,
     });
     const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ const ActivityPage = () => {
     const counts = {
         cameraTotal: summary.camera || 0,
         access: summary.app_access || 0,
+        install: summary.app_install || 0,
         uninstall: summary.app_uninstall || 0,
     };
 
@@ -66,6 +68,7 @@ const ActivityPage = () => {
 
         let cameraToday = 0;
         let accessToday = 0;
+        let installToday = 0;
         let uninstallToday = 0;
 
         for (const group of activityGroups) {
@@ -77,6 +80,7 @@ const ActivityPage = () => {
 
                 if (cameraTypes.includes(t) || a.category === "camera") cameraToday++;
                 if (a.category === "app_access") accessToday++;
+                if (a.category === "app_install") installToday++;
                 if (a.category === "app_uninstall") uninstallToday++;
             }
         }
@@ -84,6 +88,7 @@ const ActivityPage = () => {
         return {
             cameraToday,
             accessToday,
+            installToday,
             uninstallToday,
         };
     }, [activityGroups]);
@@ -147,8 +152,12 @@ const ActivityPage = () => {
                 if (modalTypeFilter) return type === modalTypeFilter;
                 return cameraTypes.includes(type) || a.category === "camera";
             });
-        } else if (modalContextType === "app_access" || modalContextType === "app_uninstall") {
-            list = list.filter((a) => a.category === modalContextType);
+        } else if (modalContextType === "app_access") {
+            list = list.filter((a) => a.category === "app_access");
+        } else if (modalContextType === "app_install_uninstall") {
+            list = list.filter(
+                (a) => a.category === "app_install" || a.category === "app_uninstall"
+            );
         } else if (modalTypeFilter) {
             list = list.filter((a) => {
                 const type = String(a.type || a.category || "").toLowerCase();
@@ -161,6 +170,14 @@ const ActivityPage = () => {
             return tb - ta;
         });
     }, [modalUser, modalFromDate, modalToDate, modalTypeFilter, modalContextType]);
+    const modalPolicyCounts = useMemo(() => {
+        const acts = modalActivities || [];
+        const today = acts.reduce((count, activity) => {
+            if (isToday(activity.timestamp)) return count + 1;
+            return count;
+        }, 0);
+        return { total: acts.length, today };
+    }, [modalActivities]);
     // ============================================================
     // FILTER + SEARCH
     // ============================================================
@@ -178,8 +195,13 @@ const ActivityPage = () => {
                     ["screenshot", "video"].includes(a.category)
                 );
             }
-            if (selectedType === "app_access" || selectedType === "app_uninstall") {
-                return activities.some((a) => a.category === selectedType);
+            if (selectedType === "app_access") {
+                return activities.some((a) => a.category === "app_access");
+            }
+            if (selectedType === "app_install_uninstall") {
+                return activities.some(
+                    (a) => a.category === "app_install" || a.category === "app_uninstall"
+                );
             }
             if (selectedType) {
                 return activities.some((a) => a.type === selectedType);
@@ -224,8 +246,12 @@ const ActivityPage = () => {
                         ["screenshot", "video"].includes(a.category)
                     );
                 }
-            } else if (selectedType === "app_access" || selectedType === "app_uninstall") {
-                relevant = activities.filter((a) => a.category === selectedType);
+            } else if (selectedType === "app_access") {
+                relevant = activities.filter((a) => a.category === "app_access");
+            } else if (selectedType === "app_install_uninstall") {
+                relevant = activities.filter(
+                    (a) => a.category === "app_install" || a.category === "app_uninstall"
+                );
             } else if (selectedType) {
                 relevant = activities.filter((a) => a.type === selectedType);
             }
@@ -296,10 +322,10 @@ const ActivityPage = () => {
             today: todayCounts.accessToday,
         },
         {
-            title: "App Uninstalled",
-            type: "app_uninstall",
-            count: counts.uninstall,
-            today: todayCounts.uninstallToday,
+            title: "App Install / Uninstall",
+            type: "app_install_uninstall",
+            count: counts.install + counts.uninstall,
+            today: todayCounts.installToday + todayCounts.uninstallToday,
         },
     ];
 
@@ -529,7 +555,9 @@ const ActivityPage = () => {
                                     : "ALL CAMERA ACTIVITY")
                                 : selectedType === "app_access"
                                     ? "APP ACCESSED"
-                                    : selectedType.replace("_", " ").toUpperCase()
+                                    : selectedType === "app_install_uninstall"
+                                        ? "APP INSTALL / UNINSTALL"
+                                        : selectedType.replace("_", " ").toUpperCase()
                         }
                     </h2>
 
@@ -657,6 +685,9 @@ const ActivityPage = () => {
                             </p>
                             <p className="modal-meta">
                                 Device ID: {modalUser.activities[0]?.deviceId}
+                            </p>
+                            <p className="modal-meta">
+                                Policy Voilation Count: {modalPolicyCounts.total}/{modalPolicyCounts.today} Today
                             </p>
                         </div>
 

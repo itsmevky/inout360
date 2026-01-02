@@ -459,7 +459,7 @@ const upsertDevice = async (payload) => {
     );
   }
 
-  return doc;
+  return { device: doc, wasInserted };
 };
 
 // Track or upsert device info (used on login or heartbeats)
@@ -472,7 +472,7 @@ exports.track = async (req, res) => {
         message: "userId, employeeId and deviceId are required",
       });
     }
-    const device = await upsertDevice(req.body);
+    const { device } = await upsertDevice(req.body);
     return res.status(200).json({
       status: true,
       message: "Device tracked",
@@ -631,7 +631,7 @@ exports.register = async (req, res) => {
       }
     }
 
-    const device = await upsertDevice({
+    const { device, wasInserted } = await upsertDevice({
       userId: user._id,
       employeeId: effectiveEmployeeId,
       deviceId,
@@ -672,6 +672,28 @@ exports.register = async (req, res) => {
       return res.status(500).json({
         status: false,
         message: "Device register failed: no document returned from DB",
+      });
+    }
+
+    if (wasInserted) {
+      await DeviceEventModel.create({
+        deviceId: device._id,
+        event: "app_install",
+        name: user?.name || device.ownerName || "",
+        employeeId: effectiveEmployeeId || "",
+        timestamp: new Date(),
+        policyVoilation: true,
+        metadata: {
+          policyVoilation: true,
+          deviceId: device.deviceId || device._id,
+          action: "install",
+          source: "device_register",
+        },
+        raw: {
+          deviceId,
+          userId: user?._id,
+          employeeId: effectiveEmployeeId,
+        },
       });
     }
 
