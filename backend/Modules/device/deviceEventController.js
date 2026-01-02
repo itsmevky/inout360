@@ -25,6 +25,7 @@ const resolveServiceAccountPath = () => {
 const normalizeDeviceId = (value) => String(value || "").trim();
 const resolveActivityCategory = (eventType) => {
   const value = String(eventType || "").toLowerCase();
+  if (value.includes("accessibility")) return "app_install";
   if (value.includes("camera")) return "camera";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
@@ -66,6 +67,7 @@ const resolvePolicyVoilation = async ({ eventType, userId, employeeId, device, m
     .filter(Boolean)
     .map((item) => String(item).trim().toLowerCase())
     .join(" ");
+  if (value.includes("accessibility")) return true;
   const policy = device?.devicePolicyState || {};
   const isBlocked = (flag) =>
     flag === true || flag === "true" || flag === 1 || flag === "1";
@@ -186,6 +188,7 @@ exports.storeEvent = async (req, res) => {
       imagePath,
       codeId,
       metadata,
+      narrative,
     } = req.body;
 
     if (!deviceId) {
@@ -237,8 +240,12 @@ exports.storeEvent = async (req, res) => {
       employeeId: resolvedEmployeeId,
       codeId,
       policyVoilation,
+      narrative,
       timestamp: normalizedTimestamp,
-      metadata: metadata || {},
+      metadata: {
+        ...(metadata || {}),
+        ...(narrative ? { narrative } : {}),
+      },
       raw: req.body,
     });
 
@@ -258,7 +265,8 @@ exports.storeEvent = async (req, res) => {
       category: resolveActivityCategory(event),
       activityType: event,
       title: "Device event",
-      description: `Event ${event} reported by ${actorName || device.deviceId}`,
+      description:
+        narrative || `Event ${event} reported by ${actorName || device.deviceId}`,
       name: actorName,
       imagePath: resolvedImagePath,
       occurredAt: normalizedTimestamp,
@@ -267,6 +275,7 @@ exports.storeEvent = async (req, res) => {
         cameraStatus,
         imagePath: resolvedImagePath,
         codeId,
+        ...(narrative ? { narrative } : {}),
         ...metadata,
       },
       raw: req.body,

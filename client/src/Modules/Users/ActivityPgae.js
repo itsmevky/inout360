@@ -336,7 +336,7 @@ const ActivityPage = () => {
             today: todayCounts.accessToday,
         },
         {
-            title: "App Install / Uninstall",
+            title: "App Install / Uninstall / Accessibility Permission",
             type: "app_install_uninstall",
             count: counts.install + counts.uninstall,
             today: todayCounts.installToday + todayCounts.uninstallToday,
@@ -358,6 +358,11 @@ const ActivityPage = () => {
         if (type === "screenshot" || type === "take_picture") return "image";
         if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(url)) return "image";
         return activity?.media ? "image" : "none";
+    };
+
+    const isAccessibilityEvent = (activity) => {
+        const value = String(activity?.type || activity?.category || "").toLowerCase();
+        return value.includes("accessibility");
     };
 
     const formatActivityLabel = (activity) => {
@@ -531,7 +536,7 @@ const ActivityPage = () => {
                             </h2>
 
                             <p className="text-gray-500 text-sm">
-                                {item.count} user activities detected
+                                {item.count} activities detected
                             </p>
                         </div>
                     );
@@ -627,7 +632,7 @@ const ActivityPage = () => {
                                 : selectedType === "app_access"
                                     ? "APP ACCESSED"
                                     : selectedType === "app_install_uninstall"
-                                        ? "APP INSTALL / UNINSTALL"
+                                        ? "APP INSTALL / UNINSTALL / ACCESSIBILITY PERMISSION"
                                         : selectedType.replace("_", " ").toUpperCase()
                         }
                     </h2>
@@ -739,16 +744,30 @@ const ActivityPage = () => {
                         </button>
 
                         <div className="modal-header modal-header--compact">
-                            <h2 className="modal-user-name">{modalUser.user}</h2>
+                            <h2 className="modal-user-name">Name: {modalUser.user}</h2>
                             <p className="modal-meta">
                                 Employee ID: {modalUser.activities[0]?.employeeId}
                             </p>
                             <p className="modal-meta">
                                 Device ID: {modalUser.activities[0]?.deviceId}
                             </p>
-                            <p className="modal-meta">
-                                Policy Voilation Count: {modalPolicyCounts.total}/{modalPolicyCounts.today} Today
-                            </p>
+                        </div>
+
+                        <div className="mt-4">
+                            <div className="activity-card p-4 rounded-xl border-l-4 bg-[#018DD4]/15 border-[#018DD4] max-w-sm">
+                                <p className="activity-card-title font-semibold text-lg text-black">
+                                    Policy Voilation Count
+                                </p>
+                                <h2 className="text-2xl font-bold mt-2 text-[#018DD4]">
+                                    {modalPolicyCounts.total}
+                                    <span className="text-base font-semibold text-gray-500">
+                                        {" "} / {modalPolicyCounts.today} Today
+                                    </span>
+                                </h2>
+                                <p className="text-gray-500 text-sm">
+                                    {modalPolicyCounts.total} activities detected
+                                </p>
+                            </div>
                         </div>
 
                         <div className="modal-activity-filters modal-activity-filters--compact">
@@ -812,7 +831,11 @@ const ActivityPage = () => {
                                     <tbody>
                                         {paginatedModalActivities.map((act, index) => (
                                             <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
-                                                <td className="p-3">{formatActivityLabel(act)}</td>
+                                                <td className="p-3">
+                                                    {isAccessibilityEvent(act)
+                                                        ? `${modalUser?.user || "User"} has turned off the accessibility settings of app`
+                                                        : formatActivityLabel(act)}
+                                                </td>
                                                 <td className="p-3">{act.deviceId || "-"}</td>
                                                 <td className="p-3">{formatTimestamp(act.timestamp)}</td>
                                                 <td className="p-3">

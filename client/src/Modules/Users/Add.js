@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { API } from "../../Helpers/api.js";
+import { API, getData } from "../../Helpers/api.js";
 
 const AddUserForm = ({ onSuccess, onClose }) => {
   const [formError, setFormError] = useState("");
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState("");
   const [open, setOpen] = useState(false);
+  const [locations, setLocations] = useState([]);
   const navigate = useNavigate();
 
   /* ================= OPEN POPUP ================= */
@@ -27,6 +28,18 @@ const AddUserForm = ({ onSuccess, onClose }) => {
     setProfileImagePreview(url);
     return () => URL.revokeObjectURL(url);
   }, [profileImageFile]);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await getData("/location");
+        setLocations((res?.locations || []).map((loc) => loc.name).filter(Boolean));
+      } catch (_err) {
+        setLocations([]);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const handleProfileImageChange = (e) => {
     setProfileImageFile(e.target.files?.[0] || null);
@@ -151,7 +164,7 @@ const AddUserForm = ({ onSuccess, onClose }) => {
               <SelectField label="Employment Type" name="employmentType" options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
               <SelectField label="Role" name="role" options={["employee", "admin", "hr","manager","supervisor","contractor"]} />
               <SelectField label="Status" name="status" options={["Active", "Inactive"]} />
-              <SelectField label="Location" name="location" options={["Ajivainfotech", "Chandigarh", "Delhi"]} />
+              <SelectField label="Location" name="location" options={locations} />
             </Grid>
 
             {/* ================= BANK DETAILS ================= */}

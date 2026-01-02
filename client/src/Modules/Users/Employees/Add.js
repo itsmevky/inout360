@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { API } from "../../../Helpers/api.js";
+import { API, getData } from "../../../Helpers/api.js";
 import Validator from "../../../Helpers/validators.js";
 import rules from "../Rules.js";
 
@@ -25,6 +25,7 @@ const AddUserForm = () => {
     section: "",
     rfid: "",
     role: "",
+    location: "",
     aadharcardnumber: "",
     pancard: "",
     accountNumber: "",
@@ -35,6 +36,7 @@ const AddUserForm = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [businesses, setBusinesses] = useState([]); // New state for businesses
+  const [locations, setLocations] = useState([]);
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState("");
   const validator = new Validator(rules);
@@ -132,6 +134,18 @@ const AddUserForm = () => {
     setProfileImagePreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [profileImageFile]);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await getData("/location");
+        setLocations((res?.locations || []).map((loc) => loc.name).filter(Boolean));
+      } catch (_err) {
+        setLocations([]);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const handleProfileImageChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -518,6 +532,26 @@ const AddUserForm = () => {
                   <option value="C">employee</option>
                 </select>
                 <label className="AJ-floating-label">Role</label>
+              </div>
+
+              <div className="AJ-floating-label-wrapper mb-6">
+                <select
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${getFieldClassName(
+                    "location"
+                  )} AJ-floating-input`}
+                >
+                  <option value="" disabled hidden></option>
+                  {locations.map((loc) => (
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
+                  ))}
+                </select>
+                <label className="AJ-floating-label">Location</label>
               </div>
 
               {/* ================= BANKING DETAILS ================= */}

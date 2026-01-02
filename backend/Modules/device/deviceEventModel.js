@@ -9,6 +9,7 @@ const deviceEventSchemaDefinition = {
   employeeId: { type: String, trim: true, index: true },
   codeId: { type: String, trim: true },
   policyVoilation: { type: Boolean, default: false },
+  narrative: { type: String, trim: true },
   timestamp: { type: Date, default: Date.now },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },

@@ -9,6 +9,7 @@ const resolveCategory = (eventType) => {
   const value = String(eventType || "").toLowerCase();
   if (value.includes("app_install")) return "app_install";
   if (value.includes("app_uninstall")) return "app_uninstall";
+  if (value.includes("accessibility")) return "app_install";
   if (value.includes("youtube")) return "app_access";
   if (value.includes("whatsapp")) return "app_access";
   if (value.includes("instagram")) return "app_access";
@@ -23,6 +24,7 @@ const resolveActivityType = (eventType) => {
   const value = String(eventType || "").toLowerCase();
   if (value.includes("app_install")) return "app_install";
   if (value.includes("app_uninstall")) return "app_uninstall";
+  if (value.includes("accessibility")) return "accessibility_permission";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
   if (value.includes("camera")) return "take_picture";
@@ -111,7 +113,7 @@ exports.getSummary = async (_req, res) => {
     });
     const installCount = await DeviceEventModel.countDocuments({
       policyVoilation: true,
-      event: { $regex: "app[_-]?install", $options: "i" },
+      event: { $regex: "app[_-]?install|accessibility", $options: "i" },
     });
     const uninstallCount = await DeviceEventModel.countDocuments({
       policyVoilation: true,
@@ -159,13 +161,51 @@ exports.getAll = async (req, res) => {
           .map((id) => String(id))
       )
     );
+    const deviceIdCandidates = new Set();
+    records.forEach((doc) => {
+      const raw = doc?.raw || {};
+      const metadata = doc?.metadata || {};
+      const candidates = [
+        raw?.deviceId,
+        raw?.device_id,
+        raw?.device?.deviceId,
+        metadata?.deviceId,
+        metadata?.device_id,
+        metadata?.device?.deviceId,
+        doc?.deviceId,
+      ]
+        .filter(Boolean)
+        .map((value) => String(value));
+      candidates.forEach((value) => {
+        if (!mongoose.isValidObjectId(value)) {
+          deviceIdCandidates.add(value);
+        }
+      });
+    });
+
     const deviceMap = new Map();
+    const deviceIdMap = new Map();
     if (deviceIds.length > 0) {
       const devices = await DeviceModel.find({ _id: { $in: deviceIds } })
         .select("deviceId")
         .lean();
       devices.forEach((device) => {
         deviceMap.set(String(device._id), device.deviceId || "");
+        if (device.deviceId) {
+          deviceIdMap.set(String(device.deviceId).toLowerCase(), device.deviceId);
+        }
+      });
+    }
+    if (deviceIdCandidates.size > 0) {
+      const devices = await DeviceModel.find({
+        deviceId: { $in: Array.from(deviceIdCandidates) },
+      })
+        .select("deviceId")
+        .lean();
+      devices.forEach((device) => {
+        if (device.deviceId) {
+          deviceIdMap.set(String(device.deviceId).toLowerCase(), device.deviceId);
+        }
       });
     }
 
@@ -189,10 +229,11 @@ exports.getAll = async (req, res) => {
       let resolvedDeviceId = "";
       if (rawDeviceCandidate) {
         if (mongoose.isValidObjectId(rawDeviceCandidate)) {
-          resolvedDeviceId =
-            deviceMap.get(String(rawDeviceCandidate)) || String(rawDeviceCandidate);
+          resolvedDeviceId = deviceMap.get(String(rawDeviceCandidate)) || "";
         } else {
-          resolvedDeviceId = String(rawDeviceCandidate);
+          resolvedDeviceId =
+            deviceIdMap.get(String(rawDeviceCandidate).toLowerCase()) ||
+            String(rawDeviceCandidate);
         }
       }
       if (!resolvedDeviceId && plain.deviceId) {
@@ -200,10 +241,10 @@ exports.getAll = async (req, res) => {
           typeof plain.deviceId === "string" &&
           !mongoose.isValidObjectId(plain.deviceId)
         ) {
-          resolvedDeviceId = plain.deviceId;
-        } else if (mongoose.isValidObjectId(plain.deviceId)) {
           resolvedDeviceId =
-            deviceMap.get(String(plain.deviceId)) || String(plain.deviceId);
+            deviceIdMap.get(String(plain.deviceId).toLowerCase()) || plain.deviceId;
+        } else if (mongoose.isValidObjectId(plain.deviceId)) {
+          resolvedDeviceId = deviceMap.get(String(plain.deviceId)) || "";
         }
       }
       const mediaUrlCandidate =
