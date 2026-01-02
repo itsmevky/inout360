@@ -234,14 +234,6 @@ const ActivityPage = () => {
     useEffect(() => {
         setModalPage(1);
     }, [modalActivities]);
-    const modalPolicyCounts = useMemo(() => {
-        const acts = modalActivities || [];
-        const today = acts.reduce((count, activity) => {
-            if (isToday(activity.timestamp)) return count + 1;
-            return count;
-        }, 0);
-        return { total: acts.length, today };
-    }, [modalActivities]);
     // ============================================================
     // FILTER + SEARCH
     // ============================================================
@@ -649,11 +641,93 @@ const ActivityPage = () => {
     };
 
     const isAccessibilityEvent = (activity) => {
-        const value = String(activity?.type || activity?.category || "").toLowerCase();
+        const value = String(
+            activity?.rawEvent || activity?.type || activity?.category || ""
+        ).toLowerCase();
         return value.includes("accessibility");
     };
 
+    const resolveAccessibilityMessage = (activity) => {
+        const name =
+            activity?.name ||
+            activity?.userName ||
+            activity?.employeeId ||
+            "User";
+        const raw = String(
+            activity?.rawEvent || activity?.type || activity?.category || ""
+        ).toLowerCase();
+        if (raw.includes("off")) {
+            return `${name} has turned off the accessibility settings of app`;
+        }
+        if (raw.includes("on")) {
+            return `${name} has turned on the accessibility settings of app`;
+        }
+        return `${name} has updated the accessibility settings of app`;
+    };
+
+    const modalPolicyCounts = useMemo(() => {
+        const acts = modalActivities || [];
+        let accessibilityOn = 0;
+        let accessibilityOff = 0;
+        let installCount = 0;
+        let uninstallCount = 0;
+        let accessibilityOnToday = 0;
+        let accessibilityOffToday = 0;
+        let installToday = 0;
+        let uninstallToday = 0;
+        const today = acts.reduce((count, activity) => {
+            if (isToday(activity.timestamp)) return count + 1;
+            return count;
+        }, 0);
+        acts.forEach((activity) => {
+            const raw = String(
+                activity?.rawEvent || activity?.type || activity?.category || ""
+            ).toLowerCase();
+            const isTodayActivity = isToday(activity.timestamp);
+
+            if (isAccessibilityEvent(activity)) {
+                if (raw.includes("off")) {
+                    accessibilityOff += 1;
+                    if (isTodayActivity) accessibilityOffToday += 1;
+                } else if (raw.includes("on")) {
+                    accessibilityOn += 1;
+                    if (isTodayActivity) accessibilityOnToday += 1;
+                }
+            }
+
+            if (activity?.category === "app_install") {
+                installCount += 1;
+                if (isTodayActivity) installToday += 1;
+            }
+            if (activity?.category === "app_uninstall") {
+                uninstallCount += 1;
+                if (isTodayActivity) uninstallToday += 1;
+            }
+        });
+
+        return {
+            total: acts.length,
+            today,
+            accessibilityOn,
+            accessibilityOff,
+            installCount,
+            uninstallCount,
+            accessibilityOnToday,
+            accessibilityOffToday,
+            installToday,
+            uninstallToday,
+        };
+    }, [modalActivities]);
+
     const formatActivityLabel = (activity) => {
+        if (isAccessibilityEvent(activity)) {
+            const raw = String(
+                activity?.rawEvent || activity?.type || activity?.category || ""
+            ).toLowerCase();
+            if (raw.includes("off")) return "Accessibility Off";
+            if (raw.includes("on")) return "Accessibility On";
+            return "Accessibility Permission";
+        }
         const raw = String(activity?.type || activity?.category || "-").replace("_", " ");
         if (String(activity?.category || "").toLowerCase() === "app_access") {
             return `${raw} accessed`;
@@ -758,8 +832,11 @@ const ActivityPage = () => {
                             deviceId: item.deviceId,
                             employeeId: item.employeeId,
                             timestamp: item.occurredAt,
+                            name: item.name || item.userName || group.user || "",
+                            userName: item.userName || group.user || "",
                             appName,
                             media: resolveMediaUrl(mediaUrl),
+                            rawEvent: item.metadata?.originalEvent || item.event || item.title || "",
                         };
                     });
 
@@ -1162,23 +1239,6 @@ const ActivityPage = () => {
                             </p>
                         </div>
 
-                        <div className="mt-4">
-                            <div className="activity-card p-4 rounded-xl border-l-4 bg-[#018DD4]/15 border-[#018DD4] max-w-sm">
-                                <p className="activity-card-title font-semibold text-lg text-black">
-                                    Policy Voilation Count
-                                </p>
-                                <h2 className="text-2xl font-bold mt-2 text-[#018DD4]">
-                                    {modalPolicyCounts.total}
-                                    <span className="text-base font-semibold text-gray-500">
-                                        {" "} / {modalPolicyCounts.today} Today
-                                    </span>
-                                </h2>
-                                <p className="text-gray-500 text-sm">
-                                    {modalPolicyCounts.total} activities detected
-                                </p>
-                            </div>
-                        </div>
-
                         <div className="modal-activity-filters modal-activity-filters--compact">
                             <h3 className="modal-section-title !m-0">User Activities</h3>
                             <div className="modal-activity-controls">
@@ -1240,11 +1300,7 @@ const ActivityPage = () => {
                                     <tbody>
                                         {paginatedModalActivities.map((act, index) => (
                                             <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
-                                                <td className="p-3">
-                                                    {isAccessibilityEvent(act)
-                                                        ? `${modalUser?.user || "User"} has turned off the accessibility settings of app`
-                                                        : formatActivityLabel(act)}
-                                                </td>
+                                                <td className="p-3">{formatActivityLabel(act)}</td>
                                                 <td className="p-3">{act.deviceId || "-"}</td>
                                                 <td className="p-3">{formatTimestamp(act.timestamp)}</td>
                                                 <td className="p-3">
@@ -1349,7 +1405,11 @@ const ActivityPage = () => {
                             </p>
                         </div>
                         <div className="mt-2">
-                            {String(mediaModalActivity.category || mediaModalActivity.type || "").toLowerCase() === "app_access" ? (
+                            {isAccessibilityEvent(mediaModalActivity) ? (
+                                <div className="text-sm text-gray-700">
+                                    {resolveAccessibilityMessage(mediaModalActivity)}
+                                </div>
+                            ) : String(mediaModalActivity.category || mediaModalActivity.type || "").toLowerCase() === "app_access" ? (
                                 <div className="text-sm text-gray-700">
                                     {`${(mediaModalActivity.appName || mediaModalActivity.type || "App").replace("_", " ")} accessed by ${mediaModalActivity.name || "user"}`}
                                 </div>

@@ -31,6 +31,53 @@ const normalizeDeviceId = (value) =>
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const normalizePolicyUpdate = (payload) => {
+  if (!payload || typeof payload !== "object") {
+    return { policyUpdate: null, locationAllowed: undefined };
+  }
+
+  const source =
+    payload.devicePolicyState && typeof payload.devicePolicyState === "object"
+      ? payload.devicePolicyState
+      : payload;
+
+  const policyKeys = [
+    "cameraDisabled",
+    "uninstallBlocked",
+    "facebookBlocked",
+    "instagramBlocked",
+    "youtubeBlocked",
+    "whatsappBlocked",
+    "kioskMode",
+    "allowedApps",
+    "blockedApps",
+  ];
+
+  const policyUpdate = {};
+  policyKeys.forEach((key) => {
+    if (source[key] === undefined) return;
+    if (key === "allowedApps" || key === "blockedApps") {
+      if (Array.isArray(source[key])) {
+        policyUpdate[key] = source[key];
+      }
+      return;
+    }
+    if (typeof source[key] === "boolean") {
+      policyUpdate[key] = source[key];
+    }
+  });
+
+  const locationAllowed =
+    typeof payload.locationAllowed === "boolean"
+      ? payload.locationAllowed
+      : undefined;
+
+  return {
+    policyUpdate: Object.keys(policyUpdate).length ? policyUpdate : null,
+    locationAllowed,
+  };
+};
+
 const resolveUserLocation = async (user) => {
   const directLocation = user?.location;
   if (directLocation) {
@@ -434,19 +481,22 @@ exports.consumeQr = async (req, res) => {
     }
 
     if (sessionDeviceId) {
-      const policyValue = action === "logout" ? false : true;
-      await DeviceModel.updateOne(
-        { deviceId: sessionDeviceId },
-        {
-          $set: {
-            "devicePolicyState.instagramBlocked": policyValue,
-            "devicePolicyState.whatsappBlocked": policyValue,
-            "devicePolicyState.facebookBlocked": policyValue,
-            "devicePolicyState.youtubeBlocked": policyValue,
-            "devicePolicyState.cameraDisabled": policyValue,
-          },
+      const payloadSettings =
+        req.body?.devicePolicyState || req.body?.deviceSettings;
+      const { policyUpdate, locationAllowed } =
+        normalizePolicyUpdate(payloadSettings);
+      if (policyUpdate || locationAllowed !== undefined) {
+        const setUpdate = {};
+        if (policyUpdate) {
+          Object.entries(policyUpdate).forEach(([key, value]) => {
+            setUpdate[`devicePolicyState.${key}`] = value;
+          });
         }
-      );
+        if (locationAllowed !== undefined) {
+          setUpdate.locationAllowed = locationAllowed;
+        }
+        await DeviceModel.updateOne({ deviceId: sessionDeviceId }, { $set: setUpdate });
+      }
     }
 
     let loginToken = null;
