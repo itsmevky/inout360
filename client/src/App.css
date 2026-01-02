@@ -1506,13 +1506,13 @@ align-items: flex-start;
   }
 
   /* Map column names */
-  .activity-table--main td:nth-child(1)::before { content: "Sr.No"; }
-  .activity-table--main td:nth-child(2)::before { content: "User"; }
-  .activity-table--main td:nth-child(3)::before { content: "Activity"; }
-  .activity-table--main td:nth-child(4)::before { content: "Device ID"; }
-  .activity-table--main td:nth-child(5)::before { content: "Employee ID"; }
-  .activity-table--main td:nth-child(6)::before { content: "Time"; }
-  .activity-table--main td:nth-child(7)::before { content: "Action"; }
+  .activity-table td:nth-child(1)::before { content: "Sr.No"; }
+  .activity-table td:nth-child(2)::before { content: "User"; }
+  .activity-table td:nth-child(3)::before { content: "Activity"; }
+  .activity-table td:nth-child(4)::before { content: "Device ID"; }
+  .activity-table td:nth-child(5)::before { content: "Employee ID"; }
+  .activity-table td:nth-child(6)::before { content: "Time"; }
+  .activity-table td:nth-child(7)::before { content: "Action"; }
 
   /* Action alignment */
   .activity-table td {
