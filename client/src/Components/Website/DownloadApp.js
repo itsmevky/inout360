@@ -20,7 +20,7 @@ const DownloadApp = () => {
 
                 {/* ANDROID BUTTON */}
                 <a
-                    href="https://yourdomain.com/apk/app-release.apk"
+                    href="https://pidilite.ajivainfotech.com/pidilite.apk"
                     download
                     className="pid_Qr_btn pid_Qr_android"
                 >
