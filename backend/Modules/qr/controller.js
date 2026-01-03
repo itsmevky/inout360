@@ -431,12 +431,19 @@ exports.consumeQr = async (req, res) => {
       }
     }
 
-    if (action === "login" && user?.sessionStatus === "Logged In") {
+    if (
+      action === "login" &&
+      (user?.sessionStatus === "Logged In" ||
+        visitor?.sessionStatus === "Logged In")
+    ) {
       return res.status(400).json({
         message: "User is already Logged In ",
       });
     }
-    if (action === "logout" && user?.sessionStatus === "Logout") {
+    if (
+      action === "logout" &&
+      (user?.sessionStatus === "Logout" || visitor?.sessionStatus === "Logout")
+    ) {
       return res.status(400).json({ message: "User is already logged out" });
     }
 
@@ -476,6 +483,11 @@ exports.consumeQr = async (req, res) => {
     }
     if (user) {
       await User.findByIdAndUpdate(user._id, {
+        sessionStatus: sessionAction,
+      });
+    }
+    if (visitor) {
+      await VisitorModel.findByIdAndUpdate(visitor._id, {
         sessionStatus: sessionAction,
       });
     }

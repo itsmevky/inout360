@@ -6,6 +6,7 @@ const DeviceEvent = require("./deviceEventModel");
 const DeviceModel = require("./model");
 const ActivityModel = require("../activity/model");
 const UserModel = require("../user/model");
+const UserSession = require("../user/userSessionsModel");
 const EmployeeModel = require("../employees/model");
 const VisitorModel = require("../user/visitorModel");
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
@@ -47,6 +48,32 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
       .select("sessionStatus")
       .lean();
     if (user) return user.sessionStatus;
+  }
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const visitor = await VisitorModel.findById(userId)
+      .select("sessionStatus")
+      .lean();
+    if (visitor) return visitor.sessionStatus;
+  }
+  if (employeeId) {
+    const visitor = await VisitorModel.findOne({ employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (visitor) return visitor.sessionStatus;
+  }
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const session = await UserSession.findOne({ userId })
+      .sort({ createdAt: -1 })
+      .select("action")
+      .lean();
+    if (session) return session.action;
+  }
+  if (employeeId) {
+    const session = await UserSession.findOne({ employeeId })
+      .sort({ createdAt: -1 })
+      .select("action")
+      .lean();
+    if (session) return session.action;
   }
   return null;
 };

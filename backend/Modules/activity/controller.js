@@ -4,6 +4,8 @@ const DeviceModel = require("../device/model");
 const paginate = require("../../helpers/limitoffset");
 const mongoose = require("mongoose");
 const UserModel = require("../user/model");
+const VisitorModel = require("../user/visitorModel");
+const UserSession = require("../user/userSessionsModel");
 
 const resolveCategory = (eventType) => {
   const value = String(eventType || "").toLowerCase();
@@ -46,11 +48,35 @@ const resolvePolicyVoilation = async (payload) => {
   const isCamera =
     isCameraActivity(payload.activityType) || isCameraActivity(payload.category);
   if (!isCamera) return false;
-  if (!payload.userId || !mongoose.isValidObjectId(payload.userId)) return false;
-  const user = await UserModel.findById(payload.userId)
-    .select("sessionStatus")
+  if (payload.userId && mongoose.isValidObjectId(payload.userId)) {
+    const user = await UserModel.findById(payload.userId)
+      .select("sessionStatus")
+      .lean();
+    if (user?.sessionStatus) return user.sessionStatus === "Logged In";
+    const visitor = await VisitorModel.findById(payload.userId)
+      .select("sessionStatus")
+      .lean();
+    if (visitor?.sessionStatus) return visitor.sessionStatus === "Logged In";
+  }
+  if (payload.employeeId) {
+    const visitor = await VisitorModel.findOne({ employeeId: payload.employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (visitor?.sessionStatus) return visitor.sessionStatus === "Logged In";
+  }
+  const sessionQuery = {};
+  if (payload.userId && mongoose.isValidObjectId(payload.userId)) {
+    sessionQuery.userId = payload.userId;
+  } else if (payload.employeeId) {
+    sessionQuery.employeeId = payload.employeeId;
+  } else {
+    return false;
+  }
+  const session = await UserSession.findOne(sessionQuery)
+    .sort({ createdAt: -1 })
+    .select("action")
     .lean();
-  return user?.sessionStatus === "Logged In";
+  return session?.action === "Logged In";
 };
 
 const buildActivityFilter = ({ userId, employeeId, deviceId, category, search }) => {
