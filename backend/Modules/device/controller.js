@@ -1229,3 +1229,32 @@ exports.uninstallDevice = async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 };
+
+// Admin delete device by id or deviceId
+exports.remove = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ status: false, message: "id is required" });
+    }
+
+    const query = mongoose.isValidObjectId(id)
+      ? { _id: id }
+      : { deviceId: new RegExp(`^${escapeRegExp(normalizeDeviceId(id))}$`, "i") };
+
+    const device = await DeviceModel.findOne(query);
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    await DeviceModel.deleteOne({ _id: device._id });
+
+    return res.status(200).json({
+      status: true,
+      message: "Device deleted successfully",
+      data: { deviceId: device.deviceId || device._id },
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};

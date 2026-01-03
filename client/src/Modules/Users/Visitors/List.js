@@ -8,7 +8,11 @@ import { useUser } from "../../../Helpers/Context/UserContext.js";
 
 const VisitorsList = () => {
   const { user } = useUser();
-  const isSuperadmin = String(user?.role || "").toLowerCase() === "superadmin";
+  const role = String(user?.role || "").toLowerCase();
+  const canManageVisitors = role === "superadmin" || role === "admin";
+  const canCreateVisitors =
+    role === "superadmin" || role === "admin" || role === "hr" || role === "manager";
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,7 +130,7 @@ const VisitorsList = () => {
       selector: (row) => formatDate(row.createdAt),
       width: "22%",
     },
-    ...(isSuperadmin
+    ...(canManageVisitors
       ? [
           {
             name: "Actions",
@@ -233,7 +237,7 @@ const VisitorsList = () => {
               </select>
             </div>
           </div>
-          {isSuperadmin && (
+          {canCreateVisitors && (
             <div className="add-new-employee-button">
               <button
                 className="crm-buttonsection"

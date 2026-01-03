@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { API, getData } from "../../Helpers/api.js";
+import { useUser } from "../../Helpers/Context/UserContext.js";
 
 const AddUserForm = ({ onSuccess, onClose }) => {
   const [formError, setFormError] = useState("");
@@ -10,6 +11,12 @@ const AddUserForm = ({ onSuccess, onClose }) => {
   const [open, setOpen] = useState(false);
   const [locations, setLocations] = useState([]);
   const navigate = useNavigate();
+  const { user } = useUser();
+  const role = String(user?.role || "").toLowerCase();
+  const roleOptions =
+    role === "hr" || role === "manager"
+      ? ["employee", "contractor", "supervisor"]
+      : ["employee", "admin", "hr", "manager", "supervisor", "contractor"];
 
   /* ================= OPEN POPUP ================= */
   useEffect(() => {
@@ -162,7 +169,7 @@ const AddUserForm = ({ onSuccess, onClose }) => {
               <SelectField label="Section" name="section" options={["Welding", "Electrical", "Assembly"]} />
               <SelectField label="Shift" name="shift" options={["Morning", "Evening", "Night"]} />
               <SelectField label="Employment Type" name="employmentType" options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
-              <SelectField label="Role" name="role" options={["employee", "admin", "hr","manager","supervisor","contractor"]} />
+              <SelectField label="Role" name="role" options={roleOptions} />
               <SelectField label="Status" name="status" options={["Active", "Inactive"]} />
               <SelectField label="Location" name="location" options={locations} />
             </Grid>

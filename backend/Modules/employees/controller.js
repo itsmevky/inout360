@@ -198,6 +198,16 @@ const validateEmployeeData = async (data) => {
 exports.add = async (req, res) => {
   try {
     const normalized = normalizePayload(req.body);
+    const creatorRole = String(req.user?.role || "").toLowerCase();
+    if (["hr", "manager"].includes(creatorRole)) {
+      const allowedRoles = ["employee", "contractor", "supervisor"];
+      if (!allowedRoles.includes(String(normalized.role || "").toLowerCase())) {
+        return res.status(403).json({
+          status: false,
+          message: "You can only assign employee, contractor, or supervisor roles.",
+        });
+      }
+    }
     if (req.file) {
       normalized.profileImage = `/uploads/employees/${req.file.filename}`;
     }

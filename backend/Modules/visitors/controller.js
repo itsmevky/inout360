@@ -132,27 +132,32 @@ const normalizePayload = (data = {}) => {
 };
 
 const validateVisitor = async (data) => {
-  const rules = {
-    firstName: "required|string",
-    lastName: "required|string",
-    gender: "required|string",
-    dob: "required|date",
-    email: "required|email",
-    phone: "required|string",
-    employeeId: "required|string",
-    rfid: "required|string",
-    role: "required|string",
-    status: "required|string",
-    location: "required|string",
-    "currentAddress.street": "required|string",
-    "currentAddress.city": "required|string",
-    "currentAddress.state": "required|string",
-    "currentAddress.pincode": "required|string",
-    "permanentAddress.street": "required|string",
-    "permanentAddress.city": "required|string",
-    "permanentAddress.state": "required|string",
-    "permanentAddress.pincode": "required|string",
-  };
+  const isProvided = (value) => value !== undefined && value !== null && value !== "";
+  const rules = {};
+
+  if (isProvided(data.firstName)) rules.firstName = "string";
+  if (isProvided(data.lastName)) rules.lastName = "string";
+  if (isProvided(data.gender)) rules.gender = "string";
+  if (isProvided(data.dob)) rules.dob = "date";
+  if (isProvided(data.email)) rules.email = "email";
+  if (isProvided(data.phone)) rules.phone = "string";
+  if (isProvided(data.employeeId)) rules.employeeId = "string";
+  if (isProvided(data.rfid)) rules.rfid = "string";
+  if (isProvided(data.role)) rules.role = "string";
+  if (isProvided(data.status)) rules.status = "string";
+  if (isProvided(data.location)) rules.location = "string";
+
+  if (isProvided(data.currentAddress?.street)) rules["currentAddress.street"] = "string";
+  if (isProvided(data.currentAddress?.city)) rules["currentAddress.city"] = "string";
+  if (isProvided(data.currentAddress?.state)) rules["currentAddress.state"] = "string";
+  if (isProvided(data.currentAddress?.pincode)) rules["currentAddress.pincode"] = "string";
+
+  if (isProvided(data.permanentAddress?.street)) rules["permanentAddress.street"] = "string";
+  if (isProvided(data.permanentAddress?.city)) rules["permanentAddress.city"] = "string";
+  if (isProvided(data.permanentAddress?.state)) rules["permanentAddress.state"] = "string";
+  if (isProvided(data.permanentAddress?.pincode)) rules["permanentAddress.pincode"] = "string";
+
+  if (!Object.keys(rules).length) return;
   const validator = new Validator(data, rules);
   await validator.validate();
 };
@@ -182,13 +187,13 @@ exports.add = async (req, res) => {
     }
     await validateVisitor(normalized);
 
-    const existing = await VisitorModel.findOne({
-      $or: [
-        { email: normalized.email },
-        { employeeId: normalized.employeeId },
-        ...(normalized.rfid ? [{ rfid: normalized.rfid }] : []),
-      ],
-    });
+    const orConditions = [];
+    if (normalized.email) orConditions.push({ email: normalized.email });
+    if (normalized.employeeId) orConditions.push({ employeeId: normalized.employeeId });
+    if (normalized.rfid) orConditions.push({ rfid: normalized.rfid });
+    const existing = orConditions.length
+      ? await VisitorModel.findOne({ $or: orConditions })
+      : null;
     if (existing) {
       return res.status(400).json({
         status: false,

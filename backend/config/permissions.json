@@ -14,7 +14,9 @@
       "activity": ["read"],
       "permissions": ["create", "read", "update", "delete"],
       "role": ["create", "read", "update", "delete"],
-      "visitors": ["create", "read", "update", "delete"]
+      "visitors": ["create", "read", "update", "delete"],
+      "location": ["create", "read", "update", "delete"],
+      "device": ["create", "read", "update", "delete"]
     }
   },
   "admin": {
@@ -30,25 +32,29 @@
       "dashboard": ["read"],
       "settings": ["read", "update"],
       "activity": ["read"],
-      "permissions": ["create", "read", "update"],
-      "role": ["create", "read", "update"],
-      "visitors": ["read"]
+      "permissions": ["create", "read", "update", "delete"],
+      "role": ["create", "read", "update", "delete"],
+      "visitors": ["create", "read", "update", "delete"],
+      "location": ["create", "read", "update", "delete"],
+      "device": ["create", "read", "update", "delete"]
     }
   },
   "hr": {
     "hierarchy": 3,
     "modules": {
       "user": ["read", "update"],
-      "employees": ["create", "read", "update"],
+      "employees": ["create", "read"],
       "contractors": ["create", "read", "update"],
       "sections": ["create", "read", "update"],
       "shift": ["create", "read", "update"],
       "attendance": ["create", "read", "update"],
       "rfid": ["create", "read", "update"],
       "dashboard": ["read"],
+      "settings": ["read"],
       "permissions": ["read"],
       "role": ["read"],
-      "visitors": ["read"]
+      "visitors": ["read"],
+      "location": ["read"]
     }
   },
   "supervisor": {
@@ -68,14 +74,16 @@
     "hierarchy": 5,
     "modules": {
       "user": ["read"],
-      "employees": ["read"],
+      "employees": ["create", "read"],
       "contractors": ["read"],
       "sections": ["read"],
       "shift": ["read"],
       "attendance": ["read"],
       "rfid": ["read"],
       "dashboard": ["read"],
-      "visitors": ["read"]
+      "settings": ["read"],
+      "visitors": ["read"],
+      "location": ["read"]
     }
   },
   "employee": {
