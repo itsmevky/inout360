@@ -40,6 +40,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
   const allNavItems = [
     { label: "Dashboard", icon: "dashboard", path: "/dashboard" },
     { label: "Employees", icon: "group", path: `${basePath}/employees` },
+    { label: "Visitors", icon: "badge", path: `${basePath}/visitors` },
     // { label: "Attendance", icon: "event", path: `${basePath}/attendance` },
     // { label: "Contractors", icon: "badge", path: `${basePath}/contractor` },
     // { label: "Rfid", icon: "qr_code", path: `${basePath}/rfid` },
@@ -58,6 +59,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     superadmin: [
       "Dashboard",
       "Employees",
+      "Visitors",
       // "Attendance",
       // "Contractors",
       // "Rfid",
@@ -71,6 +73,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     admin: [
       "Dashboard",
       "Employees",
+      "Visitors",
       // "Attendance",
       // "Contractors",
       // "Rfid",
@@ -80,7 +83,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Activity",
       "Enquiries",
     ],
-    hr: ["Dashboard", "Employees"],
+    hr: ["Dashboard", "Employees", "Visitors"],
     employee: ["Dashboard"],
   };
 

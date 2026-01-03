@@ -17,6 +17,9 @@ import Contractors from "../Modules/Users/Contractors/List";
 import Rfid from "../Modules/Users/Rfid/List";
 import Device from "../Modules/Users/Device/List";
 import Zones from "../Modules/Users/Zones/List";
+import Visitors from "../Modules/Users/Visitors/List";
+import AddVisitor from "../Modules/Users/Visitors/Add";
+import EditVisitor from "../Modules/Users/Visitors/Edit";
 import ActivityPgae from "../Modules/Users/ActivityPgae.js";
 import Fields from "../Modules/Settings/Fields/Fieldlist";
 import LocationList from "../Modules/Employee/Location/List.js";
@@ -69,6 +72,9 @@ function DashboardLayout({ userRole }) {
 
               {/* ✅ Employees, Roles, Permissions */}
               <Route path="users/employees" element={<Employees />} />
+              <Route path="users/visitors" element={<Visitors />} />
+              <Route path="users/visitors/add" element={<AddVisitor />} />
+              <Route path="users/visitors/edit/:id" element={<EditVisitor />} />
               <Route path="users/roles" element={<Roles />} />
               <Route path="users/permissions" element={<PermissionsTable />} />
 

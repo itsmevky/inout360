@@ -13,7 +13,8 @@
       "settings": ["read", "update"],
       "activity": ["read"],
       "permissions": ["create", "read", "update", "delete"],
-      "role": ["create", "read", "update", "delete"]
+      "role": ["create", "read", "update", "delete"],
+      "visitors": ["create", "read", "update", "delete"]
     }
   },
   "admin": {
@@ -30,7 +31,8 @@
       "settings": ["read", "update"],
       "activity": ["read"],
       "permissions": ["create", "read", "update"],
-      "role": ["create", "read", "update"]
+      "role": ["create", "read", "update"],
+      "visitors": ["read"]
     }
   },
   "hr": {
@@ -45,7 +47,8 @@
       "rfid": ["create", "read", "update"],
       "dashboard": ["read"],
       "permissions": ["read"],
-      "role": ["read"]
+      "role": ["read"],
+      "visitors": ["read"]
     }
   },
   "supervisor": {
@@ -57,7 +60,8 @@
       "shift": ["read"],
       "attendance": ["read", "update"],
       "rfid": ["read"],
-      "dashboard": ["read"]
+      "dashboard": ["read"],
+      "visitors": ["read"]
     }
   },
   "manager": {
@@ -70,7 +74,8 @@
       "shift": ["read"],
       "attendance": ["read"],
       "rfid": ["read"],
-      "dashboard": ["read"]
+      "dashboard": ["read"],
+      "visitors": ["read"]
     }
   },
   "employee": {

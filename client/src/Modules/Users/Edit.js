@@ -112,7 +112,7 @@ const EditUserForm = ({ user }) => {
 
       if (response.status === true || response.success === true) {
         toast.success("✅ Employee updated successfully!");
-        setTimeout(() => navigate("/dashboard/users/employees"), 1500);
+        navigate("/dashboard/users/employees");
       } else {
         toast.error(response.message || "❌ Failed to update employee.");
       }

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {toast} from "react-toastify";
 import { getData, putData, domainpath } from "../../../Helpers/api.js";
 
-const EditUserForm = ({ user, onClose }) => {
+const EditUserForm = ({ user, onClose, onSuccess }) => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
   const backendBase = domainpath.replace(/\/api\/?$/, "");
@@ -126,6 +126,10 @@ const EditUserForm = ({ user, onClose }) => {
       const res = await putData(`/employee/${user?._id}`, payload);
       if (res?.success || res?.status === true || res?.status === 200) {
         toast.success("Employee updated successfully");
+        if (onSuccess) {
+          onSuccess();
+          return;
+        }
         navigate("/dashboard/users/employees");
       } else toast.error(res.message || "Update failed");
     } catch {

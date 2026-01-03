@@ -173,6 +173,14 @@ const API = {
       ...filters,
     }),
 
+  getVisitors: (search = "", page = 0, limit = 10, filters = {}) =>
+    getData("/visitors/all", {
+      search,
+      page,
+      limit,
+      ...filters,
+    }),
+
   updateStatus: (data) => putData("/employees/status", data),
 
   // ✅ Fixed Login API (NO double /api)
