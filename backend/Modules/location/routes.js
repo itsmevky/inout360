@@ -6,7 +6,7 @@ const checkAuthorization = require("../../middleware/checkAuthorization");
 
 const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor"];
 
-router.get("/coords", verifyToken, checkAuthorization(allRoles, "location"), Controller.getCoords);
+router.get("/coords",Controller.getCoords);
 router.get("/", verifyToken, checkAuthorization(allRoles, "location"), Controller.getAll);
 router.get("/:id", verifyToken, checkAuthorization(allRoles, "location"), Controller.getById);
 router.post("/add", verifyToken, checkAuthorization(allRoles, "location"), Controller.add);
