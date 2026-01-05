@@ -98,6 +98,7 @@ const resolvePolicyVoilation = async ({ eventType, userId, employeeId, device, m
   const policy = device?.devicePolicyState || {};
   const isBlocked = (flag) =>
     flag === true || flag === "true" || flag === 1 || flag === "1";
+  if (value.includes("uninstall")) return isBlocked(policy.uninstallBlocked);
   if (value === "youtube" || value.includes("youtube")) return isBlocked(policy.youtubeBlocked);
   if (value === "whatsapp" || value.includes("whatsapp")) return isBlocked(policy.whatsappBlocked);
   if (value === "instagram" || value.includes("instagram")) return isBlocked(policy.instagramBlocked);
