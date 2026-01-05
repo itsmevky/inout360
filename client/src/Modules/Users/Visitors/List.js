@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API, deleteData } from "../../../Helpers/api.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
+import { capitalizeFirstLetter } from "../../../Helpers/CapitalizeFirstLetter.js";
 
 const VisitorsList = () => {
   const { user } = useUser();
@@ -107,7 +108,7 @@ const VisitorsList = () => {
     },
     {
       name: "Name",
-      selector: (row) => row.name || "-",
+      selector: (row) => capitalizeFirstLetter(row.name || "-"),
       width: "18%",
     },
     {

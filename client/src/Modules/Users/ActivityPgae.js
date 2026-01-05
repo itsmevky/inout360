@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { domainpath, getData } from "../../Helpers/api.js";
+import { capitalizeFirstLetter } from "../../Helpers/CapitalizeFirstLetter.js";
 
 const ActivityPage = () => {
 
@@ -353,16 +354,16 @@ const ActivityPage = () => {
             entry?.employee?.name ||
             entry?.employee?.fullName ||
             entry?.employee?.fullname;
-        if (direct) return direct;
+        if (direct) return capitalizeFirstLetter(direct);
 
         const userIdKey = entry?.userId || entry?.user?._id || entry?.user?.id;
         if (userIdKey && attendanceLookup.byUserId.has(String(userIdKey))) {
-            return attendanceLookup.byUserId.get(String(userIdKey)).userName;
+            return capitalizeFirstLetter(attendanceLookup.byUserId.get(String(userIdKey)).userName);
         }
 
         const employeeIdKey = entry?.employeeId || entry?.employee?.employeeId;
         if (employeeIdKey && attendanceLookup.byEmployeeId.has(String(employeeIdKey))) {
-            return attendanceLookup.byEmployeeId.get(String(employeeIdKey)).userName;
+            return capitalizeFirstLetter(attendanceLookup.byEmployeeId.get(String(employeeIdKey)).userName);
         }
 
         return "-";
@@ -728,11 +729,14 @@ const ActivityPage = () => {
             if (raw.includes("on")) return "Accessibility On";
             return "Accessibility Permission";
         }
-        const raw = String(activity?.type || activity?.category || "-").replace("_", " ");
-        if (String(activity?.category || "").toLowerCase() === "app_access") {
-            return `${raw} accessed`;
-        }
-        return raw;
+        const raw = String(activity?.type || activity?.category || "-")
+            .replace(/[_-]+/g, " ")
+            .trim();
+        const label =
+            String(activity?.category || "").toLowerCase() === "app_access"
+                ? `${raw} accessed`
+                : raw;
+        return capitalizeFirstLetter(label);
     };
 
     const renderPaginationButtons = (current, total, onChange) => {
@@ -832,8 +836,8 @@ const ActivityPage = () => {
                             deviceId: item.deviceId,
                             employeeId: item.employeeId,
                             timestamp: item.occurredAt,
-                            name: item.name || item.userName || group.user || "",
-                            userName: item.userName || group.user || "",
+                            name: capitalizeFirstLetter(item.name || item.userName || group.user || ""),
+                            userName: capitalizeFirstLetter(item.userName || group.user || ""),
                             appName,
                             media: resolveMediaUrl(mediaUrl),
                             rawEvent: item.metadata?.originalEvent || item.event || item.title || "",
@@ -841,7 +845,7 @@ const ActivityPage = () => {
                     });
 
                     return {
-                        user: group.user || "-",
+                        user: capitalizeFirstLetter(group.user || "-"),
                         userKey: group.userKey || group.user || "-",
                         deviceId: group.deviceId || "",
                         employeeId: group.employeeId || "",

@@ -1,6 +1,7 @@
 // src/Modules/Notifications/NotificationsPage.js
 import React, { useEffect, useState } from "react";
 import { getData, postData } from "../../Helpers/api";
+import { capitalizeFirstLetter } from "../../Helpers/CapitalizeFirstLetter.js";
 import {
     FaCamera,
     FaCameraRetro,
@@ -18,6 +19,9 @@ const iconMap = {
     APP_UNINSTALL: <FaTrashAlt />,
 };
 
+const normalizeLabel = (value) =>
+    capitalizeFirstLetter(String(value || "").replace(/[_-]+/g, " ").trim());
+
 const resolveType = ({ activityType, category }) => {
     const value = String(activityType || category || "").toLowerCase();
     if (value.includes("app_install")) return "APP_INSTALL";
@@ -33,8 +37,9 @@ const resolveType = ({ activityType, category }) => {
 
 const toNotification = (item) => {
     const type = resolveType(item);
-    const baseMessage = item.description || item.activityType || "Activity detected";
-    const appLabel = item.activityType || item.description || "App";
+    const baseMessage =
+        normalizeLabel(item.description || item.activityType || "Activity detected");
+    const appLabel = normalizeLabel(item.activityType || item.description || "App");
     const message =
         type === "APP_ACCESS"
             ? `${appLabel} Opened`
@@ -42,7 +47,7 @@ const toNotification = (item) => {
     return {
         _id: item.id || item._id,
         type,
-        employeeName: item.name || "",
+        employeeName: capitalizeFirstLetter(item.name || ""),
         employeeId: item.employeeId || "",
         deviceId: item.deviceId || "",
         message,

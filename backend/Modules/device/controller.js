@@ -698,27 +698,25 @@ exports.register = async (req, res) => {
       });
     }
 
-    if (wasInserted) {
-      await DeviceEventModel.create({
-        deviceId: device._id,
-        event: "app_install",
-        name: user?.name || device.ownerName || "",
-        employeeId: effectiveEmployeeId || "",
-        timestamp: new Date(),
+    await DeviceEventModel.create({
+      deviceId: device._id,
+      event: "app_install",
+      name: user?.name || device.ownerName || "",
+      employeeId: effectiveEmployeeId || "",
+      timestamp: new Date(),
+      policyVoilation: true,
+      metadata: {
         policyVoilation: true,
-        metadata: {
-          policyVoilation: true,
-          deviceId: device.deviceId || device._id,
-          action: "install",
-          source: "device_register",
-        },
-        raw: {
-          deviceId,
-          userId: user?._id,
-          employeeId: effectiveEmployeeId,
-        },
-      });
-    }
+        deviceId: device.deviceId || device._id,
+        action: "install",
+        source: "device_register",
+      },
+      raw: {
+        deviceId,
+        userId: user?._id,
+        employeeId: effectiveEmployeeId,
+      },
+    });
 
     console.log("Device register saved:", device._id.toString());
     const deviceToken = jwt.sign(

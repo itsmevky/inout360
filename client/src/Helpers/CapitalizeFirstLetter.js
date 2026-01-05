@@ -1,4 +1,11 @@
 export const capitalizeFirstLetter = (str) => {
   if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  const value = String(str).trim();
+  if (!value) return "";
+  return value
+    .split(/\s+/)
+    .map((word) =>
+      word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ""
+    )
+    .join(" ");
 };
