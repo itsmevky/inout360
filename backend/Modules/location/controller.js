@@ -73,7 +73,7 @@ exports.getAll = async (req, res) => {
 exports.getCoords = async (_req, res) => {
   try {
     const locations = await LocationModel.find({})
-      .select("name lat lng")
+      .select("name lat lng radius")
       .lean();
     return res.status(200).json({
       status: true,
@@ -81,6 +81,7 @@ exports.getCoords = async (_req, res) => {
         name: loc.name,
         lat: loc.lat,
         lng: loc.lng,
+        radius: loc.radius,
       })),
     });
   } catch (error) {
