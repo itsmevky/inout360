@@ -31,6 +31,25 @@ const normalizeDeviceId = (value) =>
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const buildPolicyStateForAction = (currentState = {}, action) => {
+  const nextState = { ...currentState };
+  const isLogin = action === "login";
+  const isLogout = action === "logout";
+
+  Object.keys(nextState).forEach((key) => {
+    if (typeof nextState[key] !== "boolean") return;
+    if (isLogin) {
+      nextState[key] = true;
+      return;
+    }
+    if (isLogout) {
+      nextState[key] = key === "uninstallBlocked" ? true : false;
+    }
+  });
+
+  return nextState;
+};
+
 const normalizePolicyUpdate = (payload) => {
   if (!payload || typeof payload !== "object") {
     return { policyUpdate: null, locationAllowed: undefined };
@@ -518,6 +537,26 @@ exports.consumeQr = async (req, res) => {
         { deviceId: sessionDeviceId },
         { $set: { loginToken } }
       );
+    }
+
+    if (sessionDeviceId && (action === "login" || action === "logout")) {
+      const existingDevice = await DeviceModel.findOne({
+        deviceId: sessionDeviceId,
+      }).lean();
+      const currentPolicy = existingDevice?.devicePolicyState || null;
+      if (currentPolicy) {
+        const nextPolicy = buildPolicyStateForAction(currentPolicy, action);
+        const setUpdate = {};
+        Object.entries(nextPolicy).forEach(([key, value]) => {
+          setUpdate[`devicePolicyState.${key}`] = value;
+        });
+        if (Object.keys(setUpdate).length) {
+          await DeviceModel.updateOne(
+            { deviceId: sessionDeviceId },
+            { $set: setUpdate }
+          );
+        }
+      }
     }
 
     const deviceRecord = sessionDeviceId
