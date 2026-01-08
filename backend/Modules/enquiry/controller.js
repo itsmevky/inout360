@@ -4,6 +4,7 @@ const EnquiryModel = require("./model");
 const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const DeviceModel = require("../device/model");
+const VisitorModel = require("../user/visitorModel");
 
 exports.create = async (req, res) => {
   try {
@@ -68,7 +69,7 @@ exports.getAll = async (req, res) => {
       )
     );
 
-    const [users, employees, devices] = await Promise.all([
+    const [users, employees, visitors, devices] = await Promise.all([
       userIds.length
         ? UserModel.find({ _id: { $in: userIds } })
             .select("name email employeeId")
@@ -76,6 +77,16 @@ exports.getAll = async (req, res) => {
         : [],
       employeeIds.length
         ? EmployeeModel.find({ employeeId: { $in: employeeIds } })
+            .select("name email phone employeeId")
+            .lean()
+        : [],
+      userIds.length || employeeIds.length
+        ? VisitorModel.find({
+            $or: [
+              ...(userIds.length ? [{ _id: { $in: userIds } }] : []),
+              ...(employeeIds.length ? [{ employeeId: { $in: employeeIds } }] : []),
+            ],
+          })
             .select("name email phone employeeId")
             .lean()
         : [],
@@ -93,6 +104,16 @@ exports.getAll = async (req, res) => {
     const employeeMap = new Map();
     employees.forEach((employee) => {
       employeeMap.set(String(employee.employeeId), employee);
+    });
+    const visitorByIdMap = new Map();
+    const visitorByEmployeeIdMap = new Map();
+    visitors.forEach((visitor) => {
+      if (visitor?._id) {
+        visitorByIdMap.set(String(visitor._id), visitor);
+      }
+      if (visitor?.employeeId) {
+        visitorByEmployeeIdMap.set(String(visitor.employeeId), visitor);
+      }
     });
     const deviceMap = new Map();
     devices.forEach((device) => {
@@ -113,10 +134,14 @@ exports.getAll = async (req, res) => {
     const data = enquiries.map((item) => {
       const user = userMap.get(String(item.userId)) || {};
       const employee = employeeMap.get(String(item.employeeId || "").trim()) || {};
+      const visitor =
+        visitorByIdMap.get(String(item.userId)) ||
+        visitorByEmployeeIdMap.get(String(item.employeeId || "").trim()) ||
+        {};
       const device = deviceMap.get(String(item.userId)) || {};
-      const name = employee.name || user.name || "";
-      const email = employee.email || user.email || "";
-      const phone = employee.phone || "";
+      const name = employee.name || visitor.name || user.name || "";
+      const email = employee.email || visitor.email || user.email || "";
+      const phone = employee.phone || visitor.phone || "";
       const deviceId = device.deviceId || "";
 
       return {
