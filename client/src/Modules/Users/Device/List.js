@@ -273,7 +273,7 @@ const Device = () => {
                   <td className="p-3 font-semibold">
                     {device.deviceName || device.deviceId || device.name || "-"}
                   </td>
-                  <td className="p-3">{device.userName || "-"}</td>
+                  <td className="p-3">{device.userName || device.name || "-"}</td>
                   <td className="p-3">{device.employeeId}</td>
                   <td className="p-3">
                     {statusBadge(device.statusLabel || device.status)}
@@ -325,7 +325,7 @@ const Device = () => {
                 </div>
 
                 <div className="text-gray-500 font-medium">User</div>
-                <div className="text-right">{device.userName || "-"}</div>
+                <div className="text-right">{device.userName || device.name || "-"}</div>
 
                 <div className="text-gray-500 font-medium">Employee ID</div>
                 <div className="text-right">{device.employeeId}</div>
@@ -437,7 +437,7 @@ const Device = () => {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Device Owner</h4>
                 <p className="text-sm">
-                  {selectedDevice.userName || selectedDevice.userId?.name || "-"}
+                  {selectedDevice.userName || selectedDevice.userId?.name || selectedDevice.name || "-"}
                 </p>
               </div>
 
