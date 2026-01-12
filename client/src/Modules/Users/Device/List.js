@@ -443,7 +443,7 @@ const Device = () => {
 
               <div className="p-4 bg-green-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Camera</h4>
-                {cameraBadge(!!selectedDevice.cameraDisabled)}
+                {cameraBadge(getPolicyValue(selectedDevice, "cameraDisabled"))}
               </div>
 
               <div className="p-4 bg-yellow-50 rounded-lg">
@@ -464,7 +464,7 @@ const Device = () => {
 
               <div className="p-4 bg-red-50 rounded-lg">
                 <h4 className="font-semibold text-sm">Uninstall</h4>
-                {cameraBadge(!!selectedDevice.uninstallBlocked)}
+                {cameraBadge(getPolicyValue(selectedDevice, "uninstallBlocked"))}
               </div>
 
               <div className="p-4 bg-gray-100 rounded-lg">
@@ -481,21 +481,23 @@ const Device = () => {
             </h3>
 
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              <button
-                onClick={() => togglePolicy("cameraDisabled")}
-                className="w-full py-3 bg-blue-500 text-white rounded-lg"
-              >
-                Disable Camera
-              </button>
-
-              <button
-                onClick={() => togglePolicy("uninstallBlocked")}
-                className="w-full py-3 bg-blue-500 text-white rounded-lg"
-              >
-                Disable Uninstall
-              </button>
-
               {[
+                {
+                  field: "cameraDisabled",
+                  label: "Camera",
+                  blockLabel: "Disable Camera",
+                  allowLabel: "Allow Camera",
+                  allowClass: "bg-sky-600 text-white",
+                  blockClass: "bg-sky-100 text-sky-800",
+                },
+                {
+                  field: "uninstallBlocked",
+                  label: "Uninstall",
+                  blockLabel: "Disable Uninstall",
+                  allowLabel: "Allow Uninstall",
+                  allowClass: "bg-sky-600 text-white",
+                  blockClass: "bg-sky-100 text-sky-800",
+                },
                 {
                   field: "facebookBlocked",
                   label: "Facebook",
@@ -520,9 +522,11 @@ const Device = () => {
                   allowClass: "bg-green-600 text-white",
                   blockClass: "bg-green-100 text-green-800",
                 },
-              ].map(({ field, label, allowClass, blockClass }) => {
+              ].map(({ field, label, blockLabel, allowLabel, allowClass, blockClass }) => {
                 const isBlocked = getPolicyValue(selectedDevice, field);
-                const buttonLabel = isBlocked ? `Allow ${label}` : `Block ${label}`;
+                const buttonLabel = isBlocked
+                  ? allowLabel || `Allow ${label}`
+                  : blockLabel || `Block ${label}`;
                 const buttonClass = isBlocked ? allowClass : blockClass;
                 return (
                   <button
