@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getData, postData, putData } from "../../../Helpers/api.js";
+import { deleteData, getData, postData, putData } from "../../../Helpers/api.js";
 
 const Device = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -202,18 +202,20 @@ const Device = () => {
     if (!selectedDevice) return;
     const userId = resolveUserId(selectedDevice);
     const deviceId = selectedDevice.deviceId || selectedDevice.id || selectedDevice._id;
-    if (!userId || !deviceId) return;
+    if (!deviceId) return;
     const confirmed = window.confirm(
       "Remove this device? The user will need to register again."
     );
     if (!confirmed) return;
     try {
-      const res = await postData("/device/uninstall", {
-        deviceId,
-        userId,
-        employeeId: selectedDevice.employeeId || undefined,
-        action: "uninstall",
-      });
+      const res = userId
+        ? await postData("/device/uninstall", {
+            deviceId,
+            userId,
+            employeeId: selectedDevice.employeeId || undefined,
+            action: "uninstall",
+          })
+        : await deleteData(`/device/${deviceId}`);
       if (res?.status) {
         await loadDevices();
         setShowModal(false);
