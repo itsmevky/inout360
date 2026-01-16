@@ -617,22 +617,6 @@ exports.register = async (req, res) => {
       effectiveEmployeeId = visitor.employeeId;
     }
 
-    // Prevent assigning a new device if the user already has an Active device
-    const activeFilter = {
-      userId: user._id,
-      deviceStatus: "Active",
-    };
-    if (deviceId && mongoose.isValidObjectId(deviceId)) {
-      activeFilter._id = { $ne: deviceId };
-    }
-    const activeDevice = await DeviceModel.findOne(activeFilter);
-    if (activeDevice) {
-      return res.status(400).json({
-        status: false,
-        message: "User already has an active device assigned",
-      });
-    }
-
     if (deviceId) {
       const normalizedDeviceId = normalizeDeviceId(deviceId);
       const existingDevice = await DeviceModel.findOne({
