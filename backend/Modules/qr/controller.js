@@ -15,6 +15,9 @@ const JWT_SECRET =
   process.env.JWT_ACCESS_SECRET ||
   process.env.JWT_SECRET;
 
+const STATIC_QR_LOGIN_TOKEN = String(process.env.STATIC_QR_LOGIN_TOKEN || "").trim();
+const STATIC_QR_LOGOUT_TOKEN = String(process.env.STATIC_QR_LOGOUT_TOKEN || "").trim();
+
 const normalizeLocation = (value) => {
   if (value === undefined || value === null) return "";
   if (typeof value === "string") return value.trim().toLowerCase();
@@ -351,8 +354,57 @@ exports.generateQrPng = async (req, res) => {
   }
 };
 
+exports.generateStaticQrPng = async (req, res) => {
+  try {
+    const type = String(req.query.type || "").toLowerCase();
+    if (!["login", "logout"].includes(type)) {
+      return res.status(400).json({ message: "type must be login or logout" });
+    }
+
+    const token =
+      type === "login" ? STATIC_QR_LOGIN_TOKEN : STATIC_QR_LOGOUT_TOKEN;
+    if (!token) {
+      return res.status(400).json({ message: "Static QR token not configured" });
+    }
+
+    const requestedSize = Number(req.query.size);
+    const width =
+      Number.isFinite(requestedSize) && requestedSize > 0
+        ? Math.min(Math.max(requestedSize, 128), 1024)
+        : 300;
+
+    const pngBuffer = await qrcode.toBuffer(token, {
+      type: "png",
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width,
+    });
+
+    res.set({
+      "Content-Type": "image/png",
+      "Cache-Control": "no-store",
+      "Access-Control-Expose-Headers": "X-QR-Type",
+      "X-QR-Type": type,
+    });
+    return res.status(200).send(pngBuffer);
+  } catch (error) {
+    console.error("QR Static PNG Error:", error);
+    return res
+      .status(error.status || 500)
+      .json({ message: error.message || "Server error", error: error.message });
+  }
+};
+
 exports.consumeQr = async (req, res) => {
-    const { token, userId, deviceId, location, deviceLocation, employeeId } = req.body;
+  const {
+    token,
+    userId,
+    deviceId,
+    location,
+    deviceLocation,
+    employeeId,
+    action: actionBody,
+  } = req.body;
 
   try {
     if (!token) {
@@ -364,31 +416,58 @@ exports.consumeQr = async (req, res) => {
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "userId must be a valid user id" });
     }
-    if (location === undefined || location === null || location === "") {
+    const isStaticLoginToken =
+      STATIC_QR_LOGIN_TOKEN && token === STATIC_QR_LOGIN_TOKEN;
+    const isStaticLogoutToken =
+      STATIC_QR_LOGOUT_TOKEN && token === STATIC_QR_LOGOUT_TOKEN;
+    const usingStaticToken = isStaticLoginToken || isStaticLogoutToken;
+    let resolvedLocation = location;
+    if (!usingStaticToken && (location === undefined || location === null || location === "")) {
       return res.status(400).json({ message: "location is required" });
     }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const tokenId = decoded.jti;
-    const action = String(decoded.action || "").toLowerCase();
-    const tokenLocation = decoded.location;
-
-    if (!tokenId) {
-      return res.status(400).json({ message: "tokenId missing in token" });
-    }
-    if (!["login", "logout"].includes(action)) {
-      return res.status(400).json({ message: "token action is invalid" });
+    if (
+      usingStaticToken &&
+      (resolvedLocation === undefined || resolvedLocation === null || resolvedLocation === "")
+    ) {
+      resolvedLocation = "static";
     }
 
-    const expMs = decoded?.exp ? decoded.exp * 1000 : null;
-    if (expMs && expMs < Date.now()) {
-      return res.status(400).json({ message: "QR expired" });
-    }
+    let tokenId = null;
+    let action = "";
+    let tokenLocation = null;
+    let expMs = null;
+    if (usingStaticToken) {
+      if (isStaticLoginToken) {
+        action = "login";
+      } else if (isStaticLogoutToken) {
+        action = "logout";
+      }
+      if (!["login", "logout"].includes(action)) {
+        return res.status(400).json({ message: "action must be login or logout" });
+      }
+    } else {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      tokenId = decoded.jti;
+      action = String(decoded.action || "").toLowerCase();
+      tokenLocation = decoded.location;
 
-    const normalizedTokenLocation = normalizeLocation(tokenLocation);
-    const normalizedRequestLocation = normalizeLocation(location);
-    if (normalizedTokenLocation !== normalizedRequestLocation) {
-      return res.status(400).json({ message: "Location does not match QR" });
+      if (!tokenId) {
+        return res.status(400).json({ message: "tokenId missing in token" });
+      }
+      if (!["login", "logout"].includes(action)) {
+        return res.status(400).json({ message: "token action is invalid" });
+      }
+
+      expMs = decoded?.exp ? decoded.exp * 1000 : null;
+      if (expMs && expMs < Date.now()) {
+        return res.status(400).json({ message: "QR expired" });
+      }
+
+      const normalizedTokenLocation = normalizeLocation(tokenLocation);
+      const normalizedRequestLocation = normalizeLocation(resolvedLocation);
+      if (normalizedTokenLocation !== normalizedRequestLocation) {
+        return res.status(400).json({ message: "Location does not match QR" });
+      }
     }
 
     // Resolve user/employee: accept userId as User _id or Employee _id/employeeId/userId
@@ -490,7 +569,7 @@ exports.consumeQr = async (req, res) => {
       employeeId: employee.employeeId,
       action: sessionAction,
       token,
-      location,
+      location: resolvedLocation,
       deviceLocation,
       raw: rawPayload,
     });
@@ -581,7 +660,7 @@ exports.consumeQr = async (req, res) => {
       userId: user ? user._id : employee._id,
       employeeId: employee.employeeId,
       deviceId: sessionDeviceId,
-      location,
+      location: resolvedLocation,
       deviceLocation,
       deviceSettings,
       action,

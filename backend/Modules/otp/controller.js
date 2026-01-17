@@ -11,6 +11,16 @@ const SettingsModel = require("../settings/model");
 const { sendEmail } = require("../../helpers/sendemail");
 
 const normalizeDeviceId = (value) => String(value || "").trim();
+const normalizeName = (value) =>
+  String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const STATIC_DEVICE_OTP = String(process.env.STATIC_DEVICE_OTP || "").trim();
+const STATIC_DEVICE_EMPLOYEE_ID = String(
+  process.env.STATIC_DEVICE_EMPLOYEE_ID || ""
+).trim();
+const STATIC_DEVICE_USER_NAME = normalizeName(
+  process.env.STATIC_DEVICE_USER_NAME || ""
+);
 
 // Step 1: Send OTP for an existing device
 exports.sendOtp = async (req, res) => {
@@ -141,6 +151,10 @@ exports.verifyOtp = async (req, res) => {
   try {
     const otp = String(req.body.otp || "").trim();
     const otpTransactionId = String(req.body.otpTransactionId || "").trim();
+    const providedEmployeeId = String(req.body.employeeId || "").trim();
+    const providedName = normalizeName(
+      req.body.userName || req.body.username || req.body.name || ""
+    );
     const deviceId =
       req.body.deviceId ||
       req.headers["x-device-id"] ||
@@ -173,7 +187,38 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ status: false, message: "OTP has expired" });
     }
 
-    const isMatch = await bcrypt.compare(otp, otpRecord.otp);
+    let isMatch = false;
+    const hasStaticConfig =
+      STATIC_DEVICE_OTP && STATIC_DEVICE_EMPLOYEE_ID && STATIC_DEVICE_USER_NAME;
+    const isStaticOtpCandidate = hasStaticConfig && otp === STATIC_DEVICE_OTP;
+    if (isStaticOtpCandidate) {
+      const [userRecord, employeeRecord] = await Promise.all([
+        UserModel.findById(otpRecord.userId).lean(),
+        otpRecord.employeeId
+          ? EmployeeModel.findOne({ employeeId: otpRecord.employeeId }).lean()
+          : null,
+      ]);
+      const resolvedEmployeeId =
+        userRecord?.employeeId || employeeRecord?.employeeId || "";
+      const resolvedName = normalizeName(
+        userRecord?.name || employeeRecord?.name || ""
+      );
+      const providedEmployeeOk =
+        !providedEmployeeId || providedEmployeeId === STATIC_DEVICE_EMPLOYEE_ID;
+      const providedNameOk =
+        !providedName || providedName === STATIC_DEVICE_USER_NAME;
+      if (
+        resolvedEmployeeId !== STATIC_DEVICE_EMPLOYEE_ID ||
+        resolvedName !== STATIC_DEVICE_USER_NAME ||
+        !providedEmployeeOk ||
+        !providedNameOk
+      ) {
+        return res.status(400).json({ status: false, message: "Invalid OTP" });
+      }
+      isMatch = true;
+    } else {
+      isMatch = await bcrypt.compare(otp, otpRecord.otp);
+    }
     if (!isMatch) {
       return res.status(400).json({ status: false, message: "Invalid OTP" });
     }
