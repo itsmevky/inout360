@@ -21,6 +21,7 @@ import LoginSuccess from "./Website/LoginSuccess.js";
 import AppQrPage from "./Modules/AppQr/AppQrPage.js";
 import QrDownload from "../src/Components/Website/DownloadApp.js";
 import PrivacyPolicy from "./Website/PrivacyPolicy.js";
+import StaticQr from "./Website/StaticQr.js";
 
 const AppRoutes = () => {
   const { user } = useUser();
@@ -65,6 +66,7 @@ const AppRoutes = () => {
       <Route path="/LogoutQr" element={<QrPage singleAction="logout" />} />
       <Route path="/login-success" element={<LoginSuccess />} />
       <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+      <Route path="/staticqr" element={<StaticQr />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
 
