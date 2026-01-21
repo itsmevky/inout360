@@ -7,6 +7,7 @@ const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const PolicyModel = require("./policyModel");
 const VisitorModel = require("../user/visitorModel");
+const UserSession = require("../user/userSessionsModel");
 const { sendEmail } = require("../../helpers/sendemail");
 const PermissionLogModel = require("../permissions/permissionLogModel");
 const { randomUUID } = require("crypto");
@@ -92,6 +93,48 @@ const ensureVisitorDefaults = async (visitor, visitorEmployeeId) => {
 const normalizeDeviceId = (value) => String(value || "").trim();
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const resolveUserSessionStatus = async ({ userId, employeeId }) => {
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const user = await UserModel.findById(userId)
+      .select("sessionStatus")
+      .lean();
+    if (user) return user.sessionStatus;
+  }
+  if (employeeId) {
+    const user = await UserModel.findOne({ employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (user) return user.sessionStatus;
+  }
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const visitor = await VisitorModel.findById(userId)
+      .select("sessionStatus")
+      .lean();
+    if (visitor) return visitor.sessionStatus;
+  }
+  if (employeeId) {
+    const visitor = await VisitorModel.findOne({ employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (visitor) return visitor.sessionStatus;
+  }
+  if (userId && mongoose.isValidObjectId(userId)) {
+    const session = await UserSession.findOne({ userId })
+      .sort({ createdAt: -1 })
+      .select("action")
+      .lean();
+    if (session) return session.action;
+  }
+  if (employeeId) {
+    const session = await UserSession.findOne({ employeeId })
+      .sort({ createdAt: -1 })
+      .select("action")
+      .lean();
+    if (session) return session.action;
+  }
+  return null;
+};
 const padVisitorId = (seq) => `VIS-${String(seq).padStart(5, "0")}`;
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
@@ -809,6 +852,11 @@ exports.deviceStatus = async (req, res) => {
       { expiresIn: "30d" }
     );
 
+    const sessionStatus = await resolveUserSessionStatus({
+      userId: updatedDevice.userId,
+      employeeId: updatedDevice.employeeId || null,
+    });
+
     return res.status(200).json({
       status: true,
       message: "Device status fetched",
@@ -816,6 +864,7 @@ exports.deviceStatus = async (req, res) => {
         userId: updatedDevice.userId,
         deviceId: updatedDevice.deviceId || updatedDevice._id,
         deviceLocation: updatedDevice.deviceLocation || null,
+        sessionStatus: sessionStatus || null,
         deviceToken,
         deviceSettings: {
           deviceStatus: updatedDevice.deviceStatus,
