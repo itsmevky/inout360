@@ -1,11 +1,14 @@
 const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const EmployeeModel = require("./model");
 const UserModel = require("../user/model");
+const UserSession = require("../user/userSessionsModel");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { UPLOAD_ROOT } = require("../../middleware/upload");
+const { markAttendance } = require("../../helpers/attendance");
 
 const getDotValue = (data, key) => {
   if (!data) return undefined;
@@ -156,6 +159,13 @@ const normalizePayload = (data) => {
   };
 };
 
+const normalizeSessionStatus = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (["logged in", "login", "in"].includes(normalized)) return "Logged In";
+  if (["logout", "logged out", "out"].includes(normalized)) return "Logout";
+  return null;
+};
+
 const validateEmployeeData = async (data) => {
   const rules = {
     firstName: "required|string",
@@ -294,10 +304,25 @@ exports.getAll = async (req, res) => {
       };
     });
 
+    const userIds = employees.map((emp) => emp.userId).filter(Boolean);
+    const sessionMap = {};
+    if (userIds.length) {
+      const users = await UserModel.find({ _id: { $in: userIds } })
+        .select("_id sessionStatus")
+        .lean();
+      users.forEach((user) => {
+        sessionMap[String(user._id)] = user.sessionStatus;
+      });
+    }
+    const employeesWithSession = employees.map((emp) => ({
+      ...emp,
+      sessionStatus: sessionMap[String(emp.userId)] || "Logout",
+    }));
+
     return res.status(200).json({
       status: result.status,
       message: result.message,
-      employees,
+      employees: employeesWithSession,
       total: result.pagination?.totalrecords || 0,
       pagination: result.pagination,
     });
@@ -449,6 +474,87 @@ exports.updateStatus = async (req, res) => {
       status: true,
       message: "Status updated successfully",
       modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.updateSessionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      sessionStatus,
+      action,
+      deviceId,
+      location,
+      deviceLocation,
+      note,
+    } = req.body || {};
+    const normalizedStatus = normalizeSessionStatus(sessionStatus || action);
+    if (!normalizedStatus) {
+      return res.status(400).json({
+        status: false,
+        message: "sessionStatus must be Logged In or Logout",
+      });
+    }
+
+    const query = mongoose.isValidObjectId(id)
+      ? { _id: id }
+      : { employeeId: id };
+    const employee = await EmployeeModel.findOne(query);
+    if (!employee) {
+      return res.status(404).json({ status: false, message: "Employee not found" });
+    }
+
+    const user =
+      employee.userId
+        ? await UserModel.findById(employee.userId)
+        : await UserModel.findOne({ employeeId: employee.employeeId });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    if (user.sessionStatus === normalizedStatus) {
+      return res.status(400).json({
+        status: false,
+        message: `User is already ${normalizedStatus}`,
+      });
+    }
+
+    if (!employee.rfid || !employee.section) {
+      return res.status(400).json({
+        status: false,
+        message: "Employee RFID/section missing for attendance",
+      });
+    }
+
+    const attendanceAction = normalizedStatus === "Logged In" ? "login" : "logout";
+    await markAttendance(employee, attendanceAction, user._id);
+
+    await UserModel.findByIdAndUpdate(user._id, {
+      sessionStatus: normalizedStatus,
+    });
+
+    await UserSession.create({
+      userId: user._id,
+      deviceId: deviceId || null,
+      employeeId: employee.employeeId,
+      action: normalizedStatus,
+      token: null,
+      location: location ?? employee.location ?? user.location ?? "",
+      deviceLocation,
+      raw: {
+        source: "admin",
+        adminId: req.user?._id || null,
+        note: note || null,
+      },
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "Session status updated",
+      sessionStatus: normalizedStatus,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

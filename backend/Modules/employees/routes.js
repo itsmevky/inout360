@@ -85,6 +85,13 @@ router.put(
   Controller.updateStatus
 );
 
+router.put(
+  "/:id/session-status",
+  verifyToken,
+  checkAuthorization(["admin", "superadmin"], "employees"),
+  Controller.updateSessionStatus
+);
+
 router.delete(
   "/:id",
   verifyToken,

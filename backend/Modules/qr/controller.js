@@ -5,10 +5,10 @@ const qrcode = require("qrcode");
 const User = require("../user/model");
 const DeviceModel = require("../device/model");
 const UserSession = require("../user/userSessionsModel");
-const AttendanceModel = require("../attendance/model");
 const EmployeeModel = require("../employees/model");
 const SettingsModel = require("../settings/model");
 const VisitorModel = require("../user/visitorModel");
+const { markAttendance } = require("../../helpers/attendance");
 
 const JWT_SECRET =
   process.env.SECRET_KEY ||
@@ -171,64 +171,6 @@ const resolveAssignedDeviceId = async (user, requestedDeviceId) => {
   };
 };
 
-const getDayRange = (date) => {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-};
-
-const markAttendance = async (employee, action, userId) => {
-  const { start, end } = getDayRange(new Date());
-  const now = new Date();
-
-  if (action === "login") {
-    return AttendanceModel.create({
-      rfidCardId: employee.rfid,
-      employeeId: employee.employeeId,
-      userId: userId || employee.userId || null,
-      date: start,
-      entryGateIn: now,
-      sectionAssigned: employee.section,
-      status: "Present",
-      metadata: {
-        action: "login",
-      },
-    });
-  }
-
-  if (action === "logout") {
-    const lastLogin = await AttendanceModel.findOne({
-      employeeId: employee.employeeId,
-      date: { $gte: start, $lte: end },
-      entryGateIn: { $exists: true },
-      "metadata.action": "login",
-    }).sort({ entryGateIn: -1, createdAt: -1 });
-    let totalWorkHours = null;
-    if (lastLogin?.entryGateIn) {
-      const diffMs = now.getTime() - lastLogin.entryGateIn.getTime();
-      totalWorkHours = Math.max(0, diffMs / (1000 * 60 * 60));
-    }
-    return AttendanceModel.create({
-      rfidCardId: employee.rfid,
-      employeeId: employee.employeeId,
-      userId: userId || employee.userId || null,
-      date: start,
-      exitGateOut: now,
-      totalWorkHours,
-      sectionAssigned: employee.section,
-      status: "Present",
-      metadata: {
-        action: "logout",
-        entryGateIn: lastLogin?.entryGateIn || null,
-        entryId: lastLogin?._id || null,
-      },
-    });
-  }
-
-  return null;
-};
 
 const createQrToken = async (payload) => {
   const action = String(payload.action || "").toLowerCase();

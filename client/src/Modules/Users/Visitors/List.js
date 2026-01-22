@@ -3,7 +3,7 @@ import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { API, deleteData } from "../../../Helpers/api.js";
+import { API, deleteData, putData } from "../../../Helpers/api.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
 import { capitalizeFirstLetter } from "../../../Helpers/CapitalizeFirstLetter.js";
 
@@ -71,6 +71,7 @@ const VisitorsList = () => {
   const statusBadge = (status) => {
     const normalized = String(status || "").toLowerCase();
     const isLoggedIn = normalized === "logged in";
+    const label = isLoggedIn ? "Logged In" : "Logged Out";
     return (
       <span
         className={`px-3 py-0.5 rounded-lg font-medium text-sm ${
@@ -79,7 +80,7 @@ const VisitorsList = () => {
             : "bg-red-100 text-red-600 border border-red-300"
         }`}
       >
-        {status || "Logout"}
+        {label}
       </span>
     );
   };
@@ -97,6 +98,30 @@ const VisitorsList = () => {
       }
     } catch (err) {
       toast.error("Delete failed");
+    }
+  };
+
+  const handleForceLogout = async (row) => {
+    if (!row?._id && !row?.id) return;
+    const currentStatus = String(row.sessionStatus || "").toLowerCase();
+    if (currentStatus === "logout") {
+      toast.info("Visitor is already logged out");
+      return;
+    }
+    if (!window.confirm("Force logout this visitor?")) return;
+    try {
+      const res = await putData(
+        `/visitors/${row._id || row.id}/session-status`,
+        { sessionStatus: "Logout" }
+      );
+      if (res?.status) {
+        toast.success("Visitor logged out");
+        fetchVisitors();
+      } else {
+        toast.error(res?.message || "Failed to logout");
+      }
+    } catch (err) {
+      toast.error("Failed to logout");
     }
   };
 
@@ -135,7 +160,7 @@ const VisitorsList = () => {
       ? [
           {
             name: "Actions",
-            width: "15%",
+            width: "20%",
             selector: (row) => (
               <div className="flex space-x-2 justify-center">
                 <div className="flex space-x-2">
@@ -169,6 +194,23 @@ const VisitorsList = () => {
                       viewBox="0 0 448 512"
                     >
                       <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    className="text-gray-700"
+                    onClick={() => handleForceLogout(row)}
+                    title="Force logout"
+                  >
+                    <svg
+                      fill="#374151"
+                      width={16}
+                      height={16}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 512 512"
+                    >
+                      <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H402.7l-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96zM320 112c0-17.7-14.3-32-32-32H128C57.3 80 0 137.3 0 208V304c0 70.7 57.3 128 128 128H288c17.7 0 32-14.3 32-32s-14.3-32-32-32H128c-35.3 0-64-28.7-64-64V208c0-35.3 28.7-64 64-64H288c17.7 0 32-14.3 32-32z" />
                     </svg>
                   </button>
                 </div>

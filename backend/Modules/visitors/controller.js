@@ -2,9 +2,11 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const VisitorModel = require("../user/visitorModel");
+const UserSession = require("../user/userSessionsModel");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { UPLOAD_ROOT } = require("../../middleware/upload");
+const { markAttendance } = require("../../helpers/attendance");
 
 const formatVisitor = (doc) => {
   const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
@@ -129,6 +131,13 @@ const normalizePayload = (data = {}) => {
         "",
     },
   };
+};
+
+const normalizeSessionStatus = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (["logged in", "login", "in"].includes(normalized)) return "Logged In";
+  if (["logout", "logged out", "out"].includes(normalized)) return "Logout";
+  return null;
 };
 
 const validateVisitor = async (data) => {
@@ -313,6 +322,78 @@ exports.update = async (req, res) => {
         errors: error.errors,
       });
     }
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.updateSessionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      sessionStatus,
+      action,
+      deviceId,
+      location,
+      deviceLocation,
+      note,
+    } = req.body || {};
+    const normalizedStatus = normalizeSessionStatus(sessionStatus || action);
+    if (!normalizedStatus) {
+      return res.status(400).json({
+        status: false,
+        message: "sessionStatus must be Logged In or Logout",
+      });
+    }
+
+    const query = mongoose.isValidObjectId(id)
+      ? { _id: id }
+      : { employeeId: id };
+    const visitor = await VisitorModel.findOne(query);
+    if (!visitor) {
+      return res.status(404).json({ status: false, message: "Visitor not found" });
+    }
+
+    if (visitor.sessionStatus === normalizedStatus) {
+      return res.status(400).json({
+        status: false,
+        message: `Visitor is already ${normalizedStatus}`,
+      });
+    }
+
+    const attendanceEmployee = {
+      employeeId: visitor.employeeId || String(visitor._id),
+      rfid: visitor.rfid || `VISITOR-${visitor.employeeId || visitor._id}`,
+      section: "Visitor",
+      userId: null,
+    };
+    const attendanceAction = normalizedStatus === "Logged In" ? "login" : "logout";
+    await markAttendance(attendanceEmployee, attendanceAction, visitor._id);
+
+    await VisitorModel.findByIdAndUpdate(visitor._id, {
+      sessionStatus: normalizedStatus,
+    });
+
+    await UserSession.create({
+      userId: visitor._id,
+      deviceId: deviceId || visitor.deviceId || null,
+      employeeId: visitor.employeeId || String(visitor._id),
+      action: normalizedStatus,
+      token: null,
+      location: location ?? visitor.location ?? "",
+      deviceLocation,
+      raw: {
+        source: "admin",
+        adminId: req.user?._id || null,
+        note: note || null,
+      },
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "Session status updated",
+      sessionStatus: normalizedStatus,
+    });
+  } catch (error) {
     return res.status(500).json({ status: false, message: error.message });
   }
 };
