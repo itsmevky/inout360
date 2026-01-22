@@ -762,7 +762,7 @@ exports.register = async (req, res) => {
       message: isVisitor
         ? "Visitor device registered successfully. Proceed to send OTP."
         : "Device registered successfully. Proceed to send OTP.",
-      deviceId: device._id,
+      deviceId: device.deviceId || device._id,
       userId: user._id,
       employeeId: effectiveEmployeeId,
       rfid: isVisitor ? (visitor?.rfid || null) : (employee?.rfid || null),
