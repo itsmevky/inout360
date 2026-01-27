@@ -53,6 +53,11 @@ const Settings = () => {
         setSystemConfig((prev) => ({ ...prev, [key]: value }));
     };
 
+    const emailsArray = systemConfig.otpEmail
+  ? systemConfig.otpEmail.split(",").map(e => e.trim())
+  : [""];
+
+
     const loadSettings = async (locationName = "") => {
         setLoading(true);
         try {
@@ -252,7 +257,7 @@ const Settings = () => {
                             </div>
 
                             {/* ✅ OTP Email */}
-                            <div>
+                            {/* <div>
                                 <label className="setting-System-Configuration text-gray-700 font-semibold">
                                     OTP Email
                                 </label>
@@ -262,7 +267,63 @@ const Settings = () => {
                                     onChange={(e) => handleConfigChange("otpEmail", e.target.value)}
                                     className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                 />
-                            </div>
+                            
+                            </div> */}
+
+                            <div>
+  <label className="setting-System-Configuration text-gray-700 font-semibold">
+    OTP Email
+  </label>
+
+  {emailsArray.map((email, index) => (
+    <div key={index} className="flex items-center gap-2 mt-2">
+      <input
+        type="email"
+        value={email}
+        placeholder="Enter email address"
+        onChange={(e) => {
+          const updatedEmails = [...emailsArray];
+          updatedEmails[index] = e.target.value;
+
+          handleConfigChange(
+            "otpEmail",
+            updatedEmails.filter(Boolean).join(",")
+          );
+        }}
+        className="flex-1 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+      />
+
+      {/* Remove button (except first) */}
+      {emailsArray.length > 1 && (
+        <button
+          type="button"
+          onClick={() => {
+            const updatedEmails = emailsArray.filter((_, i) => i !== index);
+            handleConfigChange("otpEmail", updatedEmails.join(","));
+          }}
+          className="px-3 py-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  ))}
+
+  {/* Add button */}
+  <button
+    type="button"
+    onClick={() => {
+      handleConfigChange(
+        "otpEmail",
+        [...emailsArray, ""].join(",")
+      );
+    }}
+    className="mt-3 text-sm text-blue-600 font-semibold hover:underline flex items-center gap-1"
+  >
+    ➕ Add Email
+  </button>
+</div>
+
 
                             {/* ✅ QR Code Expiry */}
                             <div>
