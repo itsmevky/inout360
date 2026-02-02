@@ -13,6 +13,7 @@ const resolveCategory = (eventType) => {
   if (value.includes("app_uninstall")) return "app_uninstall";
   if (value.includes("accessibility")) return "app_install";
   if (value.includes("restricted app opened")) return "app_access";
+  if (value.includes("unauthorized uninstall")) return "app_uninstall";
   if (value.includes("youtube")) return "app_access";
   if (value.includes("whatsapp")) return "app_access";
   if (value.includes("instagram")) return "app_access";
@@ -29,6 +30,7 @@ const resolveActivityType = (eventType) => {
   if (value.includes("app_uninstall")) return "app_uninstall";
   if (value.includes("accessibility")) return "accessibility_permission";
   if (value.includes("restricted app opened")) return "app_access";
+  if (value.includes("unauthorized uninstall")) return "app_uninstall_attempt";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
   if (value.includes("camera")) return "take_picture";
@@ -128,7 +130,13 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
     } else if (normalized === "app_install_uninstall") {
       filter.$or = [
         { category: { $in: ["app_install", "app_uninstall"] } },
-        { event: { $regex: "app[_-]?install|app[_-]?uninstall|accessibility", $options: "i" } },
+        {
+          event: {
+            $regex:
+              "app[_-]?install|app[_-]?uninstall|accessibility|unauthorized uninstall",
+            $options: "i",
+          },
+        },
       ];
     } else {
       filter.category = normalized;
@@ -180,6 +188,8 @@ exports.add = async (req, res) => {
 // Summary counts for dashboard cards
 exports.getSummary = async (_req, res) => {
   try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
     const cameraCount = await DeviceEventModel.countDocuments({
       policyVoilation: true,
       event: { $regex: "camera|screenshot|video", $options: "i" },
@@ -199,6 +209,31 @@ exports.getSummary = async (_req, res) => {
         $options: "i",
       },
     });
+    const [cameraToday, installToday, uninstallToday, accessToday] = await Promise.all([
+      DeviceEventModel.countDocuments({
+        policyVoilation: true,
+        event: { $regex: "camera|screenshot|video", $options: "i" },
+        timestamp: { $gte: todayStart },
+      }),
+      DeviceEventModel.countDocuments({
+        policyVoilation: true,
+        event: { $regex: "app[_-]?install|accessibility", $options: "i" },
+        timestamp: { $gte: todayStart },
+      }),
+      DeviceEventModel.countDocuments({
+        policyVoilation: true,
+        event: { $regex: "app[_-]?uninstall", $options: "i" },
+        timestamp: { $gte: todayStart },
+      }),
+      DeviceEventModel.countDocuments({
+        policyVoilation: true,
+        event: {
+          $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
+          $options: "i",
+        },
+        timestamp: { $gte: todayStart },
+      }),
+    ]);
 
     return res.status(200).json({
       status: true,
@@ -207,6 +242,12 @@ exports.getSummary = async (_req, res) => {
         app_install: installCount || 0,
         app_uninstall: uninstallCount || 0,
         app_access: accessCount || 0,
+        today: {
+          camera: cameraToday || 0,
+          app_install: installToday || 0,
+          app_uninstall: uninstallToday || 0,
+          app_access: accessToday || 0,
+        },
       },
     });
   } catch (error) {

@@ -17,6 +17,12 @@ const ActivityPage = () => {
         app_install: 0,
         app_uninstall: 0,
     });
+    const [summaryToday, setSummaryToday] = useState({
+        camera: 0,
+        app_access: 0,
+        app_install: 0,
+        app_uninstall: 0,
+    });
     const [loading, setLoading] = useState(true);
     // ============================================================
     // COLUMN WIDTH CONFIG
@@ -188,32 +194,14 @@ const ActivityPage = () => {
 
 
     const todayCounts = useMemo(() => {
-        let cameraToday = 0;
-        let accessToday = 0;
-        let installToday = 0;
-        let uninstallToday = 0;
-        let inOutToday = 0;
-
-        for (const group of activityGroups) {
-            const acts = group.activities || [];
-            for (const a of acts) {
-                if (!isToday(a.timestamp)) continue;
-
-                if (isCameraActivity(a)) cameraToday++;
-                if (a.category === "app_access") accessToday++;
-                if (a.category === "app_install") installToday++;
-                if (a.category === "app_uninstall") uninstallToday++;
-            }
-        }
-
         return {
-            cameraToday,
-            accessToday,
-            installToday,
-            uninstallToday,
-            inOutToday,
+            cameraToday: summaryToday.camera || 0,
+            accessToday: summaryToday.app_access || 0,
+            installToday: summaryToday.app_install || 0,
+            uninstallToday: summaryToday.app_uninstall || 0,
+            inOutToday: attendanceCounts.todayIn + attendanceCounts.todayOut,
         };
-    }, [activityGroups]);
+    }, [summaryToday, attendanceCounts]);
 
     const [selectedType, setSelectedType] = useState(null);
     const [cameraFilter, setCameraFilter] = useState(null);
@@ -801,6 +789,9 @@ const ActivityPage = () => {
         }
         const typeValue = String(activity?.type || activity?.category || "-").toLowerCase();
         const raw = typeValue.replace(/[_-]+/g, " ").trim();
+        if (typeValue.includes("uninstall_attempt")) {
+            return "Uninstall attempt";
+        }
         if (typeValue === "take_picture" || isCameraActivity(activity)) {
             const durationSnippet = extractDurationSnippet(narrative, "Camera Opened");
             if (compact) {
@@ -895,6 +886,14 @@ const ActivityPage = () => {
                 ]);
                 if (summaryResponse?.data) {
                     setSummary(summaryResponse.data);
+                    if (summaryResponse.data?.today) {
+                        setSummaryToday({
+                            camera: summaryResponse.data.today.camera || 0,
+                            app_access: summaryResponse.data.today.app_access || 0,
+                            app_install: summaryResponse.data.today.app_install || 0,
+                            app_uninstall: summaryResponse.data.today.app_uninstall || 0,
+                        });
+                    }
                 }
                 const attendanceList = Array.isArray(attendanceResponse)
                     ? attendanceResponse
@@ -1559,12 +1558,17 @@ const ActivityPage = () => {
                                 <div className="text-sm text-gray-700">
                                     {`${(mediaModalActivity.appName || mediaModalActivity.type || "App").replace("_", " ")} accessed by ${mediaModalActivity.name || "user"}`}
                                 </div>
+                            ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase().includes("uninstall_attempt") ? (
+                                <div className="text-sm text-gray-700">
+                                    {`App uninstall attempt detected by ${mediaModalActivity.name || "user"}`}
+                                </div>
                             ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase() === "app_uninstall" ? (
-                                <div className="text-sm text-gray-700 space-y-2">
-                                    <div><strong>Event:</strong> {(mediaModalActivity.type || mediaModalActivity.category || "-").replace("_", " ")}</div>
-                                    <div><strong>App:</strong> {mediaModalActivity.appName || "-"}</div>
-                                    <div><strong>Device ID:</strong> {mediaModalActivity.deviceId || "-"}</div>
-                                    <div><strong>Employee ID:</strong> {mediaModalActivity.employeeId || "-"}</div>
+                                <div className="text-sm text-gray-700">
+                                    {`App uninstall attempt detected by ${mediaModalActivity.name || "user"}`}
+                                </div>
+                            ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase() === "app_install" ? (
+                                <div className="text-sm text-gray-700">
+                                    {`App installed by ${mediaModalActivity.name || "user"}`}
                                 </div>
                             ) : resolveMediaType(mediaModalActivity) === "video" ? (
                                 <video
