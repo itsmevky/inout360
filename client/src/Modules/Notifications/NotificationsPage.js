@@ -44,22 +44,52 @@ const resolveType = ({ activityType, category }) => {
     return value.toUpperCase() || "CAMERA_ON";
 };
 
+const extractDurationSnippet = (value, baseMessage = "") => {
+    if (!value) return "";
+    const cleaned = String(value || "")
+        .replace(/\s+/g, " ")
+        .replace(/\bpermission controller\b/gi, "")
+        .replace(/\bcamera\s*\d+\b/gi, "")
+        .trim();
+    if (!cleaned) return "";
+    const directMatch = cleaned.match(
+        /((?:camera|video call|video|microphone|screen)[^.,]*?\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes))\b/i
+    );
+    if (directMatch) {
+        return ` (${directMatch[1].replace(/\s+/g, " ").trim().toLowerCase()})`;
+    }
+    const usedForMatch = cleaned.match(
+        /\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes)\b/i
+    );
+    if (usedForMatch) {
+        const labelMatch = String(baseMessage || "").match(
+            /\b(camera|video call|video|microphone|screen)\b/i
+        );
+        const label = labelMatch ? labelMatch[0] : "activity";
+        return ` (${`${label} ${usedForMatch[0]}`.toLowerCase()})`;
+    }
+    return "";
+};
+
 const toNotification = (item) => {
     const type = resolveType(item);
     const baseMessage =
         humanizeEventLabel(item.description || item.activityType || "Activity detected");
     const appLabel = humanizeEventLabel(item.activityType || item.description || "App");
+    const appName = item.appName || item.metadata?.appName || "";
     const message =
         type === "APP_ACCESS"
-            ? (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`)
+            ? (appName ? `${humanizeEventLabel(appName)} Opened` : (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`))
             : baseMessage;
+    const narrative = item.narrative || item.metadata?.narrative || "";
+    const durationSnippet = extractDurationSnippet(narrative, message);
     return {
         _id: item.id || item._id,
         type,
         employeeName: capitalizeFirstLetter(item.name || ""),
         employeeId: item.employeeId || "",
         deviceId: item.deviceId || "",
-        message,
+        message: `${message}${durationSnippet}`,
         createdAt: item.occurredAt || item.createdAt || new Date(),
     };
 };

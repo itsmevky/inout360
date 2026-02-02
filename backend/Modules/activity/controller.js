@@ -12,6 +12,7 @@ const resolveCategory = (eventType) => {
   if (value.includes("app_install")) return "app_install";
   if (value.includes("app_uninstall")) return "app_uninstall";
   if (value.includes("accessibility")) return "app_install";
+  if (value.includes("restricted app opened")) return "app_access";
   if (value.includes("youtube")) return "app_access";
   if (value.includes("whatsapp")) return "app_access";
   if (value.includes("instagram")) return "app_access";
@@ -27,10 +28,33 @@ const resolveActivityType = (eventType) => {
   if (value.includes("app_install")) return "app_install";
   if (value.includes("app_uninstall")) return "app_uninstall";
   if (value.includes("accessibility")) return "accessibility_permission";
+  if (value.includes("restricted app opened")) return "app_access";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
   if (value.includes("camera")) return "take_picture";
   return eventType;
+};
+
+const resolveAppNameFromText = (text) => {
+  const value = String(text || "").toLowerCase();
+  if (!value) return "";
+  const known = [
+    { key: "instagram", label: "Instagram" },
+    { key: "whatsapp", label: "WhatsApp" },
+    { key: "facebook", label: "Facebook" },
+    { key: "youtube", label: "YouTube" },
+  ];
+  for (const item of known) {
+    if (value.includes(item.key)) return item.label;
+  }
+  const pkgMatch = value.match(/\b([a-z0-9_]+)\.([a-z0-9_]+)(?:\.[a-z0-9_]+)*\b/);
+  if (pkgMatch) {
+    const candidate = pkgMatch[2] || pkgMatch[1];
+    return candidate
+      ? candidate.charAt(0).toUpperCase() + candidate.slice(1)
+      : "";
+  }
+  return "";
 };
 
 const resolveMediaType = (eventType) => {
@@ -85,7 +109,30 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
   if (deviceId) filter.deviceId = deviceId;
 
   if (category) {
-    filter.category = String(category).toLowerCase();
+    const normalized = String(category).toLowerCase();
+    if (normalized === "camera_activity") {
+      filter.$or = [
+        { category: { $in: ["camera", "screenshot", "video"] } },
+        { event: { $regex: "camera|screenshot|video", $options: "i" } },
+      ];
+    } else if (normalized === "app_access") {
+      filter.$or = [
+        { category: "app_access" },
+        {
+          event: {
+            $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
+            $options: "i",
+          },
+        },
+      ];
+    } else if (normalized === "app_install_uninstall") {
+      filter.$or = [
+        { category: { $in: ["app_install", "app_uninstall"] } },
+        { event: { $regex: "app[_-]?install|app[_-]?uninstall|accessibility", $options: "i" } },
+      ];
+    } else {
+      filter.category = normalized;
+    }
   }
 
   if (userId) {
@@ -147,7 +194,10 @@ exports.getSummary = async (_req, res) => {
     });
     const accessCount = await DeviceEventModel.countDocuments({
       policyVoilation: true,
-      event: { $regex: "youtube|whatsapp|instagram|facebook", $options: "i" },
+      event: {
+        $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
+        $options: "i",
+      },
     });
 
     return res.status(200).json({
@@ -175,9 +225,18 @@ exports.getAll = async (req, res) => {
       search,
     });
 
-    const records = await DeviceEventModel.find(filter)
-      .sort({ timestamp: -1, createdAt: -1 })
-      .lean();
+    const pageNum = parseInt(req.query.page, 10) || 0;
+    const limitNum = parseInt(req.query.limit, 10) || 50;
+    const skip = Math.max(0, pageNum) * Math.max(1, limitNum);
+
+    const [records, totalrecords] = await Promise.all([
+      DeviceEventModel.find(filter)
+        .sort({ timestamp: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      DeviceEventModel.countDocuments(filter),
+    ]);
 
     const deviceIds = Array.from(
       new Set(
@@ -281,6 +340,11 @@ exports.getAll = async (req, res) => {
         plain.metadata?.imagePath ||
         plain.raw?.imagePath ||
         "";
+      const narrative = plain.metadata?.narrative || plain.narrative || "";
+      const appNameResolved =
+        plain.metadata?.appName ||
+        resolveAppNameFromText(narrative) ||
+        resolveAppNameFromText(baseType);
       const mediaUrl =
         mediaUrlCandidate.startsWith("/uploads/")
           ? `${baseUrl}${mediaUrlCandidate}`
@@ -308,6 +372,8 @@ exports.getAll = async (req, res) => {
         media,
         metadata: {
           ...(plain.metadata || {}),
+          ...(narrative ? { narrative } : {}),
+          ...(appNameResolved ? { appName: appNameResolved } : {}),
           mediaUrl,
           originalEvent: baseType,
         },
@@ -336,7 +402,16 @@ exports.getAll = async (req, res) => {
       }
     }
 
-    res.status(200).json(Array.from(grouped.values()));
+    res.status(200).json({
+      status: true,
+      data: Array.from(grouped.values()),
+      pagination: {
+        totalrecords,
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalrecords / limitNum),
+        limit: limitNum,
+      },
+    });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
@@ -423,6 +498,11 @@ exports.getNotifications = async (req, res) => {
       }
       const description =
         plain.metadata?.description || plain.event || "Activity detected";
+      const narrative = plain.metadata?.narrative || plain.narrative || "";
+      const appNameResolved =
+        plain.metadata?.appName ||
+        resolveAppNameFromText(narrative) ||
+        resolveAppNameFromText(plain.event || "");
 
       return {
         id: plain._id?.toString?.() || plain.id,
@@ -431,6 +511,8 @@ exports.getNotifications = async (req, res) => {
         deviceId: resolvedDeviceId,
         activityType: plain.event || "",
         description,
+        appName: appNameResolved,
+        narrative,
         occurredAt: plain.timestamp || plain.createdAt,
         policyVoilation: true,
       };

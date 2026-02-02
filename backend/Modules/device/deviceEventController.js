@@ -244,6 +244,9 @@ exports.storeEvent = async (req, res) => {
     if (blockedViolation !== null) {
       policyVoilation = blockedViolation;
     }
+    if (/restricted app opened/i.test(String(event || "")) || /restricted app opened/i.test(String(narrative || ""))) {
+      policyVoilation = true;
+    }
     console.log("device-event policy check", {
       event,
       blockedViolation,

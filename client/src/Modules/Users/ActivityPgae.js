@@ -42,6 +42,74 @@ const ActivityPage = () => {
         return value;
     };
 
+    const cameraActivityTypes = ["screenshot", "take_picture", "video"];
+
+    const resolveAppLabel = (activity) => {
+        const explicit = activity?.appName || activity?.metadata?.appName || "";
+        if (explicit) return capitalizeFirstLetter(String(explicit));
+        const text = `${activity?.rawEvent || ""} ${activity?.narrative || ""}`.toLowerCase();
+        const known = [
+            { key: "instagram", label: "Instagram" },
+            { key: "whatsapp", label: "WhatsApp" },
+            { key: "facebook", label: "Facebook" },
+            { key: "youtube", label: "YouTube" },
+        ];
+        for (const item of known) {
+            if (text.includes(item.key)) return item.label;
+        }
+        const pkgMatch = text.match(/\b([a-z0-9_]+)\.([a-z0-9_]+)(?:\.[a-z0-9_]+)*\b/);
+        if (pkgMatch) {
+            const candidate = pkgMatch[2] || pkgMatch[1];
+            return candidate
+                ? candidate.charAt(0).toUpperCase() + candidate.slice(1)
+                : "";
+        }
+        return "";
+    };
+
+    const extractDurationSnippet = (value, baseMessage = "") => {
+        if (!value) return "";
+        const cleaned = String(value || "")
+            .replace(/\s+/g, " ")
+            .replace(/\bpermission controller\b/gi, "")
+            .replace(/\bcamera\s*\d+\b/gi, "")
+            .trim();
+        if (!cleaned) return "";
+        const directMatch = cleaned.match(
+            /((?:camera|video call|video|microphone|screen)[^.,]*?\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes))\b/i
+        );
+        if (directMatch) {
+            return ` (${directMatch[1].replace(/\s+/g, " ").trim().toLowerCase()})`;
+        }
+        const usedForMatch = cleaned.match(
+            /\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes)\b/i
+        );
+        if (usedForMatch) {
+            const labelMatch = String(baseMessage || "").match(
+                /\b(camera|video call|video|microphone|screen)\b/i
+            );
+            const label = labelMatch ? labelMatch[0] : "activity";
+            return ` (${`${label} ${usedForMatch[0]}`.toLowerCase()})`;
+        }
+        return "";
+    };
+
+    const isCameraActivity = (activity) => {
+        const type = String(activity?.type || activity?.category || "").toLowerCase();
+        if (cameraActivityTypes.includes(type)) return true;
+        if (activity?.category === "camera") return true;
+        const raw = String(activity?.rawEvent || "").toLowerCase();
+        const narrative = String(activity?.narrative || activity?.metadata?.narrative || "").toLowerCase();
+        return (
+            raw.includes("camera") ||
+            raw.includes("video call") ||
+            raw.includes("video-call") ||
+            narrative.includes("camera") ||
+            narrative.includes("video call") ||
+            narrative.includes("video-call")
+        );
+    };
+
     const isToday = (dateValue) => {
         if (!dateValue) return false;
         const d = new Date(dateValue);
@@ -120,8 +188,6 @@ const ActivityPage = () => {
 
 
     const todayCounts = useMemo(() => {
-        const cameraTypes = ["screenshot", "take_picture", "video"];
-
         let cameraToday = 0;
         let accessToday = 0;
         let installToday = 0;
@@ -133,9 +199,7 @@ const ActivityPage = () => {
             for (const a of acts) {
                 if (!isToday(a.timestamp)) continue;
 
-                const t = a.type || a.category || "";
-
-                if (cameraTypes.includes(t) || a.category === "camera") cameraToday++;
+                if (isCameraActivity(a)) cameraToday++;
                 if (a.category === "app_access") accessToday++;
                 if (a.category === "app_install") installToday++;
                 if (a.category === "app_uninstall") uninstallToday++;
@@ -208,11 +272,10 @@ const ActivityPage = () => {
             });
         }
         if (modalContextType === "camera_activity") {
-            const cameraTypes = ["screenshot", "take_picture", "video"];
             list = list.filter((a) => {
                 const type = String(a.type || a.category || "").toLowerCase();
                 if (modalTypeFilter) return type === modalTypeFilter;
-                return cameraTypes.includes(type) || a.category === "camera";
+                return isCameraActivity(a);
             });
         } else if (modalContextType === "app_access") {
             list = list.filter((a) => a.category === "app_access");
@@ -239,7 +302,6 @@ const ActivityPage = () => {
     // FILTER + SEARCH
     // ============================================================
     const filteredUsers = useMemo(() => {
-        const cameraTypes = ["screenshot", "take_picture", "video"];
         let list = activityGroups.filter((group) => {
             const activities = group.activities || [];
             if (selectedType === "camera_activity") {
@@ -247,9 +309,7 @@ const ActivityPage = () => {
                     return activities.some((a) => a.type === cameraFilter);
                 }
                 return activities.some((a) =>
-                    cameraTypes.includes(a.type) ||
-                    a.category === "camera" ||
-                    ["screenshot", "video"].includes(a.category)
+                    isCameraActivity(a)
                 );
             }
             if (selectedType === "app_access") {
@@ -298,9 +358,7 @@ const ActivityPage = () => {
                     relevant = activities.filter((a) => a.type === cameraFilter);
                 } else {
                     relevant = activities.filter((a) =>
-                        cameraTypes.includes(a.type) ||
-                        a.category === "camera" ||
-                        ["screenshot", "video"].includes(a.category)
+                        isCameraActivity(a)
                     );
                 }
             } else if (selectedType === "app_access") {
@@ -680,6 +738,14 @@ const ActivityPage = () => {
             if (isToday(activity.timestamp)) return count + 1;
             return count;
         }, 0);
+        const policyTotal = acts.reduce(
+            (count, activity) => (activity?.policyVoilation ? count + 1 : count),
+            0
+        );
+        const policyToday = acts.reduce((count, activity) => {
+            if (activity?.policyVoilation && isToday(activity.timestamp)) return count + 1;
+            return count;
+        }, 0);
         acts.forEach((activity) => {
             const raw = String(
                 activity?.rawEvent || activity?.type || activity?.category || ""
@@ -709,6 +775,8 @@ const ActivityPage = () => {
         return {
             total: acts.length,
             today,
+            policyTotal,
+            policyToday,
             accessibilityOn,
             accessibilityOff,
             installCount,
@@ -720,7 +788,9 @@ const ActivityPage = () => {
         };
     }, [modalActivities]);
 
-    const formatActivityLabel = (activity) => {
+    const formatActivityLabel = (activity, options = {}) => {
+        const { compact = false } = options;
+        const narrative = activity?.narrative || activity?.metadata?.narrative || "";
         if (isAccessibilityEvent(activity)) {
             const raw = String(
                 activity?.rawEvent || activity?.type || activity?.category || ""
@@ -729,14 +799,30 @@ const ActivityPage = () => {
             if (raw.includes("on")) return "Accessibility On";
             return "Accessibility Permission";
         }
-        const raw = String(activity?.type || activity?.category || "-")
-            .replace(/[_-]+/g, " ")
-            .trim();
-        const label =
-            String(activity?.category || "").toLowerCase() === "app_access"
-                ? `${raw} accessed`
-                : raw;
-        return capitalizeFirstLetter(label);
+        const typeValue = String(activity?.type || activity?.category || "-").toLowerCase();
+        const raw = typeValue.replace(/[_-]+/g, " ").trim();
+        if (typeValue === "take_picture" || isCameraActivity(activity)) {
+            const durationSnippet = extractDurationSnippet(narrative, "Camera Opened");
+            if (compact) {
+                return `Camera Opened${durationSnippet}`;
+            }
+            const appLabel = resolveAppLabel(activity);
+            return `${appLabel ? `${appLabel} ` : ""}camera opened${durationSnippet}`;
+        }
+        const isAppAccess = String(activity?.category || "").toLowerCase() === "app_access";
+        if (isAppAccess) {
+            const appLabel = resolveAppLabel(activity) || raw || "App";
+            const baseLabel = capitalizeFirstLetter(appLabel);
+            const durationSnippet = extractDurationSnippet(narrative, baseLabel);
+            if (compact) {
+                return `${baseLabel} accessed${durationSnippet}`;
+            }
+            const nameSuffix = activity?.name ? ` by ${activity.name}` : "";
+            return `${baseLabel} accessed${nameSuffix}${durationSnippet}`;
+        }
+        const baseLabel = capitalizeFirstLetter(raw);
+        const durationSnippet = extractDurationSnippet(narrative, baseLabel);
+        return `${baseLabel}${durationSnippet}`;
     };
 
     const renderPaginationButtons = (current, total, onChange) => {
@@ -803,58 +889,21 @@ const ActivityPage = () => {
         const fetchActivity = async () => {
             setLoading(true);
             try {
-                const [summaryResponse, listResponse, attendanceResponse] = await Promise.all([
+                const [summaryResponse, attendanceResponse] = await Promise.all([
                     getData("/activity/summary"),
-                    getData("/activity"),
-                    getData("/attendance/all"),
+                    getData("/attendance/all", { page: 1, limit: 1000 }),
                 ]);
                 if (summaryResponse?.data) {
                     setSummary(summaryResponse.data);
                 }
-                const list = Array.isArray(listResponse) ? listResponse : [];
-                const normalized = list.map((group) => {
-                    const activities = (group.activities || []).map((item) => {
-                        const activityType =
-                            item.activityType || item.title || item.category || "-";
-                        const appName =
-                            item.metadata?.appName ||
-                            item.metadata?.app ||
-                            item.title ||
-                            "";
-                        const mediaUrl =
-                            item.imagePath ||
-                            item.mediaUrl ||
-                            item.media?.[0]?.url ||
-                            item.metadata?.mediaUrl ||
-                            item.metadata?.media ||
-                            item.metadata?.imagePath ||
-                            "";
-                        return {
-                            id: item.id || item._id,
-                            type: activityType,
-                            category: item.category,
-                            deviceId: item.deviceId,
-                            employeeId: item.employeeId,
-                            timestamp: item.occurredAt,
-                            name: capitalizeFirstLetter(item.name || item.userName || group.user || ""),
-                            userName: capitalizeFirstLetter(item.userName || group.user || ""),
-                            appName,
-                            media: resolveMediaUrl(mediaUrl),
-                            rawEvent: item.metadata?.originalEvent || item.event || item.title || "",
-                        };
-                    });
-
-                    return {
-                        user: capitalizeFirstLetter(group.user || "-"),
-                        userKey: group.userKey || group.user || "-",
-                        deviceId: group.deviceId || "",
-                        employeeId: group.employeeId || "",
-                        activities,
-                    };
-                });
-
-                setActivityGroups(normalized);
-                setAttendanceEntries(Array.isArray(attendanceResponse) ? attendanceResponse : []);
+                const attendanceList = Array.isArray(attendanceResponse)
+                    ? attendanceResponse
+                    : Array.isArray(attendanceResponse?.data)
+                        ? attendanceResponse.data
+                        : Array.isArray(attendanceResponse?.data?.data)
+                            ? attendanceResponse.data.data
+                            : [];
+                setAttendanceEntries(attendanceList);
             } catch (error) {
                 toast.error("Failed to load activity.");
             } finally {
@@ -863,6 +912,85 @@ const ActivityPage = () => {
         };
         fetchActivity();
     }, []);
+
+    const normalizeActivityGroups = (list = []) => (
+        list.map((group) => {
+            const activities = (group.activities || []).map((item) => {
+                const activityType =
+                    item.activityType || item.title || item.category || "-";
+                const appName =
+                    item.metadata?.appName ||
+                    item.metadata?.app ||
+                    item.title ||
+                    "";
+                const mediaUrl =
+                    item.imagePath ||
+                    item.mediaUrl ||
+                    item.media?.[0]?.url ||
+                    item.metadata?.mediaUrl ||
+                    item.metadata?.media ||
+                    item.metadata?.imagePath ||
+                    "";
+                return {
+                    id: item.id || item._id,
+                    type: activityType,
+                    category: item.category,
+                    deviceId: item.deviceId,
+                    employeeId: item.employeeId,
+                    timestamp: item.occurredAt,
+                    policyVoilation: !!item.policyVoilation,
+                    name: capitalizeFirstLetter(item.name || item.userName || group.user || ""),
+                    userName: capitalizeFirstLetter(item.userName || group.user || ""),
+                    appName,
+                    media: resolveMediaUrl(mediaUrl),
+                    rawEvent: item.metadata?.originalEvent || item.event || item.title || "",
+                    narrative: item.metadata?.narrative || item.narrative || "",
+                };
+            });
+
+            return {
+                user: capitalizeFirstLetter(group.user || "-"),
+                userKey: group.userKey || group.user || "-",
+                deviceId: group.deviceId || "",
+                employeeId: group.employeeId || "",
+                activities,
+            };
+        })
+    );
+
+    const resolveActivityCategory = (type) => {
+        if (type === "camera_activity") return "camera_activity";
+        if (type === "app_access") return "app_access";
+        if (type === "app_install_uninstall") return "app_install_uninstall";
+        return type;
+    };
+
+    useEffect(() => {
+        const fetchByCategory = async () => {
+            if (!selectedType || selectedType === "in_out") return;
+            try {
+                setLoading(true);
+                const category = resolveActivityCategory(selectedType);
+                const response = await getData("/activity", {
+                    category,
+                    page: 0,
+                    limit: 50,
+                });
+                const list = Array.isArray(response?.data)
+                    ? response.data
+                    : Array.isArray(response)
+                        ? response
+                        : [];
+                setActivityGroups(normalizeActivityGroups(list));
+            } catch (error) {
+                toast.error("Failed to load activity.");
+                setActivityGroups([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchByCategory();
+    }, [selectedType]);
 
     // ============================================================
     // RENDER UI
@@ -1145,7 +1273,9 @@ const ActivityPage = () => {
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
                                         <td className="p-3">{item.user}</td>
-                                        <td className="p-3">{formatActivityLabel(item.latestActivity)}</td>
+                                        <td className="p-3">
+                                            {formatActivityLabel(item.latestActivity, { compact: true })}
+                                        </td>
                                         <td className="p-3">{item.latestActivity?.deviceId || item.deviceId}</td>
                                         <td className="p-3">{item.latestActivity?.employeeId || item.employeeId}</td>
                                         <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
@@ -1244,7 +1374,13 @@ const ActivityPage = () => {
                         </div>
 
                         <div className="modal-activity-filters modal-activity-filters--compact">
-                            <h3 className="modal-section-title !m-0">User Activities</h3>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <h3 className="modal-section-title !m-0">User Activities</h3>
+                                <span className="text-sm text-gray-600">
+                                    Policy Violation: {modalPolicyCounts.policyTotal}/
+                                    {modalPolicyCounts.policyToday}
+                                </span>
+                            </div>
                             <div className="modal-activity-controls">
                                 {modalContextType === "camera_activity" && modalUser?.activities?.some((a) => {
                                     const type = String(a.type || a.category || "").toLowerCase();
@@ -1304,7 +1440,9 @@ const ActivityPage = () => {
                                     <tbody>
                                         {paginatedModalActivities.map((act, index) => (
                                             <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
-                                                <td className="p-3">{formatActivityLabel(act)}</td>
+                                                <td className="p-3">
+                                                    {formatActivityLabel(act, { compact: true })}
+                                                </td>
                                                 <td className="p-3">{act.deviceId || "-"}</td>
                                                 <td className="p-3">{formatTimestamp(act.timestamp)}</td>
                                                 <td className="p-3">
@@ -1412,6 +1550,10 @@ const ActivityPage = () => {
                             {isAccessibilityEvent(mediaModalActivity) ? (
                                 <div className="text-sm text-gray-700">
                                     {resolveAccessibilityMessage(mediaModalActivity)}
+                                </div>
+                            ) : isCameraActivity(mediaModalActivity) ? (
+                                <div className="text-sm text-gray-700">
+                                    {`${resolveAppLabel(mediaModalActivity) ? `${resolveAppLabel(mediaModalActivity)} ` : ""}camera opened`}
                                 </div>
                             ) : String(mediaModalActivity.category || mediaModalActivity.type || "").toLowerCase() === "app_access" ? (
                                 <div className="text-sm text-gray-700">
