@@ -67,11 +67,17 @@ const toNotification = (item) => {
 const NotificationsPage = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [totalRows, setTotalRows] = useState(0);
 
     useEffect(() => {
         markNotificationsRead();
-        fetchNotifications();
     }, []);
+
+    useEffect(() => {
+        fetchNotifications();
+    }, [currentPage, rowsPerPage]);
 
     const markNotificationsRead = async () => {
         try {
@@ -84,23 +90,105 @@ const NotificationsPage = () => {
 
     const fetchNotifications = async () => {
         try {
+            setLoading(true);
             const res = await getData("/activity/notifications", {
-                page: 0,
-                limit: 50,
+                page: Math.max(currentPage - 1, 0),
+                limit: rowsPerPage,
             });
 
-            if (res?.status && Array.isArray(res.data) && res.data.length > 0) {
+            if (res?.status && Array.isArray(res.data)) {
                 setNotifications(res.data.map(toNotification));
+                setTotalRows(res.pagination?.totalrecords || 0);
             } else {
                 setNotifications([]);
+                setTotalRows(0);
             }
         } catch (err) {
             console.error("Failed to load notifications");
             setNotifications([]);
+            setTotalRows(0);
         } finally {
             setLoading(false);
         }
     };
+
+    const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+    const startItem = Math.max((currentPage - 1) * rowsPerPage + 1, 1);
+    const endItem = Math.min(currentPage * rowsPerPage, totalRows);
+
+    const handleRowsPerPageChange = (e) => {
+        const newRows = parseInt(e.target.value, 10);
+        setRowsPerPage(newRows);
+        setCurrentPage(1);
+    };
+
+    const renderPaginationButtons = () => {
+        const btns = [];
+        const start = Math.max(currentPage - 2, 1);
+        const end = Math.min(currentPage + 2, totalPages);
+        const baseBtn =
+            "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
+        const activeBtn =
+            "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
+
+        if (start > 1) {
+            btns.push(
+                <button
+                    key={1}
+                    onClick={() => setCurrentPage(1)}
+                    className={baseBtn}
+                >
+                    1
+                </button>
+            );
+            if (start > 2) btns.push(<span key="dots1">…</span>);
+        }
+
+        for (let i = start; i <= end; i++) {
+            btns.push(
+                <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    className={`${baseBtn} ${i === currentPage ? activeBtn : ""}`}
+                    style={
+                        i === currentPage
+                            ? {
+                                  backgroundColor: "#2563eb",
+                                  color: "#ffffff",
+                                  borderColor: "#2563eb",
+                                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+                              }
+                            : { backgroundColor: "#ffffff", color: "#374151" }
+                    }
+                >
+                    {i}
+                </button>
+            );
+        }
+
+        if (end < totalPages - 1) btns.push(<span key="dots2">…</span>);
+
+        if (end < totalPages) {
+            btns.push(
+                <button
+                    key={totalPages}
+                    onClick={() => setCurrentPage(totalPages)}
+                    className={baseBtn}
+                >
+                    {totalPages}
+                </button>
+            );
+        }
+
+        return btns;
+    };
+
+    useEffect(() => {
+        const pages = Math.ceil(totalRows / rowsPerPage) || 1;
+        if (currentPage > pages) {
+            setCurrentPage(pages);
+        }
+    }, [totalRows, rowsPerPage, currentPage]);
 
     return (
         <div>
@@ -162,6 +250,52 @@ const NotificationsPage = () => {
                         </div>
                     ))}
                 </div>
+
+                {!loading && totalRows > 0 && (
+                    <div className="mt-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="text-gray-600">Rows per page:</span>
+                            <select
+                                value={rowsPerPage}
+                                onChange={handleRowsPerPageChange}
+                                className="border rounded px-2 py-1 text-sm"
+                            >
+                                {[10, 20, 50, 100].map((opt) => (
+                                    <option key={opt} value={opt}>
+                                        {opt}
+                                    </option>
+                                ))}
+                            </select>
+                            <span className="text-gray-600">
+                                {startItem}-{endItem} of {totalRows}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 justify-center w-full overflow-x-auto lg:overflow-visible">
+                            <button
+                                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                ‹
+                            </button>
+
+                            <div className="flex flex-nowrap gap-2">
+                                {renderPaginationButtons()}
+                            </div>
+
+                            <button
+                                onClick={() =>
+                                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                                }
+                                disabled={currentPage === totalPages}
+                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                ›
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
