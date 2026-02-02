@@ -19,8 +19,17 @@ const iconMap = {
     APP_UNINSTALL: <FaTrashAlt />,
 };
 
-const normalizeLabel = (value) =>
-    capitalizeFirstLetter(String(value || "").replace(/[_-]+/g, " ").trim());
+const humanizeEventLabel = (value) => {
+    const normalized = String(value || "")
+        .replace(/[_-]+/g, " ")
+        .replace(/[.]+/g, " ")
+        .replace(/^\s*com\s+/i, "")
+        .replace(/\bused\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    return capitalizeFirstLetter(normalized);
+};
 
 const resolveType = ({ activityType, category }) => {
     const value = String(activityType || category || "").toLowerCase();
@@ -38,11 +47,11 @@ const resolveType = ({ activityType, category }) => {
 const toNotification = (item) => {
     const type = resolveType(item);
     const baseMessage =
-        normalizeLabel(item.description || item.activityType || "Activity detected");
-    const appLabel = normalizeLabel(item.activityType || item.description || "App");
+        humanizeEventLabel(item.description || item.activityType || "Activity detected");
+    const appLabel = humanizeEventLabel(item.activityType || item.description || "App");
     const message =
         type === "APP_ACCESS"
-            ? `${appLabel} Opened`
+            ? (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`)
             : baseMessage;
     return {
         _id: item.id || item._id,
