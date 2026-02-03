@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-
+import pidliteLogo from "../Images/pidilitelogo.png";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const Home = () => {
           style={{ padding: "10px" }}
         >
           {/* <h1 className="text-2xl font-bold text-blue-700">Inout360</h1> */}
-          <img src="https://assets.pidilite.com/is/image/pidilite/pidilite-logo-1?ts=1717678989820&dpr=off" alt="Pidilite-logo" className="h-auto w-34" />
+          <img src={pidliteLogo} alt="Pidilite-logo" className="h-auto w-34" />
           <div className="  flex flex-col gap-3 sm:flex-row sm:gap-4 justify-end homepage-nav-bar-login-register-button">
             <button
               onClick={() => navigate("/app-qr")}

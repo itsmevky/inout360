@@ -4,7 +4,7 @@ import axios from "axios";
 import QRCode from "qrcode";
 import { domainpath } from "../../Helpers/api.js";
 import "../../Styles/qrpage.css";
-import logo from "../../Images/pidilite-logo-13.png";
+import logo from "../../Images/pidilitelogo3.png";
 
 const QrCard = ({
   title,

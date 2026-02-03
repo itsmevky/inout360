@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import logo from "../Images/pidilite-logo-13.png";
+import logo from "../Images/pidilitelogo3.png";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
   const navigate = useNavigate();

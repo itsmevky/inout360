@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import Notify from "../Images/Notification .gif";
 import { useUser } from "../Helpers/Context/UserContext";
 import { getData, domainpath } from "../Helpers/api";
-import logo from "../Images/pidilite-logo-13.png"; // Adjust path
+import logo from "../Images/pidilitelogo.png"; // Adjust path
 const Header = () => {
   const { setUser } = useUser(); // Destructure setUser from useUser
 
