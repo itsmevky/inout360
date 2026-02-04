@@ -946,7 +946,8 @@ const Device = () => {
   const [deviceList, setDeviceList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const ITEMS_PER_PAGE = 15;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const ITEMS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
   // ✅ ADDED: Sorting state (new | old)
@@ -961,8 +962,18 @@ const Device = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await getData("/device");
+      const res = await getData("/device", {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      });
       setDeviceList(res?.devices || []);
+      const total =
+        res?.total ??
+        res?.pagination?.totalrecords ??
+        res?.pagination?.totalRecords ??
+        res?.pagination?.total ??
+        (Array.isArray(res?.devices) ? res.devices.length : 0);
+      setTotalRecords(total);
     } catch (err) {
       setError("Failed to load devices.");
     } finally {
@@ -1043,12 +1054,12 @@ const Device = () => {
 
   useEffect(() => {
     loadDevices();
-  }, []);
+  }, [currentPage]);
 
   // ✅ UPDATED: reset pagination when list or sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [deviceList, sortOrder]);
+  }, [sortOrder]);
 
   // ✅ SORT first, then paginate
   const sortedDeviceList = [...deviceList].sort((a, b) => {
@@ -1057,11 +1068,8 @@ const Device = () => {
     return sortOrder === "new" ? dateB - dateA : dateA - dateB;
   });
 
-  const totalPages = Math.ceil(sortedDeviceList.length / ITEMS_PER_PAGE) || 1;
-  const paginatedDeviceList = sortedDeviceList.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE) || 1;
+  const paginatedDeviceList = sortedDeviceList;
 
   const renderPaginationButtons = () => {
     const btns = [];
@@ -1442,12 +1450,21 @@ const Device = () => {
         </div>
 
         {/* PAGINATION (same block you had, just uses sorted list now) */}
-        {!loading && sortedDeviceList.length > 0 ? (
+        {!loading && totalRecords > 0 ? (
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4">
             <p className="text-sm text-gray-600">
-              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
-              {Math.min(currentPage * ITEMS_PER_PAGE, sortedDeviceList.length)} of{" "}
-              {sortedDeviceList.length}
+              Showing{" "}
+              {Math.min(
+                (currentPage - 1) * ITEMS_PER_PAGE + 1,
+                totalRecords
+              )}{" "}
+              –{" "}
+              {Math.min(
+                (currentPage - 1) * ITEMS_PER_PAGE +
+                  sortedDeviceList.length,
+                totalRecords
+              )}{" "}
+              of {totalRecords}
             </p>
 
             <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
