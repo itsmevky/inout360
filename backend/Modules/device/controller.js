@@ -901,7 +901,8 @@ exports.getAll = async (req, res) => {
       limit,
       ["userId"],
       ["deviceName", "employeeId", "model", "appVersion", "osVersion"],
-      search
+      search,
+      { createdAt: -1, _id: -1 }
     );
 
     const devices = result.data.map(formatDevice);

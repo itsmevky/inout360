@@ -950,9 +950,6 @@ const Device = () => {
   const ITEMS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ✅ ADDED: Sorting state (new | old)
-  const [sortOrder, setSortOrder] = useState("new");
-
   // ✅ ADDED: More Actions state
   const [actionView, setActionView] = useState(null); // "logs" | "apps" | "location" | null
   const [actionData, setActionData] = useState([]);
@@ -1041,32 +1038,11 @@ const Device = () => {
     return false;
   };
 
-  // ✅ ADDED: Date helper for sorting (uses your preferred fields)
-  const getDeviceDate = (device) => {
-    return new Date(
-      device?.createdAt ||
-        device?.enrollmentDate ||
-        device?.lastOnline ||
-        device?.lastSeen ||
-        0
-    ).getTime();
-  };
-
   useEffect(() => {
     loadDevices();
   }, [currentPage]);
 
-  // ✅ UPDATED: reset pagination when list or sort changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [sortOrder]);
-
-  // ✅ SORT first, then paginate
-  const sortedDeviceList = [...deviceList].sort((a, b) => {
-    const dateA = getDeviceDate(a);
-    const dateB = getDeviceDate(b);
-    return sortOrder === "new" ? dateB - dateA : dateA - dateB;
-  });
+  const sortedDeviceList = deviceList;
 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE) || 1;
   const paginatedDeviceList = sortedDeviceList;
@@ -1298,15 +1274,6 @@ const Device = () => {
         </svg>
         Device Management
 
-        {/* ✅ ADDED: Sort dropdown (does not affect your existing UI blocks) */}
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="ml-auto border rounded-lg px-3 py-2 text-sm"
-        >
-          <option value="new">Newest First</option>
-          <option value="old">Oldest First</option>
-        </select>
       </div>
 
       {/* ========================= DEVICE TABLE ========================= */}
