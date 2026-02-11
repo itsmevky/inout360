@@ -19,6 +19,13 @@ const iconMap = {
     APP_UNINSTALL: <FaTrashAlt />,
 };
 
+const knownApps = [
+    { key: "instagram", label: "Instagram" },
+    { key: "whatsapp", label: "WhatsApp" },
+    { key: "facebook", label: "Facebook" },
+    { key: "youtube", label: "YouTube" },
+];
+
 const humanizeEventLabel = (value) => {
     const normalized = String(value || "")
         .replace(/[_-]+/g, " ")
@@ -31,11 +38,18 @@ const humanizeEventLabel = (value) => {
     return capitalizeFirstLetter(normalized);
 };
 
-const resolveType = ({ activityType, category }) => {
-    const value = String(activityType || category || "").toLowerCase();
+const resolveType = ({ activityType, category, description, narrative, rawEvent }) => {
+    const value = String(activityType || category || description || "").toLowerCase();
+    const narrativeText = String(narrative || rawEvent || "").toLowerCase();
     if (value.includes("app_install")) return "APP_INSTALL";
     if (value.includes("app_uninstall")) return "APP_UNINSTALL";
+    if (value.includes("restricted app") || value.includes("app opened")) {
+        return "APP_ACCESS";
+    }
     if (["youtube", "whatsapp", "instagram", "facebook"].some((app) => value.includes(app))) {
+        return "APP_ACCESS";
+    }
+    if (/\bopened\b/.test(value) || /\bopened\b/.test(narrativeText)) {
         return "APP_ACCESS";
     }
     if (value.includes("video")) return "VIDEO";
@@ -71,12 +85,51 @@ const extractDurationSnippet = (value, baseMessage = "") => {
     return "";
 };
 
+const extractAppNameFromText = (value) => {
+    if (!value) return "";
+    const cleaned = String(value || "").replace(/\s+/g, " ").trim();
+    if (!cleaned) return "";
+    const openedMatch = cleaned.match(/^(.+?)\s*\(([^)]+)\)\s*opened\b/i);
+    if (openedMatch?.[1]) return openedMatch[1].trim();
+    const simpleOpenedMatch = cleaned.match(/^(.+?)\s+opened\b/i);
+    if (simpleOpenedMatch?.[1]) return simpleOpenedMatch[1].trim();
+    const lower = cleaned.toLowerCase();
+    for (const app of knownApps) {
+        if (lower.includes(app.key)) return app.label;
+    }
+    const pkgMatch = cleaned.match(/\b([a-z0-9_]+)(?:\.[a-z0-9_]+)+\b/i);
+    if (pkgMatch?.[0]) {
+        const parts = pkgMatch[0].split(".");
+        let candidate = parts[parts.length - 1] || "";
+        if (["com", "org", "net", "in", "io", "co"].includes(parts[0]) && parts[1]) {
+            candidate = parts[1];
+        } else if (parts.length >= 2 && parts[0].length <= 3) {
+            candidate = parts[1];
+        }
+        return candidate
+            ? candidate.charAt(0).toUpperCase() + candidate.slice(1)
+            : "";
+    }
+    return "";
+};
+
+const resolveAppName = (item) => {
+    const explicit = item.appName || item.metadata?.appName || "";
+    if (explicit) return humanizeEventLabel(explicit);
+    const narrative = item.narrative || item.metadata?.narrative || "";
+    const fromNarrative = extractAppNameFromText(narrative);
+    if (fromNarrative) return humanizeEventLabel(fromNarrative);
+    const combined = `${item.description || ""} ${item.activityType || ""} ${item.rawEvent || ""} ${narrative}`.trim();
+    const fromCombined = extractAppNameFromText(combined);
+    return fromCombined ? humanizeEventLabel(fromCombined) : "";
+};
+
 const toNotification = (item) => {
     const type = resolveType(item);
     const baseMessage =
         humanizeEventLabel(item.description || item.activityType || "Activity detected");
     const appLabel = humanizeEventLabel(item.activityType || item.description || "App");
-    const appName = item.appName || item.metadata?.appName || "";
+    const appName = resolveAppName(item);
     const message =
         type === "APP_ACCESS"
             ? (appName ? `${humanizeEventLabel(appName)} Opened` : (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`))
