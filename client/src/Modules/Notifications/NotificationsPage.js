@@ -24,6 +24,7 @@ const knownApps = [
     { key: "whatsapp", label: "WhatsApp" },
     { key: "facebook", label: "Facebook" },
     { key: "youtube", label: "YouTube" },
+    { key: "camera", label: "Camera" },
 ];
 
 const humanizeEventLabel = (value) => {
@@ -89,7 +90,7 @@ const extractAppNameFromText = (value) => {
     if (!value) return "";
     const cleaned = String(value || "").replace(/\s+/g, " ").trim();
     if (!cleaned) return "";
-    const openedMatch = cleaned.match(/^(.+?)\s*\(([^)]+)\)\s*opened\b/i);
+    const openedMatch = cleaned.match(/(?:^|\b)([^()]+?)\s*\(([^)]+)\)\s*opened\b/i);
     if (openedMatch?.[1]) return openedMatch[1].trim();
     const simpleOpenedMatch = cleaned.match(/^(.+?)\s+opened\b/i);
     if (simpleOpenedMatch?.[1]) return simpleOpenedMatch[1].trim();
@@ -103,6 +104,9 @@ const extractAppNameFromText = (value) => {
         let candidate = parts[parts.length - 1] || "";
         if (["com", "org", "net", "in", "io", "co"].includes(parts[0]) && parts[1]) {
             candidate = parts[1];
+            if (candidate === "android" && parts[2]) {
+                candidate = parts[2];
+            }
         } else if (parts.length >= 2 && parts[0].length <= 3) {
             candidate = parts[1];
         }
@@ -114,14 +118,21 @@ const extractAppNameFromText = (value) => {
 };
 
 const resolveAppName = (item) => {
-    const explicit = item.appName || item.metadata?.appName || "";
-    if (explicit) return humanizeEventLabel(explicit);
     const narrative = item.narrative || item.metadata?.narrative || "";
     const fromNarrative = extractAppNameFromText(narrative);
     if (fromNarrative) return humanizeEventLabel(fromNarrative);
+    const explicit = item.appName || item.metadata?.appName || "";
+    if (explicit && String(explicit).toLowerCase() !== "android") {
+        return humanizeEventLabel(explicit);
+    }
     const combined = `${item.description || ""} ${item.activityType || ""} ${item.rawEvent || ""} ${narrative}`.trim();
     const fromCombined = extractAppNameFromText(combined);
-    return fromCombined ? humanizeEventLabel(fromCombined) : "";
+    const normalized = fromCombined ? humanizeEventLabel(fromCombined) : "";
+    if (normalized.toLowerCase() === "android") {
+        const cameraHint = extractAppNameFromText(narrative);
+        if (cameraHint) return humanizeEventLabel(cameraHint);
+    }
+    return normalized;
 };
 
 const toNotification = (item) => {
