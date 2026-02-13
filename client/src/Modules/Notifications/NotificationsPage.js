@@ -119,9 +119,25 @@ const extractAppNameFromText = (value) => {
 
 const resolveAppName = (item) => {
     const narrative = item.narrative || item.metadata?.narrative || "";
+    if (String(narrative).toLowerCase().includes("system launcher")) {
+        return "System Camera";
+    }
     const fromNarrative = extractAppNameFromText(narrative);
     if (fromNarrative) return humanizeEventLabel(fromNarrative);
-    const explicit = item.appName || item.metadata?.appName || "";
+    const explicit =
+        item.appName ||
+        item.appLabel ||
+        item.packageName ||
+        item.package ||
+        item.app ||
+        item.appId ||
+        item.metadata?.appName ||
+        item.metadata?.appLabel ||
+        item.metadata?.packageName ||
+        item.metadata?.package ||
+        item.metadata?.app ||
+        item.metadata?.appId ||
+        "";
     if (explicit && String(explicit).toLowerCase() !== "android") {
         return humanizeEventLabel(explicit);
     }
@@ -141,10 +157,24 @@ const toNotification = (item) => {
         humanizeEventLabel(item.description || item.activityType || "Activity detected");
     const appLabel = humanizeEventLabel(item.activityType || item.description || "App");
     const appName = resolveAppName(item);
+    const isCameraType = ["CAMERA_ON", "TAKE_PICTURE", "VIDEO"].includes(type);
+    const fallbackCameraApp = "System Camera";
+    const effectiveAppName = appName || (isCameraType ? fallbackCameraApp : "");
+    const shouldPrefixApp =
+        isCameraType &&
+        effectiveAppName &&
+        !baseMessage.toLowerCase().includes(String(effectiveAppName).toLowerCase());
+    const cameraUsageEnded = /camera usage ended/i.test(baseMessage);
     const message =
         type === "APP_ACCESS"
-            ? (appName ? `${humanizeEventLabel(appName)} Opened` : (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`))
-            : baseMessage;
+            ? (effectiveAppName
+                  ? `${humanizeEventLabel(effectiveAppName)} Opened`
+                  : (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`))
+            : (shouldPrefixApp
+                  ? (cameraUsageEnded
+                        ? `${humanizeEventLabel(effectiveAppName)} usage ended`
+                        : `${humanizeEventLabel(effectiveAppName)} ${baseMessage}`)
+                  : baseMessage);
     const narrative = item.narrative || item.metadata?.narrative || "";
     const durationSnippet = extractDurationSnippet(narrative, message);
     return {
