@@ -86,16 +86,26 @@ const Header = () => {
     };
 
     fetchCount();
-    intervalId = setInterval(fetchCount, 30000);
+    intervalId = setInterval(fetchCount, 10000);
 
     const handleRead = () => setNotificationCount(0);
+    const handleCountUpdated = (event) => {
+      const nextCount = Number(event?.detail?.count);
+      if (Number.isFinite(nextCount)) {
+        setNotificationCount(Math.max(nextCount, 0));
+      } else {
+        fetchCount();
+      }
+    };
     const handleFocus = () => fetchCount();
     window.addEventListener("notifications-read", handleRead);
+    window.addEventListener("notifications-count-updated", handleCountUpdated);
     window.addEventListener("focus", handleFocus);
 
     return () => {
       clearInterval(intervalId);
       window.removeEventListener("notifications-read", handleRead);
+      window.removeEventListener("notifications-count-updated", handleCountUpdated);
       window.removeEventListener("focus", handleFocus);
     };
   }, []);

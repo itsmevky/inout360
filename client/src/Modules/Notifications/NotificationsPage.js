@@ -188,6 +188,17 @@ const toNotification = (item) => {
     };
 };
 
+const shouldHideNotification = (item) => {
+    const text = `${item?.description || ""} ${item?.activityType || ""} ${item?.narrative || ""} ${item?.metadata?.narrative || ""}`
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    return (
+        text.includes("cameramanager callback") &&
+        text.includes("camera unavailable")
+    );
+};
+
 const NotificationsPage = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -213,6 +224,25 @@ const NotificationsPage = () => {
         }
     };
 
+    const syncUnreadCount = async (maxRetries = 0) => {
+        try {
+            let count = 0;
+            for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+                const res = await getData("/activity/notifications/unread-count");
+                count = res?.status ? Number(res.count) || 0 : 0;
+                if (count === 0 || attempt === maxRetries) break;
+                await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+            window.dispatchEvent(
+                new CustomEvent("notifications-count-updated", {
+                    detail: { count },
+                })
+            );
+        } catch (err) {
+            console.error("Failed to sync unread notification count");
+        }
+    };
+
     const fetchNotifications = async () => {
         try {
             setLoading(true);
@@ -222,7 +252,8 @@ const NotificationsPage = () => {
             });
 
             if (res?.status && Array.isArray(res.data)) {
-                setNotifications(res.data.map(toNotification));
+                const filtered = res.data.filter((item) => !shouldHideNotification(item));
+                setNotifications(filtered.map(toNotification));
                 setTotalRows(res.pagination?.totalrecords || 0);
                 setLastUpdatedAt(new Date());
             } else {
@@ -324,6 +355,12 @@ const NotificationsPage = () => {
           })}`
         : "Waiting for first update";
 
+    const handleRefresh = async () => {
+        await markNotificationsRead();
+        await fetchNotifications();
+        await syncUnreadCount(2);
+    };
+
     return (
         <div>
             <div className="notification-page">
@@ -357,7 +394,7 @@ const NotificationsPage = () => {
                         <span className="notification-refresh-meta">{refreshLabel}</span>
                         <button
                             type="button"
-                            onClick={fetchNotifications}
+                            onClick={handleRefresh}
                             disabled={loading}
                             className="notification-refresh-btn"
                             aria-label="Refresh notifications"
