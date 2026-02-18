@@ -16,6 +16,7 @@ const normalizePayload = (body) => ({
   lat: normalizeNumber(body.lat),
   lng: normalizeNumber(body.lng ?? body.long),
   radius: normalizeNumber(body.radius),
+  otpEmail: String(body.otpEmail || "").trim().toLowerCase(),
   raw: body,
 });
 
@@ -73,7 +74,7 @@ exports.getAll = async (req, res) => {
 exports.getCoords = async (_req, res) => {
   try {
     const locations = await LocationModel.find({})
-      .select("name lat lng radius")
+      .select("name lat lng radius otpEmail")
       .lean();
     return res.status(200).json({
       status: true,
@@ -82,6 +83,7 @@ exports.getCoords = async (_req, res) => {
         lat: loc.lat,
         lng: loc.lng,
         radius: loc.radius,
+        otpEmail: loc.otpEmail || "",
       })),
     });
   } catch (error) {

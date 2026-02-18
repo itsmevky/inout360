@@ -5,6 +5,7 @@ const locationSchemaDefinition = {
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
   radius: { type: Number, required: true, min: 0 },
+  otpEmail: { type: String, trim: true, lowercase: true, default: "" },
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
 };
 

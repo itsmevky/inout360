@@ -7,6 +7,7 @@ const UserModel = require("../user/model");
 const EmployeeModel = require("../employees/model");
 const PolicyModel = require("./policyModel");
 const VisitorModel = require("../user/visitorModel");
+const LocationModel = require("../location/model");
 const UserSession = require("../user/userSessionsModel");
 const { sendEmail } = require("../../helpers/sendemail");
 const PermissionLogModel = require("../permissions/permissionLogModel");
@@ -184,7 +185,7 @@ const ensureVisitorCounterUpToDate = async () => {
   );
 };
 
-const createVisitorWithRetry = async ({ name, deviceId }, maxAttempts = 5) => {
+const createVisitorWithRetry = async ({ name, deviceId, location }, maxAttempts = 5) => {
   let syncedCounter = false;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const visitorEmployeeId = await getNextVisitorId();
@@ -195,6 +196,7 @@ const createVisitorWithRetry = async ({ name, deviceId }, maxAttempts = 5) => {
         employeeId: visitorEmployeeId,
         rfid,
         deviceId,
+        location: String(location || "").trim(),
         role: "visitor",
       });
     } catch (error) {
@@ -219,6 +221,7 @@ const createVisitorWithRetry = async ({ name, deviceId }, maxAttempts = 5) => {
           employeeId: fallbackEmployeeId,
           rfid,
           deviceId,
+          location: String(location || "").trim(),
           role: "visitor",
         });
         const counters = mongoose.connection.collection("counters");
@@ -573,6 +576,7 @@ exports.register = async (req, res) => {
       createdAt,
       lastSeen,
       deviceOwner,
+      location,
     } = req.body;
 
     if (!name || !deviceId) {
@@ -581,6 +585,25 @@ exports.register = async (req, res) => {
         message: "name and deviceId are required",
       });
     }
+    const resolvedLocation = String(location || "").trim();
+    if (!resolvedLocation) {
+      return res.status(400).json({
+        status: false,
+        message: "location is required",
+      });
+    }
+    const locationRecord = await LocationModel.findOne({
+      name: new RegExp(`^${escapeRegExp(resolvedLocation)}$`, "i"),
+    })
+      .select("name")
+      .lean();
+    if (!locationRecord?.name) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid location",
+      });
+    }
+    const effectiveLocation = String(locationRecord.name || "").trim();
 
     let user = null;
     let employee = null;
@@ -596,12 +619,14 @@ exports.register = async (req, res) => {
         user = await UserModel.create({
           name: displayName,
           employeeId,
+          location: effectiveLocation,
           email: null,
         });
         const rfid = await generateUniqueRfid(employeeId);
         employee = await EmployeeModel.create({
           name: displayName,
           employeeId,
+          location: effectiveLocation,
           userId: user._id,
           email: null,
           rfid,
@@ -616,6 +641,7 @@ exports.register = async (req, res) => {
           user = await UserModel.create({
             name: displayName || employee.name,
             employeeId,
+            location: effectiveLocation,
             email: null,
           });
           await EmployeeModel.updateOne(
@@ -634,6 +660,22 @@ exports.register = async (req, res) => {
             message: "Name does not match the employeeId",
           });
         }
+        const employeeLocation = String(employee.location || "").trim();
+        if (employeeLocation !== effectiveLocation) {
+          employee = await EmployeeModel.findByIdAndUpdate(
+            employee._id,
+            { $set: { location: effectiveLocation } },
+            { new: true }
+          );
+        }
+        const userLocation = String(user.location || "").trim();
+        if (userLocation !== effectiveLocation) {
+          user = await UserModel.findByIdAndUpdate(
+            user._id,
+            { $set: { location: effectiveLocation } },
+            { new: true }
+          );
+        }
       }
     } else {
       isVisitor = true;
@@ -643,6 +685,7 @@ exports.register = async (req, res) => {
         visitor = await createVisitorWithRetry({
           name: toDisplayName(name),
           deviceId: normalizedDeviceId,
+          location: effectiveLocation,
         });
       }
       if (visitor?.name) {
@@ -656,6 +699,14 @@ exports.register = async (req, res) => {
         }
       }
       visitor = await ensureVisitorDefaults(visitor, visitor?.employeeId);
+      const visitorLocation = String(visitor.location || "").trim();
+      if (visitorLocation !== effectiveLocation) {
+        visitor = await VisitorModel.findByIdAndUpdate(
+          visitor._id,
+          { $set: { location: effectiveLocation } },
+          { new: true }
+        );
+      }
       user = visitor;
       effectiveEmployeeId = visitor.employeeId;
     }

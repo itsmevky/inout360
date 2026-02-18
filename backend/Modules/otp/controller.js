@@ -13,6 +13,8 @@ const { sendEmail } = require("../../helpers/sendemail");
 const normalizeDeviceId = (value) => String(value || "").trim();
 const normalizeName = (value) =>
   String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+const escapeRegExp = (value) =>
+  String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const STATIC_DEVICE_OTP = String(process.env.STATIC_DEVICE_OTP || "").trim();
 const STATIC_DEVICE_EMPLOYEE_ID = String(
@@ -116,13 +118,33 @@ exports.sendOtp = async (req, res) => {
       raw: req.body,
     });
 
-    // Resolve OTP email (settings overrides legacy config)
-    const settings = await SettingsModel.findOne().lean();
-    const otpEmail =
-      (settings?.otpEmail && String(settings.otpEmail).trim()) ||
-      (await OtpEmailConfig.findOne())?.email;
+    const resolvedLocation = String(
+      employee?.location || visitor?.location || user?.location || ""
+    ).trim();
+    if (!resolvedLocation) {
+      return res.status(400).json({
+        status: false,
+        message: "User location not found",
+      });
+    }
+
+    // Resolve OTP email from settings record matching location
+    const locationSettings = await SettingsModel.findOne({
+      unitLocation: new RegExp(`^${escapeRegExp(resolvedLocation)}$`, "i"),
+    }).lean();
+    const defaultSettings = locationSettings
+      ? null
+      : await SettingsModel.findOne({ unitLocation: { $in: [null, ""] } }).lean();
+    const otpEmail = String(
+      locationSettings?.otpEmail || defaultSettings?.otpEmail || ""
+    )
+      .trim()
+      .toLowerCase();
     if (!otpEmail) {
-      return res.status(400).json({ status: false, message: "OTP email not configured" });
+      return res.status(400).json({
+        status: false,
+        message: `OTP email not configured in settings for location: ${resolvedLocation}`,
+      });
     }
 
     const resolvedUserName = user?.name || employee?.name || visitor?.name || "User";
