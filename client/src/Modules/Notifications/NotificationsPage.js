@@ -194,6 +194,7 @@ const NotificationsPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalRows, setTotalRows] = useState(0);
+    const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
     useEffect(() => {
         markNotificationsRead();
@@ -223,6 +224,7 @@ const NotificationsPage = () => {
             if (res?.status && Array.isArray(res.data)) {
                 setNotifications(res.data.map(toNotification));
                 setTotalRows(res.pagination?.totalrecords || 0);
+                setLastUpdatedAt(new Date());
             } else {
                 setNotifications([]);
                 setTotalRows(0);
@@ -314,6 +316,14 @@ const NotificationsPage = () => {
         }
     }, [totalRows, rowsPerPage, currentPage]);
 
+    const refreshLabel = lastUpdatedAt
+        ? `Updated at ${lastUpdatedAt.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+          })}`
+        : "Waiting for first update";
+
     return (
         <div>
             <div className="notification-page">
@@ -330,7 +340,7 @@ const NotificationsPage = () => {
                     Activity Notifications
                 </h2> */}
 
-                <div className="bg-white p-4 py-6 !mb-5 rounded-lg text-gray-700 font-semibold text-xl notification-heading-title-box">
+                <div className="bg-white p-4 py-6 !mb-5 rounded-lg text-gray-700 font-semibold text-xl notification-heading-title-box notification-header-row">
                     <span className="mr-2 flex items-center gap-4 space-x-2 notification-titel">
                         <svg
                             fill="#22374e"
@@ -340,7 +350,45 @@ const NotificationsPage = () => {
                             viewBox="0 0 640 640"
                         >
                             <path d="M320 64C302.3 64 288 78.3 288 96L288 99.2C215 114 160 178.6 160 256L160 277.7C160 325.8 143.6 372.5 113.6 410.1L103.8 422.3C98.7 428.6 96 436.4 96 444.5C96 464.1 111.9 480 131.5 480L508.4 480C528 480 543.9 464.1 543.9 444.5C543.9 436.4 541.2 428.6 536.1 422.3L526.3 410.1C496.4 372.5 480 325.8 480 277.7L480 256C480 178.6 425 114 352 99.2L352 96C352 78.3 337.7 64 320 64zM258 528C265.1 555.6 290.2 576 320 576C349.8 576 374.9 555.6 382 528L258 528z" />
-                        </svg> Activity Notifications</span>
+                        </svg>{" "}
+                        Activity Notifications
+                    </span>
+                    <div className="notification-header-actions">
+                        <span className="notification-refresh-meta">{refreshLabel}</span>
+                        <button
+                            type="button"
+                            onClick={fetchNotifications}
+                            disabled={loading}
+                            className="notification-refresh-btn"
+                            aria-label="Refresh notifications"
+                            title="Refresh notifications"
+                        >
+                            <svg
+                                width={16}
+                                height={16}
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className={`notification-refresh-icon ${loading ? "is-loading" : ""}`}
+                            >
+                                <path
+                                    d="M20 12A8 8 0 1 1 17.66 6.34"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                                <path
+                                    d="M20 4V10H14"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                            {loading ? "Refreshing..." : "Refresh"}
+                        </button>
+                    </div>
                 </div>
 
                 {loading && (
