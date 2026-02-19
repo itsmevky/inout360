@@ -27,8 +27,38 @@ const runCheck = async () => {
       lastSeen: { $lte: cutoff },
     }).select("_id deviceId userId employeeId name").lean();
 
-    if (devicesToOffline.length > 0) {
-      const bulkOps = devicesToOffline.map(d => ({
+    // 🔴 FIX: Filter out users who are already logged out
+    // We need to check the sessionStatus of the associated User (or Visitor)
+    // Assuming devicesToOffline isn't huge, we can do this efficiently.
+    const userIds = devicesToOffline.map(d => d.userId).filter(Boolean);
+
+    // Fetch session status for these users
+    // We need to import UserModel if not already imported, but let's check
+    // If not, we should dynamic require it like DeviceEventModel or correct the imports.
+    // However, top-level imports are better if no circular dependency.
+    // Let's use dynamic require for safety in this existing pattern or just standard require if safe.
+
+    // Check if UserModel is needed. 
+    // Ideally we should just update the query to include user population, 
+    // but a separate query is often cleaner for "find" with conditions on related docs in Mongo/Mongoose without aggregation.
+
+    const UserModel = require("../Modules/user/model");
+    const activeUsers = await UserModel.find({
+      _id: { $in: userIds },
+      sessionStatus: "Logged In"
+    }).select("_id").lean();
+
+    const activeUserIds = new Set(activeUsers.map(u => u._id.toString()));
+
+    // Filter the list to only include devices belonging to currently logged-in users
+    const validDevicesToOffline = devicesToOffline.filter(d =>
+      // If no userId, we assume it's a device we should track (or not? let's be safe and track)
+      // But typically a device has a user. If d.userId exists, distinct check.
+      !d.userId || activeUserIds.has(d.userId.toString())
+    );
+
+    if (validDevicesToOffline.length > 0) {
+      const bulkOps = validDevicesToOffline.map(d => ({
         updateOne: {
           filter: { _id: d._id },
           update: {
@@ -45,7 +75,7 @@ const runCheck = async () => {
 
       // Log events for dashboard notification
       if (DeviceEventModel) {
-        const events = devicesToOffline.map(d => ({
+        const events = validDevicesToOffline.map(d => ({
           deviceId: d._id,
           event: "User's Device is Inactive",
           name: d.name || "Unknown",
@@ -62,7 +92,7 @@ const runCheck = async () => {
         await DeviceEventModel.insertMany(events);
       }
 
-      console.log(`[Monitor] Marked ${devicesToOffline.length} devices as OFFLINE`);
+      console.log(`[Monitor] Marked ${validDevicesToOffline.length} devices as OFFLINE`);
     }
 
   } catch (error) {

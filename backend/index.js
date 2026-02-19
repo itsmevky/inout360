@@ -11,6 +11,7 @@ const cors = require("cors");
 const userRoutes = require("./Modules/user/routes");
 const EmployeeModel = require("./Modules/employees/model");
 const { startDevicePresenceMonitor } = require("./helpers/devicePresenceMonitor");
+const { startWorkingHoursCron } = require("./cron/workingHoursCheck");
 
 const app = express();
 app.use(express.json());
@@ -114,4 +115,5 @@ fs.readdirSync(modulesPath).forEach((folder) => {
 // ======Start the server========================//
 const PORT = process.env.PORT || 5000;
 startDevicePresenceMonitor();
+startWorkingHoursCron();
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

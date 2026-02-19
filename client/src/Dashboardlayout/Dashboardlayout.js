@@ -28,6 +28,7 @@ import LocationEdit from "../Modules/Employee/Location/Edit.js";
 import Settings from "../Modules/Users/Settings.js";
 import NotificationsPage from "../Modules/Notifications/NotificationsPage.js";
 import EnquiriesPage from "../Modules/Enquiries/EnquiriesPage";
+import WarningsPage from "../Modules/Warnings/WarningsPage";
 
 
 function DashboardLayout({ userRole }) {
@@ -119,6 +120,8 @@ function DashboardLayout({ userRole }) {
               <Route path="notifications" element={<NotificationsPage />} />
               {/* 📩 Enquiries (FIXED PATH) */}
               <Route path="enquiries" element={<EnquiriesPage />} />
+              {/* ⚠️ Warnings */}
+              <Route path="warnings" element={<WarningsPage />} />
 
               {/* ✅ Default fallback */}
               <Route path="*" element={<Dashboard />} />

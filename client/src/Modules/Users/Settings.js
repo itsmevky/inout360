@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { domainpath, getData, putData } from "../../Helpers/api.js";
 import { useUser } from "../../Helpers/Context/UserContext.js";
@@ -37,6 +37,11 @@ const Settings = () => {
         companyLogoUrl: "",
         otpEmail: "",
         otpExpirySeconds: "",
+        workingHours: {
+            enabled: false,
+            startTime: "09:30",
+            endTime: "18:30"
+        }
     };
 
     const [deviceSettings, setDeviceSettings] = useState(defaultDevice);
@@ -62,8 +67,8 @@ const Settings = () => {
     };
 
     const emailsArray = systemConfig.otpEmail
-  ? systemConfig.otpEmail.split(",").map(e => e.trim())
-  : [""];
+        ? systemConfig.otpEmail.split(",").map(e => e.trim())
+        : [""];
 
 
     const loadSettings = async (locationName = "") => {
@@ -85,6 +90,7 @@ const Settings = () => {
                 companyLogoUrl: data.companyLogoUrl || "",
                 otpEmail: data.otpEmail || "",
                 otpExpirySeconds: data.qrExpirySeconds || "",
+                workingHours: data.workingHours || { enabled: false, startTime: "09:30", endTime: "18:30" },
             };
             const nextDevice = data.deviceControls || defaultDevice;
             const nextAlerts = data.alerts || defaultAlerts;
@@ -125,6 +131,14 @@ const Settings = () => {
             payload.append("otpEmail", systemConfig.otpEmail || "");
             payload.append("qrExpirySeconds", systemConfig.otpExpirySeconds || 0);
 
+            // ✅ Working Hours
+            // Force enabled: true since we removed the toggle
+            const workingHoursPayload = {
+                ...(systemConfig.workingHours || {}),
+                enabled: true
+            };
+            payload.append("workingHours", JSON.stringify(workingHoursPayload));
+
             if (systemConfig.apkFile) payload.append("apkFile", systemConfig.apkFile);
             if (systemConfig.logoFile) payload.append("companyLogo", systemConfig.logoFile);
 
@@ -143,6 +157,7 @@ const Settings = () => {
 
                     otpEmail: data.otpEmail || "",
                     otpExpirySeconds: data.qrExpirySeconds || "",
+                    workingHours: data.workingHours || { enabled: false, startTime: "09:30", endTime: "18:30" },
                 };
 
                 setSystemConfig(nextSystem);
@@ -303,58 +318,58 @@ const Settings = () => {
                             </div> */}
 
                             <div>
-  <label className="setting-System-Configuration text-gray-700 font-semibold">
-    OTP Email
-  </label>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">
+                                    OTP Email
+                                </label>
 
-  {emailsArray.map((email, index) => (
-    <div key={index} className="flex items-center gap-2 mt-2">
-      <input
-        type="email"
-        value={email}
-        placeholder="Enter email address"
-        onChange={(e) => {
-          const updatedEmails = [...emailsArray];
-          updatedEmails[index] = e.target.value;
+                                {emailsArray.map((email, index) => (
+                                    <div key={index} className="flex items-center gap-2 mt-2">
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            placeholder="Enter email address"
+                                            onChange={(e) => {
+                                                const updatedEmails = [...emailsArray];
+                                                updatedEmails[index] = e.target.value;
 
-          handleConfigChange(
-            "otpEmail",
-            updatedEmails.filter(Boolean).join(",")
-          );
-        }}
-        className="flex-1 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-      />
+                                                handleConfigChange(
+                                                    "otpEmail",
+                                                    updatedEmails.filter(Boolean).join(",")
+                                                );
+                                            }}
+                                            className="flex-1 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                        />
 
-      {/* Remove button (except first) */}
-      {emailsArray.length > 1 && (
-        <button
-          type="button"
-          onClick={() => {
-            const updatedEmails = emailsArray.filter((_, i) => i !== index);
-            handleConfigChange("otpEmail", updatedEmails.join(","));
-          }}
-          className="px-3 py-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200"
-        >
-          ✕
-        </button>
-      )}
-    </div>
-  ))}
+                                        {/* Remove button (except first) */}
+                                        {emailsArray.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const updatedEmails = emailsArray.filter((_, i) => i !== index);
+                                                    handleConfigChange("otpEmail", updatedEmails.join(","));
+                                                }}
+                                                className="px-3 py-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
 
-  {/* Add button */}
-  <button
-    type="button"
-    onClick={() => {
-      handleConfigChange(
-        "otpEmail",
-        [...emailsArray, ""].join(",")
-      );
-    }}
-    className="mt-3 text-sm text-blue-600 font-semibold hover:underline flex items-center gap-1"
-  >
-    ➕ Add Email
-  </button>
-</div>
+                                {/* Add button */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleConfigChange(
+                                            "otpEmail",
+                                            [...emailsArray, ""].join(",")
+                                        );
+                                    }}
+                                    className="mt-3 text-sm text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                                >
+                                    ➕ Add Email
+                                </button>
+                            </div>
 
 
                             {/* ✅ QR Code Expiry */}
@@ -376,6 +391,54 @@ const Settings = () => {
                                         <option value="90">90 seconds</option>
                                         <option value="120">120 seconds</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            {/* ✅ Working Hours (Moved here) */}
+                            <div className="md:col-span-2">
+                                <label className="setting-System-Configuration text-gray-700 font-semibold block mb-2">
+                                    Working Hours
+                                </label>
+                                <div className="flex gap-4 items-center bg-gray-50 p-3 rounded-lg border border-gray-400">
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1">Start Time</label>
+                                        <input
+                                            type="time"
+                                            value={systemConfig.workingHours?.startTime || "09:30"}
+                                            onChange={(e) => {
+                                                setIsChanged(true);
+                                                setSystemConfig((prev) => ({
+                                                    ...prev,
+                                                    workingHours: {
+                                                        ...prev.workingHours,
+                                                        enabled: true, // Always enable when editing
+                                                        startTime: e.target.value
+                                                    }
+                                                }));
+                                            }}
+                                            className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <span className="text-gray-400 mt-3">-</span>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1">End Time</label>
+                                        <input
+                                            type="time"
+                                            value={systemConfig.workingHours?.endTime || "18:30"}
+                                            onChange={(e) => {
+                                                setIsChanged(true);
+                                                setSystemConfig((prev) => ({
+                                                    ...prev,
+                                                    workingHours: {
+                                                        ...prev.workingHours,
+                                                        enabled: true, // Always enable when editing
+                                                        endTime: e.target.value
+                                                    }
+                                                }));
+                                            }}
+                                            className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -474,6 +537,9 @@ const Settings = () => {
                     )}
 
                 </div>
+
+
+
             </div>
         </>
     );

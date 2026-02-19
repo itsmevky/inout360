@@ -20,6 +20,10 @@ const normalizePayload = (body = {}) => {
     typeof body.alerts === "string"
       ? JSON.parse(body.alerts)
       : body.alerts || {};
+  const workingHours =
+    typeof body.workingHours === "string"
+      ? JSON.parse(body.workingHours)
+      : body.workingHours || {};
   const qrExpirySeconds =
     Number.isFinite(Number(body.qrExpirySeconds)) && Number(body.qrExpirySeconds) > 0
       ? Number(body.qrExpirySeconds)
@@ -48,6 +52,11 @@ const normalizePayload = (body = {}) => {
       appUninstallAlert: toBool(alerts.appUninstallAlert, true),
       screenshotAlert: toBool(alerts.screenshotAlert, false),
       cameraActivityAlert: toBool(alerts.cameraActivityAlert, false),
+    },
+    workingHours: {
+      enabled: toBool(workingHours.enabled, false),
+      startTime: workingHours.startTime || "09:30",
+      endTime: workingHours.endTime || "18:30",
     },
     metadata: body.metadata,
   };
@@ -163,9 +172,9 @@ exports.update = async (req, res) => {
       { unitLocation },
       payload,
       {
-      new: true,
-      upsert: true,
-      setDefaultsOnInsert: true,
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
       }
     );
     res.status(200).json({ status: true, message: "Settings saved", data: record });

@@ -60,6 +60,12 @@ const settingsSchemaDefinition = {
     cameraActivityAlert: { type: Boolean, default: false },
   },
 
+  workingHours: {
+    enabled: { type: Boolean, default: false },
+    startTime: { type: String, default: "09:30" },
+    endTime: { type: String, default: "18:30" },
+  },
+
   metadata: {
     type: mongoose.Schema.Types.Mixed,
     default: {},
@@ -82,6 +88,7 @@ const settingsTransform = (ret) => {
 
     deviceControls: ret.deviceControls,
     alerts: ret.alerts,
+    workingHours: ret.workingHours,
 
     metadata: ret.metadata,
 

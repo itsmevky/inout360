@@ -50,7 +50,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Settings", icon: "settings", path: `${basePath}/settings` },
     { label: "Device", icon: "devices", path: `${basePath}/device` },
     { label: "Notifications", icon: "notifications", path: `${basePath}/notifications` },
-    { label: "Enquiries", icon: "mail", path: "/dashboard/enquiries" }
+    { label: "Enquiries", icon: "mail", path: "/dashboard/enquiries" },
+    // ✅ Warnings
+    { label: "Warnings", icon: "warning", path: "/dashboard/warnings" }
 
   ];
 
@@ -69,6 +71,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Location",
       "Activity",
       "Enquiries",
+      "Warnings",
     ],
     admin: [
       "Dashboard",
@@ -81,6 +84,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Settings",
       "Activity",
       "Enquiries",
+      "Warnings",
     ],
     hr: ["Dashboard", "Employees", "Visitors"],
     employee: ["Dashboard"],
