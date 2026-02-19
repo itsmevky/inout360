@@ -47,7 +47,7 @@ const runCheck = async () => {
       if (DeviceEventModel) {
         const events = devicesToOffline.map(d => ({
           deviceId: d._id,
-          event: "device_offline_auto",
+          event: "User's Device is Inactive",
           name: d.name || "Unknown",
           employeeId: d.employeeId || "",
           timestamp: new Date(),
