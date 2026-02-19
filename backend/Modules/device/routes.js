@@ -14,6 +14,7 @@ router.post("/verify-token", Controller.verifyRegisterToken);
 router.post("/add", Controller.add);
 router.post("/uninstall", Controller.uninstallDevice);
 router.post("/track", Controller.track);
+router.post("/ping", Controller.pingDevice);
 router.post("/:id/policy", verifyToken, checkAuthorization(adminRoles, "device"), Controller.setDevicePolicy);
 router.get("/:id/policy", verifyToken, checkAuthorization(adminRoles, "device"), Controller.getDevicePolicy);
 router.put("/:id/policy/toggle", verifyToken, checkAuthorization(adminRoles, "device"), Controller.toggleDevicePolicy);

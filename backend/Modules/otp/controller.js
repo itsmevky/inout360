@@ -270,6 +270,7 @@ exports.verifyOtp = async (req, res) => {
       status: true,
       message: "Device verified successfully",
       registerToken: device.registerToken,
+      deviceId: device.deviceId || device._id,
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

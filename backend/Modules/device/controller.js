@@ -621,6 +621,99 @@ exports.track = async (req, res) => {
   }
 };
 
+// Polling heartbeat endpoint for app presence
+exports.pingDevice = async (req, res) => {
+  try {
+    const { deviceId, employeeId, action, appState } = req.body || {};
+    const loginToken = String(
+      req.body?.loginToken ||
+      req.headers["x-login-token"] ||
+      req.headers["login-token"] ||
+      req.headers["devicelogintoken"] ||
+      ""
+    ).trim();
+
+    if (!loginToken) {
+      return res.status(401).json({ status: false, message: "loginToken is required" });
+    }
+    if (!deviceId) {
+      return res.status(400).json({ status: false, message: "deviceId is required" });
+    }
+
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
+    const orFilters = [
+      { deviceId: new RegExp(`^${escapeRegExp(normalizedDeviceId)}$`, "i") },
+    ];
+    if (mongoose.isValidObjectId(normalizedDeviceId)) {
+      orFilters.push({ _id: normalizedDeviceId });
+    }
+
+    const device = await DeviceModel.findOne({ $or: orFilters });
+    if (!device) {
+      return res.status(404).json({ status: false, message: "Device not found" });
+    }
+    if (String(device.loginToken || "") !== loginToken) {
+      return res.status(403).json({ status: false, message: "Invalid loginToken for this device" });
+    }
+
+    const expectedEmployeeId = String(device.employeeId || "").trim();
+    const providedEmployeeId = String(employeeId || "").trim();
+    if (providedEmployeeId && expectedEmployeeId && providedEmployeeId !== expectedEmployeeId) {
+      return res.status(403).json({ status: false, message: "Employee not authorized for this device" });
+    }
+
+    const sessionStatus = await resolveUserSessionStatus({
+      userId: device.userId,
+      employeeId: device.employeeId || null,
+    });
+    const normalizedSession = String(sessionStatus || "").toLowerCase();
+
+    const now = new Date();
+    const normalizedAction = String(action || "heartbeat").toLowerCase();
+    const isLogout = normalizedAction === "logout";
+    if (!isLogout && normalizedSession && normalizedSession !== "logged in") {
+      return res.status(403).json({ status: false, message: "User session is not logged in" });
+    }
+
+    const update = {
+      lastSeen: now,
+      "metadata.appState": String(appState || (isLogout ? "logged_out" : "active")),
+      "metadata.lastPingAt": now,
+      ...(isLogout
+        ? {
+          status: "OFFLINE",
+          "metadata.lastSocketLogoutAt": now,
+        }
+        : {
+          status: "ONLINE",
+          deviceStatus: "Active",
+          lastOnline: now,
+        }),
+    };
+
+    const updated = await DeviceModel.findOneAndUpdate(
+      { _id: device._id },
+      { $set: update },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: isLogout ? "Device marked offline" : "Ping received",
+      data: {
+        deviceId: updated.deviceId || updated._id,
+        userId: updated.userId,
+        employeeId: updated.employeeId || "",
+        status: updated.status,
+        lastSeen: updated.lastSeen,
+        devicePolicyState: updated.devicePolicyState || {},
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 // Alias for creating/upserting from admin UI
 exports.add = async (req, res) => exports.track(req, res);
 
