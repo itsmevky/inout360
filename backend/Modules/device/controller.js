@@ -15,6 +15,10 @@ const { randomUUID } = require("crypto");
 const axios = require("axios");
 const path = require("path");
 const { GoogleAuth } = require("google-auth-library");
+const {
+  normalizeLocation,
+  resolveLocationScope,
+} = require("../../helpers/locationScope");
 
 const JWT_SECRET =
   process.env.SECRET_KEY ||
@@ -135,6 +139,69 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
     if (session) return session.action;
   }
   return null;
+};
+
+const resolveDeviceOwnerLocation = async (device = {}) => {
+  const principalId = device?.userId?._id || device?.userId;
+  if (principalId && mongoose.isValidObjectId(principalId)) {
+    const user = await UserModel.findById(principalId).select("location").lean();
+    const userLocation = normalizeLocation(user?.location);
+    if (userLocation) {
+      return userLocation;
+    }
+
+    const visitor = await VisitorModel.findById(principalId).select("location").lean();
+    const visitorLocation = normalizeLocation(visitor?.location);
+    if (visitorLocation) {
+      return visitorLocation;
+    }
+  }
+
+  const employeeId = String(device?.employeeId || "").trim();
+  if (!employeeId) {
+    return "";
+  }
+  const employee = await EmployeeModel.findOne({ employeeId }).select("location").lean();
+  return normalizeLocation(employee?.location);
+};
+
+const getScopedPrincipalIds = async (scope) => {
+  if (!scope?.isAdmin) {
+    return null;
+  }
+
+  const [users, visitors, employees] = await Promise.all([
+    UserModel.find({ location: scope.location }).select("_id").lean(),
+    VisitorModel.find({ location: scope.location }).select("_id").lean(),
+    EmployeeModel.find({ location: scope.location, userId: { $ne: null } })
+      .select("userId")
+      .lean(),
+  ]);
+
+  const principalIds = new Set();
+  users.forEach((doc) => {
+    if (doc?._id) principalIds.add(String(doc._id));
+  });
+  visitors.forEach((doc) => {
+    if (doc?._id) principalIds.add(String(doc._id));
+  });
+  employees.forEach((doc) => {
+    if (doc?.userId) principalIds.add(String(doc.userId));
+  });
+
+  return Array.from(principalIds)
+    .filter((id) => mongoose.isValidObjectId(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+};
+
+const assertDeviceScopeAccess = async (scope, device, message) => {
+  if (!scope?.isAdmin) return;
+  const ownerLocation = await resolveDeviceOwnerLocation(device);
+  if (ownerLocation !== scope.location) {
+    const error = new Error(message || "You can only access devices from your assigned location");
+    error.statusCode = 403;
+    throw error;
+  }
 };
 const padVisitorId = (seq) => `VIS-${String(seq).padStart(5, "0")}`;
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
@@ -939,10 +1006,15 @@ exports.deviceStatus = async (req, res) => {
 // List devices for the UI grid
 exports.getAll = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { page, limit, search, status } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
 
     const filter = {};
+    if (scope.isAdmin) {
+      const principalIds = await getScopedPrincipalIds(scope);
+      filter.userId = { $in: principalIds };
+    }
     if (status) filter.status = normalizeStatus(status);
 
     const result = await paginate(
@@ -966,7 +1038,7 @@ exports.getAll = async (req, res) => {
       pagination: result.pagination,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       status: false,
       message: "Server Error",
       error: error.message,
@@ -977,6 +1049,7 @@ exports.getAll = async (req, res) => {
 // Detail view for the device modal
 exports.getById = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const query = mongoose.isValidObjectId(id)
       ? { _id: id }
@@ -986,6 +1059,11 @@ exports.getById = async (req, res) => {
     if (!device) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
+    await assertDeviceScopeAccess(
+      scope,
+      device,
+      "You can only access devices from your assigned location"
+    );
 
     return res.status(200).json({
       status: true,
@@ -993,13 +1071,16 @@ exports.getById = async (req, res) => {
       data: formatDevice(device),
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 // Assign or update policy for a device
 exports.setDevicePolicy = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const policyData = req.body || {};
 
@@ -1007,6 +1088,11 @@ exports.setDevicePolicy = async (req, res) => {
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
+    await assertDeviceScopeAccess(
+      scope,
+      device,
+      "You can only update policy for devices from your assigned location"
+    );
 
     const previousState = { ...(device.devicePolicyState || {}) };
 
@@ -1086,13 +1172,16 @@ exports.setDevicePolicy = async (req, res) => {
       policy,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 // Toggle a single policy flag on a device
 exports.toggleDevicePolicy = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const { field } = req.body || {};
     const allowedFields = [
@@ -1112,6 +1201,11 @@ exports.toggleDevicePolicy = async (req, res) => {
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
+    await assertDeviceScopeAccess(
+      scope,
+      device,
+      "You can only update policy for devices from your assigned location"
+    );
 
     const current = device.devicePolicyState?.[field] ?? false;
     const nextValue = !current;
@@ -1169,13 +1263,16 @@ exports.toggleDevicePolicy = async (req, res) => {
       data: formatDevice(device),
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 // Send a test push notification to a device
 exports.sendTestNotification = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const { title, message } = req.body || {};
 
@@ -1186,6 +1283,11 @@ exports.sendTestNotification = async (req, res) => {
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
+    await assertDeviceScopeAccess(
+      scope,
+      device,
+      "You can only access devices from your assigned location"
+    );
     if (!device.fcmToken) {
       return res.status(400).json({ status: false, message: "Device FCM token missing" });
     }
@@ -1207,13 +1309,16 @@ exports.sendTestNotification = async (req, res) => {
     });
   } catch (error) {
     console.error("Test notification failed:", error.message);
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 // Fetch policy and applied state for a device
 exports.getDevicePolicy = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const device = await DeviceModel.findById(req.params.id)
       .populate("policyId")
       .lean();
@@ -1221,6 +1326,11 @@ exports.getDevicePolicy = async (req, res) => {
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
+    await assertDeviceScopeAccess(
+      scope,
+      device,
+      "You can only access devices from your assigned location"
+    );
 
     return res.status(200).json({
       status: true,
@@ -1230,7 +1340,9 @@ exports.getDevicePolicy = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
@@ -1299,11 +1411,21 @@ exports.uninstallDevice = async (req, res) => {
       },
     });
 
-    await DeviceModel.deleteOne({ _id: device._id });
+    await DeviceModel.updateOne(
+      { _id: device._id },
+      {
+        $set: {
+          deviceStatus: "Disable",
+          status: "OFFLINE",
+          verified: false,
+          lastSeen: new Date(),
+        },
+      }
+    );
 
     return res.status(200).json({
       status: true,
-      message: "Device removed successfully",
+      message: "Device disabled successfully",
       data: {
         deviceId: device.deviceId || device._id,
       },
@@ -1316,6 +1438,7 @@ exports.uninstallDevice = async (req, res) => {
 // Admin delete device by id or deviceId
 exports.remove = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ status: false, message: "id is required" });
@@ -1329,6 +1452,11 @@ exports.remove = async (req, res) => {
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
+    await assertDeviceScopeAccess(
+      scope,
+      device,
+      "You can only delete devices from your assigned location"
+    );
 
     await DeviceModel.deleteOne({ _id: device._id });
 
@@ -1338,6 +1466,8 @@ exports.remove = async (req, res) => {
       data: { deviceId: device.deviceId || device._id },
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };

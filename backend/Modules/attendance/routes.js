@@ -4,12 +4,12 @@ const Controller = require("./controller");
 const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
 
-const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor"];
+const adminRoles = ["admin", "superadmin"];
 
 router.post(
   "/",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.add
 );
 
@@ -17,56 +17,56 @@ router.post(
 router.post(
   "/add",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.add
 );
 
 router.get(
   "/",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.getAll
 );
 
 router.get(
   "/all",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.getAll
 );
 
 router.get(
   "/search",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.getAll
 );
 
 router.get(
   "/:id",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.getbyid
 );
 
 router.put(
   "/:id",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.update
 );
 
 router.delete(
   "/:id",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.delete
 );
 
 router.post(
   "/delete",
   verifyToken,
-  checkAuthorization(allRoles, "attendance"),
+  checkAuthorization(adminRoles, "attendance"),
   Controller.delete
 );
 

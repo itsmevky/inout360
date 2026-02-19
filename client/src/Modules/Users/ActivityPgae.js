@@ -661,13 +661,6 @@ const ActivityPage = () => {
             count: counts.install + counts.uninstall,
             today: todayCounts.installToday + todayCounts.uninstallToday,
         },
-        {
-            title: "In / Out",
-            type: "in_out",
-            count: attendanceCounts.totalIn + attendanceCounts.totalOut,
-            today: attendanceCounts.todayIn + attendanceCounts.todayOut,
-            meta: attendanceCounts,
-        },
     ];
 
     const formatTimestamp = (value) => {
@@ -880,10 +873,7 @@ const ActivityPage = () => {
         const fetchActivity = async () => {
             setLoading(true);
             try {
-                const [summaryResponse, attendanceResponse] = await Promise.all([
-                    getData("/activity/summary"),
-                    getData("/attendance/all", { page: 1, limit: 1000 }),
-                ]);
+                const summaryResponse = await getData("/activity/summary");
                 if (summaryResponse?.data) {
                     setSummary(summaryResponse.data);
                     if (summaryResponse.data?.today) {
@@ -895,14 +885,6 @@ const ActivityPage = () => {
                         });
                     }
                 }
-                const attendanceList = Array.isArray(attendanceResponse)
-                    ? attendanceResponse
-                    : Array.isArray(attendanceResponse?.data)
-                        ? attendanceResponse.data
-                        : Array.isArray(attendanceResponse?.data?.data)
-                            ? attendanceResponse.data.data
-                            : [];
-                setAttendanceEntries(attendanceList);
             } catch (error) {
                 toast.error("Failed to load activity.");
             } finally {

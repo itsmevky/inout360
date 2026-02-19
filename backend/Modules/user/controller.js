@@ -37,6 +37,22 @@ const hashPassword = async (password) => {
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
+const resolveUserLocation = async (user = {}) => {
+  let location = String(user.location || "").trim();
+  if (location) {
+    return location;
+  }
+
+  const employeeId = String(user.employeeId || "").trim();
+  if (!employeeId) {
+    return "";
+  }
+
+  const employee = await EmployeeModel.findOne({ employeeId }).lean();
+  location = String(employee?.location || "").trim();
+  return location;
+};
+
 /* ---------------------------------
    Register User
 ---------------------------------- */
@@ -79,8 +95,8 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Only one admin / superadmin
-    if (role === "admin" || role === "superadmin") {
+    // Only one superadmin
+    if (role === "superadmin") {
       const roleUser = await User.findOne({ role });
       if (roleUser) {
         return res.status(400).json({
@@ -157,6 +173,8 @@ exports.loginUser = async (req, res) => {
       sessionStatus: "Logged In",
     });
 
+    const location = await resolveUserLocation(user);
+
     res.status(200).json({
       id: user._id,
       name: user.name,
@@ -164,6 +182,7 @@ exports.loginUser = async (req, res) => {
       employeeId: user.employeeId || "",
       email: user.email || "",
       role: user.role,
+      location,
       accessToken,
       refreshToken,
     });
@@ -212,11 +231,7 @@ exports.qrLoginUser = async (req, res) => {
     }
 
     const accessToken = generateQrAccessToken(user);
-    let location = user.location || "";
-    if (!location && user.employeeId) {
-      const employee = await EmployeeModel.findOne({ employeeId: user.employeeId }).lean();
-      location = employee?.location || "";
-    }
+    const location = await resolveUserLocation(user);
 
     res.status(200).json({
       id: user._id,

@@ -1,359 +1,462 @@
-import React, { useState, useEffect, useRef } from "react";
-import CustomDataTable from "../../../Common/Customsdatatable.js";
-import { useNavigate } from "react-router-dom";
-import AddUserForm from "../Add.js";
-import EditUserForm from "./Edit.js";
-import {toast} from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import PopupModal from "../../../popup/Popup.js";
-import ConfirmDelete from "../../../popup/conformationdelet.js";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import { API } from "../../../Helpers/api.js";
 
-const Teachers = () => {
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
-  /* ================= STATIC DATA ================= */
-  const attendancedata = [
-    {
-      _id: "1",
-      rfidCardId: "RFID-1001",
-      name: "Amit Sharma",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "09:05 AM",
-      workfloorOut: "06:15 PM",
-    },
-    {
-      _id: "2",
-      rfidCardId: "RFID-1002",
-      name: "Neha Verma",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "09:00 AM",
-      workfloorOut: "06:10 PM",
-    },
-    {
-      _id: "3",
-      rfidCardId: "RFID-1003",
-      name: "Rohit Mehta",
-      date: "2025-02-10",
-      status: "Absent",
-      entryGateIn: "-",
-      workfloorOut: "-",
-    },
-    {
-      _id: "4",
-      rfidCardId: "RFID-1004",
-      name: "Suman Kaur",
-      date: "2025-02-10",
-      status: "Absent",
-      entryGateIn: "-",
-      workfloorOut: "-",
-    },
-    {
-      _id: "5",
-      rfidCardId: "RFID-1005",
-      name: "Vikram Singh",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "09:10 AM",
-      workfloorOut: "06:30 PM",
-    },
-    {
-      _id: "6",
-      rfidCardId: "RFID-1006",
-      name: "Priya Gupta",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "08:55 AM",
-      workfloorOut: "06:20 PM",
-    },
-    {
-      _id: "7",
-      rfidCardId: "RFID-1007",
-      name: "Arjun Patel",
-      date: "2025-02-10",
-      status: "On Leave",
-      entryGateIn: "-",
-      workfloorOut: "-",
-    },
-    {
-      _id: "8",
-      rfidCardId: "RFID-1008",
-      name: "Riya Sharma",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "09:02 AM",
-      workfloorOut: "06:18 PM",
-    },
-    {
-      _id: "9",
-      rfidCardId: "RFID-1009",
-      name: "Karan Yadav",
-      date: "2025-02-10",
-      status: "Absent",
-      entryGateIn: "-",
-      workfloorOut: "-",
-    },
-    {
-      _id: "10",
-      rfidCardId: "RFID-1010",
-      name: "Sneha Joshi",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "08:50 AM",
-      workfloorOut: "06:05 PM",
-    }, {
-      _id: "11",
-      rfidCardId: "RFID-1010",
-      name: "Sneha Joshi",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "08:50 AM",
-      workfloorOut: "06:05 PM",
-    }, {
-      _id: "12",
-      rfidCardId: "RFID-1010",
-      name: "Sneha Joshi",
-      date: "2025-02-10",
-      status: "Present",
-      entryGateIn: "08:50 AM",
-      workfloorOut: "06:05 PM",
-    },
-  ];
-
-
-  /* ================= STATES ================= */
-  const [data, setData] = useState(attendancedata);
+const AttendanceList = () => {
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [attendanceStatus, setAttendanceStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  const [isAddUserFormVisible, setIsAddUserFormVisible] = useState(false);
-  const [isEditUserFormVisible, setIsEditUserFormVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  /* ================= FILTER ================= */
-  const filteredData = data.filter((item) => {
-    if (
-      searchTerm &&
-      !item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-      return false;
+  const fetchAttendance = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Fetch a large filtered set and group by user on frontend
+      const response = await API.attendance.getAll({
+        search: searchTerm,
+        status: statusFilter || undefined,
+        date: dateFilter || undefined,
+        page: 1,
+        limit: 5000,
+      });
 
-    if (attendanceStatus && item.status !== attendanceStatus)
-      return false;
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : [];
 
-    return true;
-  });
+      setEntries(list);
+    } catch (_err) {
+      setError("Failed to load attendance");
+      toast.error("Failed to load attendance");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  /* ================= HANDLERS ================= */
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+  useEffect(() => {
+    fetchAttendance();
+  }, [searchTerm, statusFilter, dateFilter]);
+
+  useEffect(() => {
     setCurrentPage(1);
+  }, [searchTerm, statusFilter, dateFilter, rowsPerPage]);
+
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleString();
   };
 
-  const handleAttendanceStatusChange = (e) => {
-    setAttendanceStatus(e.target.value);
-    setCurrentPage(1);
+  const formatDateOnly = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString();
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete?")) return;
-    setData((prev) => prev.filter((item) => item._id !== id));
-    toast.success("Attendance deleted successfully");
+  const formatTimeOnly = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleTimeString();
   };
 
-  const handlePageChange = (page) => setCurrentPage(page);
-
-  const handleRowsPerPageChange = (newRowsPerPage) => {
-    setRowsPerPage(newRowsPerPage);
-    setCurrentPage(1);
+  const resolveActivity = (row) => {
+    const inTime = row?.entryGateIn ? new Date(row.entryGateIn).getTime() : 0;
+    const outTime = row?.exitGateOut ? new Date(row.exitGateOut).getTime() : 0;
+    if (inTime && outTime) return outTime >= inTime ? "Out" : "In";
+    if (outTime) return "Out";
+    if (inTime) return "In";
+    const action = String(row?.metadata?.action || "").toLowerCase();
+    if (action === "logout") return "Out";
+    if (action === "login") return "In";
+    return "-";
   };
-  const handleEdit = (id) => {
-    const selected = attendancedata.find((item) => item._id === id);
 
-    if (!selected) {
-      toast.error("Attendance record not found");
-      return;
+  const resolveTime = (row) => {
+    if (row?.exitGateOut) return row.exitGateOut;
+    if (row?.entryGateIn) return row.entryGateIn;
+    if (row?.updatedAt) return row.updatedAt;
+    return null;
+  };
+
+  const groupedUsers = useMemo(() => {
+    const map = new Map();
+
+    entries.forEach((entry) => {
+      const key =
+        entry?.userId ||
+        entry?.employeeId ||
+        `${entry?.userName || "unknown"}-${entry?.deviceId || "device"}`;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          userKey: key,
+          userName: entry?.userName || "-",
+          employeeId: entry?.employeeId || "-",
+          deviceId: entry?.deviceId || "-",
+          entries: [],
+        });
+      }
+
+      const group = map.get(key);
+      group.entries.push(entry);
+
+      if (!group.userName || group.userName === "-") {
+        group.userName = entry?.userName || "-";
+      }
+      if (!group.employeeId || group.employeeId === "-") {
+        group.employeeId = entry?.employeeId || "-";
+      }
+      if (!group.deviceId || group.deviceId === "-") {
+        group.deviceId = entry?.deviceId || "-";
+      }
+    });
+
+    return Array.from(map.values())
+      .map((group) => {
+        const sortedEntries = [...group.entries].sort((a, b) => {
+          const ta = new Date(resolveTime(a) || 0).getTime();
+          const tb = new Date(resolveTime(b) || 0).getTime();
+          return tb - ta;
+        });
+        return {
+          ...group,
+          entries: sortedEntries,
+          latestEntry: sortedEntries[0] || null,
+        };
+      })
+      .sort((a, b) => {
+        const ta = new Date(resolveTime(a.latestEntry) || 0).getTime();
+        const tb = new Date(resolveTime(b.latestEntry) || 0).getTime();
+        return tb - ta;
+      });
+  }, [entries]);
+
+  const totalRows = groupedUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return groupedUsers.slice(start, start + rowsPerPage);
+  }, [groupedUsers, currentPage, rowsPerPage]);
+
+  const selectedUserEvents = useMemo(() => {
+    if (!selectedUser?.entries) return [];
+
+    const events = [];
+    selectedUser.entries.forEach((entry) => {
+      if (entry?.entryGateIn) {
+        events.push({ kind: "In", time: entry.entryGateIn, entry });
+      }
+      if (entry?.exitGateOut) {
+        events.push({ kind: "Out", time: entry.exitGateOut, entry });
+      }
+      if (!entry?.entryGateIn && !entry?.exitGateOut) {
+        events.push({ kind: resolveActivity(entry), time: resolveTime(entry), entry });
+      }
+    });
+
+    return events.sort((a, b) => {
+      const ta = new Date(a.time || 0).getTime();
+      const tb = new Date(b.time || 0).getTime();
+      return tb - ta;
+    });
+  }, [selectedUser]);
+
+  const selectedUserStats = useMemo(() => {
+    let inCount = 0;
+    let outCount = 0;
+    selectedUserEvents.forEach((event) => {
+      if (event.kind === "In") inCount += 1;
+      if (event.kind === "Out") outCount += 1;
+    });
+    return { inCount, outCount, total: selectedUserEvents.length };
+  }, [selectedUserEvents]);
+
+  const renderPaginationButtons = (current, total, onChange) => {
+    const btns = [];
+    const start = Math.max(current - 2, 1);
+    const end = Math.min(current + 2, total);
+    const baseBtn =
+      "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
+    const activeBtn =
+      "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
+
+    if (start > 1) {
+      btns.push(
+        <button key={1} onClick={() => onChange(1)} className={baseBtn}>
+          1
+        </button>
+      );
+      if (start > 2) btns.push(<span key="dots1">...</span>);
     }
 
-    setSelectedUser(selected);
-    setIsEditUserFormVisible(true);
-  };
-
-  // ✅ ADD THESE TWO FUNCTIONS EXACTLY HERE 👇
-  const toggleAddUserForm = () => {
-    setIsAddUserFormVisible((prev) => !prev);
-  };
-
-  const toggleEditUserForm = () => {
-    setIsEditUserFormVisible(false);
-    setSelectedUser(null);
-  };
-
-
-
-  /* ================= TABLE COLUMNS ================= */
-  const columns = [
-    {
-      name: "Rfid Card Id",
-      selector: (row) => row.rfidCardId,
-      width: "10%"
-    },
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      width: "20%"
-    },
-    {
-      name: "date",
-      selector: (row) => row.date,
-      width: "15%"
-    },
-    {
-      name: "Status",
-      selector: (row) => row.status,
-      width: "15%"
-    },
-    {
-      name: "In Time",
-      selector: (row) => row.entryGateIn,
-      width: "15%"
-    },
-    {
-      name: "Out Time",
-      selector: (row) => row.workfloorOut,
-      width: "15%"
-    },
-
-    {
-
-      name: "Actions",
-      width: "25%",
-      selector: (row) => (
-        <div className="flex space-x-2 justify-start">
-          {/* ✅ Edit Button */}
-          <button
-            className="text-blue-500"
-            onClick={() => handleEdit(row._id)}
-          >
-            <svg
-              fill="#22374e"
-              width={20}
-              height={20}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 640 512"
-            >
-              <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-            </svg>
-          </button>
-
-          {/* ✅ Delete Button */}
-          <button
-            className="text-red-500"
-            onClick={() => handleDelete(row._id)}
-          >
-            <svg
-              fill="red"
-              width={16}
-              height={16}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 448 512"
-            >
-              <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-            </svg>
-          </button>
-        </div>
-      ),
+    for (let i = start; i <= end; i += 1) {
+      btns.push(
+        <button
+          key={i}
+          onClick={() => onChange(i)}
+          className={`${baseBtn} ${i === current ? activeBtn : ""}`}
+          style={
+            i === current
+              ? {
+                  backgroundColor: "#2563eb",
+                  color: "#ffffff",
+                  borderColor: "#2563eb",
+                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+                }
+              : { backgroundColor: "#ffffff", color: "#374151" }
+          }
+        >
+          {i}
+        </button>
+      );
     }
-  ];
 
-  /* ================= UI (UNCHANGED) ================= */
+    if (end < total - 1) btns.push(<span key="dots2">...</span>);
+
+    if (end < total) {
+      btns.push(
+        <button key={total} onClick={() => onChange(total)} className={baseBtn}>
+          {total}
+        </button>
+      );
+    }
+
+    return btns;
+  };
+
+  const startItem = totalRows === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+  const endItem = Math.min(currentPage * rowsPerPage, totalRows);
+
   return (
-    <div className="relative p-4">
-      <div class="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 Attendance-user-list">
-        <svg width="20"
-          fill="navy-blue"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 448 512">
-          <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z">
-          </path>
-        </svg>List of Attendance</div>
-
-      <div className="button-crm">
-        <div className="status-dropdown-section flex gap-4">
-
-          {/* SEARCH */}
+    <div className="p-4">
+      <div className="button-crm mb-4">
+        <div className="status-dropdown-section flex gap-4 flex-wrap">
           <div className="input-search-bar flex">
             <input
               type="text"
               value={searchTerm}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search"
               className="border rounded p-2"
             />
           </div>
 
-          {/* STATUS FILTER */}
           <div className="status-select-option-dropdown first-left form-item">
             <select
-              value={attendanceStatus}
-              onChange={handleAttendanceStatusChange}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">Select Status</option>
+              <option value="">All Status</option>
               <option value="Present">Present</option>
               <option value="Absent">Absent</option>
-              <option value="On Leave">On Leave</option>
+              <option value="HalfDay">Half Day</option>
+              <option value="Leave">Leave</option>
             </select>
           </div>
 
+          <div className="status-select-option-dropdown first-left form-item">
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="border rounded p-2"
+            />
+          </div>
         </div>
       </div>
-      <CustomDataTable
-        columns={columns}
-        data={filteredData}
-        totalRows={filteredData.length}
-        rowsPerPageOptions={[10, 20, 50, 100]}
-        defaultRowsPerPage={rowsPerPage}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleRowsPerPageChange}
-        currentPage={currentPage}
-      />
-      {/* Add User Form Sliding Panel */}
-      {isAddUserFormVisible && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">
-          <div className="sidebar-inner bg-white  transition-transform transform translate-x-0">
-            <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
-              onClick={toggleAddUserForm}
-            >
-              X
-            </button>
-            <AddUserForm />
-          </div>
-        </div>
-      )}
 
-      {/* Edit User Form Sliding Panel */}
-      {isEditUserFormVisible && selectedUser && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg p-4 z-50 ">
-          <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
-            <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
-              onClick={toggleEditUserForm}
-            >
-              X
+      {error && <div className="text-red-500 mb-3">{error}</div>}
+
+      <div className="mt-2 bg-white p-5 rounded-xl shadow activity-table-wrapper">
+        <h2 className="text-xl font-bold mb-4">User Activity - ALL ATTENDANCE</h2>
+
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            <div className="activity-table-scroll">
+              <table className="w-full border-collapse activity-table">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-gray-700">
+                    <th className="p-3">Sr.No</th>
+                    <th className="p-3">User</th>
+                    <th className="p-3">Activity</th>
+                    <th className="p-3">Device ID</th>
+                    <th className="p-3">Employee ID</th>
+                    <th className="p-3">Time</th>
+                    <th className="p-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedUsers.map((user, index) => (
+                    <tr key={user.userKey} className="hover:bg-gray-50">
+                      <td className="p-3">{(currentPage - 1) * rowsPerPage + index + 1}</td>
+                      <td className="p-3">{user.userName || "-"}</td>
+                      <td className="p-3">{user.latestEntry ? resolveActivity(user.latestEntry) : "-"}</td>
+                      <td className="p-3">{user.deviceId || "-"}</td>
+                      <td className="p-3">{user.employeeId || "-"}</td>
+                      <td className="p-3">{formatDateTime(resolveTime(user.latestEntry))}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+                          title="View Details"
+                        >
+                          <svg width={22} height={22} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                            <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {paginatedUsers.length === 0 && (
+                    <tr>
+                      <td className="p-4 text-center text-gray-500" colSpan={7}>
+                        No attendance records found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-gray-600">Rows per page:</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  {ITEMS_PER_PAGE_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-gray-600">
+                  {startItem}-{endItem} of {totalRows}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  aria-label="Previous page"
+                >
+                  ‹
+                </button>
+                <div className="flex flex-nowrap gap-2">
+                  {renderPaginationButtons(currentPage, totalPages, setCurrentPage)}
+                </div>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  aria-label="Next page"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {selectedUser && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <button onClick={() => setSelectedUser(null)} className="modal-close-btn">
+              ✕
             </button>
-            <EditUserForm user={selectedUser} /> {/* ✅ Now contains full data */}
+
+            <div className="modal-header modal-header--compact">
+              <h2 className="modal-user-name">Name: {selectedUser.userName || "-"}</h2>
+              <p className="modal-meta">Employee ID: {selectedUser.employeeId || "-"}</p>
+              <p className="modal-meta">Device ID: {selectedUser.deviceId || "-"}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                Total: {selectedUserStats.total}
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                In: {selectedUserStats.inCount}
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                Out: {selectedUserStats.outCount}
+              </span>
+            </div>
+
+            <div className="activity-table-scroll max-h-[420px] overflow-auto border rounded-lg">
+              <table className="w-full border-collapse activity-table">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-gray-700 sticky top-0 z-10">
+                    <th className="p-3">Activity</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedUserEvents.map((event, idx) => (
+                    <tr
+                      key={`${event.entry?.id || event.entry?._id || idx}-${event.kind}`}
+                      className="odd:bg-white even:bg-slate-50"
+                    >
+                      <td className="p-3">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            event.kind === "In"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : event.kind === "Out"
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {event.kind}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                          {event.entry?.status || "-"}
+                        </span>
+                      </td>
+                      <td className="p-3">{formatDateOnly(event.time)}</td>
+                      <td className="p-3">{formatTimeOnly(event.time)}</td>
+                    </tr>
+                  ))}
+                  {selectedUserEvents.length === 0 && (
+                    <tr>
+                      <td className="p-4 text-center text-gray-500" colSpan={4}>
+                        No in/out records found for this user.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      )}
-      {/* Background overlay when Add or Edit User form is visible */}
-      {(isAddUserFormVisible || isEditUserFormVisible) && (
-        <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
       )}
     </div>
   );
 };
 
-export default Teachers;
+export default AttendanceList;

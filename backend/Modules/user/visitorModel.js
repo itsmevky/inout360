@@ -24,7 +24,7 @@ const visitorSchemaDefinition = {
     pincode: { type: String, trim: true, default: "" },
   },
   status: { type: String, default: "Active" },
-  location: { type: String, trim: true, default: "" },
+  location: { type: String, trim: true, default: "", index: true },
   sessionStatus: {
     type: String,
     enum: ["Logged In", "Logout"],

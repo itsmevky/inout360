@@ -5,7 +5,7 @@ const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
 const { upload } = require("../../middleware/upload");
 
-const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor"];
+const allRoles = ["admin", "superadmin"];
 
 router.get("/", verifyToken, checkAuthorization(allRoles, "settings"), Controller.get);
 router.put(

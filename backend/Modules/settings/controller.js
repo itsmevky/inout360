@@ -1,4 +1,5 @@
 const SettingsModel = require("./model");
+const EmployeeModel = require("../employees/model");
 
 const toBool = (v, fallback) => {
   if (typeof v === "boolean") return v;
@@ -52,21 +53,103 @@ const normalizePayload = (body = {}) => {
   };
 };
 
+const normalizeLocation = (value) => String(value || "").trim();
+
+const resolveUserLocation = async (user = {}) => {
+  const directLocation = normalizeLocation(user.location);
+  if (directLocation) {
+    return directLocation;
+  }
+
+  const employeeId = normalizeLocation(user.employeeId);
+  if (!employeeId) {
+    return "";
+  }
+
+  const employee = await EmployeeModel.findOne({ employeeId }).lean();
+  return normalizeLocation(employee?.location);
+};
+
+const resolveSettingsScope = async (req) => {
+  const role = String(req.user?.role || "").toLowerCase();
+  const requestedLocation = normalizeLocation(req.query?.unitLocation);
+  const payloadLocation = normalizeLocation(req.body?.unitLocation);
+
+  if (role === "superadmin") {
+    return {
+      role,
+      allowedLocation: "",
+      queryLocation: requestedLocation,
+      updateLocation: payloadLocation,
+    };
+  }
+
+  if (role === "admin") {
+    const adminLocation = await resolveUserLocation(req.user);
+    if (!adminLocation) {
+      const error = new Error("Admin location is not configured");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (requestedLocation && requestedLocation !== adminLocation) {
+      const error = new Error("You can only access your assigned location settings");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (payloadLocation && payloadLocation !== adminLocation) {
+      const error = new Error("You can only update your assigned location settings");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    return {
+      role,
+      allowedLocation: adminLocation,
+      queryLocation: adminLocation,
+      updateLocation: adminLocation,
+    };
+  }
+
+  const error = new Error("Only admin and superadmin can access settings");
+  error.statusCode = 403;
+  throw error;
+};
+
 exports.get = async (req, res) => {
   try {
-    const unitLocation = req.query?.unitLocation;
+    const scope = await resolveSettingsScope(req);
+    const unitLocation = scope.queryLocation;
     const filter = unitLocation ? { unitLocation } : {};
     const record = await SettingsModel.findOne(filter);
-    res.status(200).json({ status: true, data: record || {} });
+    res.status(200).json({
+      status: true,
+      data: record || {},
+      scope: {
+        role: scope.role,
+        unitLocation: scope.allowedLocation || scope.queryLocation || "",
+      },
+    });
   } catch (error) {
-    res.status(500).json({ status: false, message: error.message });
+    res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.update = async (req, res) => {
   try {
     const payload = normalizePayload(req.body);
-    const unitLocation = payload.unitLocation || "";
+    const scope = await resolveSettingsScope(req);
+    const unitLocation = normalizeLocation(scope.updateLocation || payload.unitLocation);
+    if (!unitLocation) {
+      return res
+        .status(400)
+        .json({ status: false, message: "unitLocation is required" });
+    }
+
+    payload.unitLocation = unitLocation;
     const apkFile = req.files?.apkFile?.[0];
     const companyLogo = req.files?.companyLogo?.[0];
 
@@ -87,6 +170,8 @@ exports.update = async (req, res) => {
     );
     res.status(200).json({ status: true, message: "Settings saved", data: record });
   } catch (error) {
-    res.status(500).json({ status: false, message: error.message });
+    res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };

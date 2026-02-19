@@ -9,6 +9,14 @@ const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { UPLOAD_ROOT } = require("../../middleware/upload");
 const { markAttendance } = require("../../helpers/attendance");
+const {
+  normalizeLocation,
+  resolveLocationScope,
+  assertScopedLocation,
+} = require("../../helpers/locationScope");
+const PRIVILEGED_ROLES = ["admin", "superadmin"];
+const isPrivilegedRole = (role) =>
+  PRIVILEGED_ROLES.includes(String(role || "").toLowerCase());
 
 const getDotValue = (data, key) => {
   if (!data) return undefined;
@@ -207,7 +215,24 @@ const validateEmployeeData = async (data) => {
 
 exports.add = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const normalized = normalizePayload(req.body);
+    if (scope.isAdmin && isPrivilegedRole(normalized.role)) {
+      return res.status(403).json({
+        status: false,
+        message: "Only superadmin can create admin/superadmin profiles",
+      });
+    }
+    if (scope.isAdmin) {
+      const requestedLocation = normalizeLocation(normalized.location);
+      if (requestedLocation && requestedLocation !== scope.location) {
+        return res.status(403).json({
+          status: false,
+          message: "You can only create employees for your assigned location",
+        });
+      }
+      normalized.location = scope.location;
+    }
     const creatorRole = String(req.user?.role || "").toLowerCase();
     if (["hr", "manager"].includes(creatorRole)) {
       const allowedRoles = ["employee", "contractor", "supervisor"];
@@ -270,15 +295,22 @@ exports.add = async (req, res) => {
         errors: error.errors,
       });
     }
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.getAll = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { page, limit, search, status, department, attendanceStatus } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const filter = {};
+    if (scope.isAdmin) {
+      filter.location = scope.location;
+      filter.role = { $nin: PRIVILEGED_ROLES };
+    }
     if (status) filter["status"] = status;
     if (department) filter["department"] = department;
     if (attendanceStatus) filter["attendanceStatus"] = attendanceStatus;
@@ -290,7 +322,8 @@ exports.getAll = async (req, res) => {
       limit,
       [],
       ["firstName", "lastName", "email", "rfid", "designation", "employeeId", "department"],
-      search
+      search,
+      { role: 1, createdAt: -1, _id: -1 }
     );
 
     // Normalize payload for UI (add id and name)
@@ -327,7 +360,7 @@ exports.getAll = async (req, res) => {
       pagination: result.pagination,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       status: false,
       message: "Server Error",
       error: error.message,
@@ -348,7 +381,9 @@ exports.getIndexes = async (_req, res) => {
       })),
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
@@ -373,12 +408,15 @@ exports.cleanupIndexes = async (_req, res) => {
       dropped,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.getbyid = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const param = req.params.id;
     const employee = await EmployeeModel.findOne({
       $or: [{ _id: param }, { rfid: param }],
@@ -386,20 +424,67 @@ exports.getbyid = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
+    if (scope.isAdmin && isPrivilegedRole(employee.role)) {
+      return res.status(403).json({
+        status: false,
+        message: "Only superadmin can access admin/superadmin profiles",
+      });
+    }
+    assertScopedLocation(
+      employee.location,
+      scope,
+      "You can only access employees from your assigned location"
+    );
 
     return res.status(200).json({ employee });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.update = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
+    const existing = await EmployeeModel.findById(req.params.id).select(
+      "profileImage location role"
+    );
+    if (!existing) {
+      return res.status(404).json({ status: false, message: "Not found" });
+    }
+    if (scope.isAdmin && isPrivilegedRole(existing.role)) {
+      return res.status(403).json({
+        status: false,
+        message: "Only superadmin can update admin/superadmin profiles",
+      });
+    }
+    assertScopedLocation(
+      existing.location,
+      scope,
+      "You can only update employees from your assigned location"
+    );
+
     const normalized = normalizePayload(req.body);
     const updates = { ...normalized };
-    const previous = req.file
-      ? await EmployeeModel.findById(req.params.id).select("profileImage")
-      : null;
+    if (scope.isAdmin && isPrivilegedRole(updates.role)) {
+      return res.status(403).json({
+        status: false,
+        message: "Only superadmin can assign admin/superadmin roles",
+      });
+    }
+    if (scope.isAdmin) {
+      const requestedLocation = normalizeLocation(updates.location);
+      if (requestedLocation && requestedLocation !== scope.location) {
+        return res.status(403).json({
+          status: false,
+          message: "You can only assign your own location",
+        });
+      }
+      updates.location = scope.location;
+    }
+
+    const previous = req.file ? existing : null;
     if (!req.file && !req.body.profileImage && !req.body.profile_image) {
       delete updates.profileImage;
     }
@@ -451,18 +536,25 @@ exports.update = async (req, res) => {
       data: updated,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.updateStatus = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { users, status } = req.body;
     if (!Array.isArray(users) || users.length === 0) {
       return res.status(400).json({ status: false, message: "Users missing" });
     }
     const result = await EmployeeModel.updateMany(
-      { _id: { $in: users } },
+      {
+        _id: { $in: users },
+        ...(scope.isAdmin ? { location: scope.location } : {}),
+        ...(scope.isAdmin ? { role: { $nin: PRIVILEGED_ROLES } } : {}),
+      },
       { $set: { status } }
     );
     if (result.matchedCount === 0) {
@@ -476,12 +568,15 @@ exports.updateStatus = async (req, res) => {
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.updateSessionStatus = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const {
       sessionStatus,
@@ -506,6 +601,17 @@ exports.updateSessionStatus = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ status: false, message: "Employee not found" });
     }
+    if (scope.isAdmin && isPrivilegedRole(employee.role)) {
+      return res.status(403).json({
+        status: false,
+        message: "Only superadmin can update admin/superadmin sessions",
+      });
+    }
+    assertScopedLocation(
+      employee.location,
+      scope,
+      "You can only update session for employees from your assigned location"
+    );
 
     const user =
       employee.userId
@@ -557,12 +663,15 @@ exports.updateSessionStatus = async (req, res) => {
       sessionStatus: normalizedStatus,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     let recordIds = req.body?.recordId || req.params?.id;
     if (!recordIds) {
       return res
@@ -577,9 +686,19 @@ exports.delete = async (req, res) => {
       });
     }
 
-    const employees = await EmployeeModel.find({ _id: { $in: recordIds } }).select(
+    const employees = await EmployeeModel.find({
+      _id: { $in: recordIds },
+      ...(scope.isAdmin ? { location: scope.location } : {}),
+      ...(scope.isAdmin ? { role: { $nin: PRIVILEGED_ROLES } } : {}),
+    }).select(
       "_id userId employeeId profileImage"
     );
+    if (scope.isAdmin && employees.length !== recordIds.length) {
+      return res.status(403).json({
+        status: false,
+        message: "You can only delete employees from your assigned location",
+      });
+    }
     const userIds = employees
       .map((employee) => employee.userId)
       .filter(Boolean);
@@ -590,7 +709,11 @@ exports.delete = async (req, res) => {
       .map((employee) => employee.profileImage)
       .filter(Boolean);
 
-    const result = await EmployeeModel.deleteMany({ _id: { $in: recordIds } });
+    const result = await EmployeeModel.deleteMany({
+      _id: { $in: recordIds },
+      ...(scope.isAdmin ? { location: scope.location } : {}),
+      ...(scope.isAdmin ? { role: { $nin: PRIVILEGED_ROLES } } : {}),
+    });
     if (result.deletedCount === 0) {
       return res
         .status(404)
@@ -627,6 +750,8 @@ exports.delete = async (req, res) => {
       message: `${result.deletedCount} record(s) deleted successfully`,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };

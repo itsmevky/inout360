@@ -5,7 +5,9 @@ const paginate = require("../../helpers/limitoffset");
 const mongoose = require("mongoose");
 const UserModel = require("../user/model");
 const VisitorModel = require("../user/visitorModel");
+const EmployeeModel = require("../employees/model");
 const UserSession = require("../user/userSessionsModel");
+const { resolveLocationScope } = require("../../helpers/locationScope");
 
 const resolveCategory = (eventType) => {
   const value = String(eventType || "").toLowerCase();
@@ -168,6 +170,52 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
   return filter;
 };
 
+const buildLocationScopeFilter = async (req) => {
+  const scope = await resolveLocationScope(req);
+  if (!scope.isAdmin) return null;
+
+  const [employees, visitors, users] = await Promise.all([
+    EmployeeModel.find({ location: scope.location }).select("employeeId").lean(),
+    VisitorModel.find({ location: scope.location }).select("employeeId _id").lean(),
+    UserModel.find({ location: scope.location }).select("_id").lean(),
+  ]);
+
+  const employeeIds = new Set();
+  employees.forEach((doc) => {
+    if (doc?.employeeId) employeeIds.add(String(doc.employeeId));
+  });
+  visitors.forEach((doc) => {
+    if (doc?.employeeId) employeeIds.add(String(doc.employeeId));
+  });
+
+  const principalIds = new Set();
+  users.forEach((doc) => {
+    if (doc?._id) principalIds.add(String(doc._id));
+  });
+  visitors.forEach((doc) => {
+    if (doc?._id) principalIds.add(String(doc._id));
+  });
+
+  const scopeOr = [];
+  if (employeeIds.size > 0) {
+    scopeOr.push({ employeeId: { $in: Array.from(employeeIds) } });
+  }
+  if (principalIds.size > 0) {
+    scopeOr.push({ "raw.userId": { $in: Array.from(principalIds) } });
+  }
+
+  if (scopeOr.length === 0) {
+    return { _id: { $in: [] } };
+  }
+
+  return { $or: scopeOr };
+};
+
+const withScope = (filter = {}, scopeFilter = null) => {
+  if (!scopeFilter) return filter;
+  return { $and: [filter, scopeFilter] };
+};
+
 exports.add = async (req, res) => {
   try {
     const payload = { ...req.body };
@@ -188,50 +236,91 @@ exports.add = async (req, res) => {
 // Summary counts for dashboard cards
 exports.getSummary = async (_req, res) => {
   try {
+    const scopeFilter = await buildLocationScopeFilter(_req);
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const cameraCount = await DeviceEventModel.countDocuments({
-      policyVoilation: true,
-      event: { $regex: "camera|screenshot|video", $options: "i" },
+      ...withScope(
+        {
+          policyVoilation: true,
+          event: { $regex: "camera|screenshot|video", $options: "i" },
+        },
+        scopeFilter
+      ),
     });
     const installCount = await DeviceEventModel.countDocuments({
-      policyVoilation: true,
-      event: { $regex: "app[_-]?install|accessibility", $options: "i" },
+      ...withScope(
+        {
+          policyVoilation: true,
+          event: { $regex: "app[_-]?install|accessibility", $options: "i" },
+        },
+        scopeFilter
+      ),
     });
     const uninstallCount = await DeviceEventModel.countDocuments({
-      policyVoilation: true,
-      event: { $regex: "app[_-]?uninstall", $options: "i" },
+      ...withScope(
+        {
+          policyVoilation: true,
+          event: { $regex: "app[_-]?uninstall", $options: "i" },
+        },
+        scopeFilter
+      ),
     });
     const accessCount = await DeviceEventModel.countDocuments({
-      policyVoilation: true,
-      event: {
-        $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
-        $options: "i",
-      },
+      ...withScope(
+        {
+          policyVoilation: true,
+          event: {
+            $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
+            $options: "i",
+          },
+        },
+        scopeFilter
+      ),
     });
     const [cameraToday, installToday, uninstallToday, accessToday] = await Promise.all([
       DeviceEventModel.countDocuments({
-        policyVoilation: true,
-        event: { $regex: "camera|screenshot|video", $options: "i" },
-        timestamp: { $gte: todayStart },
+        ...withScope(
+          {
+            policyVoilation: true,
+            event: { $regex: "camera|screenshot|video", $options: "i" },
+            timestamp: { $gte: todayStart },
+          },
+          scopeFilter
+        ),
       }),
       DeviceEventModel.countDocuments({
-        policyVoilation: true,
-        event: { $regex: "app[_-]?install|accessibility", $options: "i" },
-        timestamp: { $gte: todayStart },
+        ...withScope(
+          {
+            policyVoilation: true,
+            event: { $regex: "app[_-]?install|accessibility", $options: "i" },
+            timestamp: { $gte: todayStart },
+          },
+          scopeFilter
+        ),
       }),
       DeviceEventModel.countDocuments({
-        policyVoilation: true,
-        event: { $regex: "app[_-]?uninstall", $options: "i" },
-        timestamp: { $gte: todayStart },
+        ...withScope(
+          {
+            policyVoilation: true,
+            event: { $regex: "app[_-]?uninstall", $options: "i" },
+            timestamp: { $gte: todayStart },
+          },
+          scopeFilter
+        ),
       }),
       DeviceEventModel.countDocuments({
-        policyVoilation: true,
-        event: {
-          $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
-          $options: "i",
-        },
-        timestamp: { $gte: todayStart },
+        ...withScope(
+          {
+            policyVoilation: true,
+            event: {
+              $regex: "youtube|whatsapp|instagram|facebook|restricted app opened",
+              $options: "i",
+            },
+            timestamp: { $gte: todayStart },
+          },
+          scopeFilter
+        ),
       }),
     ]);
 
@@ -258,13 +347,15 @@ exports.getSummary = async (_req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const { userId, employeeId, deviceId, category, search } = req.query;
-    const filter = buildActivityFilter({
+    const baseFilter = buildActivityFilter({
       userId,
       employeeId,
       deviceId,
       category,
       search,
     });
+    const scopeFilter = await buildLocationScopeFilter(req);
+    const filter = withScope(baseFilter, scopeFilter);
 
     const pageNum = parseInt(req.query.page, 10) || 0;
     const limitNum = parseInt(req.query.limit, 10) || 50;
@@ -489,6 +580,9 @@ exports.getNotifications = async (req, res) => {
       };
     }
 
+    const scopeFilter = await buildLocationScopeFilter(req);
+    searchQuery = withScope(searchQuery, scopeFilter);
+
     const pageNum = parseInt(page, 10) || 0;
     const limitNum = parseInt(limit, 10) || 20;
     const skip = pageNum * limitNum;
@@ -578,10 +672,16 @@ exports.getNotifications = async (req, res) => {
 exports.getNotificationCount = async (req, res) => {
   try {
     const seenAt = req.user?.notificationsSeenAt || new Date(0);
-    const count = await DeviceEventModel.countDocuments({
-      policyVoilation: true,
-      timestamp: { $gt: seenAt },
-    });
+    const scopeFilter = await buildLocationScopeFilter(req);
+    const count = await DeviceEventModel.countDocuments(
+      withScope(
+        {
+          policyVoilation: true,
+          timestamp: { $gt: seenAt },
+        },
+        scopeFilter
+      )
+    );
 
     return res.status(200).json({ status: true, count });
   } catch (error) {
@@ -612,7 +712,10 @@ exports.getById = async (req, res) => {
     if (!id || id === "undefined") {
       return res.status(400).json({ status: false, message: "Activity id is required" });
     }
-    const record = await DeviceEventModel.findById(id);
+    const scopeFilter = await buildLocationScopeFilter(req);
+    const record = await DeviceEventModel.findOne(
+      withScope({ _id: id }, scopeFilter)
+    );
     if (!record) return res.status(404).json({ status: false, message: "Not found" });
     res.status(200).json({ status: true, data: record });
   } catch (error) {
@@ -628,7 +731,9 @@ exports.deleteMany = async (req, res) => {
       return res.status(400).json({ status: false, message: "recordId required" });
     }
     if (typeof ids === "string") ids = [ids];
-    const result = await DeviceEventModel.deleteMany({ _id: { $in: ids } });
+    const scopeFilter = await buildLocationScopeFilter(req);
+    const scopedIds = withScope({ _id: { $in: ids } }, scopeFilter);
+    const result = await DeviceEventModel.deleteMany(scopedIds);
     res
       .status(200)
       .json({ status: true, message: `${result.deletedCount} record(s) deleted` });

@@ -2,8 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import {toast} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { domainpath, getData, putData } from "../../Helpers/api.js";
+import { useUser } from "../../Helpers/Context/UserContext.js";
 
 const Settings = () => {
+    const { user } = useUser();
+    const userRole = String(user?.role || "").toLowerCase();
+    const assignedLocation = String(user?.location || "").trim();
+    const isAdmin = userRole === "admin";
+
     const defaultDevice = {
         cameraAccess: true,
         allowAppUninstall: false,
@@ -29,6 +35,8 @@ const Settings = () => {
         logoFile: null,
         apkFileUrl: "",
         companyLogoUrl: "",
+        otpEmail: "",
+        otpExpirySeconds: "",
     };
 
     const [deviceSettings, setDeviceSettings] = useState(defaultDevice);
@@ -61,13 +69,16 @@ const Settings = () => {
     const loadSettings = async (locationName = "") => {
         setLoading(true);
         try {
+            const targetLocation = isAdmin ? assignedLocation : locationName;
             const response = await getData("/settings", {
-                unitLocation: locationName,
+                unitLocation: targetLocation,
             });
             const data = response?.data || {};
+            const scopedLocation = response?.scope?.unitLocation || "";
+            const resolvedLocation = data.unitLocation || targetLocation || scopedLocation || "";
             const nextSystem = {
                 apiEndpointUrl: data.apiEndpointUrl || "",
-                unitLocation: data.unitLocation || locationName || "",
+                unitLocation: resolvedLocation,
                 apkFile: null,
                 logoFile: null,
                 apkFileUrl: data.apkFileUrl || "",
@@ -84,6 +95,10 @@ const Settings = () => {
             setInitialDevice(nextDevice);
             setInitialAlerts(nextAlerts);
             setIsChanged(false);
+
+            if (isAdmin && resolvedLocation) {
+                setLocations([{ id: resolvedLocation, name: resolvedLocation }]);
+            }
         } catch (error) {
             toast.error("Failed to load settings.");
         } finally {
@@ -93,10 +108,16 @@ const Settings = () => {
 
     const handleSave = async () => {
         try {
+            const targetLocation = isAdmin ? assignedLocation : systemConfig.unitLocation;
+            if (!targetLocation) {
+                toast.error("Unit location is required.");
+                return;
+            }
+
             const payload = new FormData();
 
             payload.append("apiEndpointUrl", systemConfig.apiEndpointUrl || "");
-            payload.append("unitLocation", systemConfig.unitLocation || "");
+            payload.append("unitLocation", targetLocation);
             payload.append("deviceControls", JSON.stringify(deviceSettings));
             payload.append("alerts", JSON.stringify(alerts));
 
@@ -150,6 +171,11 @@ const Settings = () => {
 
     useEffect(() => {
         const fetchLocations = async () => {
+            if (isAdmin) {
+                setLocations(assignedLocation ? [{ id: assignedLocation, name: assignedLocation }] : []);
+                return;
+            }
+
             try {
                 const response = await getData("/location", { page: 1, limit: 1000 });
                 setLocations(response?.locations || []);
@@ -160,7 +186,7 @@ const Settings = () => {
 
         fetchLocations();
         loadSettings("");
-    }, []);
+    }, [isAdmin, assignedLocation]);
 
     return (
         <>
@@ -200,6 +226,7 @@ const Settings = () => {
                                 <select
                                     value={systemConfig.unitLocation}
                                     onChange={(e) => loadSettings(e.target.value)}
+                                    disabled={isAdmin}
                                     className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                 >
                                     <option value="">Select Unit</option>
@@ -209,6 +236,11 @@ const Settings = () => {
                                         </option>
                                     ))}
                                 </select>
+                                {isAdmin && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Admin can manage settings only for assigned location.
+                                    </p>
+                                )}
                             </div>
 
 

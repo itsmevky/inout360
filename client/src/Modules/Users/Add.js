@@ -14,7 +14,9 @@ const AddUserForm = ({ onSuccess, onClose }) => {
   const { user } = useUser();
   const role = String(user?.role || "").toLowerCase();
   const roleOptions =
-    role === "hr" || role === "manager"
+    role === "admin"
+      ? ["employee", "hr", "manager", "supervisor", "contractor"]
+      : role === "hr" || role === "manager"
       ? ["employee", "contractor", "supervisor"]
       : ["employee", "admin", "hr", "manager", "supervisor", "contractor"];
 

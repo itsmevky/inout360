@@ -6,6 +6,7 @@ const UserModel = require("../user/model");
 const DeviceModel = require("../device/model");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
+const { resolveLocationScope } = require("../../helpers/locationScope");
 
 const validateAttendanceData = async (data) => {
   const rules = {
@@ -14,6 +15,54 @@ const validateAttendanceData = async (data) => {
   };
   const validator = new Validator(data, rules);
   await validator.validate();
+};
+
+const buildAttendanceScopeFilter = async (req) => {
+  const scope = await resolveLocationScope(req);
+  if (!scope.isAdmin) {
+    return null;
+  }
+
+  const [employees, visitors, users] = await Promise.all([
+    EmployeeModel.find({ location: scope.location }).select("employeeId").lean(),
+    VisitorModel.find({ location: scope.location }).select("employeeId _id").lean(),
+    UserModel.find({ location: scope.location }).select("_id").lean(),
+  ]);
+
+  const employeeIds = new Set();
+  employees.forEach((doc) => {
+    if (doc?.employeeId) employeeIds.add(String(doc.employeeId));
+  });
+  visitors.forEach((doc) => {
+    if (doc?.employeeId) employeeIds.add(String(doc.employeeId));
+  });
+
+  const userIds = new Set();
+  users.forEach((doc) => {
+    if (doc?._id) userIds.add(String(doc._id));
+  });
+  visitors.forEach((doc) => {
+    if (doc?._id) userIds.add(String(doc._id));
+  });
+
+  const or = [];
+  if (employeeIds.size > 0) {
+    or.push({ employeeId: { $in: Array.from(employeeIds) } });
+  }
+  if (userIds.size > 0) {
+    or.push({ userId: { $in: Array.from(userIds) } });
+  }
+
+  if (or.length === 0) {
+    return { _id: { $in: [] } };
+  }
+
+  return { $or: or };
+};
+
+const withScopeFilter = (filter = {}, scopeFilter = null) => {
+  if (!scopeFilter) return filter;
+  return { $and: [filter, scopeFilter] };
 };
 
 exports.add = async (req, res) => {
@@ -48,6 +97,7 @@ exports.add = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
+    const scopeFilter = await buildAttendanceScopeFilter(req);
     const {
       sectionAssigned,
       status,
@@ -60,7 +110,14 @@ exports.getAll = async (req, res) => {
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const filter = {};
     if (sectionAssigned) filter.sectionAssigned = sectionAssigned;
-    if (date) filter.date = date;
+    if (date) {
+      const [y, m, d] = String(date).split("-").map((part) => parseInt(part, 10));
+      if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
+        const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
+        const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
+        filter.date = { $gte: dayStart, $lte: dayEnd };
+      }
+    }
     if (status === "approved") {
       filter.hrApproved = true;
       filter.supervisorApproved = true;
@@ -68,12 +125,13 @@ exports.getAll = async (req, res) => {
 
     const result = await paginate(
       AttendanceModel,
-      filter,
+      withScopeFilter(filter, scopeFilter),
       pageNumber,
       limit,
       [],
       ["sectionAssigned", "remarks", "rfidCardId"],
-      search
+      search,
+      { entryGateIn: -1, exitGateOut: -1, updatedAt: -1, _id: -1 }
     );
     const records = result.data || [];
     const employeeIds = Array.from(
@@ -133,7 +191,7 @@ exports.getAll = async (req, res) => {
       }
     });
 
-    // Frontend expects an array response; add id alias + userName for convenience
+    // Normalize rows for UI consumption
     const dataWithId = records.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
       const userName =
@@ -154,7 +212,17 @@ exports.getAll = async (req, res) => {
         deviceId,
       };
     });
-    return res.status(200).json(dataWithId);
+    return res.status(200).json({
+      status: true,
+      data: dataWithId,
+      total: result?.pagination?.totalrecords || dataWithId.length,
+      pagination: result?.pagination || {
+        totalrecords: dataWithId.length,
+        currentPage: pageNumber,
+        totalPages: 1,
+        limit: parseInt(limit, 10) || dataWithId.length || 10,
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       status: false,
@@ -166,6 +234,7 @@ exports.getAll = async (req, res) => {
 
 exports.getbyid = async (req, res) => {
   try {
+    const scopeFilter = await buildAttendanceScopeFilter(req);
     const { id } = req.params;
 
     if (!id || id === "undefined") {
@@ -178,7 +247,9 @@ exports.getbyid = async (req, res) => {
       ? { _id: id }
       : { rfidCardId: id };
 
-    const attendance = await AttendanceModel.findOne(query);
+    const attendance = await AttendanceModel.findOne(
+      withScopeFilter(query, scopeFilter)
+    );
     if (!attendance) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
@@ -194,16 +265,21 @@ exports.getbyid = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
+    const scopeFilter = await buildAttendanceScopeFilter(req);
     const { id } = req.params;
     if (!id || id === "undefined") {
       return res
         .status(400)
         .json({ status: false, message: "Attendance id is required" });
     }
-    const updated = await AttendanceModel.findByIdAndUpdate(id, req.body, {
+    const updated = await AttendanceModel.findOneAndUpdate(
+      withScopeFilter({ _id: id }, scopeFilter),
+      req.body,
+      {
       new: true,
       runValidators: true,
-    });
+      }
+    );
     if (!updated) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
@@ -219,6 +295,7 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
+    const scopeFilter = await buildAttendanceScopeFilter(req);
     let recordIds = req.body?.recordId || req.params?.id;
     if (!recordIds) {
       return res
@@ -238,7 +315,9 @@ exports.delete = async (req, res) => {
       });
     }
 
-    const result = await AttendanceModel.deleteMany({ _id: { $in: recordIds } });
+    const result = await AttendanceModel.deleteMany(
+      withScopeFilter({ _id: { $in: recordIds } }, scopeFilter)
+    );
     if (result.deletedCount === 0) {
       return res
         .status(404)

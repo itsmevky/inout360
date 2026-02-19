@@ -15,7 +15,7 @@ const Teachers = () => {
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [isAddUserFormVisible, setIsAddUserFormVisible] = useState(false);
@@ -50,9 +50,20 @@ const Teachers = () => {
 
       console.log("attendance response", response);
 
-      if (Array.isArray(response)) {
-        setData(response);                // ✅ Attendance data comes as array
-        setTotalRows(response.length);    // ✅ Just use array length
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+      if (list.length >= 0) {
+        setData(list);
+        setTotalRows(
+          response?.total ??
+          response?.pagination?.totalrecords ??
+          response?.pagination?.totalRecords ??
+          list.length
+        );
       } else {
         setError("No attendance data found");
       }

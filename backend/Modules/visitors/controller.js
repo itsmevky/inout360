@@ -7,6 +7,11 @@ const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { UPLOAD_ROOT } = require("../../middleware/upload");
 const { markAttendance } = require("../../helpers/attendance");
+const {
+  normalizeLocation,
+  resolveLocationScope,
+  assertScopedLocation,
+} = require("../../helpers/locationScope");
 
 const formatVisitor = (doc) => {
   const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
@@ -190,7 +195,18 @@ const removeFileIfExists = (filePath) => {
 
 exports.add = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const normalized = normalizePayload(req.body);
+    if (scope.isAdmin) {
+      const requestedLocation = normalizeLocation(normalized.location);
+      if (requestedLocation && requestedLocation !== scope.location) {
+        return res.status(403).json({
+          status: false,
+          message: "You can only create visitors for your assigned location",
+        });
+      }
+      normalized.location = scope.location;
+    }
     if (req.file) {
       normalized.profileImage = `/uploads/employees/${req.file.filename}`;
     }
@@ -225,15 +241,21 @@ exports.add = async (req, res) => {
         errors: error.errors,
       });
     }
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.getAll = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { page, limit, search, sessionStatus } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const filter = {};
+    if (scope.isAdmin) {
+      filter.location = scope.location;
+    }
     if (sessionStatus) {
       if (sessionStatus === "Logout") {
         filter.$or = [
@@ -262,7 +284,8 @@ exports.getAll = async (req, res) => {
         "email",
         "phone",
       ],
-      search
+      search,
+      { createdAt: -1, _id: -1 }
     );
 
     const visitors = result.data.map(formatVisitor);
@@ -275,7 +298,7 @@ exports.getAll = async (req, res) => {
       pagination: result.pagination,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       status: false,
       message: "Server Error",
       error: error.message,
@@ -286,13 +309,29 @@ exports.getAll = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const existing = await VisitorModel.findById(id);
     if (!existing) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
+    assertScopedLocation(
+      existing.location,
+      scope,
+      "You can only update visitors from your assigned location"
+    );
 
     const normalized = normalizePayload(req.body);
+    if (scope.isAdmin) {
+      const requestedLocation = normalizeLocation(normalized.location);
+      if (requestedLocation && requestedLocation !== scope.location) {
+        return res.status(403).json({
+          status: false,
+          message: "You can only assign your own location",
+        });
+      }
+      normalized.location = scope.location;
+    }
     if (req.file) {
       normalized.profileImage = `/uploads/employees/${req.file.filename}`;
     } else if (!req.body.profileImage && !req.body.profile_image) {
@@ -322,12 +361,15 @@ exports.update = async (req, res) => {
         errors: error.errors,
       });
     }
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.updateSessionStatus = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const {
       sessionStatus,
@@ -352,6 +394,11 @@ exports.updateSessionStatus = async (req, res) => {
     if (!visitor) {
       return res.status(404).json({ status: false, message: "Visitor not found" });
     }
+    assertScopedLocation(
+      visitor.location,
+      scope,
+      "You can only update session for visitors from your assigned location"
+    );
 
     if (visitor.sessionStatus === normalizedStatus) {
       return res.status(400).json({
@@ -394,17 +441,25 @@ exports.updateSessionStatus = async (req, res) => {
       sessionStatus: normalizedStatus,
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.remove = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const visitor = await VisitorModel.findById(id);
     if (!visitor) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
+    assertScopedLocation(
+      visitor.location,
+      scope,
+      "You can only delete visitors from your assigned location"
+    );
 
     await VisitorModel.findByIdAndDelete(id);
     if (visitor.profileImage) {
@@ -416,12 +471,15 @@ exports.remove = async (req, res) => {
       message: "Visitor deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };
 
 exports.getById = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const { id } = req.params;
     const query = mongoose.isValidObjectId(id)
       ? { _id: id }
@@ -431,6 +489,11 @@ exports.getById = async (req, res) => {
     if (!visitor) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
+    assertScopedLocation(
+      visitor.location,
+      scope,
+      "You can only access visitors from your assigned location"
+    );
 
     return res.status(200).json({
       status: true,
@@ -438,6 +501,8 @@ exports.getById = async (req, res) => {
       data: formatVisitor(visitor),
     });
   } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
   }
 };

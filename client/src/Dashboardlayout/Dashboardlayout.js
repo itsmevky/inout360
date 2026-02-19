@@ -79,22 +79,35 @@ function DashboardLayout({ userRole }) {
               <Route path="users/permissions" element={<PermissionsTable />} />
 
               {/* ✅ Attendance */}
-              <Route path="users/attendance" element={<Attendance />} />
+              <Route
+                path="users/attendance"
+                element={
+                  userRole === "superadmin" || userRole === "admin"
+                    ? <Attendance />
+                    : <Dashboard />
+                }
+              />
 
               {/* ✅ Contractors, RFID, Device, Zones */}
               <Route path="users/contractor" element={<Contractors />} />
               <Route path="users/rfid" element={<Rfid />} />
               <Route path="users/device" element={<Device />} />
               <Route path="users/zones" element={<Zones />} />
-              <Route path="users/location" element={<LocationList />} />
+              <Route
+                path="users/location"
+                element={userRole === "superadmin" ? <LocationList /> : <Dashboard />}
+              />
               <Route path="users/activity" element={<ActivityPgae />} />
               <Route path="users/settings" element={<Settings />} />
 
 
-              <Route path="users/location/add" element={<LocationAdd />} />
+              <Route
+                path="users/location/add"
+                element={userRole === "superadmin" ? <LocationAdd /> : <Dashboard />}
+              />
               <Route
                 path="users/location/edit/:id"
-                element={<LocationEdit />}
+                element={userRole === "superadmin" ? <LocationEdit /> : <Dashboard />}
               />
 
 
