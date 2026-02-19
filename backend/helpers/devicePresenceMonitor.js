@@ -51,6 +51,7 @@ const runCheck = async () => {
           name: d.name || "Unknown",
           employeeId: d.employeeId || "",
           timestamp: new Date(),
+          policyVoilation: true,
           metadata: {
             reason: "inactive_timeout",
             deviceId: d.deviceId,
