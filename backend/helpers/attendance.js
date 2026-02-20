@@ -8,7 +8,7 @@ const getDayRange = (date) => {
   return { start, end };
 };
 
-const markAttendance = async (employee, action, userId) => {
+const markAttendance = async (employee, action, userId, location) => {
   const { start, end } = getDayRange(new Date());
   const now = new Date();
 
@@ -17,6 +17,7 @@ const markAttendance = async (employee, action, userId) => {
       rfidCardId: employee.rfid,
       employeeId: employee.employeeId,
       userId: userId || employee.userId || null,
+      location: location || null,
       date: start,
       entryGateIn: now,
       sectionAssigned: employee.section,
@@ -43,6 +44,7 @@ const markAttendance = async (employee, action, userId) => {
       rfidCardId: employee.rfid,
       employeeId: employee.employeeId,
       userId: userId || employee.userId || null,
+      location: location || null,
       date: start,
       exitGateOut: now,
       totalWorkHours,

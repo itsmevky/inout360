@@ -492,7 +492,7 @@ exports.consumeQr = async (req, res) => {
         .status(400)
         .json({ message: "Employee RFID/section missing for attendance" });
     }
-    await markAttendance(employee, action, user?._id || visitor?._id);
+    await markAttendance(employee, action, user?._id || visitor?._id, resolvedLocation);
 
     const sessionAction = action === "login" ? "Logged In" : "Logout";
     const sessionUserId = employee?.userId || user?._id || visitor?._id || employee._id;
@@ -585,16 +585,16 @@ exports.consumeQr = async (req, res) => {
       : null;
     const deviceSettings = deviceRecord
       ? {
-          deviceStatus: deviceRecord.deviceStatus,
-          cameraDisabled: deviceRecord.devicePolicyState?.cameraDisabled ?? false,
-          uninstallBlocked: deviceRecord.devicePolicyState?.uninstallBlocked ?? false,
-          facebookBlocked: deviceRecord.devicePolicyState?.facebookBlocked ?? false,
-          instagramBlocked: deviceRecord.devicePolicyState?.instagramBlocked ?? false,
-          youtubeBlocked: deviceRecord.devicePolicyState?.youtubeBlocked ?? false,
-          whatsappBlocked: deviceRecord.devicePolicyState?.whatsappBlocked ?? false,
-          locationAllowed: deviceRecord.locationAllowed ?? true,
-          devicePolicyState: deviceRecord.devicePolicyState || {},
-        }
+        deviceStatus: deviceRecord.deviceStatus,
+        cameraDisabled: deviceRecord.devicePolicyState?.cameraDisabled ?? false,
+        uninstallBlocked: deviceRecord.devicePolicyState?.uninstallBlocked ?? false,
+        facebookBlocked: deviceRecord.devicePolicyState?.facebookBlocked ?? false,
+        instagramBlocked: deviceRecord.devicePolicyState?.instagramBlocked ?? false,
+        youtubeBlocked: deviceRecord.devicePolicyState?.youtubeBlocked ?? false,
+        whatsappBlocked: deviceRecord.devicePolicyState?.whatsappBlocked ?? false,
+        locationAllowed: deviceRecord.locationAllowed ?? true,
+        devicePolicyState: deviceRecord.devicePolicyState || {},
+      }
       : null;
 
     const responsePayload = {
