@@ -1,4 +1,5 @@
 // import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 // import { deleteData, getData, postData, putData } from "../../../Helpers/api.js";
 
 // const Device = () => {
@@ -949,6 +950,7 @@ const Device = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const ITEMS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
   // ✅ ADDED: More Actions state
   const [actionView, setActionView] = useState(null); // "logs" | "apps" | "location" | null
@@ -1074,11 +1076,11 @@ const Device = () => {
           style={
             i === currentPage
               ? {
-                  backgroundColor: "#2563eb",
-                  color: "#ffffff",
-                  borderColor: "#2563eb",
-                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
-                }
+                backgroundColor: "#2563eb",
+                color: "#ffffff",
+                borderColor: "#2563eb",
+                boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+              }
               : { backgroundColor: "#ffffff", color: "#374151" }
           }
         >
@@ -1166,7 +1168,8 @@ const Device = () => {
 
   const removeDevice = async () => {
     if (!selectedDevice) return;
-    const userId = resolveUserId(selectedDevice);
+
+    // We only need the ID to delete from DB
     const deviceId =
       selectedDevice.deviceId || selectedDevice.id || selectedDevice._id;
     if (!deviceId) return;
@@ -1177,24 +1180,19 @@ const Device = () => {
     if (!confirmed) return;
 
     try {
-      const res = userId
-        ? await postData("/device/uninstall", {
-            deviceId,
-            userId,
-            employeeId: selectedDevice.employeeId || undefined,
-            action: "uninstall",
-          })
-        : await deleteData(`/device/${deviceId}`);
+      // Changed to ALWAYS delete from DB, never trigger "uninstall" action
+      const res = await deleteData(`/device/${deviceId}`);
 
       if (res?.status) {
         await loadDevices();
         setShowModal(false);
         setSelectedDevice(null);
-
-        // ✅ reset actions when closing
         setActionView(null);
         setActionData([]);
         setActionLoading(false);
+
+        // Navigate to the route as requested (client-side redirect)
+        navigate("/dashboard/users/device");
       }
     } catch (_err) {
       // api helper already toasts
@@ -1428,7 +1426,7 @@ const Device = () => {
               –{" "}
               {Math.min(
                 (currentPage - 1) * ITEMS_PER_PAGE +
-                  sortedDeviceList.length,
+                sortedDeviceList.length,
                 totalRecords
               )}{" "}
               of {totalRecords}
