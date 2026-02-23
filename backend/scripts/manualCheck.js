@@ -7,7 +7,10 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/inout360';
 
 const runManualCheck = async () => {
     // Get date from command line args (if provided)
-    const customDate = process.argv[2]; // Usage: node manualCheck.js 2026-02-03
+    const args = process.argv.slice(2);
+    const customDate = args.find(a => !a.startsWith('--'));
+    const isSaveMode = args.includes('--save');
+    const dryRun = !isSaveMode;
 
     try {
         console.log("🔌 Connecting to Real Database...");
@@ -20,12 +23,17 @@ const runManualCheck = async () => {
             console.log("📅 Checking for YESTERDAY (Default)");
         }
 
-        console.log("🚀 Running Working Hours Check on REAL DATA (Dry Run Mode)...");
-        console.log("ℹ️  This will NOT save any violations to the DB.");
+        if (dryRun) {
+            console.log("🚀 Running Working Hours Check on REAL DATA (Dry Run Mode)...");
+            console.log("ℹ️  This will NOT save any violations to the DB.");
+        } else {
+            console.log("🚀 Running Working Hours Check on REAL DATA (SAVE MODE)...");
+            console.log("⚠️  Violations will be SAVED to the database.");
+        }
         console.log("---------------------------------------------------");
 
-        // Run with dryRun = true AND customDate
-        const events = await runWorkingHoursCheck(true, customDate);
+        // Run with dryRun and customDate
+        const events = await runWorkingHoursCheck(dryRun, customDate);
 
         console.log("---------------------------------------------------");
         if (events.length > 0) {
@@ -53,3 +61,7 @@ const runManualCheck = async () => {
 };
 
 runManualCheck();
+
+
+// to run this node scripts/manualCheck.js YYYY-MM-DD
+// node scripts/manualCheck.js 2026-02-18

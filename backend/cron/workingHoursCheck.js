@@ -116,7 +116,8 @@ const runWorkingHoursCheck = async (dryRun = false, customDate = null) => {
         collect(employeeDetails, "Employee"); // Prioritize Employee model/name if duplicate
 
         const violationsToLog = [];
-        const syncTimestamp = new Date();
+        const violationTimestamp = new Date(targetDate);
+        violationTimestamp.setHours(23, 59, 59, 999);
 
         for (const empId of potentialViolatorsIds) {
             const person = personMap[empId] || { name: "Unknown", type: "Unknown", location: "" };
@@ -156,7 +157,7 @@ const runWorkingHoursCheck = async (dryRun = false, customDate = null) => {
                 event: "Working Hours Violation",
                 name: person.name,
                 employeeId: empId,
-                timestamp: syncTimestamp,
+                timestamp: violationTimestamp,
                 policyVoilation: true,
                 metadata: {
                     reason: "working_hours_violation",
