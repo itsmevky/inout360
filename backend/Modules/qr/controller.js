@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { randomUUID } = require("crypto");
 const qrcode = require("qrcode");
+const crypto = require("crypto");
 const User = require("../user/model");
 const DeviceModel = require("../device/model");
 const UserSession = require("../user/userSessionsModel");
@@ -258,6 +259,33 @@ exports.generateQr = async (req, res) => {
   }
 };
 
+exports.getOfflineSecret = async (req, res) => {
+  try {
+    const location = await resolveUserLocation(req.user);
+    if (!location) {
+      return res.status(400).json({ message: "location missing for user" });
+    }
+
+    // Derive a unique secret for this location specifically for offline QR generation
+    const normalizedLocation = normalizeLocation(location);
+    const offlineSecret = crypto
+      .createHmac("sha256", JWT_SECRET)
+      .update(`offline-qr-${normalizedLocation}`)
+      .digest("hex");
+
+    return res.status(200).json({
+      message: "Offline secret generated successfully",
+      offlineSecret,
+      location,
+    });
+  } catch (error) {
+    console.error("Get Offline Secret Error:", error);
+    return res
+      .status(error.status || 500)
+      .json({ message: error.message || "Server error", error: error.message });
+  }
+};
+
 exports.generateQrPng = async (req, res) => {
   try {
     const location = await resolveUserLocation(req.user);
@@ -378,6 +406,7 @@ exports.consumeQr = async (req, res) => {
     let action = "";
     let tokenLocation = null;
     let expMs = null;
+    let isOfflineToken = false;
     if (usingStaticToken) {
       if (isStaticLoginToken) {
         action = "login";
@@ -388,7 +417,25 @@ exports.consumeQr = async (req, res) => {
         return res.status(400).json({ message: "action must be login or logout" });
       }
     } else {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      let decoded;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch (err) {
+        // Try the offline location-specific secret
+        try {
+          const normalizedRequestLocation = normalizeLocation(resolvedLocation);
+          const offlineSecret = crypto
+            .createHmac("sha256", JWT_SECRET)
+            .update(`offline-qr-${normalizedRequestLocation}`)
+            .digest("hex");
+
+          decoded = jwt.verify(token, offlineSecret);
+          isOfflineToken = true;
+        } catch (offlineErr) {
+          throw err; // Throw the original error if both fail
+        }
+      }
+
       tokenId = decoded.jti;
       action = String(decoded.action || "").toLowerCase();
       tokenLocation = decoded.location;

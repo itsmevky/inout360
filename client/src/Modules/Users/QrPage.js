@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import QRCode from "qrcode";
+import CryptoJS from "crypto-js";
 import { domainpath } from "../../Helpers/api.js";
 import "../../Styles/qrpage.css";
 import logo from "../../Images/pidilitelogo3.png";
@@ -111,7 +112,26 @@ const QrPage = ({ singleAction = null }) => {
     const token = localStorage.getItem("qr_access_token");
     if (!token) {
       navigate("/qr-login");
+      return;
     }
+
+    // Fetch offline secret if we don't have it
+    const fetchOfflineSecret = async () => {
+      try {
+        if (!localStorage.getItem("qr_offline_secret") || !localStorage.getItem("qr_location")) {
+          const response = await axios.get(`${domainpath}/qr/offline-secret`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (response.data?.offlineSecret) {
+            localStorage.setItem("qr_offline_secret", response.data.offlineSecret);
+            localStorage.setItem("qr_location", response.data.location);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch offline secret", err);
+      }
+    };
+    fetchOfflineSecret();
   }, [navigate]);
 
   const handleQrLogout = () => {
@@ -119,9 +139,56 @@ const QrPage = ({ singleAction = null }) => {
     navigate("/qr-login");
   };
 
+  const generateOfflineJwt = useCallback((action) => {
+    const secret = localStorage.getItem("qr_offline_secret");
+    const location = localStorage.getItem("qr_location");
+
+    if (!secret || !location) return null;
+
+    const header = { alg: "HS256", typ: "JWT" };
+
+    // Create random UUID-like string for jti
+    const jti = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+
+    // No static expiration on backend, valid until action occurs
+    const iat = Math.floor(Date.now() / 1000);
+
+    const payload = {
+      jti,
+      action,
+      location,
+      iat
+    };
+
+    const base64UrlEncode = (obj) => {
+      const str = typeof obj === 'string' ? obj : JSON.stringify(obj);
+      const enc = CryptoJS.enc.Utf8.parse(str);
+      const base64 = CryptoJS.enc.Base64.stringify(enc);
+      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
+
+    const encodedHeader = base64UrlEncode(header);
+    const encodedPayload = base64UrlEncode(payload);
+
+    const signature = CryptoJS.HmacSHA256(`${encodedHeader}.${encodedPayload}`, secret);
+    const encodedSignature = CryptoJS.enc.Base64.stringify(signature)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
+  }, []);
+
   const fetchQrPng = useCallback(
     async (action, setState) => {
       setState((prev) => ({ ...prev, loading: true }));
+      let token = "";
+      let expiresAt = null;
+      let isOffline = false;
+
       try {
         const accessToken = localStorage.getItem("qr_access_token");
         const response = await axios.post(
@@ -131,35 +198,50 @@ const QrPage = ({ singleAction = null }) => {
             headers: {
               Authorization: accessToken ? `Bearer ${accessToken}` : "",
             },
+            timeout: 5000 // Quick timeout so we fallback faster if offline
           }
         );
 
-        const token = response?.data?.token || "";
-        const expiresAt = response?.data?.expiresAt || null;
-        const imageSrc = token
-          ? await QRCode.toDataURL(token, {
-              width: 260,
-              margin: 2,
-              color: {
-                dark: "#0f172a",
-                light: "#ffffff",
-              },
-            })
-          : "";
-
-        setState((prev) => {
-          return {
-            token,
-            imageSrc,
-            expiresAt,
-            loading: false,
-          };
-        });
+        token = response?.data?.token || "";
+        expiresAt = response?.data?.expiresAt || null;
       } catch (error) {
+        // Network error or timeout, try offline generation
+        token = generateOfflineJwt(action);
+        if (token) {
+          // Force a 45-second refresh on the frontend
+          expiresAt = new Date(Date.now() + 45 * 1000).toISOString();
+          isOffline = true;
+        }
+      }
+
+      if (token) {
+        try {
+          const imageSrc = await QRCode.toDataURL(token, {
+            width: 260,
+            margin: 2,
+            color: {
+              dark: "#0f172a",
+              light: "#ffffff",
+            },
+          });
+
+          setState((prev) => {
+            return {
+              token,
+              imageSrc,
+              expiresAt,
+              loading: false,
+              isOffline
+            };
+          });
+        } catch (err) {
+          setState((prev) => ({ ...prev, loading: false }));
+        }
+      } else {
         setState((prev) => ({ ...prev, loading: false }));
       }
     },
-    []
+    [generateOfflineJwt]
   );
 
   const scheduleRefresh = useCallback((expiresAt, action) => {
@@ -216,6 +298,7 @@ const QrPage = ({ singleAction = null }) => {
       try {
         const response = await axios.get(`${domainpath}/qr/status`, {
           params: { token },
+          timeout: 4000
         });
         const status = response?.data?.data;
         if (status?.expired) {
@@ -226,7 +309,8 @@ const QrPage = ({ singleAction = null }) => {
           }
         }
       } catch (_err) {
-        // ignore polling errors
+        // If polling fails (e.g. offline), we do nothing and let the frontend countdown timer
+        // handle refreshing the QR code when it expires locally.
       }
     };
 
@@ -299,8 +383,8 @@ const QrPage = ({ singleAction = null }) => {
       ? "Logout QR"
       : "QR Login / Logout";
   const headerSubtitle = isLoginOnly || isLogoutOnly
-    ? "One QR per action, reusable until expiry. Auto-refresh on expiry only."
-    : "One QR per action, reusable until expiry. Auto-refresh on expiry only.";
+    ? "One QR per action. Auto-generates offline if network is unavailable."
+    : "One QR per action. Auto-generates offline if network is unavailable.";
 
   return (
     <div className="qr-app-page">
