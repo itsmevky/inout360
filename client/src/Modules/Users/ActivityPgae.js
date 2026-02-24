@@ -52,16 +52,38 @@ const ActivityPage = () => {
 
     const resolveAppLabel = (activity) => {
         const explicit = activity?.appName || activity?.metadata?.appName || "";
-        if (explicit) return capitalizeFirstLetter(String(explicit));
+        const invalidNames = ["system", "phone", "take_picture", "take-picture", "screenshot", "camera"];
+        const lowerExplicit = String(explicit).toLowerCase().trim();
+
+        if (explicit && !invalidNames.includes(lowerExplicit)) {
+            return capitalizeFirstLetter(String(explicit));
+        }
+
         const text = `${activity?.rawEvent || ""} ${activity?.narrative || ""}`.toLowerCase();
         const known = [
             { key: "instagram", label: "Instagram" },
             { key: "whatsapp", label: "WhatsApp" },
             { key: "facebook", label: "Facebook" },
             { key: "youtube", label: "YouTube" },
+            { key: "snapchat", label: "Snapchat" },
+            { key: "zoom", label: "Zoom" },
+            { key: "meet", label: "Meet" },
+            { key: "teams", label: "Teams" },
         ];
         for (const item of known) {
             if (text.includes(item.key)) return item.label;
+        }
+
+        // Extract simple App name from strings like "WhatsApp camera opened", "Zoom video call camera used", or "WhatsApp camera used for"
+        const eventMatch = text.match(/^([a-z0-9_.\-]+(?:\s+[a-z0-9_.\-]+)*)\s+(?:camera opened|video call camera used|camera used for)/i);
+        if (eventMatch && eventMatch[1]) {
+            const candidate = eventMatch[1].trim();
+            const lowerCand = candidate.toLowerCase();
+            const invalidNames = ["system", "phone", "take_picture", "take-picture", "screenshot", "camera"];
+            if (!invalidNames.includes(lowerCand)) {
+                // Return the candidate capitalized
+                return candidate.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            }
         }
         const pkgMatch = text.match(/\b([a-z0-9_]+)\.([a-z0-9_]+)(?:\.[a-z0-9_]+)*\b/);
         if (pkgMatch) {
@@ -85,7 +107,10 @@ const ActivityPage = () => {
             /((?:camera|video call|video|microphone|screen)[^.,]*?\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes))\b/i
         );
         if (directMatch) {
-            return ` (${directMatch[1].replace(/\s+/g, " ").trim().toLowerCase()})`;
+            let snippet = directMatch[1].replace(/\s+/g, " ").trim().toLowerCase();
+            // Remove duplicate literal words like "camera camera" -> "camera"
+            snippet = snippet.replace(/\b(\w+)\s+\1\b/gi, "$1");
+            return ` (${snippet})`;
         }
         const usedForMatch = cleaned.match(
             /\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes)\b/i
@@ -95,7 +120,8 @@ const ActivityPage = () => {
                 /\b(camera|video call|video|microphone|screen)\b/i
             );
             const label = labelMatch ? labelMatch[0] : "activity";
-            return ` (${`${label} ${usedForMatch[0]}`.toLowerCase()})`;
+            const usedStr = usedForMatch[0].toLowerCase();
+            return ` (${usedStr.startsWith(label.toLowerCase()) ? usedStr : `${label} ${usedStr}`.toLowerCase()})`;
         }
         return "";
     };
@@ -787,11 +813,22 @@ const ActivityPage = () => {
         }
         if (typeValue === "take_picture" || isCameraActivity(activity)) {
             const durationSnippet = extractDurationSnippet(narrative, "Camera Opened");
+            const appLabel = resolveAppLabel(activity);
+
+            if (appLabel) {
+                const isVideoCall = raw.includes("video call") || narrative.toLowerCase().includes("video call");
+                const actionText = isVideoCall ? "video call" : "camera opened";
+
+                if (compact) {
+                    return `${appLabel} ${actionText}${durationSnippet}`;
+                }
+                return `${appLabel} ${actionText}${durationSnippet}`;
+            }
+
             if (compact) {
                 return `Camera Opened${durationSnippet}`;
             }
-            const appLabel = resolveAppLabel(activity);
-            return `${appLabel ? `${appLabel} ` : ""}camera opened${durationSnippet}`;
+            return `Camera opened${durationSnippet}`;
         }
         const isAppAccess = String(activity?.category || "").toLowerCase() === "app_access";
         if (isAppAccess) {
@@ -955,7 +992,7 @@ const ActivityPage = () => {
                 const response = await getData("/activity", {
                     category,
                     page: 0,
-                    limit: 50,
+                    limit: 10000,
                 });
                 const list = Array.isArray(response?.data)
                     ? response.data

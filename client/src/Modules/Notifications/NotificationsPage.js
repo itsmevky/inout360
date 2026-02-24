@@ -24,6 +24,10 @@ const knownApps = [
     { key: "whatsapp", label: "WhatsApp" },
     { key: "facebook", label: "Facebook" },
     { key: "youtube", label: "YouTube" },
+    { key: "snapchat", label: "Snapchat" },
+    { key: "zoom", label: "Zoom" },
+    { key: "meet", label: "Meet" },
+    { key: "teams", label: "Teams" },
     { key: "camera", label: "Camera" },
 ];
 
@@ -71,7 +75,10 @@ const extractDurationSnippet = (value, baseMessage = "") => {
         /((?:camera|video call|video|microphone|screen)[^.,]*?\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes))\b/i
     );
     if (directMatch) {
-        return ` (${directMatch[1].replace(/\s+/g, " ").trim().toLowerCase()})`;
+        let snippet = directMatch[1].replace(/\s+/g, " ").trim().toLowerCase();
+        // Remove duplicate literal words like "camera camera" -> "camera"
+        snippet = snippet.replace(/\b(\w+)\s+\1\b/gi, "$1");
+        return ` (${snippet})`;
     }
     const usedForMatch = cleaned.match(
         /\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes)\b/i
@@ -81,7 +88,8 @@ const extractDurationSnippet = (value, baseMessage = "") => {
             /\b(camera|video call|video|microphone|screen)\b/i
         );
         const label = labelMatch ? labelMatch[0] : "activity";
-        return ` (${`${label} ${usedForMatch[0]}`.toLowerCase()})`;
+        const usedStr = usedForMatch[0].toLowerCase();
+        return ` (${usedStr.startsWith(label.toLowerCase()) ? usedStr : `${label} ${usedStr}`.toLowerCase()})`;
     }
     return "";
 };
@@ -90,13 +98,25 @@ const extractAppNameFromText = (value) => {
     if (!value) return "";
     const cleaned = String(value || "").replace(/\s+/g, " ").trim();
     if (!cleaned) return "";
+
+    // Extract simple App name from strings like "WhatsApp camera opened", "Zoom video call camera used", or "WhatsApp camera used for"
+    const eventMatch = cleaned.match(/^([a-z0-9_.\-]+(?:\s+[a-z0-9_.\-]+)*)\s+(?:camera opened|video call camera used|camera used for)/i);
+    if (eventMatch && eventMatch[1]) {
+        const candidate = eventMatch[1].trim();
+        const lowerCand = candidate.toLowerCase();
+        const invalidNames = ["system", "phone", "take_picture", "take-picture", "screenshot", "camera"];
+        if (!invalidNames.includes(lowerCand)) {
+            return candidate.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+    }
+
     const openedMatch = cleaned.match(/(?:^|\b)([^()]+?)\s*\(([^)]+)\)\s*opened\b/i);
     if (openedMatch?.[1]) return openedMatch[1].trim();
     const simpleOpenedMatch = cleaned.match(/^(.+?)\s+opened\b/i);
     if (simpleOpenedMatch?.[1]) return simpleOpenedMatch[1].trim();
     const lower = cleaned.toLowerCase();
     for (const app of knownApps) {
-        if (lower.includes(app.key)) return app.label;
+        if (lower.includes(app.key) && app.key !== "camera") return app.label; // Camera is too generic
     }
     const pkgMatch = cleaned.match(/\b([a-z0-9_]+)(?:\.[a-z0-9_]+)+\b/i);
     if (pkgMatch?.[0]) {
@@ -138,7 +158,11 @@ const resolveAppName = (item) => {
         item.metadata?.app ||
         item.metadata?.appId ||
         "";
-    if (explicit && String(explicit).toLowerCase() !== "android") {
+
+    const invalidNames = ["system", "phone", "take_picture", "take-picture", "screenshot", "camera", "android"];
+    const lowerExplicit = String(explicit).toLowerCase().trim();
+
+    if (explicit && !invalidNames.includes(lowerExplicit)) {
         return humanizeEventLabel(explicit);
     }
     const combined = `${item.description || ""} ${item.activityType || ""} ${item.rawEvent || ""} ${narrative}`.trim();
@@ -159,22 +183,36 @@ const toNotification = (item) => {
     const appName = resolveAppName(item);
     const isCameraType = ["CAMERA_ON", "TAKE_PICTURE", "VIDEO"].includes(type);
     const fallbackCameraApp = "System Camera";
+
+    // We already have a clean effectiveAppName if it successfully extracted "WhatsApp" etc.
     const effectiveAppName = appName || (isCameraType ? fallbackCameraApp : "");
     const shouldPrefixApp =
         isCameraType &&
         effectiveAppName &&
         !baseMessage.toLowerCase().includes(String(effectiveAppName).toLowerCase());
     const cameraUsageEnded = /camera usage ended/i.test(baseMessage);
-    const message =
-        type === "APP_ACCESS"
-            ? (effectiveAppName
-                  ? `${humanizeEventLabel(effectiveAppName)} Opened`
-                  : (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`))
-            : (shouldPrefixApp
-                  ? (cameraUsageEnded
-                        ? `${humanizeEventLabel(effectiveAppName)} usage ended`
-                        : `${humanizeEventLabel(effectiveAppName)} ${baseMessage}`)
-                  : baseMessage);
+    const isVideoCall = /video call/i.test(item.narrative || item.metadata?.narrative || item.rawEvent || "");
+    const actionText = isVideoCall ? "video call" : "camera opened";
+
+    let message = baseMessage;
+
+    if (type === "APP_ACCESS") {
+        message = effectiveAppName
+            ? `${humanizeEventLabel(effectiveAppName)} Opened`
+            : (/\bopened\b/i.test(baseMessage) ? baseMessage : `${appLabel} Opened`);
+    } else if (isCameraType) {
+        if (shouldPrefixApp) {
+            message = cameraUsageEnded
+                ? `${humanizeEventLabel(effectiveAppName)} usage ended`
+                : `${humanizeEventLabel(effectiveAppName)} ${actionText}`;
+        } else {
+            // If the baseMessage already contains the app name, just format it nicely
+            message = baseMessage;
+            if (message.toLowerCase() === "camera opened" && effectiveAppName && effectiveAppName !== "Camera") {
+                message = `${humanizeEventLabel(effectiveAppName)} ${actionText}`;
+            }
+        }
+    }
     const narrative = item.narrative || item.metadata?.narrative || "";
     const durationSnippet = extractDurationSnippet(narrative, message);
     return {
@@ -310,11 +348,11 @@ const NotificationsPage = () => {
                     style={
                         i === currentPage
                             ? {
-                                  backgroundColor: "#2563eb",
-                                  color: "#ffffff",
-                                  borderColor: "#2563eb",
-                                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
-                              }
+                                backgroundColor: "#2563eb",
+                                color: "#ffffff",
+                                borderColor: "#2563eb",
+                                boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+                            }
                             : { backgroundColor: "#ffffff", color: "#374151" }
                     }
                 >
@@ -349,10 +387,10 @@ const NotificationsPage = () => {
 
     const refreshLabel = lastUpdatedAt
         ? `Updated at ${lastUpdatedAt.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-          })}`
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        })}`
         : "Waiting for first update";
 
     const handleRefresh = async () => {
