@@ -301,7 +301,7 @@ exports.generateQrPng = async (req, res) => {
       type: "png",
       errorCorrectionLevel: "M",
       margin: 2,
-      width: 300,
+      width: 480,
     });
 
     res.set({
@@ -341,7 +341,7 @@ exports.generateStaticQrPng = async (req, res) => {
     const width =
       Number.isFinite(requestedSize) && requestedSize > 0
         ? Math.min(Math.max(requestedSize, 128), 1024)
-        : 300;
+        : 480;
 
     const pngBuffer = await qrcode.toBuffer(token, {
       type: "png",

@@ -341,8 +341,12 @@
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow-x: hidden;
           font-family: "Space Grotesk", sans-serif;
           color: #0f172a;
+        }
+        .qr-app-page * {
+          box-sizing: border-box;
         }
         .qr-app-shell {
           width: 100%;
@@ -361,6 +365,8 @@
         .qr-app-logo-main {
           width: 140px;
           height: auto;
+          background: transparent;
+          mix-blend-mode: multiply;
         }
         .qr-app-title {
           font-size: 24px;
@@ -423,6 +429,7 @@
           flex-direction: column;
           gap: 16px;
           width: 100%;
+          box-sizing: border-box;
         }
         .qr-app-card-head {
           display: flex;
@@ -433,6 +440,8 @@
         .qr-app-logo {
           width: 120px;
           height: auto;
+          background: transparent;
+          mix-blend-mode: multiply;
         }
         .qr-app-card-title {
           font-size: 20px;
@@ -472,18 +481,20 @@
         }
         .qr-app-frame {
           margin: 8px auto 4px;
-          padding: 16px;
+          padding: 18px;
           background: #ffffff;
           border-radius: 14px;
           border: 1px solid #e2e8f0;
           display: flex;
           align-items: center;
           justify-content: center;
-          min-height: 260px;
+          min-height: 380px;
+          width: 100%;
+          box-sizing: border-box;
         }
         .qr-app-image {
-          width: 220px;
-          height: 220px;
+          width: min(360px, 100%);
+          height: auto;
           object-fit: contain;
         }
         .qr-app-empty {
@@ -515,23 +526,39 @@
           color: #0f172a;
         }
         @media (max-width: 640px) {
+          .qr-app-page {
+            min-height: 100dvh;
+            padding: 8px 0;
+            overflow: hidden;
+          }
           .qr-app-shell {
-            gap: 18px;
+            gap: 12px;
+            max-width: 100%;
+            padding: 0 8px;
+            width: 100%;
+            height: 100%;
           }
           .qr-app-logo-main {
             width: 120px;
           }
           .qr-app-card {
-            padding: 20px 16px;
+            padding: 14px 10px;
+            width: 100%;
+            max-width: 100%;
+            gap: 12px;
           }
           .qr-app-logo {
-            width: 110px;
+            width: 95px;
           }
           .qr-app-image {
-            width: 200px;
-            height: 200px;
+            width: min(240px, 100%);
+            height: auto;
           }
           .qr-app-frame {
-            min-height: 230px;
+            min-height: 260px;
+            padding: 10px;
+          }
+          .qr-app-meta {
+            padding: 6px 10px;
           }
         }

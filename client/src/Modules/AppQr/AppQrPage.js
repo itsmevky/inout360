@@ -16,7 +16,7 @@ const AppQrPage = () => {
       setIsGenerating(true);
       try {
         const dataUrl = await QRCode.toDataURL(TARGET_URL, {
-          width: 280,
+          width: 360,
           margin: 2,
           color: {
             dark: "#0f172a",

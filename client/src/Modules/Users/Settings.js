@@ -223,85 +223,100 @@ const Settings = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
-                            {/* API URL */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
-                                <input
-                                    type="text"
-                                    value={systemConfig.apiEndpointUrl}
-                                    placeholder="https://your-backend.com/api/"
-                                    onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
-                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                            {!isAdmin && (
+                                <>
+                                    {/* API URL */}
+                                    <div>
+                                        <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
+                                        <input
+                                            type="text"
+                                            value={systemConfig.apiEndpointUrl}
+                                            placeholder="https://your-backend.com/api/"
+                                            onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
+                                            className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             {/* Unit Location */}
                             <div>
                                 <label className="setting-System-Configuration text-gray-700 font-semibold">Unit Location</label>
-                                <select
-                                    value={systemConfig.unitLocation}
-                                    onChange={(e) => loadSettings(e.target.value)}
-                                    disabled={isAdmin}
-                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-                                >
-                                    <option value="">Select Unit</option>
-                                    {locations.map((loc) => (
-                                        <option key={loc.id || loc.name} value={loc.name}>
-                                            {loc.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {isAdmin && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Admin can manage settings only for assigned location.
-                                    </p>
+                                {isAdmin ? (
+                                    <>
+                                        <div className="w-full mt-2 border border-gray-300 p-3 rounded-lg bg-gray-100 text-gray-700">
+                                            <span className="text-sm font-medium">
+                                                {systemConfig.unitLocation || "Assigned location"}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Admin can manage settings only for assigned location.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <select
+                                        value={systemConfig.unitLocation}
+                                        onChange={(e) => loadSettings(e.target.value)}
+                                        className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    >
+                                        <option value="">Select Unit</option>
+                                        {locations.map((loc) => (
+                                            <option key={loc.id || loc.name} value={loc.name}>
+                                                {loc.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 )}
                             </div>
 
 
                             {/* APK Upload */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
-                                <input
-                                    type="file"
-                                    accept=".apk"
-                                    onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
-                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 "
-                                />
-                                {systemConfig.apkFileUrl && (
-                                    <a
-                                        className="text-sm text-blue-600 underline mt-2 inline-block"
-                                        href={`${baseUrl}${systemConfig.apkFileUrl}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        View current APK
-                                    </a>
-                                )}
-                            </div>
+                            {!isAdmin && (
+                                <div>
+                                    <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
+                                    <input
+                                        type="file"
+                                        accept=".apk"
+                                        onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
+                                        className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 "
+                                    />
+                                    {systemConfig.apkFileUrl && (
+                                        <a
+                                            className="text-sm text-blue-600 underline mt-2 inline-block"
+                                            href={`${baseUrl}${systemConfig.apkFileUrl}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            View current APK
+                                        </a>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Logo Upload */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">Company Logo</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => handleConfigChange("logoFile", e.target.files[0])}
-                                    className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50"
-                                />
-
-                                {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
-                                    <img
-                                        src={
-                                            systemConfig.logoFile
-                                                ? URL.createObjectURL(systemConfig.logoFile)
-                                                : `${baseUrl}${systemConfig.companyLogoUrl}`
-                                        }
-                                        className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
-                                        alt="Preview"
+                            {!isAdmin && (
+                                <div>
+                                    <label className="setting-System-Configuration text-gray-700 font-semibold">Company Logo</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleConfigChange("logoFile", e.target.files[0])}
+                                        className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50"
                                     />
-                                )}
-                            </div>
+
+                                    {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
+                                        <img
+                                            src={
+                                                systemConfig.logoFile
+                                                    ? URL.createObjectURL(systemConfig.logoFile)
+                                                    : `${baseUrl}${systemConfig.companyLogoUrl}`
+                                            }
+                                            className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
+                                            alt="Preview"
+                                        />
+                                    )}
+                                </div>
+                            )}
 
                             {/* ✅ OTP Email */}
                             {/* <div>
@@ -316,6 +331,28 @@ const Settings = () => {
                                 />
                             
                             </div> */}
+
+                            {/* ✅ QR Code Expiry */}
+                            <div>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">
+                                    QR Code Expiry Time
+                                </label>
+
+                                <div className="mt-2">
+                                    <select
+                                        value={systemConfig.otpExpirySeconds}
+                                        onChange={(e) => handleConfigChange("otpExpirySeconds", e.target.value)}
+                                        className="w-full mt-2 border p-3 border-gray-400 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    >
+                                        <option value="">Select Seconds</option>
+                                        <option value="30">30 seconds</option>
+                                        <option value="45">45 seconds</option>
+                                        <option value="60">60 seconds</option>
+                                        <option value="90">90 seconds</option>
+                                        <option value="120">120 seconds</option>
+                                    </select>
+                                </div>
+                            </div>
 
                             <div>
                                 <label className="setting-System-Configuration text-gray-700 font-semibold">
@@ -371,29 +408,6 @@ const Settings = () => {
                                 </button>
                             </div>
 
-
-                            {/* ✅ QR Code Expiry */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">
-                                    QR Code Expiry Time
-                                </label>
-
-                                <div className="mt-2">
-                                    <select
-                                        value={systemConfig.otpExpirySeconds}
-                                        onChange={(e) => handleConfigChange("otpExpirySeconds", e.target.value)}
-                                        className="w-full mt-2 border p-3 border-gray-400 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-                                    >
-                                        <option value="">Select Seconds</option>
-                                        <option value="30">30 seconds</option>
-                                        <option value="45">45 seconds</option>
-                                        <option value="60">60 seconds</option>
-                                        <option value="90">90 seconds</option>
-                                        <option value="120">120 seconds</option>
-                                    </select>
-                                </div>
-                            </div>
-
                             {/* ✅ Working Hours (Moved here) */}
                             <div className="md:col-span-2">
                                 <label className="setting-System-Configuration text-gray-700 font-semibold block mb-2">
@@ -447,7 +461,8 @@ const Settings = () => {
                     </div>
 
                     {/* ========= FLEX BOTTOM CARDS ========= */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
+                    {!isAdmin && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
 
                         {/* Device Controls */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Device-Controls">
@@ -515,7 +530,8 @@ const Settings = () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
+                        </div>
+                    )}
 
                     {/* ========= SAVE / CANCEL BUTTONS ========= */}
                     {isChanged && !loading && (

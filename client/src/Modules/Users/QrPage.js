@@ -217,7 +217,7 @@ const QrPage = ({ singleAction = null }) => {
       if (token) {
         try {
           const imageSrc = await QRCode.toDataURL(token, {
-            width: 260,
+            width: 360,
             margin: 2,
             color: {
               dark: "#0f172a",
@@ -292,38 +292,6 @@ const QrPage = ({ singleAction = null }) => {
     }
   }, []);
 
-  const startStatusPolling = useCallback((token, action) => {
-    if (!token) return;
-    const poll = async () => {
-      try {
-        const response = await axios.get(`${domainpath}/qr/status`, {
-          params: { token },
-          timeout: 4000
-        });
-        const status = response?.data?.data;
-        if (status?.expired) {
-          if (action === "login") {
-            fetchQrPng("login", setLoginState);
-          } else {
-            fetchQrPng("logout", setLogoutState);
-          }
-        }
-      } catch (_err) {
-        // If polling fails (e.g. offline), we do nothing and let the frontend countdown timer
-        // handle refreshing the QR code when it expires locally.
-      }
-    };
-
-    const interval = setInterval(poll, 10000);
-    if (action === "login") {
-      clearIntervalRef(loginStatusRef);
-      loginStatusRef.current = interval;
-    } else {
-      clearIntervalRef(logoutStatusRef);
-      logoutStatusRef.current = interval;
-    }
-  }, [fetchQrPng]);
-
   useEffect(() => {
     if (!isLogoutOnly) {
       fetchQrPng("login", setLoginState);
@@ -347,14 +315,11 @@ const QrPage = ({ singleAction = null }) => {
       scheduleRefresh(loginState.expiresAt, "login");
       startCountdown(loginState.expiresAt, "login");
     }
-    if (loginState.token) {
-      startStatusPolling(loginState.token, "login");
-    }
+    // Status polling removed; local expiry timer handles refresh.
   }, [
     loginState.expiresAt,
     loginState.token,
     scheduleRefresh,
-    startStatusPolling,
     startCountdown,
     isLogoutOnly,
   ]);
@@ -365,14 +330,11 @@ const QrPage = ({ singleAction = null }) => {
       scheduleRefresh(logoutState.expiresAt, "logout");
       startCountdown(logoutState.expiresAt, "logout");
     }
-    if (logoutState.token) {
-      startStatusPolling(logoutState.token, "logout");
-    }
+    // Status polling removed; local expiry timer handles refresh.
   }, [
     logoutState.expiresAt,
     logoutState.token,
     scheduleRefresh,
-    startStatusPolling,
     startCountdown,
     isLoginOnly,
   ]);
