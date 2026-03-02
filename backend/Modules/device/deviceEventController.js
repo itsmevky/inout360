@@ -85,15 +85,29 @@ const resolvePolicyVoilation = async ({ eventType, userId, employeeId, device, m
     metadata?.packageName,
     metadata?.app,
     metadata?.event,
+    metadata?.narrative,
     raw?.appName,
     raw?.packageName,
     raw?.app,
     raw?.event,
+    raw?.narrative,
   ];
   const value = parts
     .filter(Boolean)
     .map((item) => String(item).trim().toLowerCase())
     .join(" ");
+  const isPermissionEvent =
+    value.includes("permission") ||
+    value.includes("usage access") ||
+    value.includes("app usage") ||
+    value.includes("device admin") ||
+    value.includes("admin privilege") ||
+    value.includes("admin privileges") ||
+    value.includes("notification access") ||
+    value.includes("location access") ||
+    value.includes("camera access") ||
+    value.includes("microphone access");
+  if (isPermissionEvent) return true;
   if (value.includes("accessibility")) return true;
   const policy = device?.devicePolicyState || {};
   const isBlocked = (flag) =>
