@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { API, postData } from "../../Helpers/api";
 import Validator from "../../Helpers/validators.js";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import securelogin from "../../Images/secure-login.png";
 import { useUser } from "../../Helpers/Context/UserContext.js";
-import pidilitelogo from "../../Images/pidilitelogo.png";
+import pidilitelogo from "../../Images/PIL.png";
 import { Eye, EyeOff } from "lucide-react";
 
 const LoginComponent = () => {

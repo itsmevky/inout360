@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import logo from "../Images/pidilitelogo3.png";
+import logo from "../Images/PIL.png";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
   const navigate = useNavigate();
@@ -116,7 +116,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
         {/* Header */}
         <header className="sidebar-header">
-          <img src={logo} alt="Pidilite" style={{ height: 40 }} />
+          <img src={logo} alt="Pidilite" style={{ backgroundColor: "white", padding: "2px", borderRadius: "8px", maxHeight: 70, maxWidth: "100%", width: "120px", objectFit: "contain" }} />
           <button
             className="sidebar-toggler"
             onClick={() => setIsCollapsed(!isCollapsed)}

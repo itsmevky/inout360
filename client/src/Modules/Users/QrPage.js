@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import CryptoJS from "crypto-js";
 import { domainpath } from "../../Helpers/api.js";
 import "../../Styles/qrpage.css";
-import logo from "../../Images/pidilitelogo3.png";
+import logo from "../../Images/PIL.png";
 
 const QrCard = ({
   title,

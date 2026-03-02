@@ -31,8 +31,11 @@ height: auto;
 }
 
 .pid_Qr_logo {
-  width: 200px;
-  max-width: 100%;
+  max-width: 200px;
+  width: auto;
+  height: auto;
+  max-height: 80px;
+  object-fit: contain;
 }
 
 .pid_Qr_title {

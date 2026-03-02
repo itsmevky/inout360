@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import Notify from "../Images/Notification .gif";
 import { useUser } from "../Helpers/Context/UserContext";
 import { getData, domainpath } from "../Helpers/api";
-import logo from "../Images/pidilitelogo.png"; // Adjust path
+import logo from "../Images/PIL.png"; // Adjust path
 const Header = () => {
   const { setUser } = useUser(); // Destructure setUser from useUser
 
@@ -117,7 +117,7 @@ const Header = () => {
         <div className="flex items-center space-x-2">
           <div className="dash-header">
             <a href="#" className="header-logo">
-              <img height="" width="" src={logo} alt="CodingNepal" />
+              <img style={{ maxHeight: "60px", maxWidth: "200px", objectFit: "contain" }} src={logo} alt="PIL Logo" />
             </a>
           </div>
         </div>

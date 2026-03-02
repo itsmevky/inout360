@@ -1,6 +1,6 @@
 import React from "react";
 import "./DownloadApp.css";
-// import logo from "../assets/pidilitelogo.avif";
+import logo from "../../Images/PIL.png";
 
 const DownloadApp = () => {
     return (
@@ -9,7 +9,7 @@ const DownloadApp = () => {
 
                 {/* LOGO */}
                 <div className="pid_Qr_logoWrap">
-                    <img src="https://pidiliteapp.ajivainfotech.com/static/media/pidilitelogo.f1366c67510045f0211f.png" alt="App Logo" className="pid_Qr_logo" />
+                    <img src={logo} alt="App Logo" className="pid_Qr_logo" />
                 </div>
 
                 <h1 className="pid_Qr_title">Download Our App</h1>

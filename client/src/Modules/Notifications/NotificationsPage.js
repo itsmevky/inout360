@@ -65,6 +65,9 @@ const resolveType = ({ activityType, category, description, narrative, rawEvent 
 
 const extractDurationSnippet = (value, baseMessage = "") => {
     if (!value) return "";
+    if (/\bused for\s*\d+\s*(?:sec|secs|seconds|min|mins|minutes)\b/i.test(String(baseMessage || ""))) {
+        return "";
+    }
     const cleaned = String(value || "")
         .replace(/\s+/g, " ")
         .replace(/\bpermission controller\b/gi, "")
@@ -92,6 +95,15 @@ const extractDurationSnippet = (value, baseMessage = "") => {
         return ` (${usedStr.startsWith(label.toLowerCase()) ? usedStr : `${label} ${usedStr}`.toLowerCase()})`;
     }
     return "";
+};
+
+const normalizeMessage = (value) => {
+    if (!value) return "";
+    let message = String(value).replace(/\s+/g, " ").trim();
+    const dupPhrase = /\b(camera usage ended)\b(?:\s+\1\b)+/gi;
+    message = message.replace(dupPhrase, "Camera usage ended");
+    message = message.replace(/\b(\w+)(?:\s+\1\b)+/gi, "$1");
+    return message.trim();
 };
 
 const extractAppNameFromText = (value) => {
@@ -221,7 +233,7 @@ const toNotification = (item) => {
         employeeName: capitalizeFirstLetter(item.name || ""),
         employeeId: item.employeeId || "",
         deviceId: item.deviceId || "",
-        message: `${message}${durationSnippet}`,
+        message: normalizeMessage(`${message}${durationSnippet}`),
         createdAt: item.occurredAt || item.createdAt || new Date(),
     };
 };

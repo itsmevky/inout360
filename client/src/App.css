@@ -2278,6 +2278,12 @@ position: absolute;
     align-items: anchor-center;
 }
 
+.login-page-logo {
+  background: transparent;
+  mix-blend-mode: multiply;
+  display: block;
+}
+
 .button-section button:hover {
   cursor: pointer;
 }
@@ -4560,8 +4566,10 @@ margin: 20px 0px;
 }
 
 .sidebar-header .header-logo img {
-  width: 80px;
-  height: 80px;
+  max-width: 150px;
+  max-height: 50px;
+  width: auto;
+  height: auto;
   display: block;
   object-fit: contain;
   /* border-radius: 50%; */
