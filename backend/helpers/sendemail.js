@@ -104,7 +104,7 @@ async function sendEmail(templateName, to, dynamicData = {}, options = {}) {
 
     // 5️⃣ Send email
     const mailOptions = {
-      from: `Pdlite Email <${process.env.EMAIL_USER}>`,
+      from: `PIL Email <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html: emailContent,

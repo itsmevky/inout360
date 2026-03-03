@@ -325,6 +325,6 @@ const sendOtpEmail = async (to, otp, deviceName, userName, employeeId) => {
     USER_NAME: resolvedUserName,
     EMPLOYEE_ID: resolvedEmployeeId,
     OTP: otp,
-    subject: "Pidilite Device Verification OTP ",
+    subject: "PIL Device Verification OTP ",
   });
 };

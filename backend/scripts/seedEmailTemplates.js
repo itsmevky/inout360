@@ -10,17 +10,17 @@ const templates = [
   {
     name: "pidilitetemplate.html",
     file: "pidilitetemplate.html",
-    subject: "Pidilite Device Verification OTP",
+    subject: "PIL Device Verification OTP",
   },
   {
     name: "resetpassword.html",
     file: "resetpassword.html",
-    subject: "Pidilite Password Reset OTP",
+    subject: "PIL Password Reset OTP",
   },
   {
     name: "authorization.html",
     file: "authorization.html",
-    subject: "Pidilite Authorization Notice",
+    subject: "PIL Authorization Notice",
   },
 ];
 
