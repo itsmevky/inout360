@@ -6,9 +6,11 @@ import {
   Shield, Lock, Activity, Smartphone, AlertTriangle,
   CheckCircle, Zap, Eye, Building2, Factory, Landmark,
   Microscope, Truck, GraduationCap, Menu, X,
-  Network, Database, Cloud, LockKeyhole, Cpu, Globe, ArrowRight
+  Network, Database, Cloud, LockKeyhole, Cpu, Globe, ArrowRight, Users
 } from "lucide-react";
 import pidliteLogo from "../Images/PIL.png";
+import heroSecurity from "../Images/hero_secure_final.png";
+import dashboardMockup from "../Images/dashboard_actual.png";
 
 // Reusable Animation Variants
 const fadeInUp = {
@@ -19,6 +21,119 @@ const fadeInUp = {
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+};
+
+const DashboardPreview = () => {
+  const menuItems = [
+    { icon: <Activity size={18} />, label: "Dashboard", active: true },
+    { icon: <Users size={18} />, label: "Employees" },
+    { icon: <Users size={18} />, label: "Visitors" },
+    { icon: <CheckCircle size={18} />, label: "Attendance" },
+    { icon: <Globe size={18} />, label: "Location" },
+    { icon: <Zap size={18} />, label: "Activity" },
+    { icon: <Database size={18} />, label: "Settings" },
+    { icon: <Smartphone size={18} />, label: "Device" },
+    { icon: <Menu size={18} />, label: "Enquiries" },
+    { icon: <AlertTriangle size={18} />, label: "Warnings" },
+  ];
+
+  const stats = [
+    { label: "Contractors", value: "0", sub: "Total number of contractors.", color: "border-blue-400" },
+    { label: "Employee", value: "75", sub: "Total number of Employee", color: "border-blue-500" },
+    { label: "Visitors", value: "43", sub: "Total number of visitors", color: "border-blue-600" },
+    { label: "Manager", value: "0", sub: "Total number of Manager", color: "border-blue-700" },
+    { label: "Departments", value: "0", sub: "Total number of Departments.", color: "border-indigo-400" },
+    { label: "Monthly Reports", value: "346", sub: "Total of Monthly Reports", color: "border-indigo-600" },
+  ];
+
+  return (
+    <div className="w-full bg-[#f4f7fe] rounded-3xl overflow-hidden shadow-2xl flex border font-sans text-left">
+      {/* Sidebar */}
+      <div className="w-64 bg-[#0a1d37] flex flex-col text-white/70">
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
+            <img src={pidliteLogo} alt="PIL Logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-xl font-bold text-white tracking-widest">PIL</span>
+        </div>
+
+        <div className="flex-1 px-4 space-y-1 mt-4">
+          {menuItems.map((item, i) => (
+            <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all ${item.active ? 'bg-blue-600 text-white' : 'hover:bg-white/10 hover:text-white'}`}>
+              {item.icon}
+              <span className="text-sm font-medium">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 hover:text-red-400 rounded-lg cursor-pointer transition-all">
+            <X size={18} />
+            <span className="text-sm font-medium">Sign Out</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-[600px] overflow-hidden">
+        {/* Header */}
+        <div className="h-16 bg-white border-b px-8 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={pidliteLogo} alt="PIL Logo" className="w-6 h-6 object-contain" />
+            <span className="font-bold text-slate-800">PIL</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <Menu size={20} className="text-slate-400" />
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></div>
+            </div>
+            <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=Super+Admin&background=0D8ABC&color=fff" alt="admin" />
+              </div>
+              <span className="text-sm font-semibold text-slate-700">Hi, Superadmin</span>
+              <Globe size={14} className="text-slate-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Area */}
+        <div className="p-8 flex-1 overflow-y-auto">
+          <div className="bg-white p-4 rounded-xl shadow-sm border mb-8 flex items-center gap-4">
+            <div className="grid grid-cols-3 gap-1">
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">Dashboard</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <div key={i} className={`bg-white p-6 rounded-2xl shadow-sm border-l-4 ${stat.color} hover:shadow-md transition-shadow`}>
+                <div className="flex items-center gap-3 text-slate-400 mb-2">
+                  {i < 4 ? <Users size={20} /> : (i === 4 ? <Network size={20} /> : <Database size={20} />)}
+                  <span className="text-sm font-bold text-slate-500">{stat.label}</span>
+                </div>
+                <div className="text-3xl font-black text-slate-800 mb-1">{stat.value}</div>
+                <div className="text-xs text-slate-400 font-medium">{stat.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center text-[10px] text-slate-400 font-medium">
+            2025 © AjivaInfotech Pvt Ltd
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const Home = () => {
@@ -36,12 +151,12 @@ const Home = () => {
 
   // Features Data
   const features = [
-    { icon: <Lock className="w-8 h-8" />, title: "Military-Grade Encryption", desc: "End-to-end encryption for all video streams and platform data." },
-    { icon: <Activity className="w-8 h-8" />, title: "Real-Time Monitoring", desc: "Live surveillance feeds with zero latency processing." },
-    { icon: <Zap className="w-8 h-8" />, title: "Performance Analytics", desc: "Deep insights into device health, uptime, and efficiency." },
-    { icon: <Smartphone className="w-8 h-8" />, title: "Remote Device Control", desc: "Manage camera settings and restrictions via MDM policies." },
-    { icon: <AlertTriangle className="w-8 h-8" />, title: "Instant Alerts", desc: "Automated real-time notifications for security breaches." },
-    { icon: <Shield className="w-8 h-8" />, title: "Compliance-Ready", desc: "Pre-configured for strict enterprise regulatory frameworks." }
+    { icon: <Lock className="w-8 h-8" />, title: "Camera Restriction", desc: "Policy-driven camera blocking to prevent unauthorized visual data recording." },
+    { icon: <Activity className="w-8 h-8" />, title: "Automated Attendance", desc: "Real-time login/logout tracking with QR and location-based validation." },
+    { icon: <Users className="w-8 h-8" />, title: "Visitor Management", desc: "Seamless guest check-ins, badge generation, and activity monitoring." },
+    { icon: <Smartphone className="w-8 h-8" />, title: "MDM Integration", desc: "Manage device settings and security protocols via centralized policies." },
+    { icon: <AlertTriangle className="w-8 h-8" />, title: "Instant Security Alerts", desc: "Automated notifications for policy breaches and restricted area access." },
+    { icon: <Shield className="w-8 h-8" />, title: "Compliance Auditing", desc: "Comprehensive logs for Contractors, Employees, and Managers for audit-ready reporting." }
   ];
 
   // Industries Data
@@ -138,14 +253,14 @@ const Home = () => {
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
-              Enterprise-Grade Security & <br className="hidden md:block" />
+              Next-Gen Security & <br className="hidden md:block" />
               <span className="text-blue-600">
-                Camera Intelligence
+                Advanced Intelligence
               </span>
             </h1>
 
             <p className="text-2xl text-slate-700 mb-12 max-w-3xl font-medium leading-relaxed">
-              Monitor, Restrict, and Control Device Cameras with Real-Time Intelligence. The ultimate MDM-based surveillance compliance platform.
+              Complete Control Over Device Security, Cameras, and Workspace Compliance. The ultimate real-time monitoring and restriction platform.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-b border-transparent w-full">
@@ -172,8 +287,8 @@ const Home = () => {
               className="relative rounded-[2rem] overflow-hidden shadow-2xl border-[8px] border-slate-100 bg-white"
             >
               <img
-                src="https://img.freepik.com/free-vector/modern-dashboard-interface-with-infographic-elements_23-2148762740.jpg"
-                alt="PIL Dashboard"
+                src={heroSecurity}
+                alt="PIL Security Restriction"
                 className="w-full h-auto object-cover"
               />
             </motion.div>
@@ -209,10 +324,10 @@ const Home = () => {
 
           <div className="mb-20 max-w-4xl">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-8 text-slate-800 tracking-tight drop-shadow-sm">
-              What is <span className="text-blue-600">PIL?</span>
+              Empowering Security with <span className="text-blue-600">PIL (Policy-Driven Information Lock)</span>
             </h2>
             <p className="text-slate-700 text-lg md:text-xl lg:text-2xl leading-relaxed font-medium drop-shadow-sm max-w-3xl mx-auto">
-              The Policy Driven Information Lock (PIL) is built for modern enterprises. It integrates seamlessly with your MDM solutions to provide secure camera management, compliance-ready auditing, and military-grade data encryption.
+              PIL (Policy-Driven Information Lock) is a comprehensive ecosystem designed for the modern workspace. From automated attendance to military-grade camera restrictions, we provide everything needed for a secure and efficient environment.
             </p>
           </div>
 
@@ -401,13 +516,13 @@ const Home = () => {
                 {/* 3D Representation */}
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div className="absolute left-0 top-2 bg-gradient-to-br from-blue-400 to-blue-600 w-20 h-28 rounded-lg shadow-xl border-t-2 border-blue-200 opacity-90"></div>
-                  <div className="absolute left-6 top-6 bg-slate-800 w-16 h-24 rounded shadow-2xl border-4 border-slate-600 z-10 flex text-center justify-center items-center"><Activity className="text-blue-400" /></div>
+                  <div className="absolute left-6 top-6 bg-slate-800 w-16 h-24 rounded shadow-2xl border-4 border-slate-600 z-10 flex text-center justify-center items-center"><Users className="text-blue-400" /></div>
                   <div className="absolute right-0 top-14 bg-gradient-to-b from-blue-400 to-blue-700 w-16 h-16 rounded-full shadow-2xl z-20 border-4 border-blue-300 flex items-center justify-center"><div className="w-8 h-8 rounded-full bg-blue-900 absolute -bottom-8 -right-8 transform -rotate-45 w-2 h-10"></div></div>
                 </div>
               </div>
 
               <h3 className="text-xl md:text-2xl font-black mb-4 text-slate-800 relative z-10">{features[2].title}</h3>
-              <p className="text-slate-600 leading-relaxed font-medium relative z-10">Deep insights into device health, and efficiency.</p>
+              <p className="text-slate-600 leading-relaxed font-medium relative z-10">{features[2].desc}</p>
             </motion.div>
 
             {/* 4. Remote Device Control */}
@@ -430,7 +545,7 @@ const Home = () => {
               </div>
 
               <h3 className="text-xl md:text-2xl font-black mb-4 text-slate-800 relative z-10">{features[3].title}</h3>
-              <p className="text-slate-600 leading-relaxed font-medium relative z-10">Manage camera settings restrictions via MDM policies.</p>
+              <p className="text-slate-600 leading-relaxed font-medium relative z-10">{features[3].desc}</p>
             </motion.div>
 
             {/* 5. Instant Alerts */}
@@ -483,7 +598,7 @@ const Home = () => {
               </div>
 
               <h3 className="text-xl md:text-2xl font-black mb-4 text-slate-800 relative z-10">{features[5].title}</h3>
-              <p className="text-slate-600 leading-relaxed font-medium relative z-10">Pre-configured for strict enterprise regulatory frameworks.</p>
+              <p className="text-slate-600 leading-relaxed font-medium relative z-10">{features[5].desc}</p>
             </motion.div>
 
           </div>
@@ -589,6 +704,26 @@ const Home = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* DASHBOARD SHOWCASE */}
+      <section className="py-24 relative overflow-hidden bg-white">
+        <div className="w-full mx-auto px-6 md:px-12 lg:px-16 flex flex-col items-center text-center">
+          <div className="max-w-4xl mb-16">
+            <h2 className="text-4xl md:text-5xl font-black mb-6 text-slate-800">The <span className="text-blue-600">Command Center</span></h2>
+            <p className="text-slate-600 text-xl font-medium">Experience the power of centralized management with our intuitive, feature-rich dashboard.</p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="w-full max-w-6xl p-4 md:p-8 bg-slate-100 rounded-[3rem] border border-white shadow-[0_50px_100px_-20px_rgba(59,130,246,0.15)]"
+          >
+            <DashboardPreview />
+          </motion.div>
         </div>
       </section>
 
@@ -911,7 +1046,7 @@ const Home = () => {
             <div className="text-left">
               <h4 className="font-bold text-slate-900 mb-6 uppercase tracking-wider text-sm">Legal</h4>
               <ul className="flex flex-col gap-4 text-sm text-slate-600 font-medium">
-                <li><a href="#" className="hover:text-blue-600 transition-colors">Privacy Policy</a></li>
+                <li><a href="/privacypolicy" className="hover:text-blue-600 transition-colors">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a></li>
                 <li><a href="#" className="hover:text-blue-600 transition-colors">Cookie Policy</a></li>
               </ul>
