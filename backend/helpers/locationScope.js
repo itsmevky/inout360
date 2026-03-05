@@ -2,6 +2,14 @@ const EmployeeModel = require("../Modules/employees/model");
 
 const normalizeLocation = (value) => String(value || "").trim();
 
+const normalizeRole = (value) => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  const compact = raw.replace(/[\s_]+/g, "");
+  if (compact === "hrmanager") return "hr";
+  return compact;
+};
+
 const resolveUserLocation = async (user = {}) => {
   const directLocation = normalizeLocation(user.location);
   if (directLocation) {
@@ -18,26 +26,27 @@ const resolveUserLocation = async (user = {}) => {
 };
 
 const resolveLocationScope = async (req) => {
-  const role = String(req.user?.role || "").toLowerCase();
+  const role = normalizeRole(req.user?.role);
   const isSuperadmin = role === "superadmin";
-  const isAdmin = role === "admin";
-
-  if (!isSuperadmin && !isAdmin) {
-    return { role, isAdmin: false, isSuperadmin: false, location: "" };
-  }
 
   if (isSuperadmin) {
     return { role, isAdmin: false, isSuperadmin: true, location: "" };
   }
 
-  const adminLocation = await resolveUserLocation(req.user);
-  if (!adminLocation) {
-    const error = new Error("Admin location is not configured");
+  // Location-scoped roles (see controllers that check `scope.isAdmin` to apply filters)
+  const isScopedRole = ["admin", "hr", "manager", "supervisor"].includes(role);
+  if (!isScopedRole) {
+    return { role, isAdmin: false, isSuperadmin: false, location: "" };
+  }
+
+  const scopedLocation = await resolveUserLocation(req.user);
+  if (!scopedLocation) {
+    const error = new Error("User location is not configured");
     error.statusCode = 403;
     throw error;
   }
 
-  return { role, isAdmin: true, isSuperadmin: false, location: adminLocation };
+  return { role, isAdmin: true, isSuperadmin: false, location: scopedLocation };
 };
 
 const assertScopedLocation = (recordLocation, scope, message) => {

@@ -61,6 +61,35 @@
 // module.exports = checkAuthorization;
 const permissions = require("../config/permissions.json");
 
+const ROLE_ALIASES = {
+  super_admin: "superadmin",
+  "super admin": "superadmin",
+  superadmin: "superadmin",
+  admin: "admin",
+  hr: "hr",
+  hrmanager: "hr",
+  "hr manager": "hr",
+  hr_manager: "hr",
+  supervisor: "supervisor",
+  manager: "manager",
+  employee: "employee",
+  contractor: "contractor",
+};
+
+const normalizeRole = (role) => {
+  const raw = String(role || "").trim().toLowerCase();
+  if (!raw) return "";
+  if (ROLE_ALIASES[raw]) return ROLE_ALIASES[raw];
+
+  const compact = raw.replace(/[\s_]+/g, "");
+  if (ROLE_ALIASES[compact]) return ROLE_ALIASES[compact];
+
+  // Try matching to a known role key in permissions.json
+  const knownRoles = Object.keys(permissions || {});
+  const match = knownRoles.find((r) => r.replace(/[\s_]+/g, "") === compact);
+  return match || raw;
+};
+
 // HTTP method to action mapping
 const methodToAction = {
   POST: "create",
@@ -98,11 +127,12 @@ const checkAuthorization = (
         .json({ status: false, message: "Unauthorized: No user role found" });
     }
 
-    const userRole = user.role;
+    const userRole = normalizeRole(user.role);
 
     allowedRoles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    const normalizedAllowedRoles = allowedRoles.map(normalizeRole);
     // Always allow superadmin by default
-    const allRoles = [...allowedRoles, "superadmin"];
+    const allRoles = [...normalizedAllowedRoles, "superadmin"];
     if (!allRoles.includes(userRole)) {
       return res
         .status(403)

@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from "react";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API, deleteData, putData } from "../../../Helpers/api.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
 import { capitalizeFirstLetter } from "../../../Helpers/CapitalizeFirstLetter.js";
+import { can, normalizeRole } from "../../../Helpers/acl.js";
 
 const VisitorsList = () => {
   const { user } = useUser();
-  const role = String(user?.role || "").toLowerCase();
-  const canManageVisitors = role === "superadmin" || role === "admin";
-  const canCreateVisitors =
-    role === "superadmin" || role === "admin" || role === "hr" || role === "manager";
+  const role = normalizeRole(user?.role);
+  const canCreateVisitors = can(role, "visitors", "create");
+  const canUpdateVisitors = can(role, "visitors", "update");
+  const canDeleteVisitors = can(role, "visitors", "delete");
+  const canForceLogoutVisitors = role === "superadmin" || role === "admin";
+  const canManageVisitors = canUpdateVisitors || canDeleteVisitors;
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,11 @@ const VisitorsList = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [sessionFilter, setSessionFilter] = useState("");
+  const location = useLocation();
   const navigate = useNavigate();
+  const basePath = location.pathname.includes("/dashboard/employee")
+    ? "/dashboard/employee"
+    : "/dashboard/users";
 
   const fetchVisitors = async () => {
     setLoading(true);
@@ -86,6 +93,10 @@ const VisitorsList = () => {
   };
 
   const handleDelete = async (row) => {
+    if (!canDeleteVisitors) {
+      toast.error("You don't have permission to delete visitors.");
+      return;
+    }
     if (!row?._id && !row?.id) return;
     if (!window.confirm("Are you sure you want to delete this visitor?")) return;
     try {
@@ -102,6 +113,10 @@ const VisitorsList = () => {
   };
 
   const handleForceLogout = async (row) => {
+    if (!canForceLogoutVisitors) {
+      toast.error("You don't have permission to force logout visitors.");
+      return;
+    }
     if (!row?._id && !row?.id) return;
     const currentStatus = String(row.sessionStatus || "").toLowerCase();
     if (currentStatus === "logout") {
@@ -156,7 +171,7 @@ const VisitorsList = () => {
       selector: (row) => formatDate(row.createdAt),
       width: "22%",
     },
-    ...(canManageVisitors
+    ...(canManageVisitors || canForceLogoutVisitors
       ? [
           {
             name: "Actions",
@@ -164,55 +179,61 @@ const VisitorsList = () => {
             selector: (row) => (
               <div className="flex space-x-2 justify-center">
                 <div className="flex space-x-2">
-                  <button
-                    className="text-blue-500"
-                    onClick={() =>
-                      navigate(`/dashboard/users/visitors/edit/${row.id || row._id}`)
-                    }
-                  >
-                    <svg
-                      fill="#22374e"
-                      width={20}
-                      height={20}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 640 512"
+                  {canUpdateVisitors && (
+                    <button
+                      className="text-blue-500"
+                      onClick={() =>
+                        navigate(`${basePath}/visitors/edit/${row.id || row._id}`)
+                      }
                     >
-                      <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-                    </svg>
-                  </button>
+                      <svg
+                        fill="#22374e"
+                        width={20}
+                        height={20}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 640 512"
+                      >
+                        <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className="flex space-x-2">
-                  <button
-                    className="text-red-500"
-                    onClick={() => handleDelete(row)}
-                  >
-                    <svg
-                      fill="red"
-                      width={16}
-                      height={16}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 448 512"
+                  {canDeleteVisitors && (
+                    <button
+                      className="text-red-500"
+                      onClick={() => handleDelete(row)}
                     >
-                      <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-                    </svg>
-                  </button>
+                      <svg
+                        fill="red"
+                        width={16}
+                        height={16}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className="flex space-x-2">
-                  <button
-                    className="text-gray-700"
-                    onClick={() => handleForceLogout(row)}
-                    title="Force logout"
-                  >
-                    <svg
-                      fill="#374151"
-                      width={16}
-                      height={16}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 512 512"
+                  {canForceLogoutVisitors && (
+                    <button
+                      className="text-gray-700"
+                      onClick={() => handleForceLogout(row)}
+                      title="Force logout"
                     >
-                      <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H402.7l-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96zM320 112c0-17.7-14.3-32-32-32H128C57.3 80 0 137.3 0 208V304c0 70.7 57.3 128 128 128H288c17.7 0 32-14.3 32-32s-14.3-32-32-32H128c-35.3 0-64-28.7-64-64V208c0-35.3 28.7-64 64-64H288c17.7 0 32-14.3 32-32z" />
-                    </svg>
-                  </button>
+                      <svg
+                        fill="#374151"
+                        width={16}
+                        height={16}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 512 512"
+                      >
+                        <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H402.7l-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96zM320 112c0-17.7-14.3-32-32-32H128C57.3 80 0 137.3 0 208V304c0 70.7 57.3 128 128 128H288c17.7 0 32-14.3 32-32s-14.3-32-32-32H128c-35.3 0-64-28.7-64-64V208c0-35.3 28.7-64 64-64H288c17.7 0 32-14.3 32-32z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             ),
@@ -284,7 +305,7 @@ const VisitorsList = () => {
             <div className="add-new-employee-button">
               <button
                 className="crm-buttonsection"
-                onClick={() => navigate("/dashboard/users/visitors/add")}
+                onClick={() => navigate(`${basePath}/visitors/add`)}
               >
                 <svg
                   fill="white"

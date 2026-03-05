@@ -1,6 +1,16 @@
 const SettingsModel = require("./model");
 const EmployeeModel = require("../employees/model");
 
+const normalizeRole = (value) => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  const compact = raw.replace(/[\s_]+/g, "");
+  if (compact === "hrmanager") return "hr";
+  if (compact === "superadmin" || compact === "admin") return compact;
+  if (compact === "hr" || compact === "manager") return compact;
+  return raw;
+};
+
 const toBool = (v, fallback) => {
   if (typeof v === "boolean") return v;
   if (typeof v === "string") {
@@ -80,7 +90,7 @@ const resolveUserLocation = async (user = {}) => {
 };
 
 const resolveSettingsScope = async (req) => {
-  const role = String(req.user?.role || "").toLowerCase();
+  const role = normalizeRole(req.user?.role);
   const requestedLocation = normalizeLocation(req.query?.unitLocation);
   const payloadLocation = normalizeLocation(req.body?.unitLocation);
 
@@ -121,7 +131,35 @@ const resolveSettingsScope = async (req) => {
     };
   }
 
-  const error = new Error("Only admin and superadmin can access settings");
+  if (role === "hr" || role === "manager") {
+    const userLocation = await resolveUserLocation(req.user);
+    if (!userLocation) {
+      const error = new Error("User location is not configured");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (requestedLocation && requestedLocation !== userLocation) {
+      const error = new Error("You can only access your assigned location settings");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (payloadLocation && payloadLocation !== userLocation) {
+      const error = new Error("You can only update your assigned location settings");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    return {
+      role,
+      allowedLocation: userLocation,
+      queryLocation: userLocation,
+      updateLocation: userLocation,
+    };
+  }
+
+  const error = new Error("You are not authorized to access settings");
   error.statusCode = 403;
   throw error;
 };

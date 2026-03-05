@@ -940,8 +940,15 @@ import { useNavigate } from "react-router-dom";
 // export default Device;
 import React, { useEffect, useState } from "react";
 import { deleteData, getData, postData, putData } from "../../../Helpers/api.js";
+import { useUser } from "../../../Helpers/Context/UserContext.js";
+import { can, normalizeRole } from "../../../Helpers/acl.js";
 
 const Device = () => {
+  const { user } = useUser();
+  const role = normalizeRole(user?.role);
+  const canUpdateDevice = can(role, "device", "update");
+  const canDeleteDevice = can(role, "device", "delete");
+
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [deviceList, setDeviceList] = useState([]);
@@ -1147,6 +1154,7 @@ const Device = () => {
   };
 
   const togglePolicy = async (field) => {
+    if (!canUpdateDevice) return;
     if (!selectedDevice?.id) return;
     try {
       const res = await putData(`/device/${selectedDevice.id}/policy/toggle`, {
@@ -1167,6 +1175,7 @@ const Device = () => {
   };
 
   const removeDevice = async () => {
+    if (!canDeleteDevice) return;
     if (!selectedDevice) return;
 
     // We only need the ID to delete from DB
@@ -1532,105 +1541,128 @@ const Device = () => {
               </div>
             </div>
 
-            {/* ================= DEVICE CONTROLS ================= */}
-            <h3 className="mt-6 text-base sm:text-xl font-semibold">
-              Device Controls
-            </h3>
+            {/* ================= DEVICE CONTROLS (ADMIN ONLY) ================= */}
+            {canUpdateDevice ? (
+              <>
+                <h3 className="mt-6 text-base sm:text-xl font-semibold">
+                  Device Controls
+                </h3>
 
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {[
-                {
-                  field: "cameraDisabled",
-                  label: "Camera",
-                  blockLabel: "Disable Camera",
-                  allowLabel: "Allow Camera",
-                  allowClass: "bg-sky-600 text-white",
-                  blockClass: "bg-sky-100 text-sky-800",
-                },
-                {
-                  field: "uninstallBlocked",
-                  label: "Uninstall",
-                  blockLabel: "Disable Uninstall",
-                  allowLabel: "Allow Uninstall",
-                  allowClass: "bg-sky-600 text-white",
-                  blockClass: "bg-sky-100 text-sky-800",
-                },
-                {
-                  field: "facebookBlocked",
-                  label: "Facebook",
-                  allowClass: "bg-blue-600 text-white",
-                  blockClass: "bg-blue-100 text-blue-800",
-                },
-                {
-                  field: "instagramBlocked",
-                  label: "Instagram",
-                  allowClass: "bg-purple-600 text-white",
-                  blockClass: "bg-purple-100 text-purple-800",
-                },
-                {
-                  field: "youtubeBlocked",
-                  label: "YouTube",
-                  allowClass: "bg-rose-600 text-white",
-                  blockClass: "bg-rose-100 text-rose-800",
-                },
-                {
-                  field: "whatsappBlocked",
-                  label: "WhatsApp",
-                  allowClass: "bg-green-600 text-white",
-                  blockClass: "bg-green-100 text-green-800",
-                },
-              ].map(({ field, label, blockLabel, allowLabel, allowClass, blockClass }) => {
-                const isBlocked = getPolicyValue(selectedDevice, field);
-                const buttonLabel = isBlocked
-                  ? allowLabel || `Allow ${label}`
-                  : blockLabel || `Block ${label}`;
-                const buttonClass = isBlocked ? allowClass : blockClass;
-                return (
-                  <button
-                    key={field}
-                    onClick={() => togglePolicy(field)}
-                    className={`w-full py-3 rounded-lg ${buttonClass}`}
-                  >
-                    {buttonLabel}
-                  </button>
-                );
-              })}
-            </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    {
+                      field: "cameraDisabled",
+                      label: "Camera",
+                      blockLabel: "Disable Camera",
+                      allowLabel: "Allow Camera",
+                      allowClass: "bg-sky-600 text-white",
+                      blockClass: "bg-sky-100 text-sky-800",
+                    },
+                    {
+                      field: "uninstallBlocked",
+                      label: "Uninstall",
+                      blockLabel: "Disable Uninstall",
+                      allowLabel: "Allow Uninstall",
+                      allowClass: "bg-sky-600 text-white",
+                      blockClass: "bg-sky-100 text-sky-800",
+                    },
+                    {
+                      field: "facebookBlocked",
+                      label: "Facebook",
+                      allowClass: "bg-blue-600 text-white",
+                      blockClass: "bg-blue-100 text-blue-800",
+                    },
+                    {
+                      field: "instagramBlocked",
+                      label: "Instagram",
+                      allowClass: "bg-purple-600 text-white",
+                      blockClass: "bg-purple-100 text-purple-800",
+                    },
+                    {
+                      field: "youtubeBlocked",
+                      label: "YouTube",
+                      allowClass: "bg-rose-600 text-white",
+                      blockClass: "bg-rose-100 text-rose-800",
+                    },
+                    {
+                      field: "whatsappBlocked",
+                      label: "WhatsApp",
+                      allowClass: "bg-green-600 text-white",
+                      blockClass: "bg-green-100 text-green-800",
+                    },
+                  ].map(
+                    ({
+                      field,
+                      label,
+                      blockLabel,
+                      allowLabel,
+                      allowClass,
+                      blockClass,
+                    }) => {
+                      const isBlocked = getPolicyValue(selectedDevice, field);
+                      const buttonLabel = isBlocked
+                        ? allowLabel || `Allow ${label}`
+                        : blockLabel || `Block ${label}`;
+                      const buttonClass = isBlocked ? allowClass : blockClass;
+                      return (
+                        <button
+                          key={field}
+                          onClick={() => togglePolicy(field)}
+                          className={`w-full py-3 rounded-lg ${buttonClass}`}
+                        >
+                          {buttonLabel}
+                        </button>
+                      );
+                    }
+                  )}
+                </div>
+              </>
+            ) : null}
 
-            {/* ================= MORE ACTIONS (FEATURE ENABLED) ================= */}
-            <h3 className="mt-6 text-base sm:text-xl font-semibold">
-              More Actions
-            </h3>
+            {/* ================= MORE ACTIONS (ADMIN ONLY) ================= */}
+            {canUpdateDevice || canDeleteDevice ? (
+              <>
+                <h3 className="mt-6 text-base sm:text-xl font-semibold">
+                  More Actions
+                </h3>
 
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={fetchActivityLogs}
-                className="w-full py-3 bg-gray-200 rounded-lg"
-              >
-                View Activity Logs
-              </button>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {canUpdateDevice ? (
+                    <>
+                      <button
+                        onClick={fetchActivityLogs}
+                        className="w-full py-3 bg-gray-200 rounded-lg"
+                      >
+                        View Activity Logs
+                      </button>
 
-              <button
-                onClick={fetchInstalledApps}
-                className="w-full py-3 bg-gray-200 rounded-lg"
-              >
-                View Installed Apps
-              </button>
+                      <button
+                        onClick={fetchInstalledApps}
+                        className="w-full py-3 bg-gray-200 rounded-lg"
+                      >
+                        View Installed Apps
+                      </button>
 
-              <button
-                onClick={fetchLocationTimeline}
-                className="w-full py-3 bg-gray-200 rounded-lg"
-              >
-                View Location Timeline
-              </button>
+                      <button
+                        onClick={fetchLocationTimeline}
+                        className="w-full py-3 bg-gray-200 rounded-lg"
+                      >
+                        View Location Timeline
+                      </button>
+                    </>
+                  ) : null}
 
-              <button
-                onClick={removeDevice}
-                className="w-full py-3 bg-red-300 text-red-800 rounded-lg"
-              >
-                Remove Device
-              </button>
-            </div>
+                  {canDeleteDevice ? (
+                    <button
+                      onClick={removeDevice}
+                      className="w-full py-3 bg-red-300 text-red-800 rounded-lg"
+                    >
+                      Remove Device
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
 
             {/* ✅ RESULTS PANEL (inside same modal) */}
             {actionView ? (

@@ -6,9 +6,11 @@ const DeviceEventController = require("./deviceEventController");
 const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
 const adminRoles = ["admin", "superadmin"];
-router.get("/", verifyToken, checkAuthorization(adminRoles, "device"), Controller.getAll);
+const readRoles = ["admin", "superadmin", "hr", "manager"];
+
+router.get("/", verifyToken, checkAuthorization(readRoles, "device"), Controller.getAll);
 router.get("/status", Controller.deviceStatus);
-router.get("/:id", verifyToken, checkAuthorization(adminRoles, "device"), Controller.getById);
+router.get("/:id", verifyToken, checkAuthorization(readRoles, "device"), Controller.getById);
 router.post("/register", Controller.register);
 router.post("/verify-token", Controller.verifyRegisterToken);
 router.post("/add", Controller.add);

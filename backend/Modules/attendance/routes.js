@@ -4,12 +4,13 @@ const Controller = require("./controller");
 const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
 
-const adminRoles = ["admin", "superadmin"];
+// Roles that can access attendance module (method-level access is enforced by permissions.json)
+const attendanceRoles = ["admin", "superadmin", "hr", "manager", "supervisor"];
 
 router.post(
   "/",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.add
 );
 
@@ -17,56 +18,56 @@ router.post(
 router.post(
   "/add",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.add
 );
 
 router.get(
   "/",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.getAll
 );
 
 router.get(
   "/all",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.getAll
 );
 
 router.get(
   "/search",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.getAll
 );
 
 router.get(
   "/:id",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.getbyid
 );
 
 router.put(
   "/:id",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.update
 );
 
 router.delete(
   "/:id",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.delete
 );
 
 router.post(
   "/delete",
   verifyToken,
-  checkAuthorization(adminRoles, "attendance"),
+  checkAuthorization(attendanceRoles, "attendance"),
   Controller.delete
 );
 

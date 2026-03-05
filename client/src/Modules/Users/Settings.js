@@ -3,12 +3,16 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { domainpath, getData, putData } from "../../Helpers/api.js";
 import { useUser } from "../../Helpers/Context/UserContext.js";
+import { can, normalizeRole } from "../../Helpers/acl.js";
 
 const Settings = () => {
     const { user } = useUser();
-    const userRole = String(user?.role || "").toLowerCase();
+    const userRole = normalizeRole(user?.role);
     const assignedLocation = String(user?.location || "").trim();
-    const isAdmin = userRole === "admin";
+    const canReadSettings = can(userRole, "settings", "read");
+    const canUpdateSettings = can(userRole, "settings", "update");
+    const viewOnly = canReadSettings && !canUpdateSettings;
+    const canSelectLocation = userRole === "superadmin" && canUpdateSettings;
 
     const defaultDevice = {
         cameraAccess: true,
@@ -57,11 +61,13 @@ const Settings = () => {
     const baseUrl = useMemo(() => domainpath.replace(/\/api\/?$/, ""), []);
 
     const toggle = (setter, key) => {
+        if (viewOnly) return;
         setIsChanged(true);
         setter((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
     const handleConfigChange = (key, value) => {
+        if (viewOnly) return;
         setIsChanged(true);
         setSystemConfig((prev) => ({ ...prev, [key]: value }));
     };
@@ -74,9 +80,11 @@ const Settings = () => {
     const loadSettings = async (locationName = "") => {
         setLoading(true);
         try {
-            const targetLocation = isAdmin ? assignedLocation : locationName;
+            const targetLocation = canSelectLocation
+                ? String(locationName || systemConfig.unitLocation || "").trim()
+                : assignedLocation;
             const response = await getData("/settings", {
-                unitLocation: targetLocation,
+                unitLocation: targetLocation || undefined,
             });
             const data = response?.data || {};
             const scopedLocation = response?.scope?.unitLocation || "";
@@ -102,7 +110,7 @@ const Settings = () => {
             setInitialAlerts(nextAlerts);
             setIsChanged(false);
 
-            if (isAdmin && resolvedLocation) {
+            if (!canSelectLocation && resolvedLocation) {
                 setLocations([{ id: resolvedLocation, name: resolvedLocation }]);
             }
         } catch (error) {
@@ -114,7 +122,13 @@ const Settings = () => {
 
     const handleSave = async () => {
         try {
-            const targetLocation = isAdmin ? assignedLocation : systemConfig.unitLocation;
+            if (!canUpdateSettings) {
+                toast.error("You don't have permission to update settings.");
+                return;
+            }
+            const targetLocation = canSelectLocation
+                ? String(systemConfig.unitLocation || "").trim()
+                : assignedLocation;
             if (!targetLocation) {
                 toast.error("Unit location is required.");
                 return;
@@ -186,7 +200,7 @@ const Settings = () => {
 
     useEffect(() => {
         const fetchLocations = async () => {
-            if (isAdmin) {
+            if (!canSelectLocation) {
                 setLocations(assignedLocation ? [{ id: assignedLocation, name: assignedLocation }] : []);
                 return;
             }
@@ -200,8 +214,8 @@ const Settings = () => {
         };
 
         fetchLocations();
-        loadSettings("");
-    }, [isAdmin, assignedLocation]);
+        loadSettings(canSelectLocation ? "" : assignedLocation);
+    }, [canSelectLocation, assignedLocation]);
 
     return (
         <>
@@ -223,40 +237,38 @@ const Settings = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
-                            {!isAdmin && (
-                                <>
-                                    {/* API URL */}
-                                    <div>
-                                        <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
-                                        <input
-                                            type="text"
-                                            value={systemConfig.apiEndpointUrl}
-                                            placeholder="https://your-backend.com/api/"
-                                            onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
-                                            className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-                                        />
-                                    </div>
-                                </>
-                            )}
+                            {/* API URL */}
+                            <div>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
+                                <input
+                                    type="text"
+                                    value={systemConfig.apiEndpointUrl}
+                                    placeholder="https://your-backend.com/api/"
+                                    onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
+                                    disabled={viewOnly}
+                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400 disabled:opacity-70"
+                                />
+                            </div>
 
                             {/* Unit Location */}
                             <div>
                                 <label className="setting-System-Configuration text-gray-700 font-semibold">Unit Location</label>
-                                {isAdmin ? (
+                                {!canSelectLocation ? (
                                     <>
                                         <div className="w-full mt-2 border border-gray-300 p-3 rounded-lg bg-gray-100 text-gray-700">
                                             <span className="text-sm font-medium">
-                                                {systemConfig.unitLocation || "Assigned location"}
+                                                {systemConfig.unitLocation || assignedLocation || "Assigned location"}
                                             </span>
                                         </div>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Admin can manage settings only for assigned location.
+                                            Settings are available only for your assigned location.
                                         </p>
                                     </>
                                 ) : (
                                     <select
                                         value={systemConfig.unitLocation}
                                         onChange={(e) => loadSettings(e.target.value)}
+                                        disabled={viewOnly}
                                         className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                     >
                                         <option value="">Select Unit</option>
@@ -271,52 +283,50 @@ const Settings = () => {
 
 
                             {/* APK Upload */}
-                            {!isAdmin && (
-                                <div>
-                                    <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
-                                    <input
-                                        type="file"
-                                        accept=".apk"
-                                        onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
-                                        className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 "
-                                    />
-                                    {systemConfig.apkFileUrl && (
-                                        <a
-                                            className="text-sm text-blue-600 underline mt-2 inline-block"
-                                            href={`${baseUrl}${systemConfig.apkFileUrl}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            View current APK
-                                        </a>
-                                    )}
-                                </div>
-                            )}
+                            <div>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
+                                <input
+                                    type="file"
+                                    accept=".apk"
+                                    onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
+                                    disabled={!canUpdateSettings}
+                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 disabled:opacity-70"
+                                />
+                                {systemConfig.apkFileUrl && (
+                                    <a
+                                        className="text-sm text-blue-600 underline mt-2 inline-block"
+                                        href={`${baseUrl}${systemConfig.apkFileUrl}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        View current APK
+                                    </a>
+                                )}
+                            </div>
 
                             {/* Logo Upload */}
-                            {!isAdmin && (
-                                <div>
-                                    <label className="setting-System-Configuration text-gray-700 font-semibold">Company Logo</label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleConfigChange("logoFile", e.target.files[0])}
-                                        className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50"
-                                    />
+                            <div>
+                                <label className="setting-System-Configuration text-gray-700 font-semibold">Company Logo</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleConfigChange("logoFile", e.target.files[0])}
+                                    disabled={!canUpdateSettings}
+                                    className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50 disabled:opacity-70"
+                                />
 
-                                    {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
-                                        <img
-                                            src={
-                                                systemConfig.logoFile
-                                                    ? URL.createObjectURL(systemConfig.logoFile)
-                                                    : `${baseUrl}${systemConfig.companyLogoUrl}`
-                                            }
-                                            className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
-                                            alt="Preview"
-                                        />
-                                    )}
-                                </div>
-                            )}
+                                {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
+                                    <img
+                                        src={
+                                            systemConfig.logoFile
+                                                ? URL.createObjectURL(systemConfig.logoFile)
+                                                : `${baseUrl}${systemConfig.companyLogoUrl}`
+                                        }
+                                        className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
+                                        alt="Preview"
+                                    />
+                                )}
+                            </div>
 
                             {/* ✅ OTP Email */}
                             {/* <div>
@@ -342,6 +352,7 @@ const Settings = () => {
                                     <select
                                         value={systemConfig.otpExpirySeconds}
                                         onChange={(e) => handleConfigChange("otpExpirySeconds", e.target.value)}
+                                        disabled={viewOnly}
                                         className="w-full mt-2 border p-3 border-gray-400 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                     >
                                         <option value="">Select Seconds</option>
@@ -374,6 +385,7 @@ const Settings = () => {
                                                     updatedEmails.filter(Boolean).join(",")
                                                 );
                                             }}
+                                            disabled={viewOnly}
                                             className="flex-1 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                         />
 
@@ -385,6 +397,7 @@ const Settings = () => {
                                                     const updatedEmails = emailsArray.filter((_, i) => i !== index);
                                                     handleConfigChange("otpEmail", updatedEmails.join(","));
                                                 }}
+                                                disabled={viewOnly}
                                                 className="px-3 py-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200"
                                             >
                                                 ✕
@@ -402,7 +415,8 @@ const Settings = () => {
                                             [...emailsArray, ""].join(",")
                                         );
                                     }}
-                                    className="mt-3 text-sm text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                                    disabled={viewOnly}
+                                    className="mt-3 text-sm text-blue-600 font-semibold hover:underline flex items-center gap-1 disabled:opacity-60"
                                 >
                                     ➕ Add Email
                                 </button>
@@ -420,6 +434,7 @@ const Settings = () => {
                                             type="time"
                                             value={systemConfig.workingHours?.startTime || "09:30"}
                                             onChange={(e) => {
+                                                if (viewOnly) return;
                                                 setIsChanged(true);
                                                 setSystemConfig((prev) => ({
                                                     ...prev,
@@ -430,6 +445,7 @@ const Settings = () => {
                                                     }
                                                 }));
                                             }}
+                                            disabled={viewOnly}
                                             className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         />
                                     </div>
@@ -440,6 +456,7 @@ const Settings = () => {
                                             type="time"
                                             value={systemConfig.workingHours?.endTime || "18:30"}
                                             onChange={(e) => {
+                                                if (viewOnly) return;
                                                 setIsChanged(true);
                                                 setSystemConfig((prev) => ({
                                                     ...prev,
@@ -450,6 +467,7 @@ const Settings = () => {
                                                     }
                                                 }));
                                             }}
+                                            disabled={viewOnly}
                                             className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         />
                                     </div>
@@ -461,8 +479,7 @@ const Settings = () => {
                     </div>
 
                     {/* ========= FLEX BOTTOM CARDS ========= */}
-                    {!isAdmin && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
 
                         {/* Device Controls */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Device-Controls">
@@ -489,6 +506,7 @@ const Settings = () => {
                                                     type="checkbox"
                                                     checked={!!deviceSettings[key]}
                                                     onChange={() => toggle(setDeviceSettings, key)}
+                                                    disabled={viewOnly}
                                                     className="sr-only peer"
                                                 />
                                                 <div className="w-12 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-600 transition"></div>
@@ -521,6 +539,7 @@ const Settings = () => {
                                                 type="checkbox"
                                                 checked={!!alerts[key]}
                                                 onChange={() => toggle(setAlerts, key)}
+                                                disabled={viewOnly}
                                                 className="sr-only peer"
                                             />
                                             <div className="w-12 h-6 bg-gray-300 rounded-full peer-checked:bg-green-600 transition"></div>
@@ -530,11 +549,10 @@ const Settings = () => {
                                 ))}
                             </div>
                         </div>
-                        </div>
-                    )}
+                    </div>
 
                     {/* ========= SAVE / CANCEL BUTTONS ========= */}
-                    {isChanged && !loading && (
+                    {canUpdateSettings && isChanged && !loading && (
                         <div className="mt-8 flex gap-4 justify-end settingpage-save-cancel-button">
                             <button
                                 onClick={handleCancel}

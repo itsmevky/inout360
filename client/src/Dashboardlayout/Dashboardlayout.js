@@ -29,11 +29,17 @@ import Settings from "../Modules/Users/Settings.js";
 import NotificationsPage from "../Modules/Notifications/NotificationsPage.js";
 import EnquiriesPage from "../Modules/Enquiries/EnquiriesPage";
 import WarningsPage from "../Modules/Warnings/WarningsPage";
+import { can, normalizeRole } from "../Helpers/acl.js";
 
 
 function DashboardLayout({ userRole }) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const roleKey = normalizeRole(userRole);
+  const canReadAttendance = can(roleKey, "attendance", "read");
+  const canReadLocation = can(roleKey, "location", "read");
+  const canCreateLocation = can(roleKey, "location", "create");
+  const canUpdateLocation = can(roleKey, "location", "update");
 
   useEffect(() => {
     console.log("📍 Current path:", location.pathname);
@@ -79,11 +85,32 @@ function DashboardLayout({ userRole }) {
               <Route path="users/roles" element={<Roles />} />
               <Route path="users/permissions" element={<PermissionsTable />} />
 
+              {/* ✅ Aliases for legacy /dashboard/employee/... paths */}
+              <Route path="employee/employees" element={<Employees />} />
+              <Route path="employee/visitors" element={<Visitors />} />
+              <Route path="employee/visitors/add" element={<AddVisitor />} />
+              <Route path="employee/visitors/edit/:id" element={<EditVisitor />} />
+              <Route
+                path="employee/attendance"
+                element={
+                  canReadAttendance
+                    ? <Attendance />
+                    : <Dashboard />
+                }
+              />
+              <Route path="employee/device" element={<Device />} />
+              <Route path="employee/activity" element={<ActivityPgae />} />
+              <Route path="employee/settings" element={<Settings />} />
+              <Route
+                path="employee/location"
+                element={canReadLocation ? <LocationList /> : <Dashboard />}
+              />
+
               {/* ✅ Attendance */}
               <Route
                 path="users/attendance"
                 element={
-                  userRole === "superadmin" || userRole === "admin"
+                  canReadAttendance
                     ? <Attendance />
                     : <Dashboard />
                 }
@@ -96,7 +123,7 @@ function DashboardLayout({ userRole }) {
               <Route path="users/zones" element={<Zones />} />
               <Route
                 path="users/location"
-                element={userRole === "superadmin" ? <LocationList /> : <Dashboard />}
+                element={canReadLocation ? <LocationList /> : <Dashboard />}
               />
               <Route path="users/activity" element={<ActivityPgae />} />
               <Route path="users/settings" element={<Settings />} />
@@ -104,11 +131,11 @@ function DashboardLayout({ userRole }) {
 
               <Route
                 path="users/location/add"
-                element={userRole === "superadmin" ? <LocationAdd /> : <Dashboard />}
+                element={canCreateLocation ? <LocationAdd /> : <Dashboard />}
               />
               <Route
                 path="users/location/edit/:id"
-                element={userRole === "superadmin" ? <LocationEdit /> : <Dashboard />}
+                element={canUpdateLocation ? <LocationEdit /> : <Dashboard />}
               />
 
 

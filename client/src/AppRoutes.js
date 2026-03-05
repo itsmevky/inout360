@@ -22,15 +22,24 @@ import AppQrPage from "./Modules/AppQr/AppQrPage.js";
 import QrDownload from "../src/Components/Website/DownloadApp.js";
 import PrivacyPolicy from "./Website/PrivacyPolicy.js";
 import StaticQr from "./Website/StaticQr.js";
+import { normalizeRole } from "./Helpers/acl.js";
 
 const AppRoutes = () => {
   const { user } = useUser();
   if (user === undefined) return <div>Loading...</div>;
 
-  const userRole = user?.role?.toLowerCase().replace("_", "") || "";
+  const userRole = normalizeRole(user?.role);
   console.log("Detected role:", user?.role, "→ normalized:", userRole);
 
-  const allowedRoles = ["superadmin", "admin", "hr", "employee"];
+  const allowedRoles = [
+    "superadmin",
+    "admin",
+    "hr",
+    "manager",
+    "supervisor",
+    "employee",
+    "contractor",
+  ];
 
   return (
     <Routes>

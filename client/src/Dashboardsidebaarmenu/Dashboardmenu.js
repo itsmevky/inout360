@@ -32,7 +32,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
 
   // ✅ Base path by role
   const basePath =
-    userRole === "superadmin" || userRole === "admin"
+    userRole === "superadmin" ||
+    userRole === "admin" ||
+    userRole === "hr" ||
+    userRole === "manager" ||
+    userRole === "supervisor"
       ? "/dashboard/users"
       : "/dashboard/employee";
 
@@ -86,8 +90,31 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Enquiries",
       "Warnings",
     ],
-    hr: ["Dashboard", "Employees", "Visitors"],
+    hr: [
+      "Dashboard",
+      "Employees",
+      "Visitors",
+      "Attendance",
+      // "Contractors",
+      // "Rfid",
+      "Device",
+      "Settings",
+      "Activity",
+      "Enquiries",
+      "Warnings",
+    ],
+    manager: [
+      "Dashboard",
+      "Employees",
+      "Visitors",
+      "Attendance",
+      "Settings",
+      "Location",
+      "Activity",
+    ],
+    supervisor: ["Dashboard", "Employees", "Visitors", "Attendance"],
     employee: ["Dashboard"],
+    contractor: ["Dashboard"],
   };
 
   // ✅ Filter items
