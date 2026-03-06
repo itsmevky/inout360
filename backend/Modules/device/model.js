@@ -5,6 +5,7 @@ const deviceSchemaDefinition = {
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   employeeId: { type: String, trim: true, index: true },
   deviceId: { type: String, trim: true, index: true },
+  vendorCode: { type: String, trim: true, uppercase: true, default: "", index: true },
   deviceName: { type: String, required: true, trim: true },
   name: { type: String, trim: true },
   deviceStatus: {

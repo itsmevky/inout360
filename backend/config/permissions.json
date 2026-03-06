@@ -78,6 +78,12 @@
         "update",
         "delete"
       ],
+      "vendors": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
       "device": [
         "create",
         "read",

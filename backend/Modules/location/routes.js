@@ -7,6 +7,8 @@ const checkAuthorization = require("../../middleware/checkAuthorization");
 const allRoles = ["admin", "hr", "supervisor", "employee", "manager", "superadmin", "contractor"];
 const superadminOnly = ["superadmin"];
 
+// Public: used during app registration to fetch locations for a vendorCode
+router.get("/public", Controller.getPublicByVendorCode);
 router.get("/coords",Controller.getCoords);
 router.get("/", verifyToken, checkAuthorization(allRoles, "location"), Controller.getAll);
 router.get("/:id", verifyToken, checkAuthorization(allRoles, "location"), Controller.getById);

@@ -2,8 +2,9 @@ const mongoose = require("mongoose");
 const paginate = require("../../helpers/limitoffset");
 const LocationModel = require("./model");
 
-const validatePayload = ({ name, lat, lng, radius }) => {
+const validatePayload = ({ name, vendorCode, lat, lng, radius }) => {
   if (!name) throw new Error("Location name is required");
+  if (!vendorCode) throw new Error("Vendor code is required");
   if (lat === undefined || lat === null) throw new Error("Latitude is required");
   if (lng === undefined || lng === null) throw new Error("Longitude is required");
   if (radius === undefined || radius === null) throw new Error("Radius is required");
@@ -13,6 +14,7 @@ const normalizeNumber = (value) => (value === undefined ? value : Number(value))
 
 const normalizePayload = (body) => ({
   name: body.name?.trim(),
+  vendorCode: String(body.vendorCode || "").trim().toUpperCase(),
   lat: normalizeNumber(body.lat),
   lng: normalizeNumber(body.lng ?? body.long),
   radius: normalizeNumber(body.radius),
@@ -74,16 +76,43 @@ exports.getAll = async (req, res) => {
 exports.getCoords = async (_req, res) => {
   try {
     const locations = await LocationModel.find({})
-      .select("name lat lng radius otpEmail")
+      .select("name vendorCode lat lng radius otpEmail")
       .lean();
     return res.status(200).json({
       status: true,
       data: locations.map((loc) => ({
         name: loc.name,
+        vendorCode: loc.vendorCode || "",
         lat: loc.lat,
         lng: loc.lng,
         radius: loc.radius,
         otpEmail: loc.otpEmail || "",
+      })),
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// Public endpoint for registration flows: list locations for a vendorCode
+exports.getPublicByVendorCode = async (req, res) => {
+  try {
+    const vendorCode = String(req.query.vendorCode || "").trim().toUpperCase();
+    if (!vendorCode) {
+      return res.status(400).json({ status: false, message: "vendorCode is required" });
+    }
+
+    const locations = await LocationModel.find({ vendorCode })
+      .select("name vendorCode")
+      .sort({ name: 1 })
+      .lean();
+
+    return res.status(200).json({
+      status: true,
+      vendorCode,
+      locations: locations.map((loc) => ({
+        name: loc.name,
+        vendorCode: loc.vendorCode || vendorCode,
       })),
     });
   } catch (error) {

@@ -252,7 +252,10 @@ const ensureVisitorCounterUpToDate = async () => {
   );
 };
 
-const createVisitorWithRetry = async ({ name, deviceId, location }, maxAttempts = 5) => {
+const createVisitorWithRetry = async (
+  { name, deviceId, location, vendorCode },
+  maxAttempts = 5
+) => {
   let syncedCounter = false;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const visitorEmployeeId = await getNextVisitorId();
@@ -264,6 +267,7 @@ const createVisitorWithRetry = async ({ name, deviceId, location }, maxAttempts 
         rfid,
         deviceId,
         location: String(location || "").trim(),
+        vendorCode: String(vendorCode || "").trim().toUpperCase(),
         role: "visitor",
       });
     } catch (error) {
@@ -289,6 +293,7 @@ const createVisitorWithRetry = async ({ name, deviceId, location }, maxAttempts 
           rfid,
           deviceId,
           location: String(location || "").trim(),
+          vendorCode: String(vendorCode || "").trim().toUpperCase(),
           role: "visitor",
         });
         const counters = mongoose.connection.collection("counters");
@@ -476,6 +481,7 @@ const upsertDevice = async (payload) => {
     deviceId,
     userId,
     employeeId,
+    vendorCode,
     deviceName,
     name,
     deviceStatus,
@@ -529,6 +535,7 @@ const upsertDevice = async (payload) => {
     userId,
     employeeId,
     deviceId,
+    vendorCode,
     deviceName,
     name,
     deviceStatus,
@@ -737,12 +744,21 @@ exports.register = async (req, res) => {
       lastSeen,
       deviceOwner,
       location,
+      vendorCode,
     } = req.body;
 
     if (!name || !deviceId) {
       return res.status(400).json({
         status: false,
         message: "name and deviceId are required",
+      });
+    }
+
+    const normalizedVendorCode = String(vendorCode || "").trim().toUpperCase();
+    if (!normalizedVendorCode) {
+      return res.status(400).json({
+        status: false,
+        message: "vendorCode is required",
       });
     }
     const resolvedLocation = String(location || "").trim();
@@ -753,14 +769,15 @@ exports.register = async (req, res) => {
       });
     }
     const locationRecord = await LocationModel.findOne({
+      vendorCode: normalizedVendorCode,
       name: new RegExp(`^${escapeRegExp(resolvedLocation)}$`, "i"),
     })
-      .select("name")
+      .select("name vendorCode")
       .lean();
     if (!locationRecord?.name) {
       return res.status(400).json({
         status: false,
-        message: "Invalid location",
+        message: "Invalid vendorCode or location",
       });
     }
     const effectiveLocation = String(locationRecord.name || "").trim();
@@ -780,6 +797,7 @@ exports.register = async (req, res) => {
           name: displayName,
           employeeId,
           location: effectiveLocation,
+          vendorCode: normalizedVendorCode,
           email: null,
         });
         const rfid = await generateUniqueRfid(employeeId);
@@ -787,6 +805,7 @@ exports.register = async (req, res) => {
           name: displayName,
           employeeId,
           location: effectiveLocation,
+          vendorCode: normalizedVendorCode,
           userId: user._id,
           email: null,
           rfid,
@@ -802,6 +821,7 @@ exports.register = async (req, res) => {
             name: displayName || employee.name,
             employeeId,
             location: effectiveLocation,
+            vendorCode: normalizedVendorCode,
             email: null,
           });
           await EmployeeModel.updateOne(
@@ -824,7 +844,15 @@ exports.register = async (req, res) => {
         if (employeeLocation !== effectiveLocation) {
           employee = await EmployeeModel.findByIdAndUpdate(
             employee._id,
-            { $set: { location: effectiveLocation } },
+            { $set: { location: effectiveLocation, vendorCode: normalizedVendorCode } },
+            { new: true }
+          );
+        }
+        const employeeVendorCode = String(employee.vendorCode || "").trim().toUpperCase();
+        if (!employeeVendorCode || employeeVendorCode !== normalizedVendorCode) {
+          employee = await EmployeeModel.findByIdAndUpdate(
+            employee._id,
+            { $set: { vendorCode: normalizedVendorCode } },
             { new: true }
           );
         }
@@ -832,7 +860,15 @@ exports.register = async (req, res) => {
         if (userLocation !== effectiveLocation) {
           user = await UserModel.findByIdAndUpdate(
             user._id,
-            { $set: { location: effectiveLocation } },
+            { $set: { location: effectiveLocation, vendorCode: normalizedVendorCode } },
+            { new: true }
+          );
+        }
+        const userVendorCode = String(user.vendorCode || "").trim().toUpperCase();
+        if (!userVendorCode || userVendorCode !== normalizedVendorCode) {
+          user = await UserModel.findByIdAndUpdate(
+            user._id,
+            { $set: { vendorCode: normalizedVendorCode } },
             { new: true }
           );
         }
@@ -846,6 +882,7 @@ exports.register = async (req, res) => {
           name: toDisplayName(name),
           deviceId: normalizedDeviceId,
           location: effectiveLocation,
+          vendorCode: normalizedVendorCode,
         });
       }
       if (visitor?.name) {
@@ -853,7 +890,7 @@ exports.register = async (req, res) => {
         if (displayName && displayName !== visitor.name) {
           visitor = await VisitorModel.findByIdAndUpdate(
             visitor._id,
-            { $set: { name: displayName } },
+            { $set: { name: displayName, vendorCode: normalizedVendorCode } },
             { new: true }
           );
         }
@@ -863,7 +900,15 @@ exports.register = async (req, res) => {
       if (visitorLocation !== effectiveLocation) {
         visitor = await VisitorModel.findByIdAndUpdate(
           visitor._id,
-          { $set: { location: effectiveLocation } },
+          { $set: { location: effectiveLocation, vendorCode: normalizedVendorCode } },
+          { new: true }
+        );
+      }
+      const visitorVendorCode = String(visitor.vendorCode || "").trim().toUpperCase();
+      if (!visitorVendorCode || visitorVendorCode !== normalizedVendorCode) {
+        visitor = await VisitorModel.findByIdAndUpdate(
+          visitor._id,
+          { $set: { vendorCode: normalizedVendorCode } },
           { new: true }
         );
       }
@@ -896,6 +941,7 @@ exports.register = async (req, res) => {
       userId: user._id,
       employeeId: effectiveEmployeeId,
       deviceId,
+      vendorCode: normalizedVendorCode,
       deviceName: deviceName || deviceId,
       name,
       platform,

@@ -1,5 +1,5 @@
 // Location/Edit.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MdEditLocationAlt } from "react-icons/md";
 import { getData, putData } from "../../../Helpers/api.js";
@@ -7,6 +7,10 @@ import { getData, putData } from "../../../Helpers/api.js";
 const LocationEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendorCode, setSelectedVendorCode] = useState("");
+  const [vendorError, setVendorError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -17,6 +21,10 @@ const LocationEdit = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const vendorOptions = useMemo(() => {
+    return Array.isArray(vendors) ? vendors : [];
+  }, [vendors]);
+
   useEffect(() => {
     const fetchLocation = async () => {
       setLoading(true);
@@ -24,6 +32,7 @@ const LocationEdit = () => {
       try {
         const res = await getData(`/location/${id}`);
         if (res?.status && res?.data) {
+          setSelectedVendorCode(String(res.data.vendorCode || "").toUpperCase());
           setForm({
             name: res.data.name || "",
             lat: res.data.lat ?? "",
@@ -42,11 +51,30 @@ const LocationEdit = () => {
     fetchLocation();
   }, [id]);
 
+  useEffect(() => {
+    const loadVendors = async () => {
+      setVendorError("");
+      try {
+        const res = await getData("/vendors");
+        setVendors(res?.vendors || []);
+      } catch (_err) {
+        setVendors([]);
+        setVendorError("Failed to load vendors.");
+      }
+    };
+    loadVendors();
+  }, []);
+
   const update = async () => {
     setError("");
     try {
+      if (!selectedVendorCode) {
+        setError("Vendor code is required.");
+        return;
+      }
       const payload = {
         name: form.name,
+        vendorCode: selectedVendorCode,
         lat: form.lat,
         lng: form.long,
         radius: form.radius,
@@ -101,6 +129,9 @@ const LocationEdit = () => {
         {error && (
           <div className="text-red-600 mb-4 text-sm">{error}</div>
         )}
+        {vendorError ? (
+          <div className="text-red-600 mb-4 text-sm">{vendorError}</div>
+        ) : null}
 
         {/* ===== CONTENT ===== */}
         {loading ? (
@@ -117,6 +148,25 @@ const LocationEdit = () => {
           items-end
         "
           >
+            {/* Vendor */}
+            <div className="lg:col-span-2">
+              <label className="block text-gray-600 mb-1 font-medium">
+                Vendor / Company
+              </label>
+              <select
+                value={selectedVendorCode}
+                onChange={(e) => setSelectedVendorCode(e.target.value)}
+                className="border rounded-lg p-3 w-full outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Select vendor</option>
+                {vendorOptions.map((v) => (
+                  <option key={v.id || v.vendorCode} value={v.vendorCode}>
+                    {(v.vendorCode || "").toUpperCase()} - {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Location Name */}
             <div className="lg:col-span-2">
               <label className="block text-gray-600 mb-1 font-medium">

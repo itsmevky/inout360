@@ -60,6 +60,7 @@ const employeeSchema = {
   role: { type: String, required: true, default: "employee", trim: true },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   location: { type: String, trim: true, default: "", index: true },
+  vendorCode: { type: String, trim: true, uppercase: true, default: "", index: true },
   attendanceStatus: {
     type: String,
     enum: ["Present", "Absent", "On Leave", "Active", "Inactive"],

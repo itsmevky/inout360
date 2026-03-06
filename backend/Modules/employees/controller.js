@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const EmployeeModel = require("./model");
 const UserModel = require("../user/model");
+const LocationModel = require("../location/model");
 const UserSession = require("../user/userSessionsModel");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
@@ -17,6 +18,20 @@ const {
 const PRIVILEGED_ROLES = ["admin", "superadmin"];
 const isPrivilegedRole = (role) =>
   PRIVILEGED_ROLES.includes(String(role || "").toLowerCase());
+
+const normalizeVendorCode = (value) => String(value || "").trim().toUpperCase();
+const escapeRegExp = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const resolveVendorCodeForLocation = async (locationName) => {
+  const name = String(locationName || "").trim();
+  if (!name) return "";
+  const location = await LocationModel.findOne({
+    name: new RegExp(`^${escapeRegExp(name)}$`, "i"),
+  })
+    .select("vendorCode")
+    .lean();
+  return normalizeVendorCode(location?.vendorCode);
+};
 
 const getDotValue = (data, key) => {
   if (!data) return undefined;
@@ -233,6 +248,14 @@ exports.add = async (req, res) => {
       }
       normalized.location = scope.location;
     }
+
+    normalized.vendorCode = await resolveVendorCodeForLocation(normalized.location);
+    if (!normalized.vendorCode) {
+      return res.status(400).json({
+        status: false,
+        message: "Unable to resolve vendorCode for the selected location",
+      });
+    }
     const creatorRole = String(req.user?.role || "").toLowerCase();
     if (["hr", "manager"].includes(creatorRole)) {
       const allowedRoles = ["employee", "contractor", "supervisor"];
@@ -269,12 +292,19 @@ exports.add = async (req, res) => {
         password: null,
         role: normalized.role || "employee",
         location: normalized.location || "",
+        vendorCode: normalized.vendorCode || "",
         profileImage: normalized.profileImage || "",
       });
-    } else if (normalized.profileImage) {
-      await UserModel.findByIdAndUpdate(user._id, {
-        profileImage: normalized.profileImage,
-      });
+    } else {
+      const userUpdates = {
+        ...(normalized.location ? { location: normalized.location } : {}),
+        ...(normalized.vendorCode ? { vendorCode: normalized.vendorCode } : {}),
+        ...(normalized.role ? { role: normalized.role } : {}),
+        ...(normalized.profileImage ? { profileImage: normalized.profileImage } : {}),
+      };
+      if (Object.keys(userUpdates).length) {
+        await UserModel.findByIdAndUpdate(user._id, userUpdates);
+      }
     }
 
     // Do not store password; keep null for employee/user created via this flow
@@ -484,6 +514,15 @@ exports.update = async (req, res) => {
       updates.location = scope.location;
     }
 
+    updates.location = normalizeLocation(updates.location) || existing.location || "";
+    updates.vendorCode = await resolveVendorCodeForLocation(updates.location);
+    if (!updates.vendorCode) {
+      return res.status(400).json({
+        status: false,
+        message: "Unable to resolve vendorCode for the selected location",
+      });
+    }
+
     const previous = req.file ? existing : null;
     if (!req.file && !req.body.profileImage && !req.body.profile_image) {
       delete updates.profileImage;
@@ -505,6 +544,7 @@ exports.update = async (req, res) => {
     if (updated.userId) {
       const userUpdates = {
         location: updated.location || "",
+        vendorCode: updated.vendorCode || "",
         firstName: updated.firstName || "",
         lastName: updated.lastName || "",
         name: updated.name || `${updated.firstName || ""} ${updated.lastName || ""}`.trim(),

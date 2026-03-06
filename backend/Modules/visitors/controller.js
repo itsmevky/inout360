@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const VisitorModel = require("../user/visitorModel");
+const LocationModel = require("../location/model");
 const UserSession = require("../user/userSessionsModel");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
@@ -46,6 +47,20 @@ const stripAddressDotKeys = (source = {}) => {
     }
   });
   return cleaned;
+};
+
+const normalizeVendorCode = (value) => String(value || "").trim().toUpperCase();
+const escapeRegExp = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const resolveVendorCodeForLocation = async (locationName) => {
+  const name = String(locationName || "").trim();
+  if (!name) return "";
+  const location = await LocationModel.findOne({
+    name: new RegExp(`^${escapeRegExp(name)}$`, "i"),
+  })
+    .select("vendorCode")
+    .lean();
+  return normalizeVendorCode(location?.vendorCode);
 };
 
 const normalizePayload = (data = {}) => {
@@ -207,6 +222,14 @@ exports.add = async (req, res) => {
       }
       normalized.location = scope.location;
     }
+
+    normalized.vendorCode = await resolveVendorCodeForLocation(normalized.location);
+    if (!normalized.vendorCode) {
+      return res.status(400).json({
+        status: false,
+        message: "Unable to resolve vendorCode for the selected location",
+      });
+    }
     if (req.file) {
       normalized.profileImage = `/uploads/employees/${req.file.filename}`;
     }
@@ -331,6 +354,15 @@ exports.update = async (req, res) => {
         });
       }
       normalized.location = scope.location;
+    }
+
+    normalized.location = normalizeLocation(normalized.location) || existing.location || "";
+    normalized.vendorCode = await resolveVendorCodeForLocation(normalized.location);
+    if (!normalized.vendorCode) {
+      return res.status(400).json({
+        status: false,
+        message: "Unable to resolve vendorCode for the selected location",
+      });
     }
     if (req.file) {
       normalized.profileImage = `/uploads/employees/${req.file.filename}`;

@@ -25,6 +25,7 @@ const visitorSchemaDefinition = {
   },
   status: { type: String, default: "Active" },
   location: { type: String, trim: true, default: "", index: true },
+  vendorCode: { type: String, trim: true, uppercase: true, default: "", index: true },
   sessionStatus: {
     type: String,
     enum: ["Logged In", "Logout"],
@@ -51,6 +52,7 @@ const visitorTransform = (ret) => ({
   permanentAddress: ret.permanentAddress,
   status: ret.status,
   location: ret.location,
+  vendorCode: ret.vendorCode || "",
   sessionStatus: ret.sessionStatus,
   rfid: ret.rfid,
   deviceId: ret.deviceId,

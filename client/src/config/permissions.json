@@ -16,6 +16,7 @@
       "role": ["create", "read", "update", "delete"],
       "visitors": ["create", "read", "update", "delete"],
       "location": ["create", "read", "update", "delete"],
+      "vendors": ["create", "read", "update", "delete"],
       "device": ["create", "read", "update", "delete"]
     }
   },
@@ -105,4 +106,3 @@
     }
   }
 }
-
