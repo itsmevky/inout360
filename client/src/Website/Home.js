@@ -194,7 +194,7 @@ const Home = () => {
 
       {/* MODERN BEAUTIFUL HEADER */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-slate-200 py-3 shadow-md' : 'bg-white/80 backdrop-blur-sm border-b border-transparent py-5 shadow-sm'}`}>
-        <div className="w-full mx-auto px-6 md:px-12 lg:px-16 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="w-full mx-auto px-6 md:px-12 lg:px-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate("/")}>
             <div className="relative">
               <div className="absolute inset-0 bg-blue-100 rounded-full blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -206,7 +206,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center sm:justify-end gap-3 sm:gap-4 items-center">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex flex-wrap justify-end gap-3 lg:gap-4 items-center">
             <button
               onClick={() => navigate("/app-qr")}
               className="px-6 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 font-bold rounded-xl border border-slate-200 hover:border-blue-200 transition-all duration-300 shadow-sm text-sm"
@@ -233,7 +234,54 @@ const Home = () => {
               Sign In
             </button>
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <div className="md:hidden flex items-center">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-700 p-2 focus:outline-none">
+              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Dropdown */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 overflow-hidden"
+            >
+              <div className="flex flex-col gap-3 px-6 py-6">
+                <button
+                  onClick={() => { setIsMobileMenuOpen(false); navigate("/app-qr"); }}
+                  className="w-full text-center px-6 py-3 bg-slate-50 text-slate-700 font-bold rounded-xl border border-slate-200 text-base"
+                >
+                  Get App
+                </button>
+                <button
+                  onClick={() => { setIsMobileMenuOpen(false); navigate("/qr-login"); }}
+                  className="w-full text-center px-6 py-3 bg-blue-50 text-blue-600 font-bold rounded-xl border border-blue-100 text-base"
+                >
+                  QR Login
+                </button>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("accesstoken");
+                    localStorage.removeItem("refreshtoken");
+                    Cookies.remove("accesstoken");
+                    Cookies.remove("refreshtoken");
+                    setIsMobileMenuOpen(false);
+                    navigate("/login");
+                  }}
+                  className="w-full text-center px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md shadow-blue-200 text-base"
+                >
+                  Sign In
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* 1. HERO SECTION */}
@@ -252,7 +300,7 @@ const Home = () => {
               Next-Gen Security Platform
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
               Next-Gen Security & <br className="hidden md:block" />
               <span className="text-blue-600">
                 Advanced Intelligence

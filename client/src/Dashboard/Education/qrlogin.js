@@ -6,92 +6,53 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import securelogin from "../../Images/secure-login.png";
 import pidilitelogo from "../../Images/PIL.png";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, QrCode } from "lucide-react";
+import "../../Components/Website/LoginPage.css";
 
 const QrLoginComponent = () => {
   const navigate = useNavigate();
 
-  const [userData, setUserdata] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-
+  const [userData, setUserdata] = useState({ email: "", password: "", rememberMe: false });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({ email: false, password: false });
   const [showPassword, setShowPassword] = useState(false);
 
-  /* ================= VALIDATION ================= */
   const rules = {
-    email: {
-      required: true,
-      type: "string",
-      errorMessage: "Email is required.",
-    },
-    password: {
-      required: true,
-      type: "string",
-      errorMessage: "Password is required.",
-    },
+    email: { required: true, type: "string", errorMessage: "Email is required." },
+    password: { required: true, type: "string", errorMessage: "Password is required." },
   };
-
   const validator = new Validator(rules);
 
   const validateFormField = async (name, value) => {
-    const fieldRule = { [name]: rules[name] };
-    const fieldData = { [name]: value };
-    return await validator.validate(fieldData, fieldRule);
+    return await validator.validate({ [name]: value }, { [name]: rules[name] });
   };
 
   const validateform = async (formData) => {
     const validationErrors = await validator.validate(formData, rules);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return true;
-    }
+    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); return true; }
     setErrors({});
     return false;
   };
 
-  /* ================= HANDLERS ================= */
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    setUserdata({
-      ...userData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    setUserdata({ ...userData, [name]: type === "checkbox" ? checked : value });
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleBlur = async (e) => {
     const { name, value } = e.target;
     setTouched({ ...touched, [name]: true });
-
     const fieldErrors = await validateFormField(name, value);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      [name]: fieldErrors[name],
-    }));
+    setErrors((prev) => ({ ...prev, [name]: fieldErrors[name] }));
   };
-
-  const getFieldClassName = (fieldName) =>
-    errors[fieldName] ? "field-error" : "field";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     const hasErrors = await validateform(userData);
-    if (hasErrors) {
-      setLoading(false);
-      return;
-    }
-
+    if (hasErrors) { setLoading(false); return; }
     await sendData(userData);
     setLoading(false);
   };
@@ -100,13 +61,9 @@ const QrLoginComponent = () => {
     try {
       const response = await postData(API.auth.qrLogin, formData);
       const token = response?.accessToken || response?.token;
-
       if (token) {
         localStorage.setItem("qr_access_token", token);
-        if (response?.location) {
-          localStorage.setItem("qr_location", response.location);
-        }
-
+        if (response?.location) localStorage.setItem("qr_location", response.location);
         if (formData.rememberMe) {
           localStorage.setItem("qr_email", formData.email);
           localStorage.setItem("qr_password", formData.password);
@@ -114,7 +71,6 @@ const QrLoginComponent = () => {
           localStorage.removeItem("qr_email");
           localStorage.removeItem("qr_password");
         }
-
         navigate("/qr");
       } else {
         toast.error(response?.message || "Login failed");
@@ -124,103 +80,164 @@ const QrLoginComponent = () => {
     }
   };
 
-  /* ================= ON LOAD ================= */
   useEffect(() => {
     const savedEmail = localStorage.getItem("qr_email");
     const savedPassword = localStorage.getItem("qr_password");
-
     if (savedEmail && savedPassword) {
-      setUserdata({
-        email: savedEmail,
-        password: savedPassword,
-        rememberMe: true,
-      });
+      setUserdata({ email: savedEmail, password: savedPassword, rememberMe: true });
     }
-
     const accessToken = localStorage.getItem("qr_access_token");
     if (accessToken) navigate("/qr");
   }, [navigate]);
 
-  /* ================= UI ================= */
   return (
     <>
-      <div className="main-inner login-page">
-        <div className="sections">
-          <div className="left-section">
-            <img width="100%" src={securelogin} alt="Secure Login" />
+      <div className="pil-login-root">
+        <div className="pil-login-layout">
+
+          {/* ── LEFT PANEL ── */}
+          <div className="pil-login-left">
+            <div className="pil-left-content">
+              <div className="pil-left-badge">
+                <span></span>
+                QR Attendance System
+              </div>
+              <img
+                src={securelogin}
+                alt="QR Login illustration"
+                className="pil-left-illustration"
+              />
+              <h2 className="pil-left-headline">
+                Touchless <span>Check-In</span> Experience
+              </h2>
+              <p className="pil-left-sub">
+                Sign in once to activate QR-based attendance for your location. Fast, secure, and contactless.
+              </p>
+              <div className="pil-left-stats">
+                <div className="pil-stat">
+                  <div className="pil-stat-number">&lt;2s</div>
+                  <div className="pil-stat-label">Scan Time</div>
+                </div>
+                <div className="pil-stat">
+                  <div className="pil-stat-number">Auto</div>
+                  <div className="pil-stat-label">Refresh</div>
+                </div>
+                <div className="pil-stat">
+                  <div className="pil-stat-number">Offline</div>
+                  <div className="pil-stat-label">Ready</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="right-section">
-            <div className="form-justification AJ-section">
-              <form onSubmit={handleSubmit} className="login-form">
-                <img
-                  className="login-page-logo"
-                  width={200}
-                  src={pidilitelogo}
-                  alt="Logo"
-                />
+          {/* ── RIGHT PANEL ── */}
+          <div className="pil-login-right">
+            <div className="pil-card">
 
-                <h2>QR Login</h2>
+              {/* Logo */}
+              <div className="pil-card-logo">
+                <img src={pidilitelogo} alt="PIL Logo" />
+              </div>
+
+              {/* QR badge */}
+              <div className="pil-qr-badge">
+                <QrCode size={20} />
+                QR Station Login — Admin Access Required
+              </div>
+
+              {/* Title */}
+              <div className="pil-card-title">
+                <h1>QR Login</h1>
+                <p>Authenticate to activate QR attendance for this device</p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} noValidate>
 
                 {/* Email */}
-                <div className="AJ-floating-label-wrapper">
-                  <input
-                    type="text"
-                    name="email"
-                    value={userData.email}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    className={`${getFieldClassName("email")} AJ-floating-input`}
-                  />
-                  <label className="AJ-floating-label">Email</label>
+                <div className="pil-field-group">
+                  <label className="pil-field-label" htmlFor="qr-email">Email Address</label>
+                  <div className="pil-field-wrap">
+                    <span className="pil-field-icon"><Mail size={16} /></span>
+                    <input
+                      id="qr-email"
+                      type="text"
+                      name="email"
+                      value={userData.email}
+                      placeholder="admin@company.com"
+                      autoComplete="email"
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      className={`pil-field-input${errors.email ? " pil-has-error" : ""}`}
+                    />
+                  </div>
+                  {errors.email && <div className="pil-field-error">⚠ {errors.email}</div>}
                 </div>
 
                 {/* Password */}
-                <div className="AJ-floating-label-wrapper password-wrapper">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={userData.password}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    className={`${getFieldClassName(
-                      "password"
-                    )} AJ-floating-input`}
-                  />
-                  <span
-                    className="password-toggle-icon"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </span>
-                  <label className="AJ-floating-label">Password</label>
+                <div className="pil-field-group">
+                  <label className="pil-field-label" htmlFor="qr-password">Password</label>
+                  <div className="pil-field-wrap">
+                    <span className="pil-field-icon"><Lock size={16} /></span>
+                    <input
+                      id="qr-password"
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={userData.password}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      className={`pil-field-input${errors.password ? " pil-has-error" : ""}`}
+                    />
+                    <button
+                      type="button"
+                      className="pil-pw-toggle"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.password && <div className="pil-field-error">⚠ {errors.password}</div>}
                 </div>
 
-                {/* Remember */}
-                <div className="side-section">
-                  <label className="remember-me-container">
+                {/* Remember Me */}
+                <div className="pil-row-rf">
+                  <label className="pil-remember">
                     <input
                       type="checkbox"
                       name="rememberMe"
                       checked={userData.rememberMe}
                       onChange={handleInputChange}
                     />
-                    Remember Me
+                    Remember this device
                   </label>
                 </div>
 
-                <button className="button-section" type="submit">
-                  Login
+                {/* Submit */}
+                <button
+                  id="qr-login-submit-btn"
+                  type="submit"
+                  className="pil-btn-submit"
+                  disabled={loading}
+                >
+                  {loading
+                    ? <><span className="pil-btn-spinner"></span>Authenticating…</>
+                    : "Activate QR Station"}
                 </button>
+
               </form>
             </div>
           </div>
+
         </div>
       </div>
 
       {loading && (
-        <div className="loader-wrapper">
-          <div className="loader"></div>
+        <div className="pil-loader-overlay">
+          <div className="pil-loader-ring"></div>
         </div>
       )}
     </>

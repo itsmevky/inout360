@@ -1,0 +1,113 @@
+--- a/client/src/Components/Website/LoginPage.css
++++ b/client/src/Components/Website/LoginPage.css
+@@ -25,7 +25,8 @@
+ /* ── Full-page wrapper ── */
+ .pil-login-root {
+-    min-height: 100vh;
++    height: 100vh;
+     width: 100%;
+     display: flex;
+     align-items: stretch;
+@@ -78,7 +79,7 @@
+     z-index: 1;
+     display: flex;
+     width: 100%;
+-    min-height: 100vh;
++    height: 100vh;
+ }
+ 
+@@ -88,7 +89,7 @@
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+-    justify-content: center;
+-    padding: 60px 40px;
++    justify-content: space-evenly;
++    padding: 20px 40px;
+     position: relative;
+     overflow: hidden;
+@@ -133,7 +134,7 @@
+     letter-spacing: 0.5px;
+-    margin-bottom: 28px;
++    margin-bottom: 16px;
+     backdrop-filter: blur(8px);
+ }
+ 
+@@ -166,7 +167,8 @@
+     filter: drop-shadow(0 24px 48px rgba(42, 106, 191, 0.35));
+     animation: floatImg 5s ease-in-out infinite;
+     border-radius: 16px;
+-    margin-bottom: 40px;
++    margin-bottom: 20px;
++    max-height: 35vh;
++    object-fit: contain;
+ }
+ 
+@@ -211,7 +213,7 @@
+     display: flex;
+     justify-content: center;
+     gap: 16px;
+-    margin-top: 36px;
++    margin-top: 24px;
+     flex-wrap: wrap;
+ }
+ 
+@@ -241,7 +243,7 @@
+     display: flex;
+     align-items: center;
+     justify-content: center;
+-    padding: 40px 32px;
++    padding: 20px 32px;
+     position: relative;
+ }
+ 
+@@ -265,7 +267,7 @@
+     border: 1px solid rgba(255, 255, 255, 0.13);
+     border-radius: 24px;
+-    padding: 44px 38px;
++    padding: 32px 38px;
+     backdrop-filter: blur(32px);
+@@ -292,7 +294,7 @@
+     align-items: center;
+     justify-content: center;
+     text-align: center;
+-    margin-bottom: 32px;
++    margin-bottom: 20px;
+     width: 100%;
+ }
+ 
+@@ -300,7 +302,7 @@
+     width: 160px;
+-    height: auto;
++    height: 70px;
++    object-fit: contain;
+     /* screen blend makes the white background transparent on dark backgrounds */
+@@ -314,7 +316,7 @@
+ .pil-card-title {
+     text-align: center;
+-    margin-bottom: 32px;
++    margin-bottom: 20px;
+ }
+ 
+@@ -332,7 +334,7 @@
+ /* ── Form fields ── */
+ .pil-field-group {
+-    margin-bottom: 18px;
++    margin-bottom: 14px;
+ }
+ 
+@@ -424,7 +426,7 @@
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+-    margin: 18px 0 24px;
++    margin: 14px 0 20px;
+ }
+ 
+@@ -522,7 +524,7 @@
+     display: flex;
+     align-items: center;
+     gap: 12px;
+-    margin: 20px 0;
++    margin: 16px 0;
+     color: rgba(255, 255, 255, 0.3);
