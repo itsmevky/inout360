@@ -41,7 +41,8 @@ const corsOptions = {
     "http://localhost:3002",
     "http://localhost:5000",
     "http://localhost:4001",
-    "https://pidiliteapp.ajivainfotech.com"
+    "https://pidiliteapp.ajivainfotech.com",
+    "https://pil.ajivainfotech.com"
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   allowedHeaders: "Content-Type, Authorization",

@@ -13,6 +13,7 @@ const Settings = () => {
     const canUpdateSettings = can(userRole, "settings", "update");
     const viewOnly = canReadSettings && !canUpdateSettings;
     const canSelectLocation = userRole === "superadmin" && canUpdateSettings;
+    const showAdvancedSettings = userRole === "superadmin";
 
     const defaultDevice = {
         cameraAccess: true,
@@ -233,22 +234,28 @@ const Settings = () => {
                     {/* ========= TOP SECTION ========= */}
                     <div className="bg-white p-6 rounded-xl !mb-4  shadow-sm border border-gray-200 setting-page-System-Configuration">
                         <h2 className="text-xl font-bold text-gray-800">System Configuration</h2>
-                        <p className="text-sm text-gray-500 mt-1">API, Logo, APK, Location settings</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {showAdvancedSettings
+                                ? "API, Logo, APK, Location settings"
+                                : "Location, QR expiry, OTP email, Working hours"}
+                        </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
-                            {/* API URL */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
-                                <input
-                                    type="text"
-                                    value={systemConfig.apiEndpointUrl}
-                                    placeholder="https://your-backend.com/api/"
-                                    onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
-                                    disabled={viewOnly}
-                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400 disabled:opacity-70"
-                                />
-                            </div>
+                            {/* API URL (Superadmin dashboard only) */}
+                            {showAdvancedSettings && (
+                                <div>
+                                    <label className="setting-System-Configuration text-gray-700 font-semibold">API Endpoint URL</label>
+                                    <input
+                                        type="text"
+                                        value={systemConfig.apiEndpointUrl}
+                                        placeholder="https://your-backend.com/api/"
+                                        onChange={(e) => handleConfigChange("apiEndpointUrl", e.target.value)}
+                                        disabled={viewOnly}
+                                        className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400 disabled:opacity-70"
+                                    />
+                                </div>
+                            )}
 
                             {/* Unit Location */}
                             <div>
@@ -282,51 +289,55 @@ const Settings = () => {
                             </div>
 
 
-                            {/* APK Upload */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
-                                <input
-                                    type="file"
-                                    accept=".apk"
-                                    onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
-                                    disabled={!canUpdateSettings}
-                                    className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 disabled:opacity-70"
-                                />
-                                {systemConfig.apkFileUrl && (
-                                    <a
-                                        className="text-sm text-blue-600 underline mt-2 inline-block"
-                                        href={`${baseUrl}${systemConfig.apkFileUrl}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        View current APK
-                                    </a>
-                                )}
-                            </div>
-
-                            {/* Logo Upload */}
-                            <div>
-                                <label className="setting-System-Configuration text-gray-700 font-semibold">Company Logo</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => handleConfigChange("logoFile", e.target.files[0])}
-                                    disabled={!canUpdateSettings}
-                                    className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50 disabled:opacity-70"
-                                />
-
-                                {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
-                                    <img
-                                        src={
-                                            systemConfig.logoFile
-                                                ? URL.createObjectURL(systemConfig.logoFile)
-                                                : `${baseUrl}${systemConfig.companyLogoUrl}`
-                                        }
-                                        className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
-                                        alt="Preview"
+                            {/* APK Upload (Superadmin dashboard only) */}
+                            {showAdvancedSettings && (
+                                <div>
+                                    <label className="setting-System-Configuration text-gray-700 font-semibold">Upload APK File</label>
+                                    <input
+                                        type="file"
+                                        accept=".apk"
+                                        onChange={(e) => handleConfigChange("apkFile", e.target.files[0])}
+                                        disabled={viewOnly}
+                                        className="w-full mt-2 border border-gray-400 p-3 rounded-lg bg-gray-50 disabled:opacity-70"
                                     />
-                                )}
-                            </div>
+                                    {systemConfig.apkFileUrl && (
+                                        <a
+                                            className="text-sm text-blue-600 underline mt-2 inline-block"
+                                            href={`${baseUrl}${systemConfig.apkFileUrl}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            View current APK
+                                        </a>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Logo Upload (Superadmin dashboard only) */}
+                            {showAdvancedSettings && (
+                                <div>
+                                    <label className="setting-System-Configuration text-gray-700 font-semibold">Company Logo</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleConfigChange("logoFile", e.target.files[0])}
+                                        disabled={viewOnly}
+                                        className="w-full mt-2 border p-3 border-gray-400  rounded-lg bg-gray-50 disabled:opacity-70"
+                                    />
+
+                                    {(systemConfig.logoFile || systemConfig.companyLogoUrl) && (
+                                        <img
+                                            src={
+                                                systemConfig.logoFile
+                                                    ? URL.createObjectURL(systemConfig.logoFile)
+                                                    : `${baseUrl}${systemConfig.companyLogoUrl}`
+                                            }
+                                            className="mt-3 w-24 h-24 object-contain rounded-lg shadow border"
+                                            alt="Preview"
+                                        />
+                                    )}
+                                </div>
+                            )}
 
                             {/* ✅ OTP Email */}
                             {/* <div>
@@ -479,7 +490,8 @@ const Settings = () => {
                     </div>
 
                     {/* ========= FLEX BOTTOM CARDS ========= */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
+                    {showAdvancedSettings && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
 
                         {/* Device Controls */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Device-Controls">
@@ -549,7 +561,8 @@ const Settings = () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
+                        </div>
+                    )}
 
                     {/* ========= SAVE / CANCEL BUTTONS ========= */}
                     {canUpdateSettings && isChanged && !loading && (
