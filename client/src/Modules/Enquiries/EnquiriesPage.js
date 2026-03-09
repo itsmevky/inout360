@@ -355,28 +355,30 @@ const EnquiriesPage = () => {
             {/* ===== MODAL ===== */}
             {selectedEnquiry && (
                 <div className="modal-overlay">
-                    <div className="modal-container max-w-xl p-6 rounded-xl shadow-lg bg-white relative">
+                    <div className="modal-wrapper">
                         <button
                             onClick={() => setSelectedEnquiry(null)}
-                            className="absolute top-4 right-4 w-9 h-9 !mr-0 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
+                            className="modal-close-btn"
                         >
                             ✕
                         </button>
+                        <div className="modal-container max-w-xl p-6 rounded-xl shadow-lg bg-white relative">
 
-                        {/* <h2 className="text-2xl font-bold mb-4 text-blue-700">
+                            {/* <h2 className="text-2xl font-bold mb-4 text-blue-700">
                             {selectedEnquiry.subject}
                         </h2> */}
 
-                        <p><strong>Name:</strong> {selectedEnquiry.name}</p>
-                        <p><strong>Phone:</strong> {selectedEnquiry.phone}</p>
-                        <p><strong>Employee Id:</strong> {selectedEnquiry.employeeId}</p>
-                        <p><strong>Device Id:</strong> {selectedEnquiry.deviceId}</p>
+                            <p><strong>Name:</strong> {selectedEnquiry.name}</p>
+                            <p><strong>Phone:</strong> {selectedEnquiry.phone}</p>
+                            <p><strong>Employee Id:</strong> {selectedEnquiry.employeeId}</p>
+                            <p><strong>Device Id:</strong> {selectedEnquiry.deviceId}</p>
 
-                        <p><strong>Email:</strong> {selectedEnquiry.email}</p>
+                            <p><strong>Email:</strong> {selectedEnquiry.email}</p>
 
-                        <div className="mt-4 py-3 px-2 bg-gray-50 rounded-lg">
-                            <p className="font-semibold mb-1 ">Message</p>
-                            <p className="text-gray-700">{selectedEnquiry.message}</p>
+                            <div className="mt-4 py-3 px-2 bg-gray-50 rounded-lg">
+                                <p className="font-semibold mb-1 ">Message</p>
+                                <p className="text-gray-700">{selectedEnquiry.message}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

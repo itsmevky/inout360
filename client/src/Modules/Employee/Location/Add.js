@@ -165,24 +165,20 @@ const LocationAdd = () => {
 
         {/* ===== CREATE VENDOR MODAL ===== */}
         {isVendorFormOpen ? (
-          <>
-            <div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-              onClick={() => setIsVendorFormOpen(false)}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="modal-overlay">
+            <div className="modal-wrapper">
+              <button
+                type="button"
+                onClick={() => setIsVendorFormOpen(false)}
+                className="modal-close-btn"
+              >
+                ✕
+              </button>
               <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-5 border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-800">
                     Create Vendor
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => setIsVendorFormOpen(false)}
-                    className="px-3 py-1 rounded-lg border border-gray-300 hover:bg-gray-100"
-                  >
-                    ✕
-                  </button>
                 </div>
 
                 {vendorError ? (
@@ -241,7 +237,7 @@ const LocationAdd = () => {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         ) : null}
 
         {/* ===== FORM GRID ===== */}

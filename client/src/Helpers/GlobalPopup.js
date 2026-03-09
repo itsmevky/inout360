@@ -13,15 +13,17 @@ const GlobalPopup = ({ isVisible, onClose, children }) => {
   if (!isVisible) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-[9999]">
-      <div className="bg-white rounded-xl p-6 shadow-lg relative w-full max-w-xl">
+    <div className="modal-overlay z-[10000]">
+      <div className="modal-wrapper">
         <button
-          className="absolute top-2 right-2 text-red-500 text-lg font-bold"
+          className="modal-close-btn"
           onClick={onClose}
         >
-          ×
+          ✕
         </button>
-        {children}
+        <div className="modal-container !max-w-xl">
+          {children}
+        </div>
       </div>
     </div>,
     document.body

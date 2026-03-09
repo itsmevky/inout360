@@ -1416,199 +1416,201 @@ const ActivityPage = () => {
             {/* ================= MODAL ================= */}
             {modalUser && (
                 <div className="modal-overlay">
-                    <div className="modal-container">
-
+                    <div className="modal-wrapper">
                         <button
                             onClick={closeModal}
                             className="modal-close-btn"
                         >
                             ✕
                         </button>
+                        <div className="modal-container">
 
-                        <div className="modal-header modal-header--compact">
-                            <h2 className="modal-user-name">Name: {modalUser.user}</h2>
-                            <p className="modal-meta">
-                                Employee ID: {modalUser.activities[0]?.employeeId}
-                            </p>
-                            <p className="modal-meta">
-                                Device ID: {modalUser.activities[0]?.deviceId}
-                            </p>
-                        </div>
-
-                        <div className="modal-activity-filters modal-activity-filters--compact">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <h3 className="modal-section-title !m-0">User Activities</h3>
-                                <span className="text-sm text-gray-600">
-                                    Policy Violation: {modalPolicyCounts.policyTotal}/
-                                    {modalPolicyCounts.policyToday}
-                                </span>
-                            </div>
-                            <div className="modal-activity-controls">
-                                <input
-                                    type="date"
-                                    className="border rounded p-2 activity-page-date-from modal-filter-input"
-                                    value={modalFromDate}
-                                    onChange={(e) => setModalFromDate(e.target.value)}
-                                />
-                                <input
-                                    type="date"
-                                    className="border rounded p-2 activity-page-date-to modal-filter-input"
-                                    value={modalToDate}
-                                    onChange={(e) => setModalToDate(e.target.value)}
-                                />
-                                {(modalFromDate || modalToDate) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setModalFromDate("");
-                                            setModalToDate("");
-                                        }}
-                                        className="modal-filter-clear"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {modalActivities.length === 0 ? (
-                            <p className="text-gray-500 text-sm">No activity found for this user.</p>
-                        ) : (
-                            <div className="activity-table-scroll">
-                                <table className="w-full border-collapse activity-table">
-                                    <thead>
-                                        <tr className="bg-gray-100 text-left text-gray-700">
-                                            <th className="p-3">Activity</th>
-                                            <th className="p-3">Device ID</th>
-                                            <th className="p-3">Time</th>
-                                            <th className="p-3">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paginatedModalActivities.map((act, index) => (
-                                            <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
-                                                <td className="p-3">
-                                                    {formatActivityLabel(act, { compact: true })}
-                                                </td>
-                                                <td className="p-3">{act.deviceId || "-"}</td>
-                                                <td className="p-3">{formatTimestamp(act.timestamp)}</td>
-                                                <td className="p-3">
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedActivity(act);
-                                                            const type = String(act.type || act.category || "").toLowerCase();
-                                                            if (["app_access", "app_uninstall"].includes(type)) {
-                                                                setMediaModalActivity({
-                                                                    ...act,
-                                                                    media: "",
-                                                                    mediaTypeOverride: "none",
-                                                                });
-                                                            } else {
-                                                                setMediaModalActivity(act);
-                                                            }
-                                                        }}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
-                                                        title="View Details"
-                                                    >
-                                                        <svg
-                                                            width={22}
-                                                            height={22}
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 576 512">
-                                                            <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
-                                                        </svg>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                        {modalActivities.length > 0 ? (
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
-                                <p
-                                    className="text-sm text-gray-600 whitespace-nowrap"
-                                    style={{ whiteSpace: "nowrap" }}
-                                >
-                                    Showing {(modalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
-                                    {Math.min(
-                                        modalPage * MODAL_ITEMS_PER_PAGE,
-                                        modalActivities.length
-                                    )}{" "}
-                                    of {modalActivities.length}
+                            <div className="modal-header modal-header--compact">
+                                <h2 className="modal-user-name">Name: {modalUser.user}</h2>
+                                <p className="modal-meta">
+                                    Employee ID: {modalUser.activities[0]?.employeeId}
                                 </p>
-                                <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
-                                    <button
-                                        disabled={modalPage === 1}
-                                        onClick={() => setModalPage((p) => Math.max(p - 1, 1))}
-                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                                        aria-label="Previous page"
-                                    >
-                                        ‹
-                                    </button>
-                                    <div className="flex flex-nowrap gap-2">
-                                        {renderPaginationButtons(
-                                            modalPage,
-                                            modalTotalPages,
-                                            setModalPage
-                                        )}
-                                    </div>
-                                    <button
-                                        disabled={modalPage === modalTotalPages}
-                                        onClick={() =>
-                                            setModalPage((p) =>
-                                                Math.min(p + 1, modalTotalPages)
-                                            )
-                                        }
-                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                                        aria-label="Next page"
-                                    >
-                                        ›
-                                    </button>
+                                <p className="modal-meta">
+                                    Device ID: {modalUser.activities[0]?.deviceId}
+                                </p>
+                            </div>
+
+                            <div className="modal-activity-filters modal-activity-filters--compact">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <h3 className="modal-section-title !m-0">User Activities</h3>
+                                    <span className="text-sm text-gray-600">
+                                        Policy Violation: {modalPolicyCounts.policyTotal}/
+                                        {modalPolicyCounts.policyToday}
+                                    </span>
+                                </div>
+                                <div className="modal-activity-controls">
+                                    <input
+                                        type="date"
+                                        className="border rounded p-2 activity-page-date-from modal-filter-input"
+                                        value={modalFromDate}
+                                        onChange={(e) => setModalFromDate(e.target.value)}
+                                    />
+                                    <input
+                                        type="date"
+                                        className="border rounded p-2 activity-page-date-to modal-filter-input"
+                                        value={modalToDate}
+                                        onChange={(e) => setModalToDate(e.target.value)}
+                                    />
+                                    {(modalFromDate || modalToDate) && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setModalFromDate("");
+                                                setModalToDate("");
+                                            }}
+                                            className="modal-filter-clear"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                        ) : null}
+
+                            {modalActivities.length === 0 ? (
+                                <p className="text-gray-500 text-sm">No activity found for this user.</p>
+                            ) : (
+                                <div className="activity-table-scroll">
+                                    <table className="w-full border-collapse activity-table">
+                                        <thead>
+                                            <tr className="bg-gray-100 text-left text-gray-700">
+                                                <th className="p-3">Activity</th>
+                                                <th className="p-3">Device ID</th>
+                                                <th className="p-3">Time</th>
+                                                <th className="p-3">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {paginatedModalActivities.map((act, index) => (
+                                                <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
+                                                    <td className="p-3">
+                                                        {formatActivityLabel(act, { compact: true })}
+                                                    </td>
+                                                    <td className="p-3">{act.deviceId || "-"}</td>
+                                                    <td className="p-3">{formatTimestamp(act.timestamp)}</td>
+                                                    <td className="p-3">
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedActivity(act);
+                                                                const type = String(act.type || act.category || "").toLowerCase();
+                                                                if (["app_access", "app_uninstall"].includes(type)) {
+                                                                    setMediaModalActivity({
+                                                                        ...act,
+                                                                        media: "",
+                                                                        mediaTypeOverride: "none",
+                                                                    });
+                                                                } else {
+                                                                    setMediaModalActivity(act);
+                                                                }
+                                                            }}
+                                                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+                                                            title="View Details"
+                                                        >
+                                                            <svg
+                                                                width={22}
+                                                                height={22}
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 576 512">
+                                                                <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+                                                            </svg>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                            {modalActivities.length > 0 ? (
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+                                    <p
+                                        className="text-sm text-gray-600 whitespace-nowrap"
+                                        style={{ whiteSpace: "nowrap" }}
+                                    >
+                                        Showing {(modalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
+                                        {Math.min(
+                                            modalPage * MODAL_ITEMS_PER_PAGE,
+                                            modalActivities.length
+                                        )}{" "}
+                                        of {modalActivities.length}
+                                    </p>
+                                    <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+                                        <button
+                                            disabled={modalPage === 1}
+                                            onClick={() => setModalPage((p) => Math.max(p - 1, 1))}
+                                            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                            aria-label="Previous page"
+                                        >
+                                            ‹
+                                        </button>
+                                        <div className="flex flex-nowrap gap-2">
+                                            {renderPaginationButtons(
+                                                modalPage,
+                                                modalTotalPages,
+                                                setModalPage
+                                            )}
+                                        </div>
+                                        <button
+                                            disabled={modalPage === modalTotalPages}
+                                            onClick={() =>
+                                                setModalPage((p) =>
+                                                    Math.min(p + 1, modalTotalPages)
+                                                )
+                                            }
+                                            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                            aria-label="Next page"
+                                        >
+                                            ›
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 </div>
-            )
-            }
+            )}
 
             {mediaModalActivity && (
                 <div className="modal-overlay">
-                    <div className="modal-container modal-container--media">
+                    <div className="modal-wrapper">
                         <button
                             onClick={() => setMediaModalActivity(null)}
                             className="modal-close-btn"
                         >
                             ✕
                         </button>
-                        <div className="modal-header">
-                            <h2 className="modal-user-name">
-                                {(mediaModalActivity.type || mediaModalActivity.category || "-")
-                                    .replace("_", " ")
-                                    .toUpperCase()}
-                            </h2>
-                            <p className="modal-meta">
-                                {formatTimestamp(mediaModalActivity.timestamp)}
-                            </p>
-                        </div>
-                        <div className="mt-2">
-                            {(() => {
-                                const fullMessage = mediaModalActivity.narrative || mediaModalActivity.rawEvent || "";
-                                return (
-                                    <div className="text-sm text-gray-700 mb-4 whitespace-pre-wrap font-medium">
-                                        {fullMessage}
-                                    </div>
-                                );
-                            })()}
-                            {resolveMediaType(mediaModalActivity) === "video" && (
-                                <video
-                                    src={mediaModalActivity.media}
-                                    controls
-                                    className="w-full rounded-lg"
-                                />
-                            )}
+                        <div className="modal-container modal-container--media">
+                            <div className="modal-header">
+                                <h2 className="modal-user-name">
+                                    {(mediaModalActivity.type || mediaModalActivity.category || "-")
+                                        .replace("_", " ")
+                                        .toUpperCase()}
+                                </h2>
+                                <p className="modal-meta">
+                                    {formatTimestamp(mediaModalActivity.timestamp)}
+                                </p>
+                            </div>
+                            <div className="mt-2">
+                                {(() => {
+                                    const fullMessage = mediaModalActivity.narrative || mediaModalActivity.rawEvent || "";
+                                    return (
+                                        <div className="text-sm text-gray-700 mb-4 whitespace-pre-wrap font-medium">
+                                            {fullMessage}
+                                        </div>
+                                    );
+                                })()}
+                                {resolveMediaType(mediaModalActivity) === "video" && (
+                                    <video
+                                        src={mediaModalActivity.media}
+                                        controls
+                                        className="w-full rounded-lg"
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1616,99 +1618,101 @@ const ActivityPage = () => {
 
             {inOutModalUser && (
                 <div className="modal-overlay">
-                    <div className="modal-container">
+                    <div className="modal-wrapper">
                         <button
                             onClick={closeInOutModal}
                             className="modal-close-btn"
                         >
                             ✕
                         </button>
-                        <div className="modal-header modal-header--compact">
-                            <h2 className="modal-user-name">Name: {inOutModalUser.user || "-"}</h2>
-                            <p className="modal-meta">
-                                Employee ID: {inOutModalUser.employeeId || "-"}
-                            </p>
-                            <p className="modal-meta">
-                                Device ID: {inOutModalUser.deviceId || "-"}
-                            </p>
-                        </div>
-                        {paginatedInOutModalEntries.length === 0 ? (
-                            <p className="text-gray-500 text-sm">No in/out activity found for this user.</p>
-                        ) : (
-                            <div className="activity-table-scroll">
-                                <table className="w-full border-collapse activity-table">
-                                    <thead>
-                                        <tr className="bg-gray-100 text-left text-gray-700">
-                                            <th className="p-3">Activity</th>
-                                            <th className="p-3">Device ID</th>
-                                            <th className="p-3">Employee ID</th>
-                                            <th className="p-3">Time</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paginatedInOutModalEntries.map((event, index) => (
-                                            <tr key={event.entry?._id || event.entry?.id || index} className="hover:bg-gray-50">
-                                                <td className="p-3">{event.kind}</td>
-                                                <td className="p-3">{resolveAttendanceDeviceId(event.entry)}</td>
-                                                <td className="p-3">{event.entry?.employeeId || "-"}</td>
-                                                <td className="p-3">
-                                                    {formatTimestamp(event.time)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                        {inOutModalEvents.length > 0 ? (
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
-                                <p
-                                    className="text-sm text-gray-600 whitespace-nowrap"
-                                    style={{ whiteSpace: "nowrap" }}
-                                >
-                                    Showing {(inOutModalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
-                                    {Math.min(
-                                        inOutModalPage * MODAL_ITEMS_PER_PAGE,
-                                        inOutModalEvents.length
-                                    )}{" "}
-                                    of {inOutModalEvents.length}
+                        <div className="modal-container">
+                            <div className="modal-header modal-header--compact">
+                                <h2 className="modal-user-name">Name: {inOutModalUser.user || "-"}</h2>
+                                <p className="modal-meta">
+                                    Employee ID: {inOutModalUser.employeeId || "-"}
                                 </p>
-                                <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
-                                    <button
-                                        disabled={inOutModalPage === 1}
-                                        onClick={() => setInOutModalPage((p) => Math.max(p - 1, 1))}
-                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                                        aria-label="Previous page"
-                                    >
-                                        ‹
-                                    </button>
-                                    <div className="flex flex-nowrap gap-2">
-                                        {renderPaginationButtons(
-                                            inOutModalPage,
-                                            inOutModalTotalPages,
-                                            setInOutModalPage
-                                        )}
-                                    </div>
-                                    <button
-                                        disabled={inOutModalPage === inOutModalTotalPages}
-                                        onClick={() =>
-                                            setInOutModalPage((p) =>
-                                                Math.min(p + 1, inOutModalTotalPages)
-                                            )
-                                        }
-                                        className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                                        aria-label="Next page"
-                                    >
-                                        ›
-                                    </button>
-                                </div>
+                                <p className="modal-meta">
+                                    Device ID: {inOutModalUser.deviceId || "-"}
+                                </p>
                             </div>
-                        ) : null}
+                            {paginatedInOutModalEntries.length === 0 ? (
+                                <p className="text-gray-500 text-sm">No in/out activity found for this user.</p>
+                            ) : (
+                                <div className="activity-table-scroll">
+                                    <table className="w-full border-collapse activity-table">
+                                        <thead>
+                                            <tr className="bg-gray-100 text-left text-gray-700">
+                                                <th className="p-3">Activity</th>
+                                                <th className="p-3">Device ID</th>
+                                                <th className="p-3">Employee ID</th>
+                                                <th className="p-3">Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {paginatedInOutModalEntries.map((event, index) => (
+                                                <tr key={event.entry?._id || event.entry?.id || index} className="hover:bg-gray-50">
+                                                    <td className="p-3">{event.kind}</td>
+                                                    <td className="p-3">{resolveAttendanceDeviceId(event.entry)}</td>
+                                                    <td className="p-3">{event.entry?.employeeId || "-"}</td>
+                                                    <td className="p-3">
+                                                        {formatTimestamp(event.time)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                            {inOutModalEvents.length > 0 ? (
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+                                    <p
+                                        className="text-sm text-gray-600 whitespace-nowrap"
+                                        style={{ whiteSpace: "nowrap" }}
+                                    >
+                                        Showing {(inOutModalPage - 1) * MODAL_ITEMS_PER_PAGE + 1} –{" "}
+                                        {Math.min(
+                                            inOutModalPage * MODAL_ITEMS_PER_PAGE,
+                                            inOutModalEvents.length
+                                        )}{" "}
+                                        of {inOutModalEvents.length}
+                                    </p>
+                                    <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
+                                        <button
+                                            disabled={inOutModalPage === 1}
+                                            onClick={() => setInOutModalPage((p) => Math.max(p - 1, 1))}
+                                            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                            aria-label="Previous page"
+                                        >
+                                            ‹
+                                        </button>
+                                        <div className="flex flex-nowrap gap-2">
+                                            {renderPaginationButtons(
+                                                inOutModalPage,
+                                                inOutModalTotalPages,
+                                                setInOutModalPage
+                                            )}
+                                        </div>
+                                        <button
+                                            disabled={inOutModalPage === inOutModalTotalPages}
+                                            onClick={() =>
+                                                setInOutModalPage((p) =>
+                                                    Math.min(p + 1, inOutModalTotalPages)
+                                                )
+                                            }
+                                            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                            aria-label="Next page"
+                                        >
+                                            ›
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             )}
 
-        </div >
+        </div>
     );
 };
 

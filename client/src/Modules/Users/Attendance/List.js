@@ -399,133 +399,135 @@ const AttendanceList = () => {
 
       {selectedUser && (
         <div className="modal-overlay">
-          <div className="modal-container">
+          <div className="modal-wrapper">
             <button onClick={() => { setSelectedUser(null); setViewingDate(null); }} className="modal-close-btn">
               ✕
             </button>
+            <div className="modal-container">
 
-            <div className="modal-header modal-header--compact">
-              <h2 className="modal-user-name">Name: {selectedUser.userName || "-"}</h2>
-              <p className="modal-meta">Employee ID: {selectedUser.employeeId || "-"}</p>
-              <p className="modal-meta">Device ID: {selectedUser.deviceId || "-"}</p>
-            </div>
+              <div className="modal-header modal-header--compact">
+                <h2 className="modal-user-name">Name: {selectedUser.userName || "-"}</h2>
+                <p className="modal-meta">Employee ID: {selectedUser.employeeId || "-"}</p>
+                <p className="modal-meta">Device ID: {selectedUser.deviceId || "-"}</p>
+              </div>
 
-            <div className="flex flex-wrap gap-2 mb-3">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                Total: {selectedUserStats.total}
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                In: {selectedUserStats.inCount}
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
-                Out: {selectedUserStats.outCount}
-              </span>
-            </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                  Total: {selectedUserStats.total}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                  In: {selectedUserStats.inCount}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                  Out: {selectedUserStats.outCount}
+                </span>
+              </div>
 
-            {viewingDate ? (
-              <>
-                <div className="flex items-center gap-2 mb-4">
-                  <button
-                    onClick={() => setViewingDate(null)}
-                    className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
-                  >
-                    ← Back to Dates
-                  </button>
-                  <h3 className="text-lg font-bold">Entries for {viewingDate}</h3>
-                </div>
+              {viewingDate ? (
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <button
+                      onClick={() => setViewingDate(null)}
+                      className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
+                    >
+                      ← Back to Dates
+                    </button>
+                    <h3 className="text-lg font-bold">Entries for {viewingDate}</h3>
+                  </div>
+                  <div className="activity-table-scroll max-h-[420px] overflow-auto border rounded-lg">
+                    <table className="w-full border-collapse activity-table">
+                      <thead>
+                        <tr className="bg-[#1e293b] text-white text-left sticky top-0 z-10">
+                          <th className="p-3">Activity</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupedByDate
+                          .find((g) => g.date === viewingDate)
+                          ?.events.map((event, idx) => (
+                            <tr
+                              key={`${event.entry?.id || event.entry?._id || idx}-${event.kind}`}
+                              className="odd:bg-white even:bg-slate-50"
+                            >
+                              <td className="p-3">
+                                <span
+                                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${event.kind === "In"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : event.kind === "Out"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : "bg-gray-100 text-gray-700"
+                                    }`}
+                                >
+                                  {event.kind}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                                  {event.kind === "In"
+                                    ? "Logged In"
+                                    : event.kind === "Out"
+                                      ? "Logged Out"
+                                      : event.entry?.status || "-"}
+                                </span>
+                              </td>
+                              <td className="p-3">{formatTimeOnly(event.time)}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
                 <div className="activity-table-scroll max-h-[420px] overflow-auto border rounded-lg">
                   <table className="w-full border-collapse activity-table">
                     <thead>
                       <tr className="bg-[#1e293b] text-white text-left sticky top-0 z-10">
-                        <th className="p-3">Activity</th>
-                        <th className="p-3">Status</th>
-                        <th className="p-3">Time</th>
+                        <th className="p-3">Date</th>
+                        <th className="p-3">In / Out</th>
+                        <th className="p-3">Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {groupedByDate
-                        .find((g) => g.date === viewingDate)
-                        ?.events.map((event, idx) => (
-                          <tr
-                            key={`${event.entry?.id || event.entry?._id || idx}-${event.kind}`}
-                            className="odd:bg-white even:bg-slate-50"
-                          >
-                            <td className="p-3">
-                              <span
-                                className={`px-2.5 py-1 rounded-full text-xs font-semibold ${event.kind === "In"
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : event.kind === "Out"
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "bg-gray-100 text-gray-700"
-                                  }`}
-                              >
-                                {event.kind}
+                      {groupedByDate.map((group, idx) => (
+                        <tr key={group.date || idx} className="odd:bg-white even:bg-slate-50">
+                          <td className="p-3 font-semibold">{group.date}</td>
+                          <td className="p-3">
+                            <div className="flex gap-2">
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                                In: {group.inCount}
                               </span>
-                            </td>
-                            <td className="p-3">
-                              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                                {event.kind === "In"
-                                  ? "Logged In"
-                                  : event.kind === "Out"
-                                    ? "Logged Out"
-                                    : event.entry?.status || "-"}
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                                Out: {group.outCount}
                               </span>
-                            </td>
-                            <td className="p-3">{formatTimeOnly(event.time)}</td>
-                          </tr>
-                        ))}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <button
+                              onClick={() => setViewingDate(group.date)}
+                              className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+                              title="View Details"
+                            >
+                              <svg width={22} height={22} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                                <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {groupedByDate.length === 0 && (
+                        <tr>
+                          <td className="p-4 text-center text-gray-500" colSpan={3}>
+                            No attendance records found for this user.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </>
-            ) : (
-              <div className="activity-table-scroll max-h-[420px] overflow-auto border rounded-lg">
-                <table className="w-full border-collapse activity-table">
-                  <thead>
-                    <tr className="bg-[#1e293b] text-white text-left sticky top-0 z-10">
-                      <th className="p-3">Date</th>
-                      <th className="p-3">In / Out</th>
-                      <th className="p-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupedByDate.map((group, idx) => (
-                      <tr key={group.date || idx} className="odd:bg-white even:bg-slate-50">
-                        <td className="p-3 font-semibold">{group.date}</td>
-                        <td className="p-3">
-                          <div className="flex gap-2">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                              In: {group.inCount}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
-                              Out: {group.outCount}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <button
-                            onClick={() => setViewingDate(group.date)}
-                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
-                            title="View Details"
-                          >
-                            <svg width={22} height={22} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                              <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {groupedByDate.length === 0 && (
-                      <tr>
-                        <td className="p-4 text-center text-gray-500" colSpan={3}>
-                          No attendance records found for this user.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

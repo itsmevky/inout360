@@ -13,7 +13,7 @@ import {
   putData,
   postData,
 } from "../../Helpers/api.js";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../popup/Popup.js";
 import debounce from "lodash.debounce";
@@ -690,38 +690,42 @@ const GetUsers = () => {
 
       {/* Add User Form Sliding Panel */}
       {isAddUserFormVisible && (
-        <div className="sideform fixed top-0 right-0 w-1/3 h-full shadow-lg z-50 ">
-          <div className="sidebar-inner bg-white  transition-transform transform translate-x-0">
+        <div className="sideform fixed top-0 right-0 w-full md:w-1/3 h-full shadow-lg z-50">
+          <div className="modal-wrapper h-full">
             <button
-              className="upclick-cut text-red-500 float-left rounded-sm"
+              className="modal-close-btn modal-close-btn--left"
               onClick={toggleAddUserForm}
             >
-              X
+              ✕
             </button>
-            <AddUserForm />
+            <div className="sidebar-inner bg-white h-full overflow-y-auto transition-transform transform translate-x-0">
+              <AddUserForm />
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit User Form Sliding Panel */}
       {isEditUserFormVisible && selectedUser && (
-        <div className=" sideform fixed top-0 right-0 w-1/3 h-full  shadow-lg p-4 z-50 ">
-          <div className="sidebar-inner bg-white p-4 transition-transform transform translate-x-0">
+        <div className="sideform fixed top-0 right-0 w-full md:w-1/3 h-full shadow-lg z-50">
+          <div className="modal-wrapper h-full">
             <button
-              className="upclick-cut text-red-500 float-left rounded-sm "
+              className="modal-close-btn modal-close-btn--left"
               onClick={toggleEditUserForm}
             >
-              X
+              ✕
             </button>
-            {console.log(selectedUser)}
-            <EditUserForm user={selectedUser} />{" "}
+            <div className="sidebar-inner bg-white h-full overflow-y-auto transition-transform transform translate-x-0">
+              {console.log(selectedUser)}
+              <EditUserForm user={selectedUser} />
+            </div>
           </div>
         </div>
       )}
 
       {/* Background overlay when Add or Edit User form is visible */}
       {(isAddUserFormVisible || isEditUserFormVisible) && (
-        <div className="fixed inset-0 bg-black opacity-50 z-40"></div>
+        <div className="modal-overlay z-40" onClick={() => { setIsAddUserFormVisible(false); setIsEditUserFormVisible(false); }}></div>
       )}
     </div>
   );

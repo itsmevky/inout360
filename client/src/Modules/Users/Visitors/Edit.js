@@ -102,134 +102,136 @@ const EditVisitorForm = ({ onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center !m-auto">
-      <div
-        className={`add-newemployee-popup-form relative w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300
-          ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
-      >
+    <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center !m-auto p-4">
+      <div className="modal-wrapper">
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-4 right-4 w-9 h-9 !mr-0 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
+          className="modal-close-btn"
         >
           ✕
         </button>
+        <div
+          className={`add-newemployee-popup-form relative w-full max-w-3xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300
+            ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
+        >
 
-        <div className="p-6">
-          <h2 className="text-xl font-semibold mb-6">Edit Visitor</h2>
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-6">Edit Visitor</h2>
 
-          <form onSubmit={handleSubmit} noValidate key={visitor.id || visitor._id}>
-            <div className="flex flex-col sm:flex-row gap-6 mb-8">
-              <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
-                <img
-                  src={
-                    profileImagePreview ||
-                    "https://via.placeholder.com/120x150?text=Profile"
-                  }
-                  className="w-full h-full object-cover"
-                  alt="Profile"
-                />
+            <form onSubmit={handleSubmit} noValidate key={visitor.id || visitor._id}>
+              <div className="flex flex-col sm:flex-row gap-6 mb-8">
+                <div className="w-[120px] h-[150px] border rounded-md bg-gray-100 overflow-hidden">
+                  <img
+                    src={
+                      profileImagePreview ||
+                      "https://via.placeholder.com/120x150?text=Profile"
+                    }
+                    className="w-full h-full object-cover"
+                    alt="Profile"
+                  />
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Upload Profile Image
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfileImageChange}
+                    className="text-sm !px-0"
+                  />
+                </div>
               </div>
 
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                  Upload Profile Image
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfileImageChange}
-                  className="text-sm !px-0"
+              <Section title="Personal Information" />
+              <Grid>
+                <Field label="First Name" name="firstName" defaultValue={visitor.firstName || ""} />
+                <Field label="Last Name" name="lastName" defaultValue={visitor.lastName || ""} />
+                <SelectField
+                  label="Gender *"
+                  name="gender"
+                  options={["Male", "Female", "Other"]}
+                  defaultValue={visitor.gender || ""}
                 />
+                <Field
+                  label="Date of Birth"
+                  name="dob"
+                  type="date"
+                  defaultValue={visitor.dob ? String(visitor.dob).slice(0, 10) : ""}
+                />
+                <Field label="Email" name="email" defaultValue={visitor.email || ""} />
+                <Field label="Phone" name="phone" defaultValue={visitor.phone || ""} />
+              </Grid>
+
+              <Section title="Current Address" />
+              <Grid>
+                <Field
+                  label="Street"
+                  name="currentAddress.street"
+                  defaultValue={visitor.currentAddress?.street || ""}
+                />
+                <Field
+                  label="City"
+                  name="currentAddress.city"
+                  defaultValue={visitor.currentAddress?.city || ""}
+                />
+                <Field
+                  label="State"
+                  name="currentAddress.state"
+                  defaultValue={visitor.currentAddress?.state || ""}
+                />
+                <Field
+                  label="Pincode"
+                  name="currentAddress.pincode"
+                  defaultValue={visitor.currentAddress?.pincode || ""}
+                />
+              </Grid>
+
+              <Section title="Permanent Address" />
+              <Grid>
+                <Field
+                  label="Street"
+                  name="permanentAddress.street"
+                  defaultValue={visitor.permanentAddress?.street || ""}
+                />
+                <Field
+                  label="City"
+                  name="permanentAddress.city"
+                  defaultValue={visitor.permanentAddress?.city || ""}
+                />
+                <Field
+                  label="State"
+                  name="permanentAddress.state"
+                  defaultValue={visitor.permanentAddress?.state || ""}
+                />
+                <Field
+                  label="Pincode"
+                  name="permanentAddress.pincode"
+                  defaultValue={visitor.permanentAddress?.pincode || ""}
+                />
+              </Grid>
+
+              <Section title="Visitor Details" />
+              <Grid>
+                <Field label="Visitor ID" name="employeeId" defaultValue={visitor.employeeId || ""} />
+                <Field label="RFID" name="rfid" defaultValue={visitor.rfid || ""} />
+                <SelectField label="Role" name="role" options={["visitor"]} defaultValue={visitor.role || "visitor"} />
+                <SelectField label="Status" name="status" options={["Active", "Inactive"]} defaultValue={visitor.status || "Active"} />
+                <SelectField label="Location" name="location" options={locations} defaultValue={visitor.location || ""} />
+              </Grid>
+
+              <div className="mt-8 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 add-employee-submit-button"
+                >
+                  Submit
+                </button>
               </div>
-            </div>
-
-            <Section title="Personal Information" />
-            <Grid>
-              <Field label="First Name" name="firstName" defaultValue={visitor.firstName || ""} />
-              <Field label="Last Name" name="lastName" defaultValue={visitor.lastName || ""} />
-              <SelectField
-                label="Gender *"
-                name="gender"
-                options={["Male", "Female", "Other"]}
-                defaultValue={visitor.gender || ""}
-              />
-              <Field
-                label="Date of Birth"
-                name="dob"
-                type="date"
-                defaultValue={visitor.dob ? String(visitor.dob).slice(0, 10) : ""}
-              />
-              <Field label="Email" name="email" defaultValue={visitor.email || ""} />
-              <Field label="Phone" name="phone" defaultValue={visitor.phone || ""} />
-            </Grid>
-
-            <Section title="Current Address" />
-            <Grid>
-              <Field
-                label="Street"
-                name="currentAddress.street"
-                defaultValue={visitor.currentAddress?.street || ""}
-              />
-              <Field
-                label="City"
-                name="currentAddress.city"
-                defaultValue={visitor.currentAddress?.city || ""}
-              />
-              <Field
-                label="State"
-                name="currentAddress.state"
-                defaultValue={visitor.currentAddress?.state || ""}
-              />
-              <Field
-                label="Pincode"
-                name="currentAddress.pincode"
-                defaultValue={visitor.currentAddress?.pincode || ""}
-              />
-            </Grid>
-
-            <Section title="Permanent Address" />
-            <Grid>
-              <Field
-                label="Street"
-                name="permanentAddress.street"
-                defaultValue={visitor.permanentAddress?.street || ""}
-              />
-              <Field
-                label="City"
-                name="permanentAddress.city"
-                defaultValue={visitor.permanentAddress?.city || ""}
-              />
-              <Field
-                label="State"
-                name="permanentAddress.state"
-                defaultValue={visitor.permanentAddress?.state || ""}
-              />
-              <Field
-                label="Pincode"
-                name="permanentAddress.pincode"
-                defaultValue={visitor.permanentAddress?.pincode || ""}
-              />
-            </Grid>
-
-            <Section title="Visitor Details" />
-            <Grid>
-              <Field label="Visitor ID" name="employeeId" defaultValue={visitor.employeeId || ""} />
-              <Field label="RFID" name="rfid" defaultValue={visitor.rfid || ""} />
-              <SelectField label="Role" name="role" options={["visitor"]} defaultValue={visitor.role || "visitor"} />
-              <SelectField label="Status" name="status" options={["Active", "Inactive"]} defaultValue={visitor.status || "Active"} />
-              <SelectField label="Location" name="location" options={locations} defaultValue={visitor.location || ""} />
-            </Grid>
-
-            <div className="mt-8 flex justify-end">
-              <button
-                type="submit"
-                className="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 add-employee-submit-button"
-              >
-                Submit
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>

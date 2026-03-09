@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import { getData, putData, domainpath } from "../../../Helpers/api.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
 
@@ -149,101 +149,103 @@ const EditUserForm = ({ user, onClose, onSuccess }) => {
   /* ================= UI ================= */
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-        <div
-          className={`relative w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl
-          max-h-[90vh] overflow-y-auto transform transition-all duration-300
-          ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
-        >
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
+        <div className="modal-wrapper">
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
+            className="modal-close-btn"
           >
             ✕
           </button>
+          <div
+            className={`relative w-full max-w-3xl bg-white rounded-xl shadow-2xl
+            max-h-[90vh] overflow-y-auto transform transition-all duration-300
+            ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
+          >
 
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
-            <h2 className="text-xl font-semibold mb-6">Edit Employee</h2>
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+              <h2 className="text-xl font-semibold mb-6">Edit Employee</h2>
 
-            {/* PROFILE */}
-            <div className="flex items-center gap-6 mb-8 employee-editform-userprofile">
-              <div className="w-[120px] h-[150px] border rounded-md overflow-hidden bg-gray-100">
-                <img
-                  src={profilePreview || "https://via.placeholder.com/120x150"}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <input type="file" ref={fileRef} className="hidden" onChange={handleProfileSelect} />
-                <button type="button" onClick={() => fileRef.current.click()} className="px-3 py-2 bg-blue-600 text-white rounded-md">
-                  Choose Image
-                </button>
-                {profileFile && (
-                  <button type="button" onClick={cancelProfileChange} className="px-3 py-2 border rounded-md">
-                    Cancel
+              {/* PROFILE */}
+              <div className="flex items-center gap-6 mb-8 employee-editform-userprofile">
+                <div className="w-[120px] h-[150px] border rounded-md overflow-hidden bg-gray-100">
+                  <img
+                    src={profilePreview || "https://via.placeholder.com/120x150"}
+                    className="w-full h-full object-cover"
+                    alt=""
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <input type="file" ref={fileRef} className="hidden" onChange={handleProfileSelect} />
+                  <button type="button" onClick={() => fileRef.current.click()} className="px-3 py-2 bg-blue-600 text-white rounded-md">
+                    Choose Image
                   </button>
-                )}
+                  {profileFile && (
+                    <button type="button" onClick={cancelProfileChange} className="px-3 py-2 border rounded-md">
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <Section title="Personal Information" />
-            <Grid>
-              <Field label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} />
-              <Field label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} />
-              <SelectField label="Gender" name="gender" value={formData.gender} onChange={handleChange} options={["Male", "Female", "Other"]} />
-              <Field label="Date of Birth" type="date" name="dob" value={formData.dob} onChange={handleChange} />
-              <Field label="Email" name="email" value={formData.email} onChange={handleChange} />
-              <Field label="Phone" name="phone" value={formData.phone} onChange={handleChange} />
-            </Grid>
+              <Section title="Personal Information" />
+              <Grid>
+                <Field label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} />
+                <Field label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} />
+                <SelectField label="Gender" name="gender" value={formData.gender} onChange={handleChange} options={["Male", "Female", "Other"]} />
+                <Field label="Date of Birth" type="date" name="dob" value={formData.dob} onChange={handleChange} />
+                <Field label="Email" name="email" value={formData.email} onChange={handleChange} />
+                <Field label="Phone" name="phone" value={formData.phone} onChange={handleChange} />
+              </Grid>
 
-            <Section title="Current Address" />
-            <Grid>
-              <Field label="Street" name="currentStreet" value={formData.currentStreet} onChange={handleChange} />
-              <Field label="City" name="currentCity" value={formData.currentCity} onChange={handleChange} />
-              <Field label="State" name="currentState" value={formData.currentState} onChange={handleChange} />
-              <Field label="Pincode" name="currentPincode" value={formData.currentPincode} onChange={handleChange} />
-            </Grid>
+              <Section title="Current Address" />
+              <Grid>
+                <Field label="Street" name="currentStreet" value={formData.currentStreet} onChange={handleChange} />
+                <Field label="City" name="currentCity" value={formData.currentCity} onChange={handleChange} />
+                <Field label="State" name="currentState" value={formData.currentState} onChange={handleChange} />
+                <Field label="Pincode" name="currentPincode" value={formData.currentPincode} onChange={handleChange} />
+              </Grid>
 
-            <Section title="Permanent Address" />
-            <Grid>
-              <Field label="Street" name="permanentStreet" value={formData.permanentStreet} onChange={handleChange} />
-              <Field label="City" name="permanentCity" value={formData.permanentCity} onChange={handleChange} />
-              <Field label="State" name="permanentState" value={formData.permanentState} onChange={handleChange} />
-              <Field label="Pincode" name="permanentPincode" value={formData.permanentPincode} onChange={handleChange} />
-            </Grid>
+              <Section title="Permanent Address" />
+              <Grid>
+                <Field label="Street" name="permanentStreet" value={formData.permanentStreet} onChange={handleChange} />
+                <Field label="City" name="permanentCity" value={formData.permanentCity} onChange={handleChange} />
+                <Field label="State" name="permanentState" value={formData.permanentState} onChange={handleChange} />
+                <Field label="Pincode" name="permanentPincode" value={formData.permanentPincode} onChange={handleChange} />
+              </Grid>
 
-            <Section title="Employment Details" />
-            <Grid>
-              <Field label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleChange} />
-              <Field label="RFID" name="rfid" value={formData.rfid} onChange={handleChange} />
-              <Field label="Joining Date" type="date" name="joiningDate" value={formData.joiningDate} onChange={handleChange} />
-              <Field label="Designation" name="designation" value={formData.designation} onChange={handleChange} />
-              <SelectField label="Department" name="department" value={formData.department} onChange={handleChange} options={["Sales", "Marketing", "HR", "Finance", "IT", "Operations", "Manufacturing", "Art & Craft"]} />
-              <SelectField label="Section" name="section" value={formData.section} onChange={handleChange} options={["Welding", "Electrical", "Assembly"]} />
-              <SelectField label="Shift" name="shift" value={formData.shift} onChange={handleChange} options={["Morning", "Evening", "Night"]} />
-              <SelectField label="Employment Type" name="employmentType" value={formData.employmentType} onChange={handleChange} options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
+              <Section title="Employment Details" />
+              <Grid>
+                <Field label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleChange} />
+                <Field label="RFID" name="rfid" value={formData.rfid} onChange={handleChange} />
+                <Field label="Joining Date" type="date" name="joiningDate" value={formData.joiningDate} onChange={handleChange} />
+                <Field label="Designation" name="designation" value={formData.designation} onChange={handleChange} />
+                <SelectField label="Department" name="department" value={formData.department} onChange={handleChange} options={["Sales", "Marketing", "HR", "Finance", "IT", "Operations", "Manufacturing", "Art & Craft"]} />
+                <SelectField label="Section" name="section" value={formData.section} onChange={handleChange} options={["Welding", "Electrical", "Assembly"]} />
+                <SelectField label="Shift" name="shift" value={formData.shift} onChange={handleChange} options={["Morning", "Evening", "Night"]} />
+                <SelectField label="Employment Type" name="employmentType" value={formData.employmentType} onChange={handleChange} options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
 
-              {/* ✅ DROPDOWNS */}
-              <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={roleOptions} />
-              <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} options={["Active", "Inactive"]} />
-              <SelectField label="Location" name="location" value={formData.location} onChange={handleChange} options={locations} />
-            </Grid>
+                {/* ✅ DROPDOWNS */}
+                <SelectField label="Role" name="role" value={formData.role} onChange={handleChange} options={roleOptions} />
+                <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} options={["Active", "Inactive"]} />
+                <SelectField label="Location" name="location" value={formData.location} onChange={handleChange} options={locations} />
+              </Grid>
 
-            <Section title="Bank Details" />
-            <Grid>
-              <Field label="Aadhar Number" name="aadharcardnumber" value={formData.aadharcardnumber} onChange={handleChange} />
-              <Field label="PAN Card" name="pancard" value={formData.pancard} onChange={handleChange} />
-              <Field label="Account Number" name="accountNumber" value={formData.accountNumber} onChange={handleChange} />
-              <Field label="IFSC Code" name="ifscCode" value={formData.ifscCode} onChange={handleChange} />
-            </Grid>
+              <Section title="Bank Details" />
+              <Grid>
+                <Field label="Aadhar Number" name="aadharcardnumber" value={formData.aadharcardnumber} onChange={handleChange} />
+                <Field label="PAN Card" name="pancard" value={formData.pancard} onChange={handleChange} />
+                <Field label="Account Number" name="accountNumber" value={formData.accountNumber} onChange={handleChange} />
+                <Field label="IFSC Code" name="ifscCode" value={formData.ifscCode} onChange={handleChange} />
+              </Grid>
 
-            <div className="mt-8 flex justify-end w-full">
-              <button type="submit" disabled={loading} className="px-8 py-2 !mt-4 bg-blue-600 text-white rounded-md employe-editform-update-button">
-                {loading ? "Updating..." : "Update"}
-              </button>
-            </div>
-          </form>
+              <div className="mt-8 flex justify-end w-full">
+                <button type="submit" disabled={loading} className="px-8 py-2 !mt-4 bg-blue-600 text-white rounded-md employe-editform-update-button">
+                  {loading ? "Updating..." : "Update"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </>
