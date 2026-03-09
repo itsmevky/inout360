@@ -79,80 +79,8 @@ const SuperAdminDashboard = () => {
             </span>
           </div>
 
-          {/* Line Chart Section - Trends */}
-          <div className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
-              <div>
-                <h3 className="text-xl md:text-2xl font-bold text-gray-800">Attendance Trends</h3>
-                <p className="text-sm text-gray-500">Overview of the last 7 days</p>
-              </div>
-            </div>
-            <div className="h-[350px] md:h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={summary.last7DaysAttendance}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorLoggedIn" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#018DD4" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#018DD4" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorLoggedOut" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00C49F" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#00C49F" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                    domain={[0, 'auto']}
-                    width={60}
-                    dx={10}
-                  />
-                  <BarTooltip
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                  />
-                  <BarLegend
-                    verticalAlign="top"
-                    align="right"
-                    iconType="circle"
-                    wrapperStyle={{ paddingTop: '0px', paddingBottom: '30px' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="loggedIn"
-                    name="Logged In"
-                    stroke="#018DD4"
-                    strokeWidth={4}
-                    fillOpacity={1}
-                    fill="url(#colorLoggedIn)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="loggedOut"
-                    name="Logged Out"
-                    stroke="#00C49F"
-                    strokeWidth={4}
-                    fillOpacity={1}
-                    fill="url(#colorLoggedOut)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
           {/* Charts Grid Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 
             {/* User Statistics Card */}
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[400px]">
@@ -260,6 +188,78 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
 
+          </div>
+
+          {/* Line Chart Section - Trends */}
+          <div className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
+              <div>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-800">Attendance Trends</h3>
+                <p className="text-sm text-gray-500">Overview of the last 7 days</p>
+              </div>
+            </div>
+            <div className="h-[350px] md:h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={summary.last7DaysAttendance}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorLoggedIn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#018DD4" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#018DD4" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorLoggedOut" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00C49F" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#00C49F" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    domain={[0, 'auto']}
+                    width={60}
+                    dx={10}
+                  />
+                  <BarTooltip
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <BarLegend
+                    verticalAlign="top"
+                    align="right"
+                    iconType="circle"
+                    wrapperStyle={{ paddingTop: '0px', paddingBottom: '30px' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="loggedIn"
+                    name="Logged In"
+                    stroke="#018DD4"
+                    strokeWidth={4}
+                    fillOpacity={1}
+                    fill="url(#colorLoggedIn)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="loggedOut"
+                    name="Logged Out"
+                    stroke="#00C49F"
+                    strokeWidth={4}
+                    fillOpacity={1}
+                    fill="url(#colorLoggedOut)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
         </div>

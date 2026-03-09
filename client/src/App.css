@@ -1622,7 +1622,7 @@ tbody tr:nth-child(even) {
 .modal-close-btn {
   position: absolute;
   top: 0px;
-  right: -34px;
+  right: -50px;
   font-size: 18px;
   cursor: pointer;
   width: 32px;
@@ -1637,6 +1637,7 @@ tbody tr:nth-child(even) {
   z-index: 100;
   box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
   transition: all 0.2s ease;
+
 }
 
 .modal-close-btn:hover {
