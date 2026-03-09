@@ -98,21 +98,25 @@ exports.getCoords = async (_req, res) => {
 exports.getPublicByVendorCode = async (req, res) => {
   try {
     const vendorCode = String(req.query.vendorCode || "").trim().toUpperCase();
-    if (!vendorCode) {
-      return res.status(400).json({ status: false, message: "vendorCode is required" });
-    }
 
-    const locations = await LocationModel.find({ vendorCode })
-      .select("name vendorCode")
+    // If no vendorCode provided, fetch all locations (equivalent to getCoords behavior)
+    const query = vendorCode ? { vendorCode } : {};
+
+    const locations = await LocationModel.find(query)
+      .select("name vendorCode lat lng radius otpEmail")
       .sort({ name: 1 })
       .lean();
 
     return res.status(200).json({
       status: true,
-      vendorCode,
+      vendorCode: vendorCode || "ALL",
       locations: locations.map((loc) => ({
         name: loc.name,
-        vendorCode: loc.vendorCode || vendorCode,
+        vendorCode: loc.vendorCode || "",
+        lat: loc.lat,
+        lng: loc.lng,
+        radius: loc.radius,
+        otpEmail: loc.otpEmail || "",
       })),
     });
   } catch (error) {
