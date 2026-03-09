@@ -12,9 +12,10 @@ const QRApp = () => {
     const [activeTab, setActiveTab] = useState(TABS[0]);
 
     return (
-        <div className="fixed inset-0 flex flex-col w-full h-full overflow-hidden bg-white font-sans">
-            {/* WebView Container */}
-            <div className="flex-grow w-full relative">
+        <div className="fixed inset-0 flex w-full h-full overflow-hidden bg-black font-sans">
+
+            {/* 1. Full Screen WebView Area */}
+            <div className="flex-grow h-full w-full relative z-0">
                 {TABS.map((tab) => (
                     <div
                         key={tab.id}
@@ -26,29 +27,30 @@ const QRApp = () => {
                 ))}
             </div>
 
-            {/* Optimized Tablet Bottom Navigation */}
-            <nav className="h-32 bg-white border-t border-gray-100 flex items-center justify-around px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-20 pb-4">
+            {/* 2. Sleek Floating Sidebar (Left) */}
+            {/* This doesn't push the content, it floats on top with a glass effect */}
+            <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 p-3 bg-white/80 backdrop-blur-md rounded-full shadow-2xl z-30 border border-white/20">
                 {TABS.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab)}
-                        className={`flex flex-col items-center justify-center flex-1 h-full gap-3 transition-all p-4 rounded-3xl ${activeTab.id === tab.id
-                                ? 'text-blue-600 bg-blue-50/40'
-                                : 'text-gray-400 active:bg-gray-50'
+                        className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ${activeTab.id === tab.id
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'text-gray-500 hover:bg-white hover:text-blue-600'
                             }`}
                     >
-                        <span
-                            className="material-symbols-rounded block text-5xl"
-                            style={{ fontVariationSettings: activeTab.id === tab.id ? "'FILL' 1" : "'FILL' 0" }}
-                        >
+                        <span className="material-symbols-rounded text-3xl font-light">
                             {tab.icon}
                         </span>
-                        <span className={`text-xl font-bold tracking-tight ${activeTab.id === tab.id ? 'text-blue-700' : 'text-gray-500'}`}>
+
+                        {/* Tooltip on hover/active to show what the tab is */}
+                        <span className={`absolute left-20 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 shadow-xl`}>
                             {tab.title}
+                            <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-8 border-transparent border-r-gray-900" />
                         </span>
                     </button>
                 ))}
-            </nav>
+            </div>
         </div>
     );
 };
