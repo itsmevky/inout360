@@ -31,7 +31,15 @@ import QRApp from "./AppModes/QRApp.js";
 
 const AppRoutes = () => {
   const { user } = useUser();
+
+  // Standalone App Modes
+  // These act as separate entry points that bypass the main portal layout
+  if (window.location.pathname.startsWith("/full")) return <FullApp />;
+  if (window.location.pathname.startsWith("/qrapp")) return <QRApp />;
+
   if (user === undefined) return <div>Loading...</div>;
+
+
 
   const userRole = normalizeRole(user?.role);
   console.log("Detected role:", user?.role, "→ normalized:", userRole);

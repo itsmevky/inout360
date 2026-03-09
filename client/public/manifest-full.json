@@ -1,6 +1,7 @@
 {
-    "short_name": "PIL APP",
-    "name": "Developed by Ajiva Infotech",
+    "id": "/full",
+    "short_name": "PIL Full",
+    "name": "PIL Full App",
     "icons": [
         {
             "src": "PIL.png",
@@ -22,5 +23,6 @@
     "display": "standalone",
     "theme_color": "#2563eb",
     "background_color": "#ffffff",
-    "orientation": "portrait"
+    "orientation": "portrait",
+    "scope": "/"
 }
