@@ -24,114 +24,13 @@ const staggerContainer = {
 };
 
 const DashboardPreview = () => {
-  const menuItems = [
-    { icon: <Activity size={18} />, label: "Dashboard", active: true },
-    { icon: <Users size={18} />, label: "Employees" },
-    { icon: <Users size={18} />, label: "Visitors" },
-    { icon: <CheckCircle size={18} />, label: "Attendance" },
-    { icon: <Globe size={18} />, label: "Location" },
-    { icon: <Zap size={18} />, label: "Activity" },
-    { icon: <Database size={18} />, label: "Settings" },
-    { icon: <Smartphone size={18} />, label: "Device" },
-    { icon: <Menu size={18} />, label: "Enquiries" },
-    { icon: <AlertTriangle size={18} />, label: "Warnings" },
-  ];
-
-  const stats = [
-    { label: "Contractors", value: "0", sub: "Total number of contractors.", color: "border-blue-400" },
-    { label: "Employee", value: "75", sub: "Total number of Employee", color: "border-blue-500" },
-    { label: "Visitors", value: "43", sub: "Total number of visitors", color: "border-blue-600" },
-    { label: "Manager", value: "0", sub: "Total number of Manager", color: "border-blue-700" },
-    { label: "Departments", value: "0", sub: "Total number of Departments.", color: "border-indigo-400" },
-    { label: "Monthly Reports", value: "346", sub: "Total of Monthly Reports", color: "border-indigo-600" },
-  ];
-
   return (
-    <div className="w-full bg-[#f4f7fe] rounded-3xl overflow-hidden shadow-2xl flex border font-sans text-left">
-      {/* Sidebar */}
-      <div className="w-64 bg-[#0a1d37] flex flex-col text-white/70">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
-            <img src={pidliteLogo} alt="PIL Logo" className="w-full h-full object-contain" />
-          </div>
-          <span className="text-xl font-bold text-white tracking-widest">PIL</span>
-        </div>
-
-        <div className="flex-1 px-4 space-y-1 mt-4">
-          {menuItems.map((item, i) => (
-            <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all ${item.active ? 'bg-blue-600 text-white' : 'hover:bg-white/10 hover:text-white'}`}>
-              {item.icon}
-              <span className="text-sm font-medium">{item.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 hover:text-red-400 rounded-lg cursor-pointer transition-all">
-            <X size={18} />
-            <span className="text-sm font-medium">Sign Out</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-[600px] overflow-hidden">
-        {/* Header */}
-        <div className="h-16 bg-white border-b px-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={pidliteLogo} alt="PIL Logo" className="w-6 h-6 object-contain" />
-            <span className="font-bold text-slate-800">PIL</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <Menu size={20} className="text-slate-400" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></div>
-            </div>
-            <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs overflow-hidden">
-                <img src="https://ui-avatars.com/api/?name=Super+Admin&background=0D8ABC&color=fff" alt="admin" />
-              </div>
-              <span className="text-sm font-semibold text-slate-700">Hi, Superadmin</span>
-              <Globe size={14} className="text-slate-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Dashboard Area */}
-        <div className="p-8 flex-1 overflow-y-auto">
-          <div className="bg-white p-4 rounded-xl shadow-sm border mb-8 flex items-center gap-4">
-            <div className="grid grid-cols-3 gap-1">
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-            </div>
-            <h2 className="text-xl font-bold text-slate-800">Dashboard</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, i) => (
-              <div key={i} className={`bg-white p-6 rounded-2xl shadow-sm border-l-4 ${stat.color} hover:shadow-md transition-shadow`}>
-                <div className="flex items-center gap-3 text-slate-400 mb-2">
-                  {i < 4 ? <Users size={20} /> : (i === 4 ? <Network size={20} /> : <Database size={20} />)}
-                  <span className="text-sm font-bold text-slate-500">{stat.label}</span>
-                </div>
-                <div className="text-3xl font-black text-slate-800 mb-1">{stat.value}</div>
-                <div className="text-xs text-slate-400 font-medium">{stat.sub}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center text-[10px] text-slate-400 font-medium">
-            2025 © AjivaInfotech Pvt Ltd
-          </div>
-        </div>
-      </div>
+    <div className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl flex border border-slate-200">
+      <img
+        src={dashboardMockup}
+        alt="PIL Dashboard Control Center"
+        className="w-full h-auto object-cover"
+      />
     </div>
   );
 };
@@ -399,8 +298,8 @@ const Home = () => {
                 <LockKeyhole className="w-14 h-14 text-indigo-400 drop-shadow-lg absolute bottom-2 left-2" fill="currentColor" stroke="white" strokeWidth={1.5} />
               </div>
 
-              <h3 className="text-2xl font-black mb-5 text-slate-800 tracking-tight relative z-10">MDM Integration</h3>
-              <p className="text-slate-600 leading-relaxed text-[1.05rem] font-medium relative z-10">Native bindings for leading MDM providers to seamlessly restrict and deploy camera policies.</p>
+              <h3 className="text-2xl font-black mb-5 text-slate-800 tracking-tight relative z-10">QR Attendance system</h3>
+              <p className="text-slate-600 leading-relaxed text-[1.05rem] font-medium relative z-10">Seamless and touchless attendance management for employees and visitors through secure QR-based login/logout.</p>
             </motion.div>
 
             {/* Card 2: Compliance Ready (Elevated) */}
@@ -422,8 +321,8 @@ const Home = () => {
                 <div className="absolute bottom-4 right-0 transform rotate-12 bg-white rounded-full shadow-lg p-2"><CheckCircle className="w-8 h-8 text-yellow-400" fill="currentColor" stroke="white" strokeWidth={1} /></div>
               </div>
 
-              <h3 className="text-[1.7rem] font-black mb-5 text-slate-800 tracking-tight relative z-10">Compliance Ready</h3>
-              <p className="text-slate-600 leading-relaxed text-[1.05rem] font-medium relative z-10">Out-of-the-box compliance for GDPR, HIPAA, and strict corporate data protection frameworks.</p>
+              <h3 className="text-[1.7rem] font-black mb-5 text-slate-800 tracking-tight relative z-10">Premises Restrictions</h3>
+              <p className="text-slate-600 leading-relaxed text-[1.05rem] font-medium relative z-10">Policy-based automated blocking of cameras and apps like Facebook strictly within the organization's premises.</p>
             </motion.div>
 
             {/* Card 3: Data Encryption */}
@@ -443,8 +342,8 @@ const Home = () => {
                 <Lock className="w-16 h-16 text-blue-600 drop-shadow-xl absolute top-2 right-2" fill="currentColor" stroke="white" strokeWidth={1.5} />
               </div>
 
-              <h3 className="text-2xl font-black mb-5 text-slate-800 tracking-tight relative z-10">Data Encryption</h3>
-              <p className="text-slate-600 leading-relaxed text-[1.05rem] font-medium relative z-10">AES-256 encryption at rest and in transit ensures your video data is never compromised.</p>
+              <h3 className="text-2xl font-black mb-5 text-slate-800 tracking-tight relative z-10">MDM & App Control</h3>
+              <p className="text-slate-600 leading-relaxed text-[1.05rem] font-medium relative z-10">Centralized mobile device management to push restrictions and monitor compliance across registered devices.</p>
             </motion.div>
 
           </div>

@@ -849,3 +849,14 @@
         font-size: 1.4rem;
     }
 }
+
+/* ── App Mode Adjustments ── */
+.pil-login-root.is-app-mode .pil-login-right {
+    flex: 1;
+    width: 100%;
+}
+
+.pil-login-root.is-app-mode .pil-card {
+    max-width: 480px;
+    margin: 0 auto;
+}

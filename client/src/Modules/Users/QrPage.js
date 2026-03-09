@@ -62,6 +62,9 @@ const QrCard = ({
 );
 
 const QrPage = ({ singleAction = null }) => {
+  const queryParams = new URLSearchParams(window.location.search);
+  const isAppMode = queryParams.get('mode') === 'app';
+
   const [loginState, setLoginState] = useState({
     token: "",
     imageSrc: "",
@@ -111,7 +114,7 @@ const QrPage = ({ singleAction = null }) => {
   useEffect(() => {
     const token = localStorage.getItem("qr_access_token");
     if (!token) {
-      navigate("/qr-login");
+      navigate(`/qr-login${window.location.search}`);
       return;
     }
 
@@ -136,7 +139,7 @@ const QrPage = ({ singleAction = null }) => {
 
   const handleQrLogout = () => {
     localStorage.removeItem("qr_access_token");
-    navigate("/qr-login");
+    navigate(`/qr-login${window.location.search}`);
   };
 
   const generateOfflineJwt = useCallback((action) => {
@@ -351,7 +354,7 @@ const QrPage = ({ singleAction = null }) => {
   return (
     <div className="qr-app-page">
       <div className="qr-app-shell">
-        {!singleAction && (
+        {!singleAction && !isAppMode && (
           <div className="qr-app-header">
             <img src={logo} alt="Pidilite" className="qr-app-logo-main" />
             <h1 className="qr-app-title">{headerTitle}</h1>
@@ -385,7 +388,7 @@ const QrPage = ({ singleAction = null }) => {
               loading={loginState.loading}
               remainingSeconds={loginRemaining}
               onTitleClick={
-                isLoginOnly ? undefined : () => navigate("/LoginQr")
+                isLoginOnly ? undefined : () => navigate(`/LoginQr${window.location.search}`)
               }
             />
           )}
@@ -398,7 +401,7 @@ const QrPage = ({ singleAction = null }) => {
               loading={logoutState.loading}
               remainingSeconds={logoutRemaining}
               onTitleClick={
-                isLogoutOnly ? undefined : () => navigate("/LogoutQr")
+                isLogoutOnly ? undefined : () => navigate(`/LogoutQr${window.location.search}`)
               }
             />
           )}

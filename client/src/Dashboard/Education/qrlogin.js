@@ -11,6 +11,8 @@ import "../../Components/Website/LoginPage.css";
 
 const QrLoginComponent = () => {
   const navigate = useNavigate();
+  const queryParams = new URLSearchParams(window.location.search);
+  const isAppMode = queryParams.get('mode') === 'app';
 
   const [userData, setUserdata] = useState({ email: "", password: "", rememberMe: false });
   const [errors, setErrors] = useState({});
@@ -71,7 +73,7 @@ const QrLoginComponent = () => {
           localStorage.removeItem("qr_email");
           localStorage.removeItem("qr_password");
         }
-        navigate("/qr");
+        navigate(`/qr${window.location.search}`);
       } else {
         toast.error(response?.message || "Login failed");
       }
@@ -87,48 +89,50 @@ const QrLoginComponent = () => {
       setUserdata({ email: savedEmail, password: savedPassword, rememberMe: true });
     }
     const accessToken = localStorage.getItem("qr_access_token");
-    if (accessToken) navigate("/qr");
+    if (accessToken) navigate(`/qr${window.location.search}`);
   }, [navigate]);
 
   return (
     <>
-      <div className="pil-login-root">
+      <div className={`pil-login-root ${isAppMode ? 'is-app-mode' : ''}`}>
         <div className="pil-login-layout">
 
           {/* ── LEFT PANEL ── */}
-          <div className="pil-login-left">
-            <div className="pil-left-content">
-              <div className="pil-left-badge">
-                <span></span>
-                QR Attendance System
-              </div>
-              <img
-                src={securelogin}
-                alt="QR Login illustration"
-                className="pil-left-illustration"
-              />
-              <h2 className="pil-left-headline">
-                Touchless <span>Check-In</span> Experience
-              </h2>
-              <p className="pil-left-sub">
-                Sign in once to activate QR-based attendance for your location. Fast, secure, and contactless.
-              </p>
-              <div className="pil-left-stats">
-                <div className="pil-stat">
-                  <div className="pil-stat-number">&lt;2s</div>
-                  <div className="pil-stat-label">Scan Time</div>
+          {!isAppMode && (
+            <div className="pil-login-left">
+              <div className="pil-left-content">
+                <div className="pil-left-badge">
+                  <span></span>
+                  QR Attendance System
                 </div>
-                <div className="pil-stat">
-                  <div className="pil-stat-number">Auto</div>
-                  <div className="pil-stat-label">Refresh</div>
-                </div>
-                <div className="pil-stat">
-                  <div className="pil-stat-number">Offline</div>
-                  <div className="pil-stat-label">Ready</div>
+                <img
+                  src={securelogin}
+                  alt="QR Login illustration"
+                  className="pil-left-illustration"
+                />
+                <h2 className="pil-left-headline">
+                  Touchless <span>Check-In</span> Experience
+                </h2>
+                <p className="pil-left-sub">
+                  Sign in once to activate QR-based attendance for your location. Fast, secure, and contactless.
+                </p>
+                <div className="pil-left-stats">
+                  <div className="pil-stat">
+                    <div className="pil-stat-number">&lt;2s</div>
+                    <div className="pil-stat-label">Scan Time</div>
+                  </div>
+                  <div className="pil-stat">
+                    <div className="pil-stat-number">Auto</div>
+                    <div className="pil-stat-label">Refresh</div>
+                  </div>
+                  <div className="pil-stat">
+                    <div className="pil-stat-number">Offline</div>
+                    <div className="pil-stat-label">Ready</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* ── RIGHT PANEL ── */}
           <div className="pil-login-right">

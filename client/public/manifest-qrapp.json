@@ -1,7 +1,7 @@
 {
     "id": "/qrapp",
-    "short_name": "PIL QR",
-    "name": "PIL QR App",
+    "short_name": "PIL",
+    "name": "Developed by Ajiva Infotech",
     "icons": [
         {
             "src": "PIL.png",
