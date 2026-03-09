@@ -24,6 +24,11 @@ import PrivacyPolicy from "./Website/PrivacyPolicy.js";
 import StaticQr from "./Website/StaticQr.js";
 import { normalizeRole } from "./Helpers/acl.js";
 
+// App Modes
+import FullApp from "./AppModes/FullApp.js";
+import QRApp from "./AppModes/QRApp.js";
+
+
 const AppRoutes = () => {
   const { user } = useUser();
   if (user === undefined) return <div>Loading...</div>;
@@ -57,6 +62,10 @@ const AppRoutes = () => {
         }
       />
 
+
+      {/* App Modes */}
+      <Route path="/full" element={<FullApp />} />
+      <Route path="/qrapp" element={<QRApp />} />
 
       {/* Public Routes */}
       <Route path="/" element={<Homepage />} />
