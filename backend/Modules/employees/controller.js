@@ -30,7 +30,8 @@ const resolveVendorCodeForLocation = async (locationName) => {
   })
     .select("vendorCode")
     .lean();
-  return normalizeVendorCode(location?.vendorCode);
+  if (!location) return null; // Distinguish between "not found" and "empty vendor code"
+  return normalizeVendorCode(location.vendorCode);
 };
 
 const getDotValue = (data, key) => {
@@ -250,10 +251,10 @@ exports.add = async (req, res) => {
     }
 
     normalized.vendorCode = await resolveVendorCodeForLocation(normalized.location);
-    if (!normalized.vendorCode) {
+    if (normalized.vendorCode === null) {
       return res.status(400).json({
         status: false,
-        message: "Unable to resolve vendorCode for the selected location",
+        message: "Unable to resolve location",
       });
     }
     const creatorRole = String(req.user?.role || "").toLowerCase();
@@ -516,10 +517,10 @@ exports.update = async (req, res) => {
 
     updates.location = normalizeLocation(updates.location) || existing.location || "";
     updates.vendorCode = await resolveVendorCodeForLocation(updates.location);
-    if (!updates.vendorCode) {
+    if (updates.vendorCode === null) {
       return res.status(400).json({
         status: false,
-        message: "Unable to resolve vendorCode for the selected location",
+        message: "Unable to resolve location",
       });
     }
 

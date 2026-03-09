@@ -754,13 +754,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    const normalizedVendorCode = String(vendorCode || "").trim().toUpperCase();
-    if (!normalizedVendorCode) {
-      return res.status(400).json({
-        status: false,
-        message: "vendorCode is required",
-      });
-    }
+    let normalizedVendorCode = String(vendorCode || "").trim().toUpperCase();
     const resolvedLocation = String(location || "").trim();
     if (!resolvedLocation) {
       return res.status(400).json({
@@ -768,12 +762,18 @@ exports.register = async (req, res) => {
         message: "location is required",
       });
     }
-    const locationRecord = await LocationModel.findOne({
-      vendorCode: normalizedVendorCode,
+
+    const locQuery = {
       name: new RegExp(`^${escapeRegExp(resolvedLocation)}$`, "i"),
-    })
+    };
+    if (normalizedVendorCode) {
+      locQuery.vendorCode = normalizedVendorCode;
+    }
+
+    const locationRecord = await LocationModel.findOne(locQuery)
       .select("name vendorCode")
       .lean();
+
     if (!locationRecord?.name) {
       return res.status(400).json({
         status: false,
@@ -781,6 +781,7 @@ exports.register = async (req, res) => {
       });
     }
     const effectiveLocation = String(locationRecord.name || "").trim();
+    normalizedVendorCode = locationRecord.vendorCode || normalizedVendorCode;
 
     let user = null;
     let employee = null;

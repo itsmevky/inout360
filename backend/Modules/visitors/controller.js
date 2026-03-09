@@ -60,7 +60,8 @@ const resolveVendorCodeForLocation = async (locationName) => {
   })
     .select("vendorCode")
     .lean();
-  return normalizeVendorCode(location?.vendorCode);
+  if (!location) return null;
+  return normalizeVendorCode(location.vendorCode);
 };
 
 const normalizePayload = (data = {}) => {
@@ -196,7 +197,7 @@ const removeFileIfExists = (filePath) => {
   if (filePath.startsWith("/uploads/")) {
     const absolutePath = path.join(UPLOAD_ROOT, filePath.replace("/uploads/", ""));
     if (fs.existsSync(absolutePath)) {
-      fs.unlink(absolutePath, () => {});
+      fs.unlink(absolutePath, () => { });
     }
     return;
   }
@@ -204,7 +205,7 @@ const removeFileIfExists = (filePath) => {
     ? filePath
     : path.join(process.cwd(), filePath);
   if (fs.existsSync(resolved)) {
-    fs.unlink(resolved, () => {});
+    fs.unlink(resolved, () => { });
   }
 };
 
@@ -224,10 +225,10 @@ exports.add = async (req, res) => {
     }
 
     normalized.vendorCode = await resolveVendorCodeForLocation(normalized.location);
-    if (!normalized.vendorCode) {
+    if (normalized.vendorCode === null) {
       return res.status(400).json({
         status: false,
-        message: "Unable to resolve vendorCode for the selected location",
+        message: "Unable to resolve location",
       });
     }
     if (req.file) {
@@ -358,10 +359,10 @@ exports.update = async (req, res) => {
 
     normalized.location = normalizeLocation(normalized.location) || existing.location || "";
     normalized.vendorCode = await resolveVendorCodeForLocation(normalized.location);
-    if (!normalized.vendorCode) {
+    if (normalized.vendorCode === null) {
       return res.status(400).json({
         status: false,
-        message: "Unable to resolve vendorCode for the selected location",
+        message: "Unable to resolve location",
       });
     }
     if (req.file) {
