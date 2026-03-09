@@ -135,7 +135,7 @@ const buildActivityFilter = ({ userId, employeeId, deviceId, category, search })
         {
           event: {
             $regex:
-              "app[_-]?install|app[_-]?uninstall|accessibility|unauthorized uninstall",
+              "app[_-]?install|app[_-]?uninstall|accessibility|unauthorized uninstall|inactive|restricted app settings|working hours violation|overlay|notification permission",
             $options: "i",
           },
         },
@@ -248,20 +248,14 @@ exports.getSummary = async (_req, res) => {
         scopeFilter
       ),
     });
-    const installCount = await DeviceEventModel.countDocuments({
+    const securityEventCount = await DeviceEventModel.countDocuments({
       ...withScope(
         {
           policyVoilation: true,
-          event: { $regex: "app[_-]?install|accessibility", $options: "i" },
-        },
-        scopeFilter
-      ),
-    });
-    const uninstallCount = await DeviceEventModel.countDocuments({
-      ...withScope(
-        {
-          policyVoilation: true,
-          event: { $regex: "app[_-]?uninstall", $options: "i" },
+          event: {
+            $regex: "app[_-]?install|app[_-]?uninstall|accessibility|unauthorized uninstall|inactive|restricted app settings|working hours violation|overlay|notification permission",
+            $options: "i"
+          },
         },
         scopeFilter
       ),
@@ -278,7 +272,7 @@ exports.getSummary = async (_req, res) => {
         scopeFilter
       ),
     });
-    const [cameraToday, installToday, uninstallToday, accessToday] = await Promise.all([
+    const [cameraToday, securityToday, accessToday] = await Promise.all([
       DeviceEventModel.countDocuments({
         ...withScope(
           {
@@ -293,17 +287,10 @@ exports.getSummary = async (_req, res) => {
         ...withScope(
           {
             policyVoilation: true,
-            event: { $regex: "app[_-]?install|accessibility", $options: "i" },
-            timestamp: { $gte: todayStart },
-          },
-          scopeFilter
-        ),
-      }),
-      DeviceEventModel.countDocuments({
-        ...withScope(
-          {
-            policyVoilation: true,
-            event: { $regex: "app[_-]?uninstall", $options: "i" },
+            event: {
+              $regex: "app[_-]?install|app[_-]?uninstall|accessibility|unauthorized uninstall|inactive|restricted app settings|working hours violation|overlay|notification permission",
+              $options: "i"
+            },
             timestamp: { $gte: todayStart },
           },
           scopeFilter
@@ -328,13 +315,13 @@ exports.getSummary = async (_req, res) => {
       status: true,
       data: {
         camera: cameraCount || 0,
-        app_install: installCount || 0,
-        app_uninstall: uninstallCount || 0,
+        app_install: securityEventCount || 0,
+        app_uninstall: 0,
         app_access: accessCount || 0,
         today: {
           camera: cameraToday || 0,
-          app_install: installToday || 0,
-          app_uninstall: uninstallToday || 0,
+          app_install: securityToday || 0,
+          app_uninstall: 0,
           app_access: accessToday || 0,
         },
       },

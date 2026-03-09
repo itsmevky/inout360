@@ -59,7 +59,14 @@ const ActivityPage = () => {
             return capitalizeFirstLetter(String(explicit));
         }
 
-        const text = `${activity?.rawEvent || ""} ${activity?.narrative || ""}`.toLowerCase();
+        let text = `${activity?.rawEvent || ""} ${activity?.narrative || ""}`.toLowerCase();
+
+        // Strip common noise prefixes that might interfere with app name extraction
+        text = text
+            .replace(/\bcamera usage ended\b/gi, "")
+            .replace(/\bpermission controller\b/gi, "")
+            .trim();
+
         const known = [
             { key: "instagram", label: "Instagram" },
             { key: "whatsapp", label: "WhatsApp" },
@@ -69,6 +76,7 @@ const ActivityPage = () => {
             { key: "zoom", label: "Zoom" },
             { key: "meet", label: "Meet" },
             { key: "teams", label: "Teams" },
+            { key: "pil", label: "PIL" },
         ];
         for (const item of known) {
             if (text.includes(item.key)) return item.label;
@@ -81,7 +89,6 @@ const ActivityPage = () => {
             const lowerCand = candidate.toLowerCase();
             const invalidNames = ["system", "phone", "take_picture", "take-picture", "screenshot", "camera"];
             if (!invalidNames.includes(lowerCand)) {
-                // Return the candidate capitalized
                 return candidate.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             }
         }
@@ -129,6 +136,7 @@ const ActivityPage = () => {
     const isCameraActivity = (activity) => {
         const type = String(activity?.type || activity?.category || "").toLowerCase();
         if (cameraActivityTypes.includes(type)) return true;
+        if (type.includes("camera") || type.includes("video call") || type.includes("video-call")) return true;
         if (activity?.category === "camera") return true;
         const raw = String(activity?.rawEvent || "").toLowerCase();
         const narrative = String(activity?.narrative || activity?.metadata?.narrative || "").toLowerCase();
@@ -139,6 +147,26 @@ const ActivityPage = () => {
             narrative.includes("camera") ||
             narrative.includes("video call") ||
             narrative.includes("video-call")
+        );
+    };
+
+    const isSecurityEvent = (activity) => {
+        const type = String(activity?.type || activity?.category || "").toLowerCase();
+        const raw = String(activity?.rawEvent || "").toLowerCase();
+        const narrative = String(activity?.narrative || "").toLowerCase();
+
+        return (
+            type.includes("accessibility") ||
+            type.includes("app_install") ||
+            type.includes("app_uninstall") ||
+            raw.includes("accessibility") ||
+            raw.includes("inactive") ||
+            raw.includes("violation") ||
+            raw.includes("restricted settings") ||
+            raw.includes("overlay") ||
+            narrative.includes("accessibility") ||
+            narrative.includes("restricted app settings") ||
+            narrative.includes("device is inactive")
         );
     };
 
@@ -294,9 +322,7 @@ const ActivityPage = () => {
         } else if (modalContextType === "app_access") {
             list = list.filter((a) => a.category === "app_access");
         } else if (modalContextType === "app_install_uninstall") {
-            list = list.filter(
-                (a) => a.category === "app_install" || a.category === "app_uninstall"
-            );
+            list = list.filter((a) => isSecurityEvent(a) && !isCameraActivity(a));
         } else if (modalTypeFilter) {
             list = list.filter((a) => {
                 const type = String(a.type || a.category || "").toLowerCase();
@@ -316,23 +342,34 @@ const ActivityPage = () => {
     // FILTER + SEARCH
     // ============================================================
     const filteredUsers = useMemo(() => {
-        let list = activityGroups.filter((group) => {
+        // ---- MERGE duplicate groups for the same user ----
+        const mergedMap = new Map();
+        for (const group of activityGroups) {
+            const key = String(group.user || group.employeeId || group.userKey || group.deviceId || "").toLowerCase().trim();
+            if (!key) continue;
+            if (!mergedMap.has(key)) {
+                mergedMap.set(key, { ...group, activities: [...(group.activities || [])] });
+            } else {
+                const existing = mergedMap.get(key);
+                existing.activities = [...existing.activities, ...(group.activities || [])];
+                if (!existing.deviceId && group.deviceId) existing.deviceId = group.deviceId;
+                if (!existing.employeeId && group.employeeId) existing.employeeId = group.employeeId;
+            }
+        }
+        let list = Array.from(mergedMap.values());
+
+        // ---- TYPE FILTER ----
+        list = list.filter((group) => {
             const activities = group.activities || [];
             if (selectedType === "camera_activity") {
-                if (cameraFilter) {
-                    return activities.some((a) => a.type === cameraFilter);
-                }
-                return activities.some((a) =>
-                    isCameraActivity(a)
-                );
+                if (cameraFilter) return activities.some((a) => a.type === cameraFilter);
+                return activities.some((a) => isCameraActivity(a));
             }
             if (selectedType === "app_access") {
-                return activities.some((a) => a.category === "app_access");
+                return activities.some((a) => a.category === "app_access" && !isCameraActivity(a));
             }
             if (selectedType === "app_install_uninstall") {
-                return activities.some(
-                    (a) => a.category === "app_install" || a.category === "app_uninstall"
-                );
+                return activities.some((a) => isSecurityEvent(a) && !isCameraActivity(a));
             }
             if (selectedType) {
                 return activities.some((a) => a.type === selectedType);
@@ -340,6 +377,7 @@ const ActivityPage = () => {
             return true;
         });
 
+        // ---- SEARCH FILTER ----
         if (searchTerm.trim() !== "") {
             list = list.filter((item) =>
                 String(item.user || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -348,10 +386,11 @@ const ActivityPage = () => {
             );
         }
 
-        if (fromDate || toDate) {
-            const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
-            const to = toDate ? new Date(toDate + "T23:59:59") : null;
+        // ---- DATE FILTER ----
+        const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+        const to = toDate ? new Date(toDate + "T23:59:59") : null;
 
+        if (from || to) {
             list = list.filter((item) => {
                 const activities = item.activities || [];
                 return activities.some((a) => {
@@ -364,32 +403,35 @@ const ActivityPage = () => {
             });
         }
 
+        // ---- RESOLVE LATEST ACTIVITY PER USER ----
         return list.map((item) => {
             const activities = item.activities || [];
             let relevant = activities;
             if (selectedType === "camera_activity") {
-                if (cameraFilter) {
-                    relevant = activities.filter((a) => a.type === cameraFilter);
-                } else {
-                    relevant = activities.filter((a) =>
-                        isCameraActivity(a)
-                    );
-                }
+                relevant = cameraFilter
+                    ? activities.filter((a) => a.type === cameraFilter)
+                    : activities.filter((a) => isCameraActivity(a));
             } else if (selectedType === "app_access") {
-                relevant = activities.filter((a) => a.category === "app_access");
+                relevant = activities.filter((a) => a.category === "app_access" && !isCameraActivity(a));
             } else if (selectedType === "app_install_uninstall") {
-                relevant = activities.filter(
-                    (a) => a.category === "app_install" || a.category === "app_uninstall"
-                );
+                relevant = activities.filter((a) => isSecurityEvent(a) && !isCameraActivity(a));
             } else if (selectedType) {
                 relevant = activities.filter((a) => a.type === selectedType);
             }
 
-            const latest = [...relevant].sort((a, b) => {
-                const ta = new Date(a.timestamp || 0).getTime();
-                const tb = new Date(b.timestamp || 0).getTime();
-                return tb - ta;
-            })[0];
+            if (from || to) {
+                relevant = relevant.filter((a) => {
+                    const t = a.timestamp ? new Date(a.timestamp) : null;
+                    if (!t || Number.isNaN(t.getTime())) return false;
+                    if (from && t < from) return false;
+                    if (to && t > to) return false;
+                    return true;
+                });
+            }
+
+            const latest = [...relevant].sort((a, b) =>
+                new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+            )[0];
 
             return { ...item, latestActivity: latest };
         });
@@ -633,6 +675,8 @@ const ActivityPage = () => {
         setModalUser({
             user: record.user,
             activities: record.activities || [],
+            employeeId: record.employeeId,
+            deviceId: record.deviceId,
         });
     };
 
@@ -682,7 +726,7 @@ const ActivityPage = () => {
             today: todayCounts.accessToday,
         },
         {
-            title: "App Install / Uninstall / Accessibility Permission",
+            title: "Security & Permission Events",
             type: "app_install_uninstall",
             count: counts.install + counts.uninstall,
             today: todayCounts.installToday + todayCounts.uninstallToday,
@@ -705,6 +749,8 @@ const ActivityPage = () => {
         if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(url)) return "image";
         return activity?.media ? "image" : "none";
     };
+
+
 
     const isAccessibilityEvent = (activity) => {
         const value = String(
@@ -802,33 +848,40 @@ const ActivityPage = () => {
             const raw = String(
                 activity?.rawEvent || activity?.type || activity?.category || ""
             ).toLowerCase();
-            if (raw.includes("off")) return "Accessibility Off";
-            if (raw.includes("on")) return "Accessibility On";
+            if (raw.includes("off") || raw.includes("disabled")) return "Accessibility Off";
+            if (raw.includes("on") || raw.includes("enabled")) return "Accessibility On";
             return "Accessibility Permission";
         }
         const typeValue = String(activity?.type || activity?.category || "-").toLowerCase();
+        const rawEvent = String(activity?.rawEvent || "").toLowerCase();
+
+        if (rawEvent.includes("inactive")) return "Device Inactive";
+        if (rawEvent.includes("working hours violation")) return "Working Hours Violation";
+        if (rawEvent.includes("restricted app settings")) return "Restricted Settings Access";
+        if (rawEvent.includes("overlay")) {
+            if (rawEvent.includes("disabled") || rawEvent.includes("off")) return "Overlay Disabled";
+            return "Overlay Enabled";
+        }
+        if (rawEvent.includes("notification permission")) {
+            if (rawEvent.includes("disabled") || rawEvent.includes("off")) return "Notification Disabled";
+            return "Notification Enabled";
+        }
         const raw = typeValue.replace(/[_-]+/g, " ").trim();
         if (typeValue.includes("uninstall_attempt")) {
             return "Uninstall attempt";
         }
-        if (typeValue === "take_picture" || isCameraActivity(activity)) {
-            const durationSnippet = extractDurationSnippet(narrative, "Camera Opened");
+        const isCam = isCameraActivity(activity);
+        if (typeValue === "take_picture" || isCam) {
             const appLabel = resolveAppLabel(activity);
 
+            const isVideoCall = raw.includes("video call") || narrative.toLowerCase().includes("video call");
+            const actionText = isVideoCall ? "video call" : "camera opened";
+
             if (appLabel) {
-                const isVideoCall = raw.includes("video call") || narrative.toLowerCase().includes("video call");
-                const actionText = isVideoCall ? "video call" : "camera opened";
-
-                if (compact) {
-                    return `${appLabel} ${actionText}${durationSnippet}`;
-                }
-                return `${appLabel} ${actionText}${durationSnippet}`;
+                return `${appLabel} ${actionText}`;
             }
 
-            if (compact) {
-                return `Camera Opened${durationSnippet}`;
-            }
-            return `Camera opened${durationSnippet}`;
+            return capitalizeFirstLetter(actionText);
         }
         const isAppAccess = String(activity?.category || "").toLowerCase() === "app_access";
         if (isAppAccess) {
@@ -1079,8 +1132,8 @@ const ActivityPage = () => {
                 })}
             </div>
 
-            {/* ================= CAMERA FILTER ================= */}
-            {selectedType === "camera_activity" && (
+            {/* ================= FILTER BAR ================= */}
+            {selectedType !== "in_out" && (
                 <div className="mt-6 flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between activity-page-searchbar-dropdown">
 
                     {/* LEFT SIDE: SEARCH + CAMERA FILTER */}
@@ -1108,16 +1161,7 @@ const ActivityPage = () => {
                             </div>
                         </div>
 
-                        <select
-                            className="p-2  bg-white activity-page-select-option w-full sm:w-auto"
-                            value={cameraFilter || ""}
-                            onChange={(e) => setCameraFilter(e.target.value)}
-                        >
-                            <option value="">All Camera Activity</option>
-                            <option value="screenshot">Screenshot</option>
-                            <option value="take_picture">Take Picture</option>
-                            <option value="video">Record Video</option>
-                        </select>
+
                     </div>
 
                     {/* RIGHT SIDE: DATE RANGE */}
@@ -1400,21 +1444,6 @@ const ActivityPage = () => {
                                 </span>
                             </div>
                             <div className="modal-activity-controls">
-                                {modalContextType === "camera_activity" && modalUser?.activities?.some((a) => {
-                                    const type = String(a.type || a.category || "").toLowerCase();
-                                    return ["screenshot", "take_picture", "video"].includes(type);
-                                }) ? (
-                                    <select
-                                        className="p-2 bg-white activity-page-select-option modal-filter-input"
-                                        value={modalTypeFilter}
-                                        onChange={(e) => setModalTypeFilter(e.target.value)}
-                                    >
-                                        <option value="">All Camera Activity</option>
-                                        <option value="screenshot">Screenshot</option>
-                                        <option value="take_picture">Take Picture</option>
-                                        <option value="video">Video</option>
-                                    </select>
-                                ) : null}
                                 <input
                                     type="date"
                                     className="border rounded p-2 activity-page-date-from modal-filter-input"
@@ -1565,44 +1594,20 @@ const ActivityPage = () => {
                             </p>
                         </div>
                         <div className="mt-2">
-                            {isAccessibilityEvent(mediaModalActivity) ? (
-                                <div className="text-sm text-gray-700">
-                                    {resolveAccessibilityMessage(mediaModalActivity)}
-                                </div>
-                            ) : isCameraActivity(mediaModalActivity) ? (
-                                <div className="text-sm text-gray-700">
-                                    {`${resolveAppLabel(mediaModalActivity) ? `${resolveAppLabel(mediaModalActivity)} ` : ""}camera opened`}
-                                </div>
-                            ) : String(mediaModalActivity.category || mediaModalActivity.type || "").toLowerCase() === "app_access" ? (
-                                <div className="text-sm text-gray-700">
-                                    {`${(mediaModalActivity.appName || mediaModalActivity.type || "App").replace("_", " ")} accessed by ${mediaModalActivity.name || "user"}`}
-                                </div>
-                            ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase().includes("uninstall_attempt") ? (
-                                <div className="text-sm text-gray-700">
-                                    {`App uninstall attempt detected by ${mediaModalActivity.name || "user"}`}
-                                </div>
-                            ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase() === "app_uninstall" ? (
-                                <div className="text-sm text-gray-700">
-                                    {`App uninstall attempt detected by ${mediaModalActivity.name || "user"}`}
-                                </div>
-                            ) : String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase() === "app_install" ? (
-                                <div className="text-sm text-gray-700">
-                                    {`App installed by ${mediaModalActivity.name || "user"}`}
-                                </div>
-                            ) : resolveMediaType(mediaModalActivity) === "video" ? (
+                            {(() => {
+                                const fullMessage = mediaModalActivity.narrative || mediaModalActivity.rawEvent || "";
+                                return (
+                                    <div className="text-sm text-gray-700 mb-4 whitespace-pre-wrap font-medium">
+                                        {fullMessage}
+                                    </div>
+                                );
+                            })()}
+                            {resolveMediaType(mediaModalActivity) === "video" && (
                                 <video
                                     src={mediaModalActivity.media}
                                     controls
                                     className="w-full rounded-lg"
                                 />
-                            ) : resolveMediaType(mediaModalActivity) === "image" ? (
-                                <img
-                                    src={mediaModalActivity.media}
-                                    alt="activity media"
-                                    className="w-full rounded-lg"
-                                />
-                            ) : (
-                                <div className="text-sm text-gray-500">No media available.</div>
                             )}
                         </div>
                     </div>
