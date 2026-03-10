@@ -146,7 +146,7 @@ const QrLoginComponent = () => {
               {/* QR badge */}
               <div className="pil-qr-badge">
                 <QrCode size={20} />
-                QR Station Login — Admin Access Required
+                QR Station Login — Admin, HR or Manager Access Required
               </div>
 
               {/* Title */}

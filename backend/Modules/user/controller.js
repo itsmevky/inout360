@@ -220,7 +220,7 @@ exports.qrLoginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const allowedRoles = ["superadmin", "admin", "manager"];
+    const allowedRoles = ["superadmin", "admin", "hr", "manager"];
     if (!allowedRoles.includes(String(user.role || "").toLowerCase())) {
       return res.status(403).json({ message: "You are not authorized" });
     }
