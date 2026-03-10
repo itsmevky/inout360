@@ -631,100 +631,32 @@ const Employeepage = () => {
         )}
         {/* Add User Form Center Modal */}
         {isAddUserFormVisible && (
-          <>
-
-            {/* BACKDROP */}
-            <div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-fadeIn"
-              onClick={toggleAddUserForm}
-            ></div>
-
-            {/* CENTER WRAPPER */}
-            <div
-              className="fixed inset-0 flex items-center justify-center z-50"
-            >
-
-              {/* MAIN MODAL */}
-              <div
-              // className="bg-white rounded-2xl shadow-2xl w-[70%] max-w-[1000px] max-h-[90vh] overflow-y-auto p-8 relative animate-zoomIn"
-              >
-                {/* CLOSE BUTTON */}
-                {/* <button
-                  className="  absolute top-5 right-5 bg-red-500 text-white w-9 h-9 flex items-center justify-center rounded-full shadow-lg " onClick={toggleAddUserForm}
-                >
-                  ✕
-                </button> */}
-
-                {/* FORM CONTENT */}
-                <AddUserForm
-                  onSuccess={() => {
-                    toggleAddUserForm();
-                    fetchemployees();
-                  }}
-                  onClose={() => {
-                    toggleAddUserForm();
-                  }}
-                />
-              </div>
-
-            </div>
-          </>
+          <AddUserForm
+            onSuccess={() => {
+              toggleAddUserForm();
+              fetchemployees();
+            }}
+            onClose={() => {
+              toggleAddUserForm();
+            }}
+          />
         )}
 
 
-        {/* Edit User Form Sliding Panel */}
+        {/* Edit User Form Center Modal */}
         {isEditUserFormVisible && selectedUser && (
-          <>
-            {/* BACKDROP */}
-            <div
-              className="fixed inset-0 bg-black/50 z-[10]"
-              onClick={() => {
-                setIsEditUserFormVisible(false);
-                setSelectedUser(null);
-              }}
-            />
-
-            {/* SIDE PANEL */}
-            <div
-              className="fixed top-0 right-0 w-full md:w-1/3 h-full bg-white shadow-2xl z-[9999] animate-slideIn"
-              onClick={(e) => e.stopPropagation()} // ✅ important
-            >
-              <div className="modal-wrapper h-full">
-                <button
-                  className="modal-close-btn modal-close-btn--left"
-                  onClick={() => {
-                    setIsEditUserFormVisible(false);
-                    setSelectedUser(null);
-                  }}
-                >
-                  ✕
-                </button>
-                <div className="p-4 h-full overflow-y-auto">
-
-                  {/* FORM */}
-                  <EditUserForm
-                    user={selectedUser}
-                    onClose={() => {
-                      setIsEditUserFormVisible(false);
-                      setSelectedUser(null);
-                    }}
-                    onSuccess={() => {
-                      setIsEditUserFormVisible(false);
-                      setSelectedUser(null);
-                      fetchemployees();
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Background overlay when Add or Edit User form is visible */}
-        {(isAddUserFormVisible || isEditUserFormVisible) && (
-          <div className="fixed inset-0 bg-black opacity-50 z-40">
-
-          </div>
+          <EditUserForm
+            user={selectedUser}
+            onClose={() => {
+              setIsEditUserFormVisible(false);
+              setSelectedUser(null);
+            }}
+            onSuccess={() => {
+              setIsEditUserFormVisible(false);
+              setSelectedUser(null);
+              fetchemployees();
+            }}
+          />
         )}
       </div>
     </div>
