@@ -764,15 +764,7 @@ exports.register = async (req, res) => {
         message: "name and deviceId are required",
       });
     }
-    if (employeeId !== undefined && employeeId !== null && String(employeeId).trim() !== "") {
-      const normalizedEmployeeId = String(employeeId).trim();
-      if (!/^\d+$/.test(normalizedEmployeeId)) {
-        return res.status(400).json({
-          status: false,
-          message: "Employee Id must be numeric",
-        });
-      }
-    }
+
 
     let normalizedVendorCode = String(vendorCode || "").trim().toUpperCase();
     const resolvedLocation = String(location || "").trim();
@@ -1176,25 +1168,25 @@ exports.getAll = async (req, res) => {
       filter.verified = { $ne: false };
     }
 
-	    const result = await paginate(
-	      DeviceModel,
-	      filter,
-	      pageNumber,
-	      limit,
-	      ["userId"],
-	      [
-	        "deviceId",
-	        "deviceName",
-	        "employeeId",
-	        "name",
-	        "ownerName",
-	        "model",
-	        "appVersion",
-	        "osVersion",
-	      ],
-	      search,
-	      { createdAt: -1, _id: -1 }
-	    );
+    const result = await paginate(
+      DeviceModel,
+      filter,
+      pageNumber,
+      limit,
+      ["userId"],
+      [
+        "deviceId",
+        "deviceName",
+        "employeeId",
+        "name",
+        "ownerName",
+        "model",
+        "appVersion",
+        "osVersion",
+      ],
+      search,
+      { createdAt: -1, _id: -1 }
+    );
 
     const devices = result.data.map(formatDevice);
 
