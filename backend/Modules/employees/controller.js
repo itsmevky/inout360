@@ -4,8 +4,12 @@ const fs = require("fs");
 const path = require("path");
 const EmployeeModel = require("./model");
 const UserModel = require("../user/model");
+const VisitorModel = require("../user/visitorModel");
 const LocationModel = require("../location/model");
 const UserSession = require("../user/userSessionsModel");
+const DeviceModel = require("../device/model");
+const DeviceEventModel = require("../device/deviceEventModel");
+const AttendanceModel = require("../attendance/model");
 const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { UPLOAD_ROOT } = require("../../middleware/upload");
@@ -233,12 +237,6 @@ exports.add = async (req, res) => {
   try {
     const scope = await resolveLocationScope(req);
     const normalized = normalizePayload(req.body);
-    if (scope.isAdmin && isPrivilegedRole(normalized.role)) {
-      return res.status(403).json({
-        status: false,
-        message: "Only superadmin can create admin/superadmin profiles",
-      });
-    }
     if (scope.isAdmin) {
       const requestedLocation = normalizeLocation(normalized.location);
       if (requestedLocation && requestedLocation !== scope.location) {
@@ -257,16 +255,7 @@ exports.add = async (req, res) => {
         message: "Unable to resolve location",
       });
     }
-    const creatorRole = String(req.user?.role || "").toLowerCase();
-    if (["hr", "manager"].includes(creatorRole)) {
-      const allowedRoles = ["employee", "contractor", "supervisor"];
-      if (!allowedRoles.includes(String(normalized.role || "").toLowerCase())) {
-        return res.status(403).json({
-          status: false,
-          message: "You can only assign employee, contractor, or supervisor roles.",
-        });
-      }
-    }
+
     if (req.file) {
       normalized.profileImage = `/uploads/employees/${req.file.filename}`;
     }
@@ -279,37 +268,18 @@ exports.add = async (req, res) => {
         .json({ status: false, message: "Employee already exists with this email" });
     }
 
-    // Ensure a corresponding user record exists with required fields
-    let user = await UserModel.findOne({
-      $or: [{ email: normalized.email }, { employeeId: normalized.employeeId }],
-    });
-    if (!user) {
-      user = await UserModel.create({
-        name: normalized.name,
-        firstName: normalized.firstName,
-        lastName: normalized.lastName,
-        employeeId: normalized.employeeId,
-        email: normalized.email,
-        password: null,
-        role: normalized.role || "employee",
-        location: normalized.location || "",
-        vendorCode: normalized.vendorCode || "",
-        profileImage: normalized.profileImage || "",
-      });
-    } else {
-      const userUpdates = {
-        ...(normalized.location ? { location: normalized.location } : {}),
-        ...(normalized.vendorCode ? { vendorCode: normalized.vendorCode } : {}),
-        ...(normalized.role ? { role: normalized.role } : {}),
-        ...(normalized.profileImage ? { profileImage: normalized.profileImage } : {}),
-      };
-      if (Object.keys(userUpdates).length) {
-        await UserModel.findByIdAndUpdate(user._id, userUpdates);
-      }
-    }
+    const normalizedRole = "employee";
+    let userId = null;
 
-    // Do not store password; keep null for employee/user created via this flow
-    const data = { ...normalized, password: null, userId: user._id };
+    // Do not store password; keep null for records created via this flow
+    const data = {
+      ...normalized,
+      role: normalizedRole,
+      password: null,
+      userId,
+      otpVerified: true,
+      otpVerifiedAt: new Date(),
+    };
 
     const employee = await EmployeeModel.create(data);
 
@@ -335,7 +305,7 @@ exports.add = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const scope = await resolveLocationScope(req);
-    const { page, limit, search, status, department, attendanceStatus } = req.query;
+    const { page, limit, search, status, department, attendanceStatus, includeUnverified } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const filter = {};
     if (scope.isAdmin) {
@@ -345,6 +315,15 @@ exports.getAll = async (req, res) => {
     if (status) filter["status"] = status;
     if (department) filter["department"] = department;
     if (attendanceStatus) filter["attendanceStatus"] = attendanceStatus;
+    const showUnverified =
+      includeUnverified === true ||
+      includeUnverified === 1 ||
+      includeUnverified === "1" ||
+      String(includeUnverified || "").toLowerCase() === "true";
+    if (!showUnverified) {
+      const otpGate = { $or: [{ otpVerified: true }, { otpVerified: { $exists: false } }] };
+      filter.$and = Array.isArray(filter.$and) ? [...filter.$and, otpGate] : [otpGate];
+    }
 
     const result = await paginate(
       EmployeeModel,
@@ -369,24 +348,37 @@ exports.getAll = async (req, res) => {
     });
 
     const userIds = employees.map((emp) => emp.userId).filter(Boolean);
+    const empIds = employees.map((emp) => emp.employeeId).filter(Boolean);
+
+    const [sessionData, deviceData] = await Promise.all([
+      userIds.length
+        ? UserModel.find({ _id: { $in: userIds } }).select("_id sessionStatus").lean()
+        : Promise.resolve([]),
+      empIds.length
+        ? DeviceModel.find({ employeeId: { $in: empIds } }).select("employeeId deviceId").lean()
+        : Promise.resolve([]),
+    ]);
+
     const sessionMap = {};
-    if (userIds.length) {
-      const users = await UserModel.find({ _id: { $in: userIds } })
-        .select("_id sessionStatus")
-        .lean();
-      users.forEach((user) => {
-        sessionMap[String(user._id)] = user.sessionStatus;
-      });
-    }
-    const employeesWithSession = employees.map((emp) => ({
+    sessionData.forEach((u) => {
+      sessionMap[String(u._id)] = u.sessionStatus;
+    });
+
+    const deviceMap = {};
+    deviceData.forEach((d) => {
+      if (d.employeeId) deviceMap[d.employeeId] = d.deviceId || String(d._id);
+    });
+
+    const employeesWithData = employees.map((emp) => ({
       ...emp,
       sessionStatus: sessionMap[String(emp.userId)] || "Logout",
+      deviceId: deviceMap[emp.employeeId] || emp.deviceId || "-",
     }));
 
     return res.status(200).json({
       status: result.status,
       message: result.message,
-      employees: employeesWithSession,
+      employees: employeesWithData,
       total: result.pagination?.totalrecords || 0,
       pagination: result.pagination,
     });
@@ -475,6 +467,132 @@ exports.getbyid = async (req, res) => {
   }
 };
 
+exports.getOverviewByEmployeeId = async (req, res) => {
+  try {
+    const scope = await resolveLocationScope(req);
+    const employeeId = String(req.params.employeeId || "").trim();
+    if (!employeeId) {
+      return res.status(400).json({ status: false, message: "employeeId is required" });
+    }
+
+    let principalType = "employee";
+    let principal = await EmployeeModel.findOne({ employeeId }).lean();
+    if (!principal) {
+      principalType = "visitor";
+      principal = await VisitorModel.findOne({ employeeId }).lean();
+    }
+    if (!principal) {
+      return res.status(404).json({ status: false, message: "Not found" });
+    }
+
+    if (principalType === "employee") {
+      if (scope.isAdmin && isPrivilegedRole(principal.role)) {
+        return res.status(403).json({
+          status: false,
+          message: "Only superadmin can access admin/superadmin profiles",
+        });
+      }
+      assertScopedLocation(
+        principal.location,
+        scope,
+        "You can only access employees from your assigned location"
+      );
+    } else {
+      assertScopedLocation(
+        principal.location,
+        scope,
+        "You can only access visitors from your assigned location"
+      );
+    }
+
+    const baseViolationFilter = { employeeId, policyVoilation: true };
+    const cameraRegex = /camera|screenshot|video/i;
+    const accessRegex = /youtube|whatsapp|instagram|facebook|restricted app opened/i;
+    const securityRegex =
+      /overlay|notification permission|location permission|device admin|accessibility|usage access/i;
+
+    const [
+      devices,
+      violationsTotal,
+      cameraViolations,
+      accessViolations,
+      securityViolations,
+      recentViolationEvents,
+      attendance,
+      sessionStatus,
+    ] = await Promise.all([
+      DeviceModel.find({ employeeId })
+        .select(
+          "deviceId deviceName status deviceStatus platform model osVersion appVersion verified lastSeen lastOnline createdAt"
+        )
+        .sort({ createdAt: -1, _id: -1 })
+        .lean(),
+      DeviceEventModel.countDocuments(baseViolationFilter),
+      DeviceEventModel.countDocuments({
+        ...baseViolationFilter,
+        event: { $regex: cameraRegex },
+      }),
+      DeviceEventModel.countDocuments({
+        ...baseViolationFilter,
+        event: { $regex: accessRegex },
+      }),
+      DeviceEventModel.countDocuments({
+        ...baseViolationFilter,
+        event: { $regex: securityRegex },
+      }),
+      DeviceEventModel.find(baseViolationFilter)
+        .select("event timestamp narrative metadata imagePath cameraStatus policyVoilation")
+        .sort({ timestamp: -1, _id: -1 })
+        .limit(200)
+        .lean(),
+      AttendanceModel.find({ employeeId })
+        .select(
+          "date rfidCardId location sectionAssigned status entryGateIn workfloorIn workfloorOut exitGateOut totalWorkHours"
+        )
+        .sort({ date: -1, _id: -1 })
+        .limit(60)
+        .lean(),
+      principal.userId
+        ? UserModel.findById(principal.userId).select("sessionStatus").lean()
+        : UserModel.findOne({ employeeId }).select("sessionStatus").lean(),
+    ]);
+
+    return res.status(200).json({
+      status: true,
+      data: {
+        principalType,
+        profile: {
+          name: principal.name || `${principal.firstName || ""} ${principal.lastName || ""}`.trim(),
+          employeeId: principal.employeeId || employeeId,
+          email: principal.email || "",
+          gender: principal.gender || "",
+          department: principal.department || "",
+          role: principal.role || "",
+          status: principal.status || "",
+          location: principal.location || "",
+          rfid: principal.rfid || "",
+          createdAt: principal.createdAt || null,
+          sessionStatus: sessionStatus?.sessionStatus || "Logout",
+        },
+        counts: {
+          policyViolations: violationsTotal || 0,
+          camera: cameraViolations || 0,
+          appAccess: accessViolations || 0,
+          securityPermission: securityViolations || 0,
+        },
+        devices: devices || [],
+        attendance: attendance || [],
+        violationEvents: recentViolationEvents || [],
+      },
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      status: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
 exports.update = async (req, res) => {
   try {
     const scope = await resolveLocationScope(req);
@@ -497,13 +615,7 @@ exports.update = async (req, res) => {
     );
 
     const normalized = normalizePayload(req.body);
-    const updates = { ...normalized };
-    if (scope.isAdmin && isPrivilegedRole(updates.role)) {
-      return res.status(403).json({
-        status: false,
-        message: "Only superadmin can assign admin/superadmin roles",
-      });
-    }
+    const updates = { ...normalized, role: "employee" };
     if (scope.isAdmin) {
       const requestedLocation = normalizeLocation(updates.location);
       if (requestedLocation && requestedLocation !== scope.location) {
@@ -535,28 +647,13 @@ exports.update = async (req, res) => {
     // Do not process password updates in this flow
     delete updates.password;
 
+    // Removal of user update sync logic as per request.
     const updated = await EmployeeModel.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: false,
     });
     if (!updated) {
       return res.status(404).json({ status: false, message: "Not found" });
-    }
-    if (updated.userId) {
-      const userUpdates = {
-        location: updated.location || "",
-        vendorCode: updated.vendorCode || "",
-        firstName: updated.firstName || "",
-        lastName: updated.lastName || "",
-        name: updated.name || `${updated.firstName || ""} ${updated.lastName || ""}`.trim(),
-        email: updated.email || "",
-        role: updated.role || "employee",
-        employeeId: updated.employeeId || "",
-      };
-      if (updates.profileImage) {
-        userUpdates.profileImage = updates.profileImage;
-      }
-      await UserModel.findByIdAndUpdate(updated.userId, userUpdates);
     }
     if (req.file && previous?.profileImage) {
       const oldPath = previous.profileImage;

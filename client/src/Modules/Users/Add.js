@@ -173,7 +173,6 @@ const AddUserForm = ({ onSuccess, onClose }) => {
                 <SelectField label="Section" name="section" options={["Welding", "Electrical", "Assembly"]} />
                 <SelectField label="Shift" name="shift" options={["Morning", "Evening", "Night"]} />
                 <SelectField label="Employment Type" name="employmentType" options={["Full Time", "Part Time", "Intern", "Contract Basis"]} />
-                <SelectField label="Role" name="role" options={roleOptions} />
                 <SelectField label="Status" name="status" options={["Active", "Inactive"]} />
                 <SelectField label="Location" name="location" options={locations} />
               </Grid>

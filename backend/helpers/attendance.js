@@ -8,7 +8,7 @@ const getDayRange = (date) => {
   return { start, end };
 };
 
-const markAttendance = async (employee, action, userId, location) => {
+const markAttendance = async (employee, action, userId, location, locationId) => {
   const { start, end } = getDayRange(new Date());
   const now = new Date();
 
@@ -18,6 +18,7 @@ const markAttendance = async (employee, action, userId, location) => {
       employeeId: employee.employeeId,
       userId: userId || employee.userId || null,
       location: location || null,
+      locationId: locationId || null,
       date: start,
       entryGateIn: now,
       sectionAssigned: employee.section,
@@ -45,6 +46,7 @@ const markAttendance = async (employee, action, userId, location) => {
       employeeId: employee.employeeId,
       userId: userId || employee.userId || null,
       location: location || null,
+      locationId: locationId || null,
       date: start,
       exitGateOut: now,
       totalWorkHours,

@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const Validator = require("../../helpers/validators");
 const User = require("./model");
 const EmployeeModel = require("../employees/model");
+const LocationModel = require("../location/model");
 const { sendEmail } = require("../../helpers/sendemail");
 
 /* ---------------------------------
@@ -106,15 +107,32 @@ exports.registerUser = async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(password);
+
+    let locationId = null;
+    let vendorCode = "";
+    if (req.body.location) {
+      const loc = await LocationModel.findOne({ name: req.body.location });
+      if (loc) {
+        locationId = loc._id;
+        vendorCode = loc.vendorCode || "";
+      }
+    }
+
     const user = await User.create({
-      name,
+      firstName: req.body.firstName || "",
+      lastName: req.body.lastName || "",
+      name: name || req.body.name || `${req.body.firstName} ${req.body.lastName}`.trim(),
       email,
-      employeeId,
+      employeeId: employeeId || `USR${Date.now()}`, // Generate if missing for system users
       role,
       password: hashedPassword,
+      location: req.body.location || "",
+      locationId: locationId,
+      vendorCode: vendorCode,
     });
 
     res.status(201).json({
+      status: true,
       message: "User registered successfully",
       user: {
         id: user._id,
@@ -126,9 +144,123 @@ exports.registerUser = async (req, res) => {
   } catch (error) {
     console.error("Registration Error:", error);
     res.status(500).json({
+      status: false,
       message: "Server error",
       error: error.message,
     });
+  }
+};
+
+/* ---------------------------------
+   Get All Users (for superadmin)
+---------------------------------- */
+const paginate = require("../../helpers/limitoffset");
+exports.getAll = async (req, res) => {
+  try {
+    const { page, limit, search, role } = req.query;
+    const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
+    const filter = {};
+    if (role) filter["role"] = role;
+
+    const result = await paginate(
+      User,
+      filter,
+      pageNumber,
+      limit,
+      [],
+      ["name", "email", "employeeId", "role", "location"],
+      search,
+      { createdAt: -1 }
+    );
+
+    return res.status(200).json({
+      status: true,
+      data: result.data,
+      total: result.pagination?.totalrecords || 0,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+/* ---------------------------------
+   Get User By ID
+---------------------------------- */
+exports.getbyid = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+    return res.status(200).json({ status: true, data: user });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+/* ---------------------------------
+   Update User
+---------------------------------- */
+exports.update = async (req, res) => {
+  try {
+    const updates = { ...req.body };
+    if (updates.password) {
+      updates.password = await hashPassword(updates.password);
+    } else {
+      delete updates.password;
+    }
+
+    if (updates.firstName || updates.lastName || updates.name) {
+      const f = updates.firstName || "";
+      const l = updates.lastName || "";
+      updates.name = updates.name || `${f} ${l}`.trim();
+    }
+
+    if (updates.location) {
+      const loc = await LocationModel.findOne({ name: updates.location });
+      if (loc) {
+        updates.locationId = loc._id;
+        updates.vendorCode = loc.vendorCode || "";
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    // Optional: If user is linked to an employee, update employee record too?
+    // For now, keep it simple as per request.
+
+    res.status(200).json({
+      status: true,
+      message: "User updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+/* ---------------------------------
+   Remove User
+---------------------------------- */
+exports.remove = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+    res.status(200).json({ status: true, message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
   }
 };
 

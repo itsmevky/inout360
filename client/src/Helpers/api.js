@@ -148,7 +148,7 @@ const API = {
   },
 
   // Generic CRUD methods
-  // getAll: (params) => getData("/sections/all", params),
+  getAll: (module, params) => getData(`/${module}`, params),
   getById: (module, id) => getData(`/${module}/${id}`),
   add: (module, data) => postData(`/${module}`, data),
   update: (module, id, data) => putData(`/${module}/${id}`, data),

@@ -105,7 +105,6 @@ const SuperAdminDashboard = () => {
                         fontWeight: 700,
                       }}
                     />
-                    <BarTooltip cursor={{ fill: 'transparent' }} />
                     <Bar
                       dataKey="value"
                       fill="#018DD4"

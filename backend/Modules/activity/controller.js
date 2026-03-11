@@ -72,10 +72,81 @@ const resolveMediaType = (eventType) => {
 const isCameraActivity = (value) =>
   /camera|screenshot|video/i.test(String(value || ""));
 
+const parseDurationSeconds = (...candidates) => {
+  const joined = candidates
+    .filter(Boolean)
+    .map((value) => String(value))
+    .join(" ");
+  if (!joined) return null;
+  const text = joined.toLowerCase();
+  const match = text.match(/used\s*for\s*(\d+(?:\.\d+)?)\s*(?:sec|secs|second|seconds)\b/);
+  if (!match) return null;
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) ? seconds : null;
+};
+
+const isPermissionDisabledEvent = (textValue) => {
+  const value = String(textValue || "").toLowerCase();
+  const isDisabled =
+    /\bdisabled\b/i.test(value) ||
+    /turned\s*off/i.test(value) ||
+    /turn\s*off/i.test(value) ||
+    /\boff\b/i.test(value);
+  if (!isDisabled) return false;
+  return (
+    value.includes("overlay") ||
+    value.includes("location permission") ||
+    value.includes("notification permission") ||
+    value.includes("device admin") ||
+    value.includes("accessibility") ||
+    value.includes("usage access")
+  );
+};
+
+const isVideoCallContext = (textValue) => {
+  const value = String(textValue || "").toLowerCase();
+  return (
+    value.includes("video call") ||
+    value.includes("videocall") ||
+    value.includes("whatsapp") ||
+    value.includes("instagram") ||
+    value.includes("facebook")
+  );
+};
+
 const resolvePolicyVoilation = async (payload) => {
+  const parts = [
+    payload.activityType,
+    payload.category,
+    payload.title,
+    payload.event,
+    payload.narrative,
+    payload.metadata?.narrative,
+    payload.raw?.narrative,
+    payload.metadata?.appName,
+    payload.metadata?.packageName,
+    payload.metadata?.app,
+  ];
+  const value = parts
+    .filter(Boolean)
+    .map((item) => String(item).trim().toLowerCase())
+    .join(" ");
+
+  if (isPermissionDisabledEvent(value)) return true;
+
   const isCamera =
     isCameraActivity(payload.activityType) || isCameraActivity(payload.category);
   if (!isCamera) return false;
+  const seconds = parseDurationSeconds(
+    payload.narrative,
+    payload.metadata?.narrative,
+    payload.raw?.narrative,
+    payload.activityType,
+    payload.category
+  );
+  if (!seconds || seconds <= 3) return false;
+  if (!isVideoCallContext(value)) return false;
+
   if (payload.userId && mongoose.isValidObjectId(payload.userId)) {
     const user = await UserModel.findById(payload.userId)
       .select("sessionStatus")
@@ -107,8 +178,16 @@ const resolvePolicyVoilation = async (payload) => {
   return session?.action === "Logged In";
 };
 
-const buildActivityFilter = ({ userId, employeeId, deviceId, category, search }) => {
-  const filter = { policyVoilation: true };
+const buildActivityFilter = ({
+  userId,
+  employeeId,
+  deviceId,
+  category,
+  search,
+  violationsOnly,
+}) => {
+  const filter = {};
+  if (violationsOnly) filter.policyVoilation = true;
   if (employeeId) filter.employeeId = employeeId;
   if (deviceId) filter.deviceId = deviceId;
 
@@ -333,13 +412,15 @@ exports.getSummary = async (_req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const { userId, employeeId, deviceId, category, search } = req.query;
+    const { userId, employeeId, deviceId, category, search, violationsOnly } = req.query;
+    const onlyViolations = String(violationsOnly || "").toLowerCase() === "true";
     const baseFilter = buildActivityFilter({
       userId,
       employeeId,
       deviceId,
       category,
       search,
+      violationsOnly: onlyViolations,
     });
     const scopeFilter = await buildLocationScopeFilter(req);
     const filter = withScope(baseFilter, scopeFilter);
@@ -707,6 +788,46 @@ exports.getById = async (req, res) => {
     res.status(200).json({ status: true, data: record });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || id === "undefined") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Notification id is required" });
+    }
+    const scopeFilter = await buildLocationScopeFilter(req);
+    const filter = withScope({ _id: id, policyVoilation: true }, scopeFilter);
+    const result = await DeviceEventModel.deleteOne(filter);
+    return res.status(200).json({
+      status: true,
+      message: result.deletedCount ? "Notification deleted" : "No notification deleted",
+      deletedCount: result.deletedCount || 0,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.clearNotifications = async (req, res) => {
+  try {
+    const { employeeId, deviceId } = req.query || {};
+    const scopeFilter = await buildLocationScopeFilter(req);
+    const baseFilter = { policyVoilation: true };
+    if (employeeId) baseFilter.employeeId = String(employeeId).trim();
+    if (deviceId) baseFilter.deviceId = String(deviceId).trim();
+    const filter = withScope(baseFilter, scopeFilter);
+    const result = await DeviceEventModel.deleteMany(filter);
+    return res.status(200).json({
+      status: true,
+      message: `${result.deletedCount || 0} notification(s) cleared`,
+      deletedCount: result.deletedCount || 0,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
   }
 };
 

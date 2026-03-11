@@ -1,10 +1,10 @@
-const { ajModel } = require("../../common/classes/Model");
+const { ajModel, mongoose } = require("../../common/classes/Model");
 
 const userSchemaDefinition = {
   firstName: { type: String, trim: true },
   lastName: { type: String, trim: true },
   name: { type: String, required: true, trim: true },
-  employeeId: { type: String, required: true, trim: true, index: true },
+  employeeId: { type: String, required: false, trim: true, index: true },
   sessionStatus: {
     type: String,
     enum: ["Logged In", "Logout"],
@@ -54,6 +54,7 @@ const userSchemaDefinition = {
     default: "employee",
   },
   location: { type: String, trim: true, default: "" },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", default: null, index: true },
   vendorCode: { type: String, trim: true, uppercase: true, default: "", index: true },
   profileImage: { type: String, trim: true, default: "" },
 };
@@ -63,9 +64,11 @@ const userTransform = (ret) => ({
   name: ret.name,
   fullname: ret.name,
   employeeId: ret.employeeId,
+  email: ret.email,
   sessionStatus: ret.sessionStatus,
   role: ret.role,
   location: ret.location,
+  locationId: ret.locationId,
   vendorCode: ret.vendorCode || "",
   profileImage: ret.profileImage,
   createdAt: ret.createdAt,

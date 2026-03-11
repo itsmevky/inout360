@@ -311,10 +311,9 @@ const AttendanceList = () => {
                 <thead>
                   <tr className="bg-gray-100 text-left text-gray-700">
                     <th className="p-3">Sr.No</th>
-                    <th className="p-3">User</th>
+                    <th className="p-3">Name / Employee ID</th>
                     <th className="p-3">Activity</th>
                     <th className="p-3">Device ID</th>
-                    <th className="p-3">Employee ID</th>
                     <th className="p-3">Time</th>
                     <th className="p-3">Action</th>
                   </tr>
@@ -323,10 +322,14 @@ const AttendanceList = () => {
                   {paginatedUsers.map((user, index) => (
                     <tr key={user.userKey} className="hover:bg-gray-50">
                       <td className="p-3">{(currentPage - 1) * rowsPerPage + index + 1}</td>
-                      <td className="p-3">{user.userName || "-"}</td>
+                      <td className="p-3">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-900">{user.userName || "-"}</span>
+                          <span className="text-xs text-gray-500 font-medium">{user.employeeId || "-"}</span>
+                        </div>
+                      </td>
                       <td className="p-3">{user.latestEntry ? resolveActivity(user.latestEntry) : "-"}</td>
                       <td className="p-3">{user.deviceId || "-"}</td>
-                      <td className="p-3">{user.employeeId || "-"}</td>
                       <td className="p-3">{formatDateTime(resolveTime(user.latestEntry))}</td>
                       <td className="p-3">
                         <button
@@ -343,7 +346,7 @@ const AttendanceList = () => {
                   ))}
                   {paginatedUsers.length === 0 && (
                     <tr>
-                      <td className="p-4 text-center text-gray-500" colSpan={7}>
+                      <td className="p-4 text-center text-gray-500" colSpan={6}>
                         No attendance records found.
                       </td>
                     </tr>

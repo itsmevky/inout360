@@ -13,10 +13,11 @@ import { can, normalizeRole } from "../../../Helpers/acl.js";
 const Employeepage = () => {
   const { user } = useUser();
   const role = normalizeRole(user?.role);
-  const canCreateEmployees = can(role, "employees", "create");
+  const canCreateEmployees = role === "superadmin";
   const canUpdateEmployees = can(role, "employees", "update");
   const canDeleteEmployees = can(role, "employees", "delete");
   const canForceLogoutEmployees = role === "superadmin" || role === "admin";
+  const canManageDevices = role === "superadmin" || role === "admin";
   const canManageEmployees = canUpdateEmployees || canDeleteEmployees;
   const [data, setData] = useState([]);
   // const [selectedUsers, setselectedUsers] = useState([]);
@@ -187,57 +188,84 @@ const Employeepage = () => {
     }
   };
 
+  const openUserOverview = (row, sectionId = "") => {
+    const id = row?.employeeId || row?.id || row?._id;
+    if (!id) return;
+    const hash = sectionId ? `#${sectionId}` : "";
+    navigate(`/dashboard/users/user/${encodeURIComponent(String(id))}${hash}`);
+  };
+
+  const openDeviceModalFromList = (row) => {
+    const empId = row?.employeeId || row?.id || row?._id;
+    if (!empId) return;
+    navigate(
+      `/dashboard/users/device?employeeId=${encodeURIComponent(
+        String(empId)
+      )}&openModal=1`
+    );
+  };
+
 
   const columns = [
-    ...(canManageEmployees
-      ? [
-        {
-          name: (
-            <input
-              type="checkbox"
-              onChange={handleSelectAllChange}
-              checked={selectedUsers.length === data.length && data.length > 0}
-            />
-          ),
-          selector: (row) => (
-            <input
-              type="checkbox"
-              checked={selectedUsers.includes(getRowId(row))}
-              onChange={() => handleCheckboxChange(getRowId(row))}
-            />
-          ),
-          width: "3%",
-        },
-      ]
-      : []),
     {
-      name: "ID",
-      selector: (row) => row.employeeId || row._id,
+      name: "Name / Employee ID",
+      selector: (row) => {
+        const name = row.name || row.firstName || "";
+        const empId = row.employeeId || row._id || "-";
+        return (
+          <button
+            type="button"
+            onClick={() => openUserOverview(row, "details")}
+            className="block text-left whitespace-normal leading-tight w-full p-0 m-0 border-none bg-transparent"
+            title="View details"
+            style={{ textAlign: "left" }}
+          >
+            <div
+              className="flex flex-col items-start text-left p-0 m-0 w-full"
+              style={{ textAlign: 'left' }}
+            >
+              <span className="font-bold text-[#22374e] text-base leading-tight hover:underline text-nowrap">
+                {name || "-"}
+              </span>
+              <span className="text-xs text-gray-500 font-bold uppercase mt-1 leading-none">
+                {empId}
+              </span>
+            </div>
+          </button>
+        );
+      },
+      width: "18%",
+    },
+
+    {
+      name: "Location",
+      selector: (row) => row.location || "-",
       width: "15%",
     },
     {
-      name: "Name",
-      selector: (row) => row.name || row.firstName || "",
-      width: "15%",
-    },
-    {
-      name: "Email",
-      selector: (row) => row.email,
-      width: "20%",
-    },
-    {
-      name: "Session",
-      width: "15%",
-      selector: (row) => sessionBadge(row.sessionStatus),
-    },
-    {
-      name: "Gender",
-      selector: (row) => row.gender,
-      width: "15%",
-    },
-    {
-      name: "Department",
-      selector: (row) => row.department,
+      name: "Device",
+      selector: (row) => {
+        const dId = row.deviceId || "-";
+        const empId = row.employeeId || row._id || row.id;
+        const isLoggedIn = String(row.sessionStatus || "").toLowerCase() === "logged in";
+        return (
+          <div className="flex flex-col items-start text-left">
+            {dId !== "-" ? (
+              <button
+                onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(empId))}`)}
+                className="text-[#22374e] hover:underline font-bold text-sm leading-tight text-nowrap"
+              >
+                {dId}
+              </button>
+            ) : (
+              <span className="text-gray-400 font-bold text-sm">-</span>
+            )}
+            <span className={`text-[10px] font-bold uppercase mt-1 leading-none ${isLoggedIn ? 'text-green-600' : 'text-red-500'}`}>
+              {isLoggedIn ? 'Login' : 'Logout'}
+            </span>
+          </div>
+        );
+      },
       width: "15%",
     },
 
@@ -477,7 +505,7 @@ const Employeepage = () => {
 
         <div class="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 list-user-title">
           <svg width="20"
-            fill="navy-blue"
+            fill="#22374e"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 448 512">
             <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z">
@@ -500,7 +528,7 @@ const Employeepage = () => {
               />
               <div className="searching-log flex items-center">
                 <svg
-                  fill="#blue"
+                  fill="#22374e"
                   width={16}
                   height={16}
                   xmlns="http://www.w3.org/2000/svg"

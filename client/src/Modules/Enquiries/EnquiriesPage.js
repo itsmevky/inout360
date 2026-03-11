@@ -225,11 +225,10 @@ const EnquiriesPage = () => {
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-gray-100 text-left">
+                                        <th className="p-3">Name / Employee ID</th>
                                         <th className="p-3">#</th>
-                                        <th className="p-3">Name</th>
                                         <th className="p-3">Email</th>
                                         <th className="p-3">Phone</th>
-                                        <th className="p-3">Employee Id</th>
                                         <th className="p-3">Created</th>
                                         <th className="p-3">Action</th>
                                     </tr>
@@ -239,12 +238,16 @@ const EnquiriesPage = () => {
                                     {paginatedEnquiries.map((e, i) => (
                                         <tr key={e._id} className="border-t hover:bg-gray-50 bg-white">
                                             <td className="p-3">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-gray-900">{e.name || "-"}</span>
+                                                    <span className="text-xs text-gray-500 font-medium">{e.employeeId || "-"}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-3">
                                                 {(currentPage - 1) * ITEMS_PER_PAGE + i + 1}
                                             </td>
-                                            <td className="p-3">{e.name}</td>
                                             <td className="p-3">{e.email}</td>
                                             <td className="p-3">{e.phone}</td>
-                                            <td className="p-3">{e.employeeId}</td>
                                             <td className="p-3">
                                                 {new Date(e.createdAt).toLocaleString()}
                                             </td>
@@ -287,10 +290,11 @@ const EnquiriesPage = () => {
 
                                     <div className="!p-0 text-sm">
                                         <p className="flex justify-between items-center !my-1 !px-0">
-                                            <span className="font-semibold">Name:</span> {e.name}
-                                        </p>
-                                        <p className="flex justify-between items-center !my-1 !px-0">
-                                            <span className="font-semibold">Employee Id:</span> {e.employeeId}
+                                            <span className="font-semibold">Name / Employee ID:</span>
+                                            <span className="text-right">
+                                                <span className="font-bold block">{e.name}</span>
+                                                <span className="text-xs text-gray-500">{e.employeeId}</span>
+                                            </span>
                                         </p>
                                         <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Phone:</span> {e.phone}

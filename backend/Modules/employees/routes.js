@@ -45,12 +45,19 @@ router.get(
   Controller.getAll
 );
 
-router.get(
-  "/indexes",
-  verifyToken,
-  checkAuthorization(allRoles, "employees"),
-  Controller.getIndexes
-);
+	router.get(
+	  "/indexes",
+	  verifyToken,
+	  checkAuthorization(allRoles, "employees"),
+	  Controller.getIndexes
+	);
+
+	router.get(
+	  "/overview/:employeeId",
+	  verifyToken,
+	  checkAuthorization(allRoles, "employees"),
+	  Controller.getOverviewByEmployeeId
+	);
 
 router.post(
   "/cleanup-indexes",
@@ -63,12 +70,12 @@ router.post(
 router.get("/indexes/public", Controller.getIndexes);
 router.post("/cleanup-indexes/public", Controller.cleanupIndexes);
 
-router.get(
-  "/:id",
-  verifyToken,
-  checkAuthorization(allRoles, "employees"),
-  Controller.getbyid
-);
+	router.get(
+	  "/:id",
+	  verifyToken,
+	  checkAuthorization(allRoles, "employees"),
+	  Controller.getbyid
+	);
 
 router.put(
   "/:id",

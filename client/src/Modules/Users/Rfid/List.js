@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "./Add.js";
 import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
@@ -199,6 +199,11 @@ const Teachers = () => {
 
   const columns = [
     {
+      name: "Name",
+      selector: (row) => row.employeeId?.firstName || "N/A",
+      width: "15%",
+    },
+    {
       name: (
         <input
           type="checkbox"
@@ -219,11 +224,6 @@ const Teachers = () => {
     {
       name: "Rfid",
       selector: (row) => row.uid,
-      width: "15%",
-    },
-    {
-      name: "employeeId",
-      selector: (row) => row.employeeId?.firstName || "N/A",
       width: "15%",
     },
 
@@ -511,7 +511,7 @@ const Teachers = () => {
       {/* ---- RFID Management Section ---- */}
       <div class="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 Rfid-user-list">
         <svg width="20"
-          fill="navy-blue"
+          fill="#22374e"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 448 512">
           <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z">
@@ -605,7 +605,7 @@ const Teachers = () => {
               />
               <div className="searching-log flex items-center">
                 <svg
-                  fill="#blue"
+                  fill="#22374e"
                   width={16}
                   height={16}
                   xmlns="http://www.w3.org/2000/svg"

@@ -11,10 +11,11 @@ import { can, normalizeRole } from "../../../Helpers/acl.js";
 const VisitorsList = () => {
   const { user } = useUser();
   const role = normalizeRole(user?.role);
-  const canCreateVisitors = can(role, "visitors", "create");
+  const canCreateVisitors = role === "superadmin";
   const canUpdateVisitors = can(role, "visitors", "update");
   const canDeleteVisitors = can(role, "visitors", "delete");
   const canForceLogoutVisitors = role === "superadmin" || role === "admin";
+  const canManageDevices = role === "superadmin" || role === "admin";
   const canManageVisitors = canUpdateVisitors || canDeleteVisitors;
 
   const [data, setData] = useState([]);
@@ -81,11 +82,10 @@ const VisitorsList = () => {
     const label = isLoggedIn ? "Logged In" : "Logged Out";
     return (
       <span
-        className={`px-3 py-0.5 rounded-lg font-medium text-sm ${
-          isLoggedIn
-            ? "bg-green-100 text-green-800 border border-green-300"
-            : "bg-red-100 text-red-600 border border-red-300"
-        }`}
+        className={`px-3 py-0.5 rounded-lg font-medium text-sm ${isLoggedIn
+          ? "bg-green-100 text-green-800 border border-green-300"
+          : "bg-red-100 text-red-600 border border-red-300"
+          }`}
       >
         {label}
       </span>
@@ -140,105 +140,152 @@ const VisitorsList = () => {
     }
   };
 
+  const openUserOverview = (row, sectionId = "") => {
+    const id = row?.employeeId || row?.id || row?._id;
+    if (!id) return;
+    const hash = sectionId ? `#${sectionId}` : "";
+    navigate(`/dashboard/users/user/${encodeURIComponent(String(id))}${hash}`);
+  };
+
+  const openDeviceModalFromList = (row) => {
+    const empId = row?.employeeId || row?.id || row?._id;
+    if (!empId) return;
+    navigate(
+      `/dashboard/users/device?employeeId=${encodeURIComponent(
+        String(empId)
+      )}&openModal=1`
+    );
+  };
+
   const columns = [
     {
-      name: "Visitor ID",
-      selector: (row) => row.employeeId || row._id,
+      name: "Name / Employee ID",
+      selector: (row) => {
+        const name = capitalizeFirstLetter(row.name || "-");
+        const empId = row.employeeId || row._id || "-";
+        return (
+          <button
+            type="button"
+            onClick={() => openUserOverview(row, "details")}
+            className="block text-left whitespace-normal leading-tight w-full p-0 m-0 border-none bg-transparent"
+            title="View details"
+            style={{ textAlign: "left" }}
+          >
+            <div
+              className="flex flex-col items-start text-left p-0 m-0 w-full"
+              style={{ textAlign: 'left' }}
+            >
+              <span className="font-bold text-[#22374e] text-base leading-tight hover:underline text-nowrap">
+                {name}
+              </span>
+              <span className="text-xs text-gray-500 font-bold uppercase mt-1 leading-none">
+                {empId}
+              </span>
+            </div>
+          </button>
+        );
+      },
+      width: "20%",
+    },
+    {
+      name: "Location",
+      selector: (row) => row.location || "-",
       width: "15%",
     },
     {
-      name: "Name",
-      selector: (row) => capitalizeFirstLetter(row.name || "-"),
-      width: "18%",
-    },
-    {
-      name: "RFID",
-      selector: (row) => row.rfid || "-",
+      name: "Device",
+      selector: (row) => {
+        const dId = row.deviceId || "-";
+        const empId = row.employeeId || row._id || row.id;
+        const isLoggedIn = String(row.sessionStatus || "").toLowerCase() === "logged in";
+        return (
+          <div className="flex flex-col items-start text-left">
+            {dId !== "-" ? (
+              <button
+                onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(empId))}`)}
+                className="text-[#22374e] hover:underline font-bold text-sm leading-tight text-nowrap"
+              >
+                {dId}
+              </button>
+            ) : (
+              <span className="text-gray-400 font-bold text-sm">-</span>
+            )}
+            <span className={`text-[10px] font-bold uppercase mt-1 leading-none ${isLoggedIn ? 'text-green-600' : 'text-red-500'}`}>
+              {isLoggedIn ? 'Login' : 'Logout'}
+            </span>
+          </div>
+        );
+      },
       width: "15%",
-    },
-    {
-      name: "Email",
-      selector: (row) => row.email || "-",
-      width: "15%",
-    },
-    {
-      name: "Session",
-      selector: (row) => statusBadge(row.sessionStatus),
-      width: "15%",
-    },
-    {
-      name: "Created",
-      selector: (row) => formatDate(row.createdAt),
-      width: "22%",
     },
     ...(canManageVisitors || canForceLogoutVisitors
       ? [
-          {
-            name: "Actions",
-            width: "20%",
-            selector: (row) => (
-              <div className="flex space-x-2 justify-center">
-                <div className="flex space-x-2">
-                  {canUpdateVisitors && (
-                    <button
-                      className="text-blue-500"
-                      onClick={() =>
-                        navigate(`${basePath}/visitors/edit/${row.id || row._id}`)
-                      }
+        {
+          name: "Actions",
+          width: "20%",
+          selector: (row) => (
+            <div className="flex space-x-2 justify-center">
+              <div className="flex space-x-2">
+                {canUpdateVisitors && (
+                  <button
+                    className="text-blue-500"
+                    onClick={() =>
+                      navigate(`${basePath}/visitors/edit/${row.id || row._id}`)
+                    }
+                  >
+                    <svg
+                      fill="#22374e"
+                      width={20}
+                      height={20}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 640 512"
                     >
-                      <svg
-                        fill="#22374e"
-                        width={20}
-                        height={20}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 640 512"
-                      >
-                        <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  {canDeleteVisitors && (
-                    <button
-                      className="text-red-500"
-                      onClick={() => handleDelete(row)}
-                    >
-                      <svg
-                        fill="red"
-                        width={16}
-                        height={16}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 448 512"
-                      >
-                        <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  {canForceLogoutVisitors && (
-                    <button
-                      className="text-gray-700"
-                      onClick={() => handleForceLogout(row)}
-                      title="Force logout"
-                    >
-                      <svg
-                        fill="#374151"
-                        width={16}
-                        height={16}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 512 512"
-                      >
-                        <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H402.7l-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96zM320 112c0-17.7-14.3-32-32-32H128C57.3 80 0 137.3 0 208V304c0 70.7 57.3 128 128 128H288c17.7 0 32-14.3 32-32s-14.3-32-32-32H128c-35.3 0-64-28.7-64-64V208c0-35.3 28.7-64 64-64H288c17.7 0 32-14.3 32-32z" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
+                      <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" />
+                    </svg>
+                  </button>
+                )}
               </div>
-            ),
-          },
-        ]
+              <div className="flex space-x-2">
+                {canDeleteVisitors && (
+                  <button
+                    className="text-red-500"
+                    onClick={() => handleDelete(row)}
+                  >
+                    <svg
+                      fill="red"
+                      width={16}
+                      height={16}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 448 512"
+                    >
+                      <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                {canForceLogoutVisitors && (
+                  <button
+                    className="text-gray-700"
+                    onClick={() => handleForceLogout(row)}
+                    title="Force logout"
+                  >
+                    <svg
+                      fill="#374151"
+                      width={16}
+                      height={16}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 512 512"
+                    >
+                      <path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H402.7l-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96zM320 112c0-17.7-14.3-32-32-32H128C57.3 80 0 137.3 0 208V304c0 70.7 57.3 128 128 128H288c17.7 0 32-14.3 32-32s-14.3-32-32-32H128c-35.3 0-64-28.7-64-64V208c0-35.3 28.7-64 64-64H288c17.7 0 32-14.3 32-32z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 
@@ -249,7 +296,7 @@ const VisitorsList = () => {
         <div className="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 list-user-title">
           <svg
             width="20"
-            fill="navy-blue"
+            fill="#22374e"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 448 512"
           >
@@ -275,7 +322,7 @@ const VisitorsList = () => {
               />
               <div className="searching-log flex items-center">
                 <svg
-                  fill="#blue"
+                  fill="#22374e"
                   width={16}
                   height={16}
                   xmlns="http://www.w3.org/2000/svg"

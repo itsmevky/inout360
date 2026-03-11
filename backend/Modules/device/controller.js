@@ -8,6 +8,7 @@ const EmployeeModel = require("../employees/model");
 const PolicyModel = require("./policyModel");
 const VisitorModel = require("../user/visitorModel");
 const LocationModel = require("../location/model");
+const { resolveLocationByNameOrAlias } = require("../location/resolver");
 const UserSession = require("../user/userSessionsModel");
 const { sendEmail } = require("../../helpers/sendemail");
 const PermissionLogModel = require("../permissions/permissionLogModel");
@@ -173,9 +174,7 @@ const getScopedPrincipalIds = async (scope) => {
   const [users, visitors, employees] = await Promise.all([
     UserModel.find({ location: scope.location }).select("_id").lean(),
     VisitorModel.find({ location: scope.location }).select("_id").lean(),
-    EmployeeModel.find({ location: scope.location, userId: { $ne: null } })
-      .select("userId")
-      .lean(),
+    EmployeeModel.find({ location: scope.location }).select("_id userId").lean(),
   ]);
 
   const principalIds = new Set();
@@ -186,6 +185,8 @@ const getScopedPrincipalIds = async (scope) => {
     if (doc?._id) principalIds.add(String(doc._id));
   });
   employees.forEach((doc) => {
+    // Some deployments used User._id for employees (employee.userId), but the newer flow can use Employee._id.
+    if (doc?._id) principalIds.add(String(doc._id));
     if (doc?.userId) principalIds.add(String(doc.userId));
   });
 
@@ -253,7 +254,7 @@ const ensureVisitorCounterUpToDate = async () => {
 };
 
 const createVisitorWithRetry = async (
-  { name, deviceId, location, vendorCode },
+  { name, deviceId, location, locationId, vendorCode },
   maxAttempts = 5
 ) => {
   let syncedCounter = false;
@@ -267,6 +268,7 @@ const createVisitorWithRetry = async (
         rfid,
         deviceId,
         location: String(location || "").trim(),
+        locationId: locationId || null,
         vendorCode: String(vendorCode || "").trim().toUpperCase(),
         role: "visitor",
       });
@@ -293,6 +295,7 @@ const createVisitorWithRetry = async (
           rfid,
           deviceId,
           location: String(location || "").trim(),
+          locationId: locationId || null,
           vendorCode: String(vendorCode || "").trim().toUpperCase(),
           role: "visitor",
         });
@@ -335,16 +338,20 @@ const cleanUpdate = (obj) =>
 
 const formatDevice = (doc) => {
   const d = typeof doc.toObject === "function" ? doc.toObject() : doc;
+  const resolvedUserName =
+    d.userId?.name ||
+    (d.userId && (d.userId.firstName || d.userId.lastName)
+      ? `${d.userId.firstName || ""} ${d.userId.lastName || ""}`.trim()
+      : d.userId?.email) ||
+    d.name ||
+    d.ownerName ||
+    "";
   return {
     ...d,
     id: d._id?.toString?.() || d.id,
     name: d.name,
     deviceId: d.deviceId || d._id,
-    userName:
-      d.userId?.name ||
-      (d.userId && (d.userId.firstName || d.userId.lastName)
-        ? `${d.userId.firstName || ""} ${d.userId.lastName || ""}`.trim()
-        : d.userId?.email),
+    userName: resolvedUserName,
     statusLabel:
       (d.status || "").toUpperCase() === "ONLINE"
         ? "Online"
@@ -481,6 +488,8 @@ const upsertDevice = async (payload) => {
     deviceId,
     userId,
     employeeId,
+    location,
+    locationId,
     vendorCode,
     deviceName,
     name,
@@ -535,6 +544,8 @@ const upsertDevice = async (payload) => {
     userId,
     employeeId,
     deviceId,
+    location: typeof location === "string" ? location.trim() : location,
+    locationId: mongoose.isValidObjectId(locationId) ? locationId : undefined,
     vendorCode,
     deviceName,
     name,
@@ -753,6 +764,15 @@ exports.register = async (req, res) => {
         message: "name and deviceId are required",
       });
     }
+    if (employeeId !== undefined && employeeId !== null && String(employeeId).trim() !== "") {
+      const normalizedEmployeeId = String(employeeId).trim();
+      if (!/^\d+$/.test(normalizedEmployeeId)) {
+        return res.status(400).json({
+          status: false,
+          message: "Employee Id must be numeric",
+        });
+      }
+    }
 
     let normalizedVendorCode = String(vendorCode || "").trim().toUpperCase();
     const resolvedLocation = String(location || "").trim();
@@ -763,16 +783,10 @@ exports.register = async (req, res) => {
       });
     }
 
-    const locQuery = {
-      name: new RegExp(`^${escapeRegExp(resolvedLocation)}$`, "i"),
-    };
-    if (normalizedVendorCode) {
-      locQuery.vendorCode = normalizedVendorCode;
-    }
-
-    const locationRecord = await LocationModel.findOne(locQuery)
-      .select("name vendorCode")
-      .lean();
+    const locationRecord = await resolveLocationByNameOrAlias({
+      location: resolvedLocation,
+      vendorCode: normalizedVendorCode,
+    });
 
     if (!locationRecord?.name) {
       return res.status(400).json({
@@ -781,55 +795,35 @@ exports.register = async (req, res) => {
       });
     }
     const effectiveLocation = String(locationRecord.name || "").trim();
+    const effectiveLocationId = locationRecord._id || null;
     normalizedVendorCode = locationRecord.vendorCode || normalizedVendorCode;
 
-    let user = null;
     let employee = null;
     let effectiveEmployeeId = employeeId;
     let isVisitor = false;
     let visitor = null;
+    let principal = null;
 
     if (employeeId) {
       const normalizedName = String(name).trim();
       const displayName = toDisplayName(normalizedName);
       employee = await EmployeeModel.findOne({ employeeId });
       if (!employee) {
-        user = await UserModel.create({
-          name: displayName,
-          employeeId,
-          location: effectiveLocation,
-          vendorCode: normalizedVendorCode,
-          email: null,
-        });
         const rfid = await generateUniqueRfid(employeeId);
         employee = await EmployeeModel.create({
           name: displayName,
           employeeId,
           location: effectiveLocation,
+          locationId: effectiveLocationId,
           vendorCode: normalizedVendorCode,
-          userId: user._id,
           email: null,
           rfid,
           section: "General",
+          otpVerified: false,
+          otpVerifiedAt: null,
         });
         employee = await ensureEmployeeDefaults(employee, employeeId);
       } else {
-        user = employee.userId
-          ? await UserModel.findById(employee.userId)
-          : await UserModel.findOne({ employeeId });
-        if (!user) {
-          user = await UserModel.create({
-            name: displayName || employee.name,
-            employeeId,
-            location: effectiveLocation,
-            vendorCode: normalizedVendorCode,
-            email: null,
-          });
-          await EmployeeModel.updateOne(
-            { _id: employee._id },
-            { $set: { userId: user._id } }
-          );
-        }
         employee = await ensureEmployeeDefaults(employee, employeeId);
         const normalizedNameLower = normalizeNameForCompare(normalizedName);
         const employeeName = normalizeNameForCompare(
@@ -842,10 +836,16 @@ exports.register = async (req, res) => {
           });
         }
         const employeeLocation = String(employee.location || "").trim();
-        if (employeeLocation !== effectiveLocation) {
+        if (employeeLocation !== effectiveLocation || !employee.locationId) {
           employee = await EmployeeModel.findByIdAndUpdate(
             employee._id,
-            { $set: { location: effectiveLocation, vendorCode: normalizedVendorCode } },
+            {
+              $set: {
+                location: effectiveLocation,
+                locationId: effectiveLocationId,
+                vendorCode: normalizedVendorCode,
+              },
+            },
             { new: true }
           );
         }
@@ -857,23 +857,17 @@ exports.register = async (req, res) => {
             { new: true }
           );
         }
-        const userLocation = String(user.location || "").trim();
-        if (userLocation !== effectiveLocation) {
-          user = await UserModel.findByIdAndUpdate(
-            user._id,
-            { $set: { location: effectiveLocation, vendorCode: normalizedVendorCode } },
-            { new: true }
-          );
-        }
-        const userVendorCode = String(user.vendorCode || "").trim().toUpperCase();
-        if (!userVendorCode || userVendorCode !== normalizedVendorCode) {
-          user = await UserModel.findByIdAndUpdate(
-            user._id,
-            { $set: { vendorCode: normalizedVendorCode } },
+
+        // Ensure OTP gate exists for older records
+        if (employee.otpVerified === undefined) {
+          employee = await EmployeeModel.findByIdAndUpdate(
+            employee._id,
+            { $set: { otpVerified: true, otpVerifiedAt: employee.updatedAt || null } },
             { new: true }
           );
         }
       }
+      principal = employee;
     } else {
       isVisitor = true;
       const normalizedDeviceId = normalizeDeviceId(deviceId);
@@ -883,6 +877,7 @@ exports.register = async (req, res) => {
           name: toDisplayName(name),
           deviceId: normalizedDeviceId,
           location: effectiveLocation,
+          locationId: effectiveLocationId,
           vendorCode: normalizedVendorCode,
         });
       }
@@ -898,10 +893,16 @@ exports.register = async (req, res) => {
       }
       visitor = await ensureVisitorDefaults(visitor, visitor?.employeeId);
       const visitorLocation = String(visitor.location || "").trim();
-      if (visitorLocation !== effectiveLocation) {
+      if (visitorLocation !== effectiveLocation || !visitor.locationId) {
         visitor = await VisitorModel.findByIdAndUpdate(
           visitor._id,
-          { $set: { location: effectiveLocation, vendorCode: normalizedVendorCode } },
+          {
+            $set: {
+              location: effectiveLocation,
+              locationId: effectiveLocationId,
+              vendorCode: normalizedVendorCode,
+            },
+          },
           { new: true }
         );
       }
@@ -913,8 +914,15 @@ exports.register = async (req, res) => {
           { new: true }
         );
       }
-      user = visitor;
       effectiveEmployeeId = visitor.employeeId;
+      if (visitor.otpVerified === undefined) {
+        visitor = await VisitorModel.findByIdAndUpdate(
+          visitor._id,
+          { $set: { otpVerified: true, otpVerifiedAt: visitor.updatedAt || null } },
+          { new: true }
+        );
+      }
+      principal = visitor;
     }
 
     if (deviceId) {
@@ -928,7 +936,7 @@ exports.register = async (req, res) => {
       if (
         existingDevice &&
         existingDevice.userId &&
-        existingDevice.userId.toString() !== user._id.toString() &&
+        existingDevice.userId.toString() !== principal._id.toString() &&
         existingDevice.deviceStatus === "Active"
       ) {
         return res.status(409).json({
@@ -939,9 +947,11 @@ exports.register = async (req, res) => {
     }
 
     const { device, wasInserted } = await upsertDevice({
-      userId: user._id,
+      userId: principal._id,
       employeeId: effectiveEmployeeId,
       deviceId,
+      location: effectiveLocation,
+      locationId: effectiveLocationId,
       vendorCode: normalizedVendorCode,
       deviceName: deviceName || deviceId,
       name,
@@ -986,19 +996,19 @@ exports.register = async (req, res) => {
     await DeviceEventModel.create({
       deviceId: device._id,
       event: "app_install",
-      name: user?.name || device.ownerName || "",
+      name: principal?.name || device.ownerName || "",
       employeeId: effectiveEmployeeId || "",
       timestamp: new Date(),
-      policyVoilation: true,
+      policyVoilation: false,
       metadata: {
-        policyVoilation: true,
+        policyVoilation: false,
         deviceId: device.deviceId || device._id,
         action: "install",
         source: "device_register",
       },
       raw: {
         deviceId,
-        userId: user?._id,
+        userId: principal?._id,
         employeeId: effectiveEmployeeId,
       },
     });
@@ -1007,7 +1017,7 @@ exports.register = async (req, res) => {
     const deviceToken = jwt.sign(
       {
         deviceId: device.deviceId || device._id,
-        userId: user._id,
+        userId: principal._id,
         employeeId: effectiveEmployeeId,
         fcmToken: fcmToken || device.fcmToken || null,
       },
@@ -1147,7 +1157,7 @@ exports.deviceStatus = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const scope = await resolveLocationScope(req);
-    const { page, limit, search, status } = req.query;
+    const { page, limit, search, status, employeeId, includeUnverified } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
 
     const filter = {};
@@ -1155,18 +1165,36 @@ exports.getAll = async (req, res) => {
       const principalIds = await getScopedPrincipalIds(scope);
       filter.userId = { $in: principalIds };
     }
+    if (employeeId) filter.employeeId = String(employeeId).trim();
     if (status) filter.status = normalizeStatus(status);
+    const showUnverified =
+      includeUnverified === true ||
+      includeUnverified === 1 ||
+      includeUnverified === "1" ||
+      String(includeUnverified || "").toLowerCase() === "true";
+    if (!showUnverified) {
+      filter.verified = { $ne: false };
+    }
 
-    const result = await paginate(
-      DeviceModel,
-      filter,
-      pageNumber,
-      limit,
-      ["userId"],
-      ["deviceName", "employeeId", "model", "appVersion", "osVersion"],
-      search,
-      { createdAt: -1, _id: -1 }
-    );
+	    const result = await paginate(
+	      DeviceModel,
+	      filter,
+	      pageNumber,
+	      limit,
+	      ["userId"],
+	      [
+	        "deviceId",
+	        "deviceName",
+	        "employeeId",
+	        "name",
+	        "ownerName",
+	        "model",
+	        "appVersion",
+	        "osVersion",
+	      ],
+	      search,
+	      { createdAt: -1, _id: -1 }
+	    );
 
     const devices = result.data.map(formatDevice);
 
@@ -1529,7 +1557,7 @@ exports.uninstallDevice = async (req, res) => {
       employeeId
         ? await EmployeeModel.findOne({ employeeId }).lean()
         : await EmployeeModel.findOne({ userId }).lean();
-    const policyVoilation = !!device.devicePolicyState?.uninstallBlocked;
+    const policyVoilation = false;
 
     await DeviceEventModel.create({
       deviceId: device._id,

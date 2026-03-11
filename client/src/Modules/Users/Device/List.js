@@ -576,7 +576,7 @@ import { useNavigate } from "react-router-dom";
 //       {/* PAGE HEADING */}
 //       <div className="bg-white p-4 rounded-lg shadow flex items-center gap-3 text-xl font-semibold text-gray-700 device-list-heading">
 //         <svg width="20"
-//           fill="navy-blue"
+//           fill="#22374e"
 //           xmlns="http://www.w3.org/2000/svg"
 //           viewBox="0 0 448 512">
 //           <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z"></path>
@@ -938,10 +938,11 @@ import { useNavigate } from "react-router-dom";
 // };
 
 // export default Device;
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { deleteData, getData, postData, putData } from "../../../Helpers/api.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
 import { can, normalizeRole } from "../../../Helpers/acl.js";
+import { useLocation } from "react-router-dom";
 
 const Device = () => {
   const { user } = useUser();
@@ -958,6 +959,14 @@ const Device = () => {
   const ITEMS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const query = useMemo(() => new URLSearchParams(location.search || ""), [location.search]);
+  const employeeIdFilter = String(query.get("employeeId") || "").trim();
+  const shouldOpenModal = String(query.get("openModal") || "").toLowerCase() === "1" || String(query.get("openModal") || "").toLowerCase() === "true";
+  const openOnceRef = useRef(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // ✅ ADDED: More Actions state
   const [actionView, setActionView] = useState(null); // "logs" | "apps" | "location" | null
@@ -971,6 +980,8 @@ const Device = () => {
       const res = await getData("/device", {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
+        ...(employeeIdFilter ? { employeeId: employeeIdFilter } : {}),
+        ...(searchTerm ? { search: searchTerm } : {}),
       });
       setDeviceList(res?.devices || []);
       const total =
@@ -1048,8 +1059,33 @@ const Device = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+    // reset one-time open flag when filter changes
+    openOnceRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeIdFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearchTerm(String(searchInput || "").trim());
+      setCurrentPage(1);
+      openOnceRef.current = false;
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
     loadDevices();
-  }, [currentPage]);
+  }, [currentPage, employeeIdFilter, searchTerm]);
+
+  useEffect(() => {
+    if (!shouldOpenModal) return;
+    if (openOnceRef.current) return;
+    if (loading) return;
+    if (!Array.isArray(deviceList) || deviceList.length === 0) return;
+    openOnceRef.current = true;
+    openDeviceModal(deviceList[0]);
+  }, [shouldOpenModal, loading, deviceList]);
 
   const sortedDeviceList = deviceList;
 
@@ -1273,7 +1309,7 @@ const Device = () => {
       <div className="bg-white p-4 rounded-lg shadow flex items-center gap-3 text-xl font-semibold text-gray-700 device-list-heading">
         <svg
           width="20"
-          fill="navy-blue"
+          fill="#22374e"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 448 512"
         >
@@ -1285,6 +1321,46 @@ const Device = () => {
 
       {/* ========================= DEVICE TABLE ========================= */}
       <div className="mt-6 m-0">
+        <div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="w-full sm:max-w-sm">
+            <div className="relative">
+              <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setSearchInput("");
+                }}
+                placeholder="Search"
+                className="w-full border rounded-xl px-4 py-2 pr-10 text-sm"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 512 512"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {employeeIdFilter ? (
+            <div className="text-xs text-gray-600 font-semibold">
+              Filter: <span className="text-gray-900">{employeeIdFilter}</span>{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard/users/device")}
+                className="ml-2 text-blue-700 hover:underline"
+              >
+                Clear filter
+              </button>
+            </div>
+          ) : null}
+        </div>
+
         {loading ? (
           <div className="bg-white p-5 rounded-xl shadow text-gray-600">
             Loading devices...
@@ -1301,9 +1377,8 @@ const Device = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 text-left text-gray-700">
+                <th className="p-3">Name / Employee ID</th>
                 <th className="p-3">Device</th>
-                <th className="p-3">User</th>
-                <th className="p-3">Employee ID</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Android</th>
                 <th className="p-3">App Ver.</th>
@@ -1315,11 +1390,15 @@ const Device = () => {
             <tbody>
               {paginatedDeviceList.map((device) => (
                 <tr key={device.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-900">{device.userName || device.name || "-"}</span>
+                      <span className="text-xs text-gray-500 font-medium">{device.employeeId || "-"}</span>
+                    </div>
+                  </td>
                   <td className="p-3 font-semibold">
                     {device.deviceName || device.deviceId || device.name || "-"}
                   </td>
-                  <td className="p-3">{device.userName || device.name || "-"}</td>
-                  <td className="p-3">{device.employeeId}</td>
                   <td className="p-3">
                     {statusBadge(device.statusLabel || device.status)}
                   </td>
@@ -1372,13 +1451,11 @@ const Device = () => {
                   {device.deviceName || device.deviceId || device.name || "-"}
                 </div>
 
-                <div className="text-gray-500 font-medium">User</div>
+                <div className="text-gray-500 font-medium">Name / Employee ID</div>
                 <div className="text-right">
-                  {device.userName || device.name || "-"}
+                  <span className="font-bold block">{device.userName || device.name || "-"}</span>
+                  <span className="text-xs text-gray-500">{device.employeeId || "-"}</span>
                 </div>
-
-                <div className="text-gray-500 font-medium">Employee ID</div>
-                <div className="text-right">{device.employeeId}</div>
 
                 <div className="text-gray-500 font-medium">Status</div>
                 <div className="text-right">

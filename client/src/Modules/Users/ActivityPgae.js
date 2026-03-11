@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { domainpath, getData } from "../../Helpers/api.js";
 import { capitalizeFirstLetter } from "../../Helpers/CapitalizeFirstLetter.js";
@@ -61,10 +62,12 @@ const ActivityPage = () => {
 
         let text = `${activity?.rawEvent || ""} ${activity?.narrative || ""}`.toLowerCase();
 
-        // Strip common noise prefixes that might interfere with app name extraction
+        // Technical noise removal
         text = text
+            .replace(/cameramanager callback \(camera unavailable\)/gi, "")
             .replace(/\bcamera usage ended\b/gi, "")
             .replace(/\bpermission controller\b/gi, "")
+            .replace(/\|/g, " ")
             .trim();
 
         const known = [
@@ -82,12 +85,11 @@ const ActivityPage = () => {
             if (text.includes(item.key)) return item.label;
         }
 
-        // Extract simple App name from strings like "WhatsApp camera opened", "Zoom video call camera used", or "WhatsApp camera used for"
+        // Extract simple App name
         const eventMatch = text.match(/^([a-z0-9_.\-]+(?:\s+[a-z0-9_.\-]+)*)\s+(?:camera opened|video call camera used|camera used for)/i);
         if (eventMatch && eventMatch[1]) {
             const candidate = eventMatch[1].trim();
             const lowerCand = candidate.toLowerCase();
-            const invalidNames = ["system", "phone", "take_picture", "take-picture", "screenshot", "camera"];
             if (!invalidNames.includes(lowerCand)) {
                 return candidate.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             }
@@ -100,6 +102,39 @@ const ActivityPage = () => {
                 : "";
         }
         return "";
+    };
+
+    const cleanNarrative = (text) => {
+        if (!text) return "";
+        let cleaned = text;
+
+        // 1. Remove package names like (com.google.android.youtube)
+        cleaned = cleaned.replace(/\([a-z0-9_.-]+\.[a-z0-9_.-]+\.[a-z0-9_.-]+\)/gi, "");
+        cleaned = cleaned.replace(/\b[a-z0-9_.-]+\.[a-z0-9_.-]+\.[a-z0-9_.-]+\b/gi, "");
+
+        // 2. Handle the "CameraManager Callback" prefix and Pipe separators
+        if (cleaned.includes("|")) {
+            const parts = cleaned.split("|");
+            // If it's a technical prefix + app message, take the app message
+            if (parts.length > 1 && parts[0].toLowerCase().includes("camera")) {
+                cleaned = parts[1].trim();
+            } else {
+                cleaned = cleaned.replace(/\|/g, " ");
+            }
+        }
+
+        cleaned = cleaned.replace(/CameraManager Callback \(Camera Unavailable\)/gi, "");
+
+        // 3. Final cleanup
+        cleaned = cleaned.replace(/\s+/g, " ").trim();
+
+        // 4. Transform tech phrases to user friendly ones
+        if (cleaned.toLowerCase().includes("video call") && cleaned.toLowerCase().includes("in progress")) {
+            const app = resolveAppLabel({ narrative: cleaned });
+            return `${app || ""} video call camera opened`.trim();
+        }
+
+        return capitalizeFirstLetter(cleaned);
     };
 
     const extractDurationSnippet = (value, baseMessage = "") => {
@@ -875,7 +910,7 @@ const ActivityPage = () => {
             const appLabel = resolveAppLabel(activity);
 
             const isVideoCall = raw.includes("video call") || narrative.toLowerCase().includes("video call");
-            const actionText = isVideoCall ? "video call" : "camera opened";
+            const actionText = isVideoCall ? "video call opened" : "camera opened";
 
             if (appLabel) {
                 return `${appLabel} ${actionText}`;
@@ -889,10 +924,10 @@ const ActivityPage = () => {
             const baseLabel = capitalizeFirstLetter(appLabel);
             const durationSnippet = extractDurationSnippet(narrative, baseLabel);
             if (compact) {
-                return `${baseLabel} accessed${durationSnippet}`;
+                return `${baseLabel} opened${durationSnippet}`;
             }
             const nameSuffix = activity?.name ? ` by ${activity.name}` : "";
-            return `${baseLabel} accessed${nameSuffix}${durationSnippet}`;
+            return `${baseLabel} opened${nameSuffix}${durationSnippet}`;
         }
         const baseLabel = capitalizeFirstLetter(raw);
         const durationSnippet = extractDurationSnippet(narrative, baseLabel);
@@ -1063,14 +1098,36 @@ const ActivityPage = () => {
         fetchByCategory();
     }, [selectedType]);
 
-    // ============================================================
-    // RENDER UI
-    // ============================================================
+    const location = useLocation();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const empId = params.get("employeeId");
+        const type = params.get("type");
+
+        if (type) {
+            let mappedType = type;
+            if (type === "security_permission") mappedType = "app_install_uninstall";
+            setSelectedType(mappedType);
+        }
+
+        if (empId && (activityGroups.length > 0 || attendanceEntries.length > 0)) {
+            // Wait for both type and data to be ready
+            const type = params.get("type");
+            if (type === "in_out") {
+                const record = inOutUsers.find(u => u.employeeId === empId);
+                if (record) openInOutModal(record);
+            } else {
+                const record = filteredUsers.find(u => u.employeeId === empId);
+                if (record) openModal(record);
+            }
+        }
+    }, [location.search, activityGroups, attendanceEntries]);
     return (
         <div className="layout-section-dashboard p-4">
 
             <div className="bg-white p-4 py-8 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 activity-list-heading">
-                <svg width="20" fill="navy-blue" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z"></path>
+                <svg width="20" fill="#22374e" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z"></path>
                 </svg>
                 User Activity
             </div>
@@ -1151,7 +1208,7 @@ const ActivityPage = () => {
                             />
                             <div className="searching-log-activity-page flex items-center px-2">
                                 <svg
-                                    fill="#blue"
+                                    fill="#22374e"
                                     width="16"
                                     height="16"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1209,11 +1266,10 @@ const ActivityPage = () => {
                         <table className="w-full border-collapse activity-table activity-table--main">
                             <thead>
                                 <tr className="bg-gray-100 text-left text-gray-700">
+                                    <th style={{ width: columnWidths.user }} className="p-3">Name / Employee ID</th>
                                     <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
-                                    <th style={{ width: columnWidths.user }} className="p-3">User</th>
                                     <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
                                     <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
-                                    <th style={{ width: columnWidths.emp }} className="p-3">Employee ID</th>
                                     <th style={{ width: columnWidths.time }} className="p-3">Time</th>
                                     <th style={{ width: columnWidths.action }} className="p-3">Action</th>
                                 </tr>
@@ -1222,14 +1278,18 @@ const ActivityPage = () => {
                                 {paginatedInOutUsers.map((record, index) => (
                                     <tr key={record.userKey || index} className="hover:bg-gray-50">
                                         <td className="p-3">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-gray-900">{record.user || "-"}</span>
+                                                <span className="text-xs text-gray-500 font-medium">{record.employeeId || "-"}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
-                                        <td className="p-3">{record.user || "-"}</td>
                                         <td className="p-3">
                                             {record.latestEntry ? resolveAttendanceAction(record.latestEntry) : "-"}
                                         </td>
                                         <td className="p-3">{record.deviceId || "-"}</td>
-                                        <td className="p-3">{record.employeeId || "-"}</td>
                                         <td className="p-3">
                                             {record.latestEntry
                                                 ? formatTimestamp(resolveAttendanceTime(record.latestEntry))
@@ -1318,11 +1378,10 @@ const ActivityPage = () => {
                         <table className="w-full border-collapse activity-table">
                             <thead>
                                 <tr className="bg-gray-100 text-left text-gray-700">
+                                    <th style={{ width: columnWidths.user }} className="p-3">Name / Employee ID</th>
                                     <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
-                                    <th style={{ width: columnWidths.user }} className="p-3">User</th>
                                     <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
                                     <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
-                                    <th style={{ width: columnWidths.emp }} className="p-3">Employee ID</th>
                                     <th style={{ width: columnWidths.time }} className="p-3">Time</th>
                                     <th style={{ width: columnWidths.action }} className="p-3">Action</th>
                                 </tr>
@@ -1332,14 +1391,18 @@ const ActivityPage = () => {
                                 {paginatedUsers.map((item, index) => (
                                     <tr key={item.userKey || index} className="hover:bg-gray-50">
                                         <td className="p-3">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-gray-900">{item.user || "-"}</span>
+                                                <span className="text-xs text-gray-500 font-medium">{item.latestActivity?.employeeId || item.employeeId || "-"}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
-                                        <td className="p-3">{item.user}</td>
                                         <td className="p-3">
                                             {formatActivityLabel(item.latestActivity, { compact: true })}
                                         </td>
                                         <td className="p-3">{item.latestActivity?.deviceId || item.deviceId}</td>
-                                        <td className="p-3">{item.latestActivity?.employeeId || item.employeeId}</td>
                                         <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
 
                                         <td className="p-3">
@@ -1599,17 +1662,11 @@ const ActivityPage = () => {
                                     const fullMessage = mediaModalActivity.narrative || mediaModalActivity.rawEvent || "";
                                     return (
                                         <div className="text-sm text-gray-700 mb-4 whitespace-pre-wrap font-medium">
-                                            {fullMessage}
+                                            {cleanNarrative(fullMessage)}
                                         </div>
                                     );
                                 })()}
-                                {resolveMediaType(mediaModalActivity) === "video" && (
-                                    <video
-                                        src={mediaModalActivity.media}
-                                        controls
-                                        className="w-full rounded-lg"
-                                    />
-                                )}
+
                             </div>
                         </div>
                     </div>

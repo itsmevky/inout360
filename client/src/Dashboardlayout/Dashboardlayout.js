@@ -20,6 +20,7 @@ import Zones from "../Modules/Users/Zones/List";
 import Visitors from "../Modules/Users/Visitors/List";
 import AddVisitor from "../Modules/Users/Visitors/Add";
 import EditVisitor from "../Modules/Users/Visitors/Edit";
+import UserOverview from "../Modules/Users/UserOverview.js";
 import ActivityPgae from "../Modules/Users/ActivityPgae.js";
 import Fields from "../Modules/Settings/Fields/Fieldlist";
 import LocationList from "../Modules/Employee/Location/List.js";
@@ -80,6 +81,7 @@ function DashboardLayout({ userRole }) {
               {/* ✅ Employees, Roles, Permissions */}
               <Route path="users/employees" element={<Employees />} />
               <Route path="users/visitors" element={<Visitors />} />
+              <Route path="users/user/:employeeId" element={<UserOverview />} />
               <Route path="users/visitors/add" element={<AddVisitor />} />
               <Route path="users/visitors/edit/:id" element={<EditVisitor />} />
               <Route path="users/roles" element={<Roles />} />
@@ -88,6 +90,7 @@ function DashboardLayout({ userRole }) {
               {/* ✅ Aliases for legacy /dashboard/employee/... paths */}
               <Route path="employee/employees" element={<Employees />} />
               <Route path="employee/visitors" element={<Visitors />} />
+              <Route path="employee/user/:employeeId" element={<UserOverview />} />
               <Route path="employee/visitors/add" element={<AddVisitor />} />
               <Route path="employee/visitors/edit/:id" element={<EditVisitor />} />
               <Route

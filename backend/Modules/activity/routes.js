@@ -35,12 +35,26 @@ router.get(
   Controller.getAll
 );
 
-router.get(
-  "/notifications",
-  verifyToken,
-  checkAuthorization(allRoles, "activity"),
-  Controller.getNotifications
-);
+	router.get(
+	  "/notifications",
+	  verifyToken,
+	  checkAuthorization(allRoles, "activity"),
+	  Controller.getNotifications
+	);
+
+	router.delete(
+	  "/notifications",
+	  verifyToken,
+	  checkAuthorization(allRoles, "activity"),
+	  Controller.clearNotifications
+	);
+
+	router.delete(
+	  "/notifications/:id",
+	  verifyToken,
+	  checkAuthorization(allRoles, "activity"),
+	  Controller.deleteNotification
+	);
 
 router.get(
   "/notifications/unread-count",

@@ -1,6 +1,7 @@
 // src/Modules/Notifications/NotificationsPage.js
 import React, { useEffect, useState } from "react";
-import { getData, postData } from "../../Helpers/api";
+import { toast } from "react-toastify";
+import { deleteData, getData, postData } from "../../Helpers/api";
 import { capitalizeFirstLetter } from "../../Helpers/CapitalizeFirstLetter.js";
 import {
     FaCamera,
@@ -9,6 +10,8 @@ import {
     FaMobileAlt,
     FaTrashAlt,
 } from "react-icons/fa";
+import { useUser } from "../../Helpers/Context/UserContext";
+import { normalizeRole, can } from "../../Helpers/acl";
 
 const iconMap = {
     CAMERA_ON: <FaCamera />,
@@ -257,6 +260,10 @@ const NotificationsPage = () => {
     const [totalRows, setTotalRows] = useState(0);
     const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
+    const { user } = useUser();
+    const role = normalizeRole(user?.role);
+    const canDeleteActivity = can(role, "activity", "delete");
+
     useEffect(() => {
         markNotificationsRead();
     }, []);
@@ -316,6 +323,41 @@ const NotificationsPage = () => {
             setTotalRows(0);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteNotification = async (id) => {
+        if (!id) return;
+        if (!canDeleteActivity) {
+            toast.error("You don't have permission to delete notifications.");
+            return;
+        }
+        const confirmed = window.confirm("Delete this notification?");
+        if (!confirmed) return;
+        try {
+            await deleteData(`/activity/notifications/${id}`);
+            await fetchNotifications();
+            await syncUnreadCount(1);
+        } catch (err) {
+            console.error("Failed to delete notification");
+        }
+    };
+
+    const handleClearAll = async () => {
+        if (notifications.length === 0) return;
+        if (!canDeleteActivity) {
+            toast.error("You don't have permission to clear notifications.");
+            return;
+        }
+        const confirmed = window.confirm("Clear all notifications?");
+        if (!confirmed) return;
+        try {
+            await deleteData("/activity/notifications");
+            setCurrentPage(1);
+            await fetchNotifications();
+            await syncUnreadCount(1);
+        } catch (err) {
+            console.error("Failed to clear notifications");
         }
     };
 
@@ -475,6 +517,19 @@ const NotificationsPage = () => {
                             </svg>
                             {loading ? "Refreshing..." : "Refresh"}
                         </button>
+                        {canDeleteActivity && (
+                            <button
+                                type="button"
+                                onClick={handleClearAll}
+                                disabled={loading || notifications.length === 0}
+                                className="notification-clear-btn"
+                                aria-label="Clear all notifications"
+                                title="Clear all"
+                            >
+                                <FaTrashAlt />
+                                Clear all
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -505,6 +560,20 @@ const NotificationsPage = () => {
                                 <p className="notification-time">
                                     {new Date(n.createdAt).toLocaleString()}
                                 </p>
+                            </div>
+
+                            <div className="notification-actions">
+                                {canDeleteActivity && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteNotification(n._id)}
+                                        className="notification-delete-btn"
+                                        title="Delete notification"
+                                        aria-label="Delete notification"
+                                    >
+                                        <FaTrashAlt />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}

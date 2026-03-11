@@ -60,7 +60,11 @@ const employeeSchema = {
   role: { type: String, required: true, default: "employee", trim: true },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   location: { type: String, trim: true, default: "", index: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", default: null, index: true },
+  deviceId: { type: String, trim: true, index: true },
   vendorCode: { type: String, trim: true, uppercase: true, default: "", index: true },
+  otpVerified: { type: Boolean, default: false, index: true },
+  otpVerifiedAt: { type: Date, default: null },
   attendanceStatus: {
     type: String,
     enum: ["Present", "Absent", "On Leave", "Active", "Inactive"],

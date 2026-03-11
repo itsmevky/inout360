@@ -61,11 +61,11 @@ const CustomDataTable = ({
           style={
             i === currentPage
               ? {
-                  backgroundColor: "#2563eb",
-                  color: "#ffffff",
-                  borderColor: "#2563eb",
-                  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
-                }
+                backgroundColor: "#2563eb",
+                color: "#ffffff",
+                borderColor: "#2563eb",
+                boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)",
+              }
               : { backgroundColor: "#ffffff", color: "#374151" }
           }
         >
@@ -103,7 +103,7 @@ const CustomDataTable = ({
               {columns.map((col, index) => (
                 <th
                   key={index}
-                  className="px-3 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap"
+                  className="px-3 py-2 text-left text-xs font-bold text-[#22374e] uppercase tracking-wider whitespace-nowrap border-b border-gray-100"
                   style={{ width: col.width || "auto" }}
                 >
                   {col.name}
@@ -116,16 +116,19 @@ const CustomDataTable = ({
             {data.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
-                className="border-b hover:bg-gray-50 transition"
+                className="hover:bg-gray-50 transition"
               >
                 {columns.map((col, colIndex) => (
                   <td
                     key={colIndex}
-                    className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap"
+                    className="px-3 py-1 text-sm text-gray-700 whitespace-normal text-left align-middle border-b border-gray-50"
+                    style={{ width: col.width || "auto" }}
                   >
-                    {col.selector
-                      ? col.selector(row)
-                      : row[col.selectorKey]}
+                    <div className="text-left w-full h-full flex items-center justify-start">
+                      {col.selector
+                        ? col.selector(row)
+                        : row[col.selectorKey]}
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -215,7 +218,7 @@ const CustomDataTable = ({
           </button>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

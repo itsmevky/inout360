@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "./Add.js";
 import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
@@ -149,33 +149,16 @@ const Contractors = () => {
 
   const columns = [
     {
-      name: (
-        <input
-          type="checkbox"
-          onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
-        />
-      ),
+      name: "Name / Contractor Code",
       selector: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedTeachers.includes(row.id)}
-          onChange={() => handleCheckboxChange(row.id)}
-        />
+        <div className="flex flex-col">
+          <span className="font-bold text-gray-900">{row.name || "-"}</span>
+          <span className="text-xs text-gray-500 font-medium">{row.code || "-"}</span>
+        </div>
       ),
-      width: "2%",
+      width: "25%",
     },
 
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      width: "20%",
-    },
-    {
-      name: "Contractor Code",
-      selector: (row) => row.code,
-      width: "20%",
-    },
     {
       name: "Contact Person",
       selector: (row) => row.contactPerson,
@@ -450,7 +433,7 @@ const Contractors = () => {
     <div className="relative p-4 ">
       <div class="bg-white p-4 rounded-lg text-gray-700 font-semibold text-xl flex gap-4 Contractor-user-list">
         <svg width="20"
-          fill="navy-blue"
+          fill="#22374e"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 448 512">
           <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z">
@@ -471,7 +454,7 @@ const Contractors = () => {
             />
             <div className="searching-log flex items-center">
               <svg
-                fill="#blue"
+                fill="#22374e"
                 width={16}
                 height={16}
                 xmlns="http://www.w3.org/2000/svg"

@@ -1,4 +1,4 @@
-const { ajModel } = require("../../common/classes/Model");
+const { ajModel, mongoose } = require("../../common/classes/Model");
 
 const visitorSchemaDefinition = {
   firstName: { type: String, trim: true, default: "" },
@@ -25,7 +25,10 @@ const visitorSchemaDefinition = {
   },
   status: { type: String, default: "Active" },
   location: { type: String, trim: true, default: "", index: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", default: null, index: true },
   vendorCode: { type: String, trim: true, uppercase: true, default: "", index: true },
+  otpVerified: { type: Boolean, default: false, index: true },
+  otpVerifiedAt: { type: Date, default: null },
   sessionStatus: {
     type: String,
     enum: ["Logged In", "Logout"],
@@ -52,6 +55,7 @@ const visitorTransform = (ret) => ({
   permanentAddress: ret.permanentAddress,
   status: ret.status,
   location: ret.location,
+  locationId: ret.locationId,
   vendorCode: ret.vendorCode || "",
   sessionStatus: ret.sessionStatus,
   rfid: ret.rfid,

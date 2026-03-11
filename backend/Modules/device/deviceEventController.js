@@ -78,9 +78,59 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
   return null;
 };
 
-const resolvePolicyVoilation = async ({ eventType, userId, employeeId, device, metadata, raw }) => {
+const parseDurationSeconds = (...candidates) => {
+  const joined = candidates
+    .filter(Boolean)
+    .map((value) => String(value))
+    .join(" ");
+  if (!joined) return null;
+  const text = joined.toLowerCase();
+  const match = text.match(/used\s*for\s*(\d+(?:\.\d+)?)\s*(?:sec|secs|second|seconds)\b/);
+  if (!match) return null;
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) ? seconds : null;
+};
+
+const isPermissionDisabledEvent = (textValue) => {
+  const value = String(textValue || "").toLowerCase();
+  const isDisabled =
+    /\bdisabled\b/i.test(value) ||
+    /turned\s*off/i.test(value) ||
+    /turn\s*off/i.test(value) ||
+    /\boff\b/i.test(value);
+  if (!isDisabled) return false;
+  return (
+    value.includes("overlay") ||
+    value.includes("location permission") ||
+    value.includes("notification permission") ||
+    value.includes("device admin") ||
+    value.includes("accessibility") ||
+    value.includes("usage access")
+  );
+};
+
+const isVideoCallContext = (textValue) => {
+  const value = String(textValue || "").toLowerCase();
+  return (
+    value.includes("video call") ||
+    value.includes("videocall") ||
+    value.includes("whatsapp") ||
+    value.includes("instagram") ||
+    value.includes("facebook")
+  );
+};
+
+const resolvePolicyVoilation = async ({
+  eventType,
+  userId,
+  employeeId,
+  metadata,
+  narrative,
+  raw,
+}) => {
   const parts = [
     eventType,
+    narrative,
     metadata?.appName,
     metadata?.packageName,
     metadata?.app,
@@ -96,42 +146,17 @@ const resolvePolicyVoilation = async ({ eventType, userId, employeeId, device, m
     .filter(Boolean)
     .map((item) => String(item).trim().toLowerCase())
     .join(" ");
-  const isPermissionEvent =
-    value.includes("permission") ||
-    value.includes("usage access") ||
-    value.includes("app usage") ||
-    value.includes("device admin") ||
-    value.includes("admin privilege") ||
-    value.includes("admin privileges") ||
-    value.includes("notification access") ||
-    value.includes("location access") ||
-    value.includes("camera access") ||
-    value.includes("microphone access");
-  if (isPermissionEvent) return true;
-  if (value.includes("accessibility")) return true;
-  const policy = device?.devicePolicyState || {};
-  const isBlocked = (flag) =>
-    flag === true || flag === "true" || flag === 1 || flag === "1";
-  if (value.includes("uninstall")) return isBlocked(policy.uninstallBlocked);
-  if (value === "youtube" || value.includes("youtube")) return isBlocked(policy.youtubeBlocked);
-  if (value === "whatsapp" || value.includes("whatsapp")) return isBlocked(policy.whatsappBlocked);
-  if (value === "instagram" || value.includes("instagram")) return isBlocked(policy.instagramBlocked);
-  if (value === "facebook" || value.includes("facebook")) return isBlocked(policy.facebookBlocked);
+
+  // Rule 1: Policy violation ONLY for permission-disable type events.
+  if (isPermissionDisabledEvent(value)) return true;
+
+  // Rule 2: Policy violation ONLY when user is Logged In AND camera usage > 3 sec AND (video call context).
   if (!isCameraEvent(eventType)) return false;
+  const seconds = parseDurationSeconds(narrative, metadata?.narrative, raw?.narrative, eventType);
+  if (!seconds || seconds <= 3) return false;
+  if (!isVideoCallContext(value)) return false;
   const status = await resolveUserSessionStatus({ userId, employeeId });
   return status === "Logged In";
-};
-
-const resolveBlockedAppViolation = (eventType, device) => {
-  const value = String(eventType || "").trim().toLowerCase();
-  const policy = device?.devicePolicyState || {};
-  const isBlocked = (flag) =>
-    flag === true || flag === "true" || flag === 1 || flag === "1";
-  if (value.includes("youtube")) return isBlocked(policy.youtubeBlocked);
-  if (value.includes("whatsapp")) return isBlocked(policy.whatsappBlocked);
-  if (value.includes("instagram")) return isBlocked(policy.instagramBlocked);
-  if (value.includes("facebook")) return isBlocked(policy.facebookBlocked);
-  return null;
 };
 
 const resolveActorName = async ({ userId, employeeId, fallbackName }) => {
@@ -250,21 +275,13 @@ exports.storeEvent = async (req, res) => {
       eventType: event,
       userId: device.userId,
       employeeId: resolvedEmployeeId,
-      device,
       metadata,
+      narrative,
       raw: req.body,
     });
-    const blockedViolation = resolveBlockedAppViolation(event, device);
-    if (blockedViolation !== null) {
-      policyVoilation = blockedViolation;
-    }
-    if (/restricted app opened/i.test(String(event || "")) || /restricted app opened/i.test(String(narrative || ""))) {
-      policyVoilation = true;
-    }
     console.log("device-event policy check", {
       event,
-      blockedViolation,
-      policyState: device?.devicePolicyState || {},
+      narrative,
       finalPolicyVoilation: policyVoilation,
     });
 

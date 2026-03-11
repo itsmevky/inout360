@@ -10,6 +10,7 @@ const EmployeeModel = require("../employees/model");
 const SettingsModel = require("../settings/model");
 const VisitorModel = require("../user/visitorModel");
 const { markAttendance } = require("../../helpers/attendance");
+const { resolveLocationByNameOrAlias } = require("../location/resolver");
 
 const JWT_SECRET =
   process.env.SECRET_KEY ||
@@ -407,6 +408,7 @@ exports.consumeQr = async (req, res) => {
     let tokenLocation = null;
     let expMs = null;
     let isOfflineToken = false;
+    let resolvedLocationId = null;
     if (usingStaticToken) {
       if (isStaticLoginToken) {
         action = "login";
@@ -421,19 +423,36 @@ exports.consumeQr = async (req, res) => {
       try {
         decoded = jwt.verify(token, JWT_SECRET);
       } catch (err) {
-        // Try the offline location-specific secret
-        try {
-          const normalizedRequestLocation = normalizeLocation(resolvedLocation);
-          const offlineSecret = crypto
-            .createHmac("sha256", JWT_SECRET)
-            .update(`offline-qr-${normalizedRequestLocation}`)
-            .digest("hex");
+        // Try the offline location-specific secret(s).
+        // Decode payload without verification to read `location` (do not trust it; only for picking secret candidates).
+        const unverified = jwt.decode(token) || {};
+        const secretCandidates = [];
+        if (unverified?.location !== undefined && unverified?.location !== null) {
+          secretCandidates.push(unverified.location);
+        }
+        secretCandidates.push(resolvedLocation);
 
-          decoded = jwt.verify(token, offlineSecret);
-          isOfflineToken = true;
-        } catch (offlineErr) {
+        let verified = null;
+        for (const candidate of secretCandidates) {
+          try {
+            const normalizedCandidate = normalizeLocation(candidate);
+            if (!normalizedCandidate) continue;
+            const offlineSecret = crypto
+              .createHmac("sha256", JWT_SECRET)
+              .update(`offline-qr-${normalizedCandidate}`)
+              .digest("hex");
+            verified = jwt.verify(token, offlineSecret);
+            isOfflineToken = true;
+            break;
+          } catch (_offlineErr) {
+            // continue
+          }
+        }
+
+        if (!verified) {
           throw err; // Throw the original error if both fail
         }
+        decoded = verified;
       }
 
       tokenId = decoded.jti;
@@ -452,10 +471,26 @@ exports.consumeQr = async (req, res) => {
         return res.status(400).json({ message: "QR expired" });
       }
 
-      const normalizedTokenLocation = normalizeLocation(tokenLocation);
-      const normalizedRequestLocation = normalizeLocation(resolvedLocation);
-      if (normalizedTokenLocation !== normalizedRequestLocation) {
-        return res.status(400).json({ message: "Location does not match QR" });
+      // Location match: prefer comparing Location _id (supports renamed locations via aliases),
+      // but fall back to string compare for legacy/unmapped locations.
+      const tokenLocRecord = await resolveLocationByNameOrAlias({ location: tokenLocation });
+      const requestLocRecord = await resolveLocationByNameOrAlias({ location: resolvedLocation });
+      if (tokenLocRecord && requestLocRecord) {
+        if (String(tokenLocRecord._id) !== String(requestLocRecord._id)) {
+          return res.status(400).json({ message: "Location does not match QR" });
+        }
+        resolvedLocation = String(requestLocRecord.name || resolvedLocation).trim();
+        resolvedLocationId = requestLocRecord._id;
+      } else {
+        const normalizedTokenLocation = normalizeLocation(tokenLocation);
+        const normalizedRequestLocation = normalizeLocation(resolvedLocation);
+        if (normalizedTokenLocation !== normalizedRequestLocation) {
+          return res.status(400).json({ message: "Location does not match QR" });
+        }
+        if (requestLocRecord) {
+          resolvedLocation = String(requestLocRecord.name || resolvedLocation).trim();
+          resolvedLocationId = requestLocRecord._id;
+        }
       }
     }
 
@@ -539,7 +574,21 @@ exports.consumeQr = async (req, res) => {
         .status(400)
         .json({ message: "Employee RFID/section missing for attendance" });
     }
-    await markAttendance(employee, action, user?._id || visitor?._id, resolvedLocation);
+    if (!resolvedLocationId && resolvedLocation && resolvedLocation !== "static") {
+      const requestLocRecord = await resolveLocationByNameOrAlias({ location: resolvedLocation });
+      if (requestLocRecord) {
+        resolvedLocation = String(requestLocRecord.name || resolvedLocation).trim();
+        resolvedLocationId = requestLocRecord._id;
+      }
+    }
+
+    await markAttendance(
+      employee,
+      action,
+      user?._id || visitor?._id,
+      resolvedLocation,
+      resolvedLocationId
+    );
 
     const sessionAction = action === "login" ? "Logged In" : "Logout";
     const sessionUserId = employee?.userId || user?._id || visitor?._id || employee._id;

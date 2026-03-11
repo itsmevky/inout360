@@ -15,6 +15,8 @@ const buildLocationFallbackFilter = (location) => ({
   ],
 });
 
+const otpGateFilter = { $or: [{ otpVerified: true }, { otpVerified: { $exists: false } }] };
+
 // Dashboard summary counts for cards
 exports.getSummary = async (req, res) => {
   try {
@@ -23,8 +25,8 @@ exports.getSummary = async (req, res) => {
     if (scope.isAdmin) {
       const location = scope.location;
       const [employeesAtLocation, visitorsAtLocation] = await Promise.all([
-        Employee.find({ location }).select("employeeId").lean(),
-        Visitor.find({ location }).select("employeeId").lean(),
+        Employee.find({ location, ...otpGateFilter }).select("employeeId").lean(),
+        Visitor.find({ location, ...otpGateFilter }).select("employeeId").lean(),
       ]);
 
       const scopedEmployeeIds = Array.from(
@@ -56,8 +58,8 @@ exports.getSummary = async (req, res) => {
       const [contractors, employees, visitors, managers, departments, monthlyReports, totalActivities, todayActivities] =
         await Promise.all([
           Contractor.countDocuments(buildLocationFallbackFilter(location)),
-          Employee.countDocuments({ location }),
-          Visitor.countDocuments({ location }),
+          Employee.countDocuments({ location, ...otpGateFilter }),
+          Visitor.countDocuments({ location, ...otpGateFilter }),
           Employee.countDocuments({ role: "manager", location }),
           Section.countDocuments(buildLocationFallbackFilter(location)),
           Attendance.countDocuments(attendanceFilter),
@@ -144,8 +146,8 @@ exports.getSummary = async (req, res) => {
     const [contractors, employees, visitors, managers, departments, monthlyReports, totalActivities, todayActivities] =
       await Promise.all([
         Contractor.countDocuments({}),
-        Employee.countDocuments({}),
-        Visitor.countDocuments({}),
+        Employee.countDocuments({ ...otpGateFilter }),
+        Visitor.countDocuments({ ...otpGateFilter }),
         Employee.countDocuments({ role: "manager" }),
         Section.countDocuments({}),
         Attendance.countDocuments({}), // treating attendance entries as monthly reports

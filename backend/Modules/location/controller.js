@@ -1,6 +1,12 @@
 const mongoose = require("mongoose");
 const paginate = require("../../helpers/limitoffset");
 const LocationModel = require("./model");
+const SettingsModel = require("../settings/model");
+const EmployeeModel = require("../employees/model");
+const UserModel = require("../user/model");
+const VisitorModel = require("../user/visitorModel");
+const AttendanceModel = require("../attendance/model");
+const DeviceModel = require("../device/model");
 
 const validatePayload = ({ name, vendorCode, lat, lng, radius }) => {
   if (!name) throw new Error("Location name is required");
@@ -144,13 +150,102 @@ exports.update = async (req, res) => {
     const data = normalizePayload(req.body);
     validatePayload(data);
 
-    const loc = await LocationModel.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    });
-    if (!loc) {
+    const existing = await LocationModel.findById(id).lean();
+    if (!existing) {
       return res.status(404).json({ status: false, message: "Not found" });
     }
+
+    const existingName = String(existing.name || "").trim();
+    const nextName = String(data.name || "").trim();
+    const nameChanged =
+      existingName &&
+      nextName &&
+      existingName.toLowerCase() !== nextName.toLowerCase();
+
+    let nextAliases = Array.isArray(existing.aliases) ? [...existing.aliases] : [];
+    if (nameChanged && existingName) {
+      nextAliases.push(existingName);
+    }
+
+    // Deduplicate aliases (case-insensitive) and avoid keeping the current name as an alias.
+    const seen = new Set();
+    nextAliases = nextAliases
+      .map((a) => String(a || "").trim())
+      .filter(Boolean)
+      .filter((a) => a.toLowerCase() !== nextName.toLowerCase())
+      .filter((a) => {
+        const key = a.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    const loc = await LocationModel.findByIdAndUpdate(
+      id,
+      { ...data, aliases: nextAliases },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (nameChanged) {
+      const locationId = loc?._id;
+      const canonicalName = String(loc?.name || "").trim();
+      const canonicalVendorCode = String(loc?.vendorCode || "").trim().toUpperCase();
+
+      await Promise.all([
+        SettingsModel.updateMany(
+          { $or: [{ unitLocationId: locationId }, { unitLocation: existingName }] },
+          { $set: { unitLocation: canonicalName, unitLocationId: locationId } }
+        ),
+        EmployeeModel.updateMany(
+          { $or: [{ locationId: locationId }, { location: existingName }] },
+          {
+            $set: {
+              location: canonicalName,
+              locationId: locationId,
+              vendorCode: canonicalVendorCode,
+            },
+          }
+        ),
+        UserModel.updateMany(
+          { $or: [{ locationId: locationId }, { location: existingName }] },
+          {
+            $set: {
+              location: canonicalName,
+              locationId: locationId,
+              vendorCode: canonicalVendorCode,
+            },
+          }
+        ),
+        VisitorModel.updateMany(
+          { $or: [{ locationId: locationId }, { location: existingName }] },
+          {
+            $set: {
+              location: canonicalName,
+              locationId: locationId,
+              vendorCode: canonicalVendorCode,
+            },
+          }
+        ),
+        AttendanceModel.updateMany(
+          { $or: [{ locationId: locationId }, { location: existingName }] },
+          { $set: { location: canonicalName, locationId: locationId } }
+        ),
+        DeviceModel.updateMany(
+          { $or: [{ locationId: locationId }, { location: existingName }] },
+          {
+            $set: {
+              location: canonicalName,
+              locationId: locationId,
+              vendorCode: canonicalVendorCode,
+            },
+          }
+        ),
+      ]);
+    }
+
     return res.status(200).json({ status: true, message: "Location updated", data: format(loc) });
   } catch (error) {
     return res.status(400).json({ status: false, message: error.message });

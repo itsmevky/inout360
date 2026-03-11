@@ -1,5 +1,6 @@
 const SettingsModel = require("./model");
 const EmployeeModel = require("../employees/model");
+const { resolveLocationByNameOrAlias } = require("../location/resolver");
 
 const normalizeRole = (value) => {
   const raw = String(value || "").trim().toLowerCase();
@@ -196,7 +197,9 @@ exports.update = async (req, res) => {
         .json({ status: false, message: "unitLocation is required" });
     }
 
-    payload.unitLocation = unitLocation;
+    const locationRecord = await resolveLocationByNameOrAlias({ location: unitLocation });
+    payload.unitLocation = locationRecord?.name ? String(locationRecord.name).trim() : unitLocation;
+    payload.unitLocationId = locationRecord?._id || null;
     const apkFile = req.files?.apkFile?.[0];
     const companyLogo = req.files?.companyLogo?.[0];
 

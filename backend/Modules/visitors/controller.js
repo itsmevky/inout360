@@ -274,7 +274,7 @@ exports.add = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const scope = await resolveLocationScope(req);
-    const { page, limit, search, sessionStatus } = req.query;
+    const { page, limit, search, sessionStatus, includeUnverified } = req.query;
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const filter = {};
     if (scope.isAdmin) {
@@ -290,6 +290,16 @@ exports.getAll = async (req, res) => {
       } else {
         filter.sessionStatus = sessionStatus;
       }
+    }
+
+    const showUnverified =
+      includeUnverified === true ||
+      includeUnverified === 1 ||
+      includeUnverified === "1" ||
+      String(includeUnverified || "").toLowerCase() === "true";
+    if (!showUnverified) {
+      const otpGate = { $or: [{ otpVerified: true }, { otpVerified: { $exists: false } }] };
+      filter.$and = Array.isArray(filter.$and) ? [...filter.$and, otpGate] : [otpGate];
     }
 
     const result = await paginate(

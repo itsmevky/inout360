@@ -266,6 +266,36 @@ exports.verifyOtp = async (req, res) => {
     }
     await device.save();
 
+    // OTP gate for dashboard visibility: mark the principal as verified
+    const now = new Date();
+    if (otpRecord.employeeId) {
+      const updatedEmployee = await EmployeeModel.findOneAndUpdate(
+        { employeeId: otpRecord.employeeId },
+        { $set: { otpVerified: true, otpVerifiedAt: now } },
+        { new: true }
+      );
+      if (!updatedEmployee) {
+        await VisitorModel.findOneAndUpdate(
+          { employeeId: otpRecord.employeeId },
+          { $set: { otpVerified: true, otpVerifiedAt: now } },
+          { new: true }
+        );
+      }
+    } else if (otpRecord.userId && mongoose.isValidObjectId(otpRecord.userId)) {
+      const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
+        otpRecord.userId,
+        { $set: { otpVerified: true, otpVerifiedAt: now } },
+        { new: true }
+      );
+      if (!updatedEmployee) {
+        await VisitorModel.findByIdAndUpdate(
+          otpRecord.userId,
+          { $set: { otpVerified: true, otpVerifiedAt: now } },
+          { new: true }
+        );
+      }
+    }
+
     return res.status(200).json({
       status: true,
       message: "Device verified successfully",

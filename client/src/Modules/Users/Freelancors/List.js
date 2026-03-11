@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "../Add.js";
 import EditUserForm from "../Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
@@ -134,27 +134,16 @@ const Teachers = () => {
 
   const columns = [
     {
-      name: (
-        <input
-          type="checkbox"
-          onChange={handleSelectAllChange}
-          checked={selectedTeachers.length === data.length && data.length > 0}
-        />
-      ),
+      name: "Name / Employee ID",
       selector: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedTeachers.includes(row.id)}
-          onChange={() => handleCheckboxChange(row.id)}
-        />
+        <div className="flex flex-col">
+          <span className="font-bold text-gray-900">{row.fullname || "-"}</span>
+          <span className="text-xs text-gray-500 font-medium">{row.id || row.employeeId || row._id || "-"}</span>
+        </div>
       ),
-      width: "5%",
-    },
-    {
-      name: "Name",
-      selector: (row) => row.fullname,
       width: "25%",
     },
+
     {
       name: "Email",
       selector: (row) => row.email,
@@ -404,7 +393,7 @@ const Teachers = () => {
             />
             <div className="searching-log flex items-center">
               <svg
-                fill="#blue"
+                fill="#22374e"
                 width={16}
                 height={16}
                 xmlns="http://www.w3.org/2000/svg"

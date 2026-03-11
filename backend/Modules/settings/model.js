@@ -15,6 +15,12 @@ const settingsSchemaDefinition = {
     trim: true,
     default: "",
   },
+  unitLocationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+    default: null,
+    index: true,
+  },
 
   apkFileUrl: {
     type: String,
@@ -81,6 +87,7 @@ const settingsTransform = (ret) => {
 
     apiEndpointUrl: ret.apiEndpointUrl,
     unitLocation: ret.unitLocation,
+    unitLocationId: ret.unitLocationId,
     apkFileUrl: ret.apkFileUrl,
     companyLogoUrl: ret.companyLogoUrl,
     qrExpirySeconds: ret.qrExpirySeconds,

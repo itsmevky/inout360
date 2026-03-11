@@ -33,10 +33,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
   // ✅ Base path by role
   const basePath =
     userRole === "superadmin" ||
-    userRole === "admin" ||
-    userRole === "hr" ||
-    userRole === "manager" ||
-    userRole === "supervisor"
+      userRole === "admin" ||
+      userRole === "hr" ||
+      userRole === "manager" ||
+      userRole === "supervisor"
       ? "/dashboard/users"
       : "/dashboard/employee";
 
@@ -45,6 +45,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Dashboard", icon: "dashboard", path: "/dashboard" },
     { label: "Employees", icon: "group", path: `${basePath}/employees` },
     { label: "Visitors", icon: "badge", path: `${basePath}/visitors` },
+    { label: "Users", icon: "person", path: `/dashboard/users` },
     { label: "Attendance", icon: "event", path: `${basePath}/attendance` },
     // { label: "Contractors", icon: "badge", path: `${basePath}/contractor` },
     // { label: "Rfid", icon: "qr_code", path: `${basePath}/rfid` },
@@ -66,6 +67,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Dashboard",
       "Employees",
       "Visitors",
+      "Users",
       "Attendance",
       // "Contractors",
       // "Rfid",

@@ -52,7 +52,8 @@
         "update"
       ],
       "activity": [
-        "read"
+        "read",
+        "delete"
       ],
       "permissions": [
         "create",
@@ -145,7 +146,8 @@
         "update"
       ],
       "activity": [
-        "read"
+        "read",
+        "delete"
       ],
       "permissions": [
         "create",

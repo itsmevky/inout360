@@ -599,7 +599,7 @@ const FormList = () => {
             />
             <div className="searching-log flex items-center">
               <svg
-                fill="#blue"
+                fill="#22374e"
                 width={18}
                 height={18}
                 xmlns="http://www.w3.org/2000/svg"
