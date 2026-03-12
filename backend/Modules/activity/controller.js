@@ -1,4 +1,3 @@
-const ActivityModel = require("./model");
 const DeviceEventModel = require("../device/deviceEventModel");
 const DeviceModel = require("../device/model");
 const paginate = require("../../helpers/limitoffset");
@@ -283,6 +282,14 @@ const buildLocationScopeFilter = async (req) => {
     scopeOr.push({ "raw.userId": { $in: Array.from(principalIds) } });
   }
 
+  // Include activities that happened at this location
+  if (scope.locationId) {
+    scopeOr.push({ locationId: scope.locationId });
+  }
+  if (scope.location) {
+    scopeOr.push({ location: scope.location });
+  }
+
   if (scopeOr.length === 0) {
     return { _id: { $in: [] } };
   }
@@ -305,9 +312,76 @@ exports.add = async (req, res) => {
     if (payload.policyVoilation === undefined) {
       payload.policyVoilation = await resolvePolicyVoilation(payload);
     }
-    const record = await ActivityModel.create(payload);
+
+    // Resolve current session location
+    if (!payload.location) {
+      const sessionQuery = {};
+      if (payload.userId && mongoose.isValidObjectId(payload.userId)) {
+        sessionQuery.userId = payload.userId;
+      } else if (payload.employeeId) {
+        sessionQuery.employeeId = payload.employeeId;
+      }
+
+      if (Object.keys(sessionQuery).length > 0) {
+        const session = await UserSession.findOne(sessionQuery)
+          .sort({ createdAt: -1 })
+          .select("location locationId action")
+          .lean();
+        if (session && session.action === "Logged In") {
+          payload.location = session.location;
+          payload.locationId = session.locationId;
+        }
+      }
+    }
+
+    // Map Activity fields to DeviceEvent schema
+    const eventPayload = {
+      event: payload.activityType || payload.event || payload.category || "activity",
+      narrative: payload.description || payload.narrative || "",
+      timestamp: payload.occurredAt || new Date(),
+      imagePath: payload.imagePath || "",
+      employeeId: payload.employeeId || "",
+      name: payload.name || "",
+      location: payload.location || "",
+      locationId: payload.locationId || null,
+      policyVoilation: !!payload.policyVoilation,
+      metadata: {
+        ...(payload.metadata || {}),
+        category: payload.category,
+      },
+      raw: {
+        ...(payload.raw || {}),
+        userId: payload.userId,
+      },
+    };
+
+    // Resolve device ObjectId if possible
+    if (payload.deviceId) {
+      const normalizedId = String(payload.deviceId).trim();
+      const deviceQuery = {
+        $or: [{ deviceId: new RegExp(`^${normalizedId}$`, "i") }],
+      };
+      if (mongoose.isValidObjectId(normalizedId)) {
+        deviceQuery.$or.push({ _id: normalizedId });
+      }
+      const device = await DeviceModel.findOne(deviceQuery).select("_id").lean();
+      if (device) {
+        eventPayload.deviceId = device._id;
+      } else if (mongoose.isValidObjectId(normalizedId)) {
+        eventPayload.deviceId = normalizedId;
+      }
+    }
+
+    if (!eventPayload.deviceId) {
+      // If we still don't have a valid ObjectId for deviceId, this might fail validation
+      // but let's see if the schema allows it or if we can find a better fallback.
+      return res.status(400).json({ status: false, message: "Valid deviceId is required" });
+    }
+
+    const record = await DeviceEventModel.create(eventPayload);
     res.status(201).json({ status: true, message: "Activity logged", data: record });
   } catch (error) {
+    console.error("Activity add error:", error);
     res.status(400).json({ status: false, message: error.message });
   }
 };

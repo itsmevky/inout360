@@ -12,9 +12,11 @@ const activitySchemaDefinition = {
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "Users", required: true, index: true },
   employeeId: { type: String, trim: true, index: true },
   deviceId: { type: String, trim: true, index: true },
+  location: { type: String, trim: true, index: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", default: null, index: true },
   category: {
     type: String,
-    enum: ["camera", "app_install", "app_uninstall", "screenshot","video", "other"],
+    enum: ["camera", "app_install", "app_uninstall", "screenshot", "video", "other"],
     default: "other",
   },
   activityType: { type: String, trim: true },

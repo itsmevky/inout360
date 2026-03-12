@@ -4,9 +4,10 @@ import Header from "./header.js";
 import Footer from "./footer.js";
 import { getData } from "../Helpers/api.js";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, Legend as BarLegend, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, Legend as BarLegend, ResponsiveContainer,
   PieChart, Pie, Cell, Tooltip as PieTooltip, Legend as PieLegend,
-  LineChart, Line, AreaChart, Area
+  LineChart, Line, AreaChart, Area,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 // import "../../src/App.css ";
 const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
@@ -45,8 +46,8 @@ const SuperAdminDashboard = () => {
   ];
 
   const pieChartDataRaw = [
-    { name: 'Total Violations', value: summary.totalActivities },
-    { name: "Today's Violations", value: summary.todayActivities },
+    { name: 'Total', value: summary.totalActivities },
+    { name: "Today's ", value: summary.todayActivities },
   ];
   const pieChartData = pieChartDataRaw.some(d => d.value > 0) ? pieChartDataRaw : [{ name: 'No Data', value: 1 }];
 
@@ -83,57 +84,63 @@ const SuperAdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 
             {/* User Statistics Card */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[400px]">
-              <h3 className="text-xl font-bold text-gray-800 mb-8">User Distribution</h3>
-              <div className="w-full h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    layout="vertical"
-                    margin={{ left: 20, right: 60, top: 10, bottom: 10 }}
-                  >
-                    <XAxis type="number" hide />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      axisLine={false}
-                      tickLine={false}
-                      width={100}
-                      tick={{
-                        fill: '#4b5563',
-                        fontSize: 14,
-                        fontWeight: 700,
-                      }}
-                    />
-                    <Bar
-                      dataKey="value"
-                      fill="#018DD4"
-                      radius={[0, 8, 8, 0]}
-                      barSize={32}
-                      label={{ position: 'right', fill: '#1f2937', fontSize: 14, fontWeight: 800, offset: 15 }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[290px]">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">User Distribution</h3>
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Total Users</span>
+                    <h4 className="text-3xl font-black text-gray-900 leading-none">
+                      {(summary.employees || 0) + (summary.visitors || 0)}
+                    </h4>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1.5 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                      <span className="text-[9px] text-blue-600 font-black uppercase">Active</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 w-full px-1 mt-auto">
+                  {/* Employee Ring Hub */}
+                  <div className="flex-1 bg-gray-50/50 py-3 px-2 rounded-2xl border border-gray-100 flex flex-col items-center justify-center group hover:bg-white hover:shadow-md transition-all cursor-default">
+                    <div className="w-8 h-8 rounded-full bg-blue-100/50 flex flex-col items-center justify-center text-blue-500 mb-2">
+                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest mb-0.5">Employees</p>
+                    <p className="text-xl font-black text-gray-900">{summary.employees || 0}</p>
+                  </div>
+
+                  {/* Visitor Ring Hub */}
+                  <div className="flex-1 bg-gray-50/50 py-3 px-2 rounded-2xl border border-gray-100 flex flex-col items-center justify-center group hover:bg-white hover:shadow-md transition-all cursor-default">
+                    <div className="w-8 h-8 rounded-full bg-green-100/50 flex flex-col items-center justify-center text-[#00C49F] mb-2">
+                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest mb-0.5">Visitors</p>
+                    <p className="text-xl font-black text-gray-900">{summary.visitors || 0}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Violations Overview Card */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[400px]">
-              <h3 className="text-xl font-bold text-gray-800 mb-2 w-full text-left">Violations</h3>
-              <div className="w-full h-[250px] flex justify-center mt-4">
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[290px]">
+              <h3 className="text-lg font-bold text-gray-800 mb-1 w-full text-left">Violations</h3>
+              <div className="w-full h-[180px] flex justify-center items-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieChartData}
                       cx="50%"
-                      cy="55%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={60}
                       paddingAngle={8}
                       dataKey="value"
                     >
                       {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.name === 'No Data' ? '#f3f4f6' : COLORS[index % COLORS.length]} cornerRadius={6} />
+                        <Cell key={`cell-${index}`} fill={entry.name === 'No Data' ? '#f3f4f6' : COLORS[index % COLORS.length]} cornerRadius={8} />
                       ))}
                     </Pie>
                     <PieTooltip
@@ -142,33 +149,34 @@ const SuperAdminDashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap justify-center gap-4 mt-auto pt-6">
+              <div className="flex flex-row gap-3 mt-auto w-full border-t border-gray-50 pt-4 px-1 justify-center">
                 {pieChartDataRaw.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                    <span className="text-xs text-gray-600 font-bold">{d.name}: {d.value}</span>
+                  <div key={i} className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group/legend cursor-default">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">{d.name.split("'")[0]}:</span>
+                    <span className="text-xs font-black text-gray-900">{d.value}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Attendance Overview Card */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[400px]">
-              <h3 className="text-xl font-bold text-gray-800 mb-2 w-full text-left">Today's Attendance</h3>
-              <div className="w-full h-[250px] flex justify-center mt-4">
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[290px]">
+              <h3 className="text-lg font-bold text-gray-800 mb-1 w-full text-left">Today's Attendance</h3>
+              <div className="w-full h-[180px] flex justify-center items-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={attendanceData}
                       cx="50%"
-                      cy="55%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={60}
                       paddingAngle={8}
                       dataKey="value"
                     >
                       {attendanceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.name === 'No Data' ? '#f3f4f6' : COLORS[index % COLORS.length]} cornerRadius={6} />
+                        <Cell key={`cell-${index}`} fill={entry.name === 'No Data' ? '#f3f4f6' : COLORS[index % COLORS.length]} cornerRadius={8} />
                       ))}
                     </Pie>
                     <PieTooltip
@@ -177,11 +185,12 @@ const SuperAdminDashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap justify-center gap-4 mt-auto pt-6">
+              <div className="flex flex-row gap-3 mt-auto w-full border-t border-gray-50 pt-4 px-1 justify-center">
                 {attendanceDataRaw.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                    <span className="text-xs text-gray-600 font-bold">{d.name}: {d.value}</span>
+                  <div key={i} className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group/legend cursor-default">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">{d.name.split(' ')[1] || d.name}:</span>
+                    <span className="text-xs font-black text-gray-900">{d.value}</span>
                   </div>
                 ))}
               </div>

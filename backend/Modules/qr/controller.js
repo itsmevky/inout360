@@ -608,6 +608,7 @@ exports.consumeQr = async (req, res) => {
       action: sessionAction,
       token,
       location: resolvedLocation,
+      locationId: resolvedLocationId,
       deviceLocation,
       raw: rawPayload,
     });

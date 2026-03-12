@@ -4,7 +4,6 @@ const axios = require("axios");
 const { GoogleAuth } = require("google-auth-library");
 const DeviceEvent = require("./deviceEventModel");
 const DeviceModel = require("./model");
-const ActivityModel = require("../activity/model");
 const UserModel = require("../user/model");
 const UserSession = require("../user/userSessionsModel");
 const EmployeeModel = require("../employees/model");
@@ -319,29 +318,6 @@ exports.storeEvent = async (req, res) => {
 
     const resolvedImagePath =
       imagePath || metadata?.imagePath || req.body?.imagePath || "";
-
-    await ActivityModel.create({
-      userId: device.userId,
-      employeeId: resolvedEmployeeId,
-      deviceId: String(device.deviceId || device._id || ""),
-      category: resolveActivityCategory(event),
-      activityType: event,
-      title: "Device event",
-      description:
-        narrative || `Event ${event} reported by ${actorName || device.deviceId}`,
-      name: actorName,
-      imagePath: resolvedImagePath,
-      occurredAt: normalizedTimestamp,
-      policyVoilation,
-      metadata: {
-        cameraStatus,
-        imagePath: resolvedImagePath,
-        codeId,
-        ...(narrative ? { narrative } : {}),
-        ...metadata,
-      },
-      raw: req.body,
-    });
 
     try {
       await sendAdminNotification(

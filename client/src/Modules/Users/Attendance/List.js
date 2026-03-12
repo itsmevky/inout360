@@ -1,14 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { useSearchParams } from "react-router-dom";
 import { API } from "../../../Helpers/api.js";
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
 const AttendanceList = () => {
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get("searchTerm") || searchParams.get("employeeId") || "";
+
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

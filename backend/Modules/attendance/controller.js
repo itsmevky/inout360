@@ -53,6 +53,14 @@ const buildAttendanceScopeFilter = async (req) => {
     or.push({ userId: { $in: Array.from(userIds) } });
   }
 
+  // Include records where the activity actually happened at this location
+  if (scope.locationId) {
+    or.push({ locationId: scope.locationId });
+  }
+  if (scope.location) {
+    or.push({ location: scope.location });
+  }
+
   if (or.length === 0) {
     return { _id: { $in: [] } };
   }
@@ -148,23 +156,23 @@ exports.getAll = async (req, res) => {
     const [employees, visitors, users, devices] = await Promise.all([
       employeeIds.length > 0
         ? EmployeeModel.find({ employeeId: { $in: employeeIds } })
-            .select("name employeeId userId")
-            .lean()
+          .select("name employeeId userId")
+          .lean()
         : [],
       employeeIds.length > 0
         ? VisitorModel.find({ employeeId: { $in: employeeIds } })
-            .select("name employeeId userId")
-            .lean()
+          .select("name employeeId userId")
+          .lean()
         : [],
       userIds.length > 0
         ? UserModel.find({ _id: { $in: userIds } })
-            .select("name fullName fullname username")
-            .lean()
+          .select("name fullName fullname username")
+          .lean()
         : [],
       userIds.length > 0
         ? DeviceModel.find({ userId: { $in: userIds } })
-            .select("userId deviceId")
-            .lean()
+          .select("userId deviceId")
+          .lean()
         : [],
     ]);
 
@@ -276,8 +284,8 @@ exports.update = async (req, res) => {
       withScopeFilter({ _id: id }, scopeFilter),
       req.body,
       {
-      new: true,
-      runValidators: true,
+        new: true,
+        runValidators: true,
       }
     );
     if (!updated) {

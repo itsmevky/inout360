@@ -7,6 +7,8 @@ const deviceEventSchemaDefinition = {
   imagePath: { type: String, trim: true },
   name: { type: String, trim: true },
   employeeId: { type: String, trim: true, index: true },
+  location: { type: String, trim: true, index: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", default: null, index: true },
   codeId: { type: String, trim: true },
   policyVoilation: { type: Boolean, default: false },
   narrative: { type: String, trim: true },

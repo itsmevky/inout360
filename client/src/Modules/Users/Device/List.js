@@ -965,8 +965,9 @@ const Device = () => {
   const employeeIdFilter = String(query.get("employeeId") || "").trim();
   const shouldOpenModal = String(query.get("openModal") || "").toLowerCase() === "1" || String(query.get("openModal") || "").toLowerCase() === "true";
   const openOnceRef = useRef(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const initialSearch = query.get("search") || "";
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
 
   // ✅ ADDED: More Actions state
   const [actionView, setActionView] = useState(null); // "logs" | "apps" | "location" | null

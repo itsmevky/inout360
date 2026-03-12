@@ -990,6 +990,8 @@ exports.register = async (req, res) => {
       event: "app_install",
       name: principal?.name || device.ownerName || "",
       employeeId: effectiveEmployeeId || "",
+      location: effectiveLocation,
+      locationId: effectiveLocationId,
       timestamp: new Date(),
       policyVoilation: false,
       metadata: {
@@ -1551,11 +1553,28 @@ exports.uninstallDevice = async (req, res) => {
         : await EmployeeModel.findOne({ userId }).lean();
     const policyVoilation = false;
 
+    // Resolve current session location for accurate alerts
+    let eventLocation = device.location;
+    let eventLocationId = device.locationId;
+    const session = await UserSession.findOne({
+      $or: [
+        { userId },
+        { employeeId: employee?.employeeId || employeeId }
+      ].filter(f => f.userId || f.employeeId)
+    }).sort({ createdAt: -1 }).select("location locationId action").lean();
+
+    if (session && session.action === "Logged In") {
+      eventLocation = session.location;
+      eventLocationId = session.locationId;
+    }
+
     await DeviceEventModel.create({
       deviceId: device._id,
       event: "app_uninstall",
       name: user?.name || device.ownerName || "",
       employeeId: employee?.employeeId || device.employeeId || employeeId || "",
+      location: eventLocation,
+      locationId: eventLocationId,
       timestamp: new Date(),
       policyVoilation,
       metadata: {
