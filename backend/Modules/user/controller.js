@@ -432,11 +432,16 @@ exports.forgotPassword = async (req, res) => {
       }
     );
 
-    await sendEmail("resetpassword.html", user.email, {
-      OTP: otp,
-      subject: "Password Reset OTP",
-      USER_NAME: resolvedName || "User",
-    });
+    await sendEmail(
+      "resetpassword.html",
+      user.email,
+      {
+        OTP: otp,
+        subject: "Password Reset OTP",
+        USER_NAME: resolvedName || "User",
+      },
+      { fromFile: true, subject: "Password Reset OTP" }
+    );
 
     res.status(200).json({
       status: true,
@@ -444,9 +449,11 @@ exports.forgotPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Forgot Password Error:", error);
-    res.status(500).json({
-      message: "Server error",
+    res.status(error.status || error.statusCode || 500).json({
+      status: false,
+      message: error.firstMessage || error.message || "Server error",
       error: error.message,
+      errors: error.errors || undefined,
     });
   }
 };
@@ -488,9 +495,11 @@ exports.verifyResetOtp = async (req, res) => {
     });
   } catch (error) {
     console.error("Verify OTP Error:", error);
-    res.status(500).json({
-      message: "Server error",
+    res.status(error.status || error.statusCode || 500).json({
+      status: false,
+      message: error.firstMessage || error.message || "Server error",
       error: error.message,
+      errors: error.errors || undefined,
     });
   }
 };
@@ -531,9 +540,11 @@ exports.resetPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Reset Password Error:", error);
-    res.status(500).json({
-      message: "Server error",
+    res.status(error.status || error.statusCode || 500).json({
+      status: false,
+      message: error.firstMessage || error.message || "Server error",
       error: error.message,
+      errors: error.errors || undefined,
     });
   }
 };

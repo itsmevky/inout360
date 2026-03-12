@@ -351,10 +351,15 @@ const sendOtpEmail = async (to, otp, deviceName, userName, employeeId) => {
   const resolvedDeviceName = deviceName || "device";
   const resolvedUserName = userName || "User";
   const resolvedEmployeeId = employeeId || "N/A";
-  await sendEmail("pidilitetemplate.html", to, {
-    USER_NAME: resolvedUserName,
-    EMPLOYEE_ID: resolvedEmployeeId,
-    OTP: otp,
-    subject: "PIL Device Verification OTP ",
-  });
+  await sendEmail(
+    "pidilitetemplate.html",
+    to,
+    {
+      USER_NAME: resolvedUserName,
+      EMPLOYEE_ID: resolvedEmployeeId,
+      OTP: otp,
+      subject: "PIL Device Verification OTP",
+    },
+    { fromFile: true, subject: "PIL Device Verification OTP" }
+  );
 };

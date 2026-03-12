@@ -424,10 +424,15 @@ const sendAuthorizationEmail = async (userId, actionMessage) => {
   if (!userId) return;
   const user = await UserModel.findById(userId).lean();
   if (!user?.email) return;
-  await sendEmail("authorization.html", user.email, {
-    USER_NAME: user.name || "User",
-    ACTION_MESSAGE: actionMessage,
-  });
+  await sendEmail(
+    "authorization.html",
+    user.email,
+    {
+      USER_NAME: user.name || "User",
+      ACTION_MESSAGE: actionMessage,
+    },
+    { fromFile: true, subject: "Authorization" }
+  );
 };
 
 const logPermission = async ({ userId, employeeId, adminId, permission }) => {

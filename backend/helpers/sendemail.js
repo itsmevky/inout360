@@ -5,7 +5,9 @@ const path = require("path");
 
 // ===== Configure email transport =====
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT || 587,
+  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
@@ -63,6 +65,10 @@ const getTemplateAttachments = (templateName) => {
 ========================= */
 async function sendEmail(templateName, to, dynamicData = {}, options = {}) {
   try {
+    if (!process.env.SMTP_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      throw new Error("Email service not configured (SMTP_HOST/EMAIL_USER/EMAIL_PASSWORD missing)");
+    }
+
     let subject;
     let emailContent;
     let attachments = [];
@@ -78,7 +84,12 @@ async function sendEmail(templateName, to, dynamicData = {}, options = {}) {
       }
     } else if (options.fromFile === true) {
       // 2️⃣ Fallback to file-based template
-      emailContent = await loadTemplateFromFile(templateName);
+      try {
+        emailContent = await loadTemplateFromFile(templateName);
+      } catch (fileErr) {
+        const detail = fileErr?.code ? `${fileErr.code}: ${fileErr.message}` : String(fileErr?.message || fileErr);
+        throw new Error(`Email template file not found: ${templateName} (${detail})`);
+      }
       subject = options.subject || "Notification";
       attachments = getTemplateAttachments(templateName);
     } else {
