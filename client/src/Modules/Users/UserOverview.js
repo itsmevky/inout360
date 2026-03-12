@@ -76,6 +76,21 @@ export default function UserOverview() {
   const devices = Array.isArray(overview?.devices) ? overview.devices : [];
   const attendance = Array.isArray(overview?.attendance) ? overview.attendance : [];
 
+  const normalizeSessionStatus = (value) => {
+    const raw = String(value || "").trim();
+    const lower = raw.toLowerCase();
+    if (!raw) return { label: "Offline", isOnline: false };
+    if (lower.includes("logged in") || lower === "login" || lower === "loggedin") {
+      return { label: "Online", isOnline: true };
+    }
+    if (lower.includes("logged out") || lower === "logout" || lower === "loggedout") {
+      return { label: "Offline", isOnline: false };
+    }
+    return { label: raw, isOnline: lower.includes("in") && !lower.includes("out") };
+  };
+
+  const sessionUi = normalizeSessionStatus(profile.sessionStatus);
+
   const displayAttendance = useMemo(() => {
     if (!fromDate && !toDate) {
       const todayAt = new Date();
@@ -125,7 +140,12 @@ export default function UserOverview() {
 
   const violationEvents = Array.isArray(overview?.violationEvents) ? overview.violationEvents : [];
   const principalType = overview?.principalType || "user";
-  const backPath = principalType === "visitor" ? "/dashboard/users/visitors" : "/dashboard/users/employees";
+  const dashboardPrefix = (location.pathname || "").startsWith("/dashboard/employee")
+    ? "/dashboard/employee"
+    : "/dashboard/users";
+  const backPath = principalType === "visitor"
+    ? `${dashboardPrefix}/visitors`
+    : `${dashboardPrefix}/employees`;
 
   const categorized = useMemo(() => {
     const today = new Date();
@@ -169,24 +189,20 @@ export default function UserOverview() {
       <div className="relative p-4 !m-0">
         {/* Premium Profile Section */}
         <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-gray-100 mb-6 group transition-all hover:shadow-xl hover:shadow-blue-500/5">
-          {/* Cover Decor */}
-          <div className="h-32 bg-[#1e293b] relative overflow-hidden">
-            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-            <div className="absolute top-4 left-4">
-              <button
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 backdrop-blur-md text-white hover:bg-white hover:text-gray-900 transition-all border border-white/10 shadow-lg"
-                onClick={() => navigate(backPath)}
-                title="Go Back"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-            </div>
+          <div className="pt-6 px-8">
+            <button
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all border border-gray-100 shadow-sm"
+              onClick={() => navigate(backPath)}
+              title="Go Back"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
           </div>
 
-          <div className="px-8 pb-8 -mt-12 relative">
-            <div className="flex flex-col md:flex-row gap-8 items-end">
+          <div className="px-8 pb-8 pt-4 relative">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
               {/* Avatar Area */}
               <div className="relative group">
                 <div className="w-32 h-32 rounded-[2.5rem] bg-white p-2 shadow-2xl border border-white rotate-3 group-hover:rotate-0 transition-transform duration-500">
@@ -194,10 +210,13 @@ export default function UserOverview() {
                     {profile?.name?.charAt(0) || "U"}
                   </div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-green-500 border-4 border-white shadow-lg flex items-center justify-center" title="User Online">
-                  <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></div>
-                </div>
-              </div>
+	                <div
+	                  className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center ${sessionUi.isOnline ? "bg-green-500" : "bg-gray-400"}`}
+	                  title={sessionUi.isOnline ? "User Online" : "User Offline"}
+	                >
+	                  <div className={`w-2.5 h-2.5 rounded-full bg-white ${sessionUi.isOnline ? "animate-pulse" : ""}`}></div>
+	                </div>
+	              </div>
 
               {/* Identity Section */}
               <div className="flex-1 mb-2">
@@ -222,14 +241,14 @@ export default function UserOverview() {
                 </div>
               </div>
 
-              {/* Activity Integrated Stats */}
-              <div className="flex gap-3 mb-2">
-                <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center min-w-[100px] transition-all hover:bg-white hover:shadow-md cursor-default">
-                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Status</p>
-                  <p className={`text-sm font-black ${profile.sessionStatus === 'Logged In' ? 'text-green-600' : 'text-gray-600'}`}>
-                    {profile.sessionStatus || "Offline"}
-                  </p>
-                </div>
+	              {/* Activity Integrated Stats */}
+	              <div className="flex gap-3 mb-2">
+	                <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center min-w-[100px] transition-all hover:bg-white hover:shadow-md cursor-default">
+	                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Status</p>
+	                  <p className={`text-sm font-black ${sessionUi.isOnline ? "text-green-600" : "text-gray-600"}`}>
+	                    {sessionUi.label}
+	                  </p>
+	                </div>
                 {profile.department && (
                   <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center min-w-[100px] transition-all hover:bg-white hover:shadow-md cursor-default">
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Department</p>
@@ -241,7 +260,7 @@ export default function UserOverview() {
 
             {/* Expanded Info Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-12 border-t border-gray-50 pt-10">
-              <div className="space-y-1">
+	              <div className="space-y-1">
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-blue-500"></span>
                   Email Address
@@ -262,10 +281,10 @@ export default function UserOverview() {
               <div className="space-y-1">
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-purple-500"></span>
-                  Mobile Session
-                </p>
-                <p className="text-sm font-bold text-gray-800">{profile.sessionStatus || "Logout"}</p>
-              </div>
+	                  Mobile Session
+	                </p>
+	                <p className="text-sm font-bold text-gray-800">{sessionUi.label}</p>
+	              </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-pink-500"></span>
@@ -285,67 +304,52 @@ export default function UserOverview() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <button
+                type="button"
                 onClick={() => navigate(`/dashboard/users/activity?employeeId=${employeeId}&type=camera_activity`)}
-                className="bg-white border border-gray-100 rounded-[2rem] p-6 text-left hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all flex flex-col gap-4 group relative overflow-hidden"
+                className="cursor-pointer p-5 rounded-xl border-l-4 bg-[#018DD4]/15 border-[#018DD4] text-left"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/50 rounded-bl-[4rem] group-hover:bg-blue-100/50 transition-colors -mr-12 -mt-12"></div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M23 6.00012L17 10.4201V7.00012C17 6.45012 16.55 6.00012 16 6.00012H3C2.45 6.00012 2 6.45012 2 7.00012V17.0001C2 17.5501 2.45 18.0001 3 18.0001H16C16.55 18.0001 17 17.5501 17 17.0001V13.5801L23 18.0001V6.00012Z" /></svg>
-                  </div>
-                  <span className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">Monitoring</span>
-                </div>
-                <div className="flex items-center justify-between w-full mt-2 bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-white group-hover:border-blue-100 transition-all">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-gray-900 leading-none">{counts.camera || 0}</span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Logs</span>
-                  </div>
-                  <div className="text-[10px] text-red-500 font-black px-2 py-1 bg-red-50 rounded-lg">
-                    +{categorized.camera.today} TODAY
-                  </div>
-                </div>
+                <p className="font-semibold text-lg text-gray-900">Cam Activity</p>
+                <h2 className="text-3xl font-bold mt-2 text-gray-900">
+                  {counts.camera || 0}
+                  <span className="text-base font-semibold text-gray-500">
+                    {" "} / {categorized.camera.today || 0} Today
+                  </span>
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">{counts.camera || 0} activities detected</p>
               </button>
+
               <button
+                type="button"
                 onClick={() => navigate(`/dashboard/users/activity?employeeId=${employeeId}&type=app_access`)}
-                className="bg-white border border-gray-100 rounded-[2rem] p-6 text-left hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all flex flex-col gap-4 group relative overflow-hidden"
+                className="cursor-pointer p-5 rounded-xl border-l-4 bg-white border-[#018DD4] text-left"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-[4rem] group-hover:bg-indigo-100/50 transition-colors -mr-12 -mt-12"></div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6H20V16H4V6ZM2 4C0.89543 4 0 4.89543 0 6V18C0 19.1046 0.89543 20 2 20H22C23.1046 20 24 19.1046 24 18V6C24 4.89543 23.1046 4 22 4H2Z" /></svg>
-                  </div>
-                  <span className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">Usage access</span>
-                </div>
-                <div className="flex items-center justify-between w-full mt-2 bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-white group-hover:border-indigo-100 transition-all">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-gray-900 leading-none">{counts.appAccess || 0}</span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Access</span>
-                  </div>
-                  <div className="text-[10px] text-red-500 font-black px-2 py-1 bg-red-50 rounded-lg">
-                    +{categorized.appAccess.today} TODAY
-                  </div>
-                </div>
+                <p className="font-semibold text-lg text-gray-900">App Accessed</p>
+                <h2 className="text-3xl font-bold mt-2 text-gray-900">
+                  {counts.appAccess || 0}
+                  <span className="text-base font-semibold text-gray-500">
+                    {" "} / {categorized.appAccess.today || 0} Today
+                  </span>
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">{counts.appAccess || 0} activities detected</p>
               </button>
+
               <button
+                type="button"
                 onClick={() => navigate(`/dashboard/users/activity?employeeId=${employeeId}&type=security_permission`)}
-                className="bg-white border border-gray-100 rounded-[2rem] p-6 text-left hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-1 transition-all flex flex-col gap-4 group relative overflow-hidden"
+                className="cursor-pointer p-5 rounded-xl border-l-4 bg-white border-[#018DD4] text-left"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-red-50/50 rounded-bl-[4rem] group-hover:bg-red-100/50 transition-colors -mr-12 -mt-12"></div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-50 rounded-2xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4 5V11C4 16.19 7.41 21.05 12 22C16.59 21.05 20 16.19 20 11V5L12 2Z" /></svg>
-                  </div>
-                  <span className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">Compliance</span>
-                </div>
-                <div className="flex items-center justify-between w-full mt-2 bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-white group-hover:border-red-100 transition-all">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-gray-900 leading-none">{counts.securityPermission || 0}</span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Policy</span>
-                  </div>
-                  <div className="text-[10px] text-red-500 font-black px-2 py-1 bg-red-50 rounded-lg">
-                    +{categorized.security.today} TODAY
-                  </div>
-                </div>
+                <p className="font-semibold text-lg text-gray-900 leading-snug">
+                  Security &amp; Permission
+                  <br />
+                  Events
+                </p>
+                <h2 className="text-3xl font-bold mt-2 text-gray-900">
+                  {counts.securityPermission || 0}
+                  <span className="text-base font-semibold text-gray-500">
+                    {" "} / {categorized.security.today || 0} Today
+                  </span>
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">{counts.securityPermission || 0} activities detected</p>
               </button>
             </div>
 
@@ -361,19 +365,18 @@ export default function UserOverview() {
                 <div className="text-sm text-gray-500">No devices found.</div>
               ) : (
                 <div className="overflow-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-gray-600 border-b">
-                        <th className="py-2 pr-4">Device Id</th>
-                        <th className="py-2 pr-4">Device Name</th>
-                        <th className="py-2 pr-4">Platform</th>
-                        <th className="py-2 pr-4">Status</th>
-                        <th className="py-2 pr-4">Last Seen</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {devices.map((d) => (
-                        <tr key={d._id || d.deviceId} className="border-b last:border-b-0">
+	                  <table className="min-w-full text-sm">
+	                    <thead>
+	                      <tr className="text-left text-gray-600 border-b">
+	                        <th className="py-2 pr-4">Device Id</th>
+	                        <th className="py-2 pr-4">Device Name</th>
+	                        <th className="py-2 pr-4">Platform</th>
+	                        <th className="py-2 pr-4">Last Seen</th>
+	                      </tr>
+	                    </thead>
+	                    <tbody>
+	                      {devices.map((d) => (
+	                        <tr key={d._id || d.deviceId} className="border-b last:border-b-0">
                           <td className="py-2 pr-4 font-semibold text-gray-900">
                             <span
                               className="cursor-pointer hover:text-blue-600 transition-colors"
@@ -381,15 +384,14 @@ export default function UserOverview() {
                             >
                               {d.deviceId || "-"}
                             </span>
-                          </td>
-                          <td className="py-2 pr-4">{d.deviceName || "-"}</td>
-                          <td className="py-2 pr-4">{d.platform || "-"}</td>
-                          <td className="py-2 pr-4">{d.status || d.deviceStatus || "-"}</td>
-                          <td className="py-2 pr-4">{formatDateTime(d.lastSeen || d.lastOnline)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+	                          </td>
+	                          <td className="py-2 pr-4">{d.deviceName || "-"}</td>
+	                          <td className="py-2 pr-4">{d.platform || "-"}</td>
+	                          <td className="py-2 pr-4">{formatDateTime(d.lastSeen || d.lastOnline)}</td>
+	                        </tr>
+	                      ))}
+	                    </tbody>
+	                  </table>
                 </div>
               )}
             </div>
@@ -530,5 +532,3 @@ export default function UserOverview() {
     </div >
   );
 }
-
-

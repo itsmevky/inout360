@@ -158,9 +158,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
         <nav className="sidebar-nav">
           <ul className="nav-list primary-nav">
             {visibleNavItems.map((item) => {
-              const isActive =
-                location.pathname.toLowerCase() ===
-                (item.path || "").toLowerCase();
+              const currentPath = (location.pathname || "").toLowerCase();
+              const itemPath = (item.path || "").toLowerCase();
+              const isDashboardRoot = itemPath === "/dashboard";
+              const isActive = isDashboardRoot
+                ? currentPath === "/dashboard"
+                : (currentPath === itemPath || currentPath.startsWith(`${itemPath}/`));
 
               return (
                 <li

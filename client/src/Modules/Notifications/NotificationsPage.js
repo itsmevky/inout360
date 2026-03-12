@@ -43,7 +43,11 @@ const humanizeEventLabel = (value) => {
         .replace(/\s+/g, " ")
         .trim()
         .toLowerCase();
-    return capitalizeFirstLetter(normalized);
+    const humanized = capitalizeFirstLetter(normalized);
+    // Brand normalization: show "PIL" instead of "Pidilite" in event/app labels
+    return /\bpidilite\b/i.test(String(value || ""))
+        ? humanized.replace(/\bPidilite\b/gi, "PIL")
+        : humanized;
 };
 
 const resolveType = ({ activityType, category, description, narrative, rawEvent }) => {
@@ -107,6 +111,34 @@ const normalizeMessage = (value) => {
     message = message.replace(dupPhrase, "Camera usage ended");
     message = message.replace(/\b(\w+)(?:\s+\1\b)+/gi, "$1");
     return message.trim();
+};
+
+const rewritePolicyOrAppEventMessage = (item, baseMessage) => {
+    const raw = `${item?.description || ""} ${item?.activityType || ""} ${item?.rawEvent || ""} ${item?.narrative || ""} ${item?.metadata?.narrative || ""}`
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (raw.includes("app install")) return "App Installed";
+    if (raw.includes("app uninstall")) return "App Uninstalled";
+
+    const isTurnedOff = raw.includes("disabled") || raw.includes("off") || raw.includes("turned off");
+    const isTurnedOn = raw.includes("enabled") || raw.includes("on") || raw.includes("turned on");
+
+    const formatPermission = (name) => {
+        if (isTurnedOff) return `App ${name} Permission Turned off`;
+        if (isTurnedOn) return `App ${name} Permission Turned on`;
+        return `App ${name} Permission`;
+    };
+
+    if (raw.includes("overlay")) return formatPermission("Overlay");
+    if (raw.includes("location permission") || raw.includes("gps")) return formatPermission("Location");
+    if (raw.includes("notification permission")) return formatPermission("Notification");
+    if (raw.includes("device admin")) return formatPermission("Device Admin");
+    if (raw.includes("usage access")) return formatPermission("Usage Access");
+    if (raw.includes("accessibility")) return formatPermission("Accessibility");
+
+    return baseMessage;
 };
 
 const extractAppNameFromText = (value) => {
@@ -209,7 +241,7 @@ const toNotification = (item) => {
     const isVideoCall = /video call/i.test(item.narrative || item.metadata?.narrative || item.rawEvent || "");
     const actionText = isVideoCall ? "video call" : "camera opened";
 
-    let message = baseMessage;
+    let message = rewritePolicyOrAppEventMessage(item, baseMessage);
 
     if (type === "APP_ACCESS") {
         message = effectiveAppName

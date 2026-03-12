@@ -82,6 +82,8 @@ function DashboardLayout({ userRole }) {
               <Route path="users/employees" element={<Employees />} />
               <Route path="users/visitors" element={<Visitors />} />
               <Route path="users/user/:employeeId" element={<UserOverview />} />
+              <Route path="users/employees/user/:employeeId" element={<UserOverview />} />
+              <Route path="users/visitors/user/:employeeId" element={<UserOverview />} />
               <Route path="users/visitors/add" element={<AddVisitor />} />
               <Route path="users/visitors/edit/:id" element={<EditVisitor />} />
               <Route path="users/roles" element={<Roles />} />
@@ -91,6 +93,8 @@ function DashboardLayout({ userRole }) {
               <Route path="employee/employees" element={<Employees />} />
               <Route path="employee/visitors" element={<Visitors />} />
               <Route path="employee/user/:employeeId" element={<UserOverview />} />
+              <Route path="employee/employees/user/:employeeId" element={<UserOverview />} />
+              <Route path="employee/visitors/user/:employeeId" element={<UserOverview />} />
               <Route path="employee/visitors/add" element={<AddVisitor />} />
               <Route path="employee/visitors/edit/:id" element={<EditVisitor />} />
               <Route

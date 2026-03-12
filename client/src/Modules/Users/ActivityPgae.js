@@ -57,7 +57,10 @@ const ActivityPage = () => {
         const lowerExplicit = String(explicit).toLowerCase().trim();
 
         if (explicit && !invalidNames.includes(lowerExplicit)) {
-            return capitalizeFirstLetter(String(explicit));
+            const label = capitalizeFirstLetter(String(explicit));
+            return /\bpidilite\b/i.test(String(explicit))
+                ? label.replace(/\bPidilite\b/gi, "PIL")
+                : label;
         }
 
         let text = `${activity?.rawEvent || ""} ${activity?.narrative || ""}`.toLowerCase();
@@ -80,6 +83,7 @@ const ActivityPage = () => {
             { key: "meet", label: "Meet" },
             { key: "teams", label: "Teams" },
             { key: "pil", label: "PIL" },
+            { key: "pidilite", label: "PIL" },
         ];
         for (const item of known) {
             if (text.includes(item.key)) return item.label;
@@ -883,23 +887,45 @@ const ActivityPage = () => {
             const raw = String(
                 activity?.rawEvent || activity?.type || activity?.category || ""
             ).toLowerCase();
-            if (raw.includes("off") || raw.includes("disabled")) return "Accessibility Off";
-            if (raw.includes("on") || raw.includes("enabled")) return "Accessibility On";
-            return "Accessibility Permission";
+            if (raw.includes("off") || raw.includes("disabled")) return "App Accessibility Permission Turned off";
+            if (raw.includes("on") || raw.includes("enabled")) return "App Accessibility Permission Turned on";
+            return "App Accessibility Permission";
         }
         const typeValue = String(activity?.type || activity?.category || "-").toLowerCase();
         const rawEvent = String(activity?.rawEvent || "").toLowerCase();
 
+        if (typeValue === "app_install" || rawEvent.includes("app install")) return "App Installed";
+        if (typeValue === "app_uninstall" || rawEvent.includes("app uninstall")) return "App Uninstalled";
+
         if (rawEvent.includes("inactive")) return "Device Inactive";
         if (rawEvent.includes("working hours violation")) return "Working Hours Violation";
         if (rawEvent.includes("restricted app settings")) return "Restricted Settings Access";
+        const isTurnedOff = rawEvent.includes("disabled") || rawEvent.includes("off") || rawEvent.includes("turned off");
+        const isTurnedOn = rawEvent.includes("enabled") || rawEvent.includes("on") || rawEvent.includes("turned on");
         if (rawEvent.includes("overlay")) {
-            if (rawEvent.includes("disabled") || rawEvent.includes("off")) return "Overlay Disabled";
-            return "Overlay Enabled";
+            if (isTurnedOff) return "App Overlay Permission Turned off";
+            if (isTurnedOn) return "App Overlay Permission Turned on";
+            return "App Overlay Permission";
+        }
+        if (rawEvent.includes("location permission") || rawEvent.includes("gps")) {
+            if (isTurnedOff) return "App Location Permission Turned off";
+            if (isTurnedOn) return "App Location Permission Turned on";
+            return "App Location Permission";
         }
         if (rawEvent.includes("notification permission")) {
-            if (rawEvent.includes("disabled") || rawEvent.includes("off")) return "Notification Disabled";
-            return "Notification Enabled";
+            if (isTurnedOff) return "App Notification Permission Turned off";
+            if (isTurnedOn) return "App Notification Permission Turned on";
+            return "App Notification Permission";
+        }
+        if (rawEvent.includes("device admin")) {
+            if (isTurnedOff) return "App Device Admin Permission Turned off";
+            if (isTurnedOn) return "App Device Admin Permission Turned on";
+            return "App Device Admin Permission";
+        }
+        if (rawEvent.includes("usage access")) {
+            if (isTurnedOff) return "App Usage Access Permission Turned off";
+            if (isTurnedOn) return "App Usage Access Permission Turned on";
+            return "App Usage Access Permission";
         }
         const raw = typeValue.replace(/[_-]+/g, " ").trim();
         if (typeValue.includes("uninstall_attempt")) {
@@ -1266,8 +1292,8 @@ const ActivityPage = () => {
                         <table className="w-full border-collapse activity-table activity-table--main">
                             <thead>
                                 <tr className="bg-gray-100 text-left text-gray-700">
-                                    <th style={{ width: columnWidths.user }} className="p-3">Name / Employee ID</th>
                                     <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
+                                    <th style={{ width: columnWidths.user }} className="p-3">Name / Employee ID</th>
                                     <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
                                     <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
                                     <th style={{ width: columnWidths.time }} className="p-3">Time</th>
@@ -1278,13 +1304,13 @@ const ActivityPage = () => {
                                 {paginatedInOutUsers.map((record, index) => (
                                     <tr key={record.userKey || index} className="hover:bg-gray-50">
                                         <td className="p-3">
+                                            {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                                        </td>
+                                        <td className="p-3">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-gray-900">{record.user || "-"}</span>
                                                 <span className="text-xs text-gray-500 font-medium">{record.employeeId || "-"}</span>
                                             </div>
-                                        </td>
-                                        <td className="p-3">
-                                            {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
                                         <td className="p-3">
                                             {record.latestEntry ? resolveAttendanceAction(record.latestEntry) : "-"}
@@ -1369,7 +1395,7 @@ const ActivityPage = () => {
                                 : selectedType === "app_access"
                                     ? "APP ACCESSED"
                                     : selectedType === "app_install_uninstall"
-                                        ? "APP INSTALL / UNINSTALL / ACCESSIBILITY PERMISSION"
+                                        ? "APP INSTALLED / UNINSTALLED & APP PERMISSIONS"
                                         : selectedType.replace("_", " ").toUpperCase()
                         }
                     </h2>
@@ -1378,8 +1404,8 @@ const ActivityPage = () => {
                         <table className="w-full border-collapse activity-table">
                             <thead>
                                 <tr className="bg-gray-100 text-left text-gray-700">
-                                    <th style={{ width: columnWidths.user }} className="p-3">Name / Employee ID</th>
                                     <th style={{ width: columnWidths.srNo }} className="p-3">Sr.No</th>
+                                    <th style={{ width: columnWidths.user }} className="p-3">Name / Employee ID</th>
                                     <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
                                     <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
                                     <th style={{ width: columnWidths.time }} className="p-3">Time</th>
@@ -1391,13 +1417,13 @@ const ActivityPage = () => {
                                 {paginatedUsers.map((item, index) => (
                                     <tr key={item.userKey || index} className="hover:bg-gray-50">
                                         <td className="p-3">
+                                            {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                                        </td>
+                                        <td className="p-3">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-gray-900">{item.user || "-"}</span>
                                                 <span className="text-xs text-gray-500 font-medium">{item.latestActivity?.employeeId || item.employeeId || "-"}</span>
                                             </div>
-                                        </td>
-                                        <td className="p-3">
-                                            {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
                                         <td className="p-3">
                                             {formatActivityLabel(item.latestActivity, { compact: true })}
@@ -1649,9 +1675,19 @@ const ActivityPage = () => {
                         <div className="modal-container modal-container--media">
                             <div className="modal-header">
                                 <h2 className="modal-user-name">
-                                    {(mediaModalActivity.type || mediaModalActivity.category || "-")
-                                        .replace("_", " ")
-                                        .toUpperCase()}
+                                    {(() => {
+                                        const ctx = modalContextType || selectedType;
+                                        if (ctx === "camera_activity") return "Cam Activity";
+                                        if (ctx === "app_access") return "App Accessed";
+                                        if (ctx === "app_install_uninstall") return "Security & Permission Events";
+
+                                        const actType = String(mediaModalActivity.type || mediaModalActivity.category || "").toLowerCase();
+                                        if (isCameraActivity(mediaModalActivity)) return "Cam Activity";
+                                        if (actType === "app_access") return "App Accessed";
+                                        if (["app_install", "app_uninstall"].includes(actType) || isSecurityEvent(mediaModalActivity)) return "Security & Permission Events";
+
+                                        return (mediaModalActivity.type || mediaModalActivity.category || "-").replace(/_/g, " ").toUpperCase();
+                                    })()}
                                 </h2>
                                 <p className="modal-meta">
                                     {formatTimestamp(mediaModalActivity.timestamp)}

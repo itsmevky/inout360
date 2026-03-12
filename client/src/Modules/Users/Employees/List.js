@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AddUserForm from "../Add.js";
 import EditUserForm from "./Edit.js";
 import { API, getData, deleteData, putData } from "../../../Helpers/api.js";
@@ -34,6 +34,7 @@ const Employeepage = () => {
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [users, setUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [attendanceFilter, setAttendanceFilter] = useState("");
@@ -126,7 +127,7 @@ const Employeepage = () => {
   const sessionBadge = (status) => {
     const normalized = String(status || "").toLowerCase();
     const isLoggedIn = normalized === "logged in";
-    const label = isLoggedIn ? "Logged In" : "Logged Out";
+    const label = isLoggedIn ? "Online" : "Offline";
     return (
       <span
         className={`px-3 py-0.5 rounded-lg font-medium text-sm ${isLoggedIn
@@ -192,7 +193,10 @@ const Employeepage = () => {
     const id = row?.employeeId || row?.id || row?._id;
     if (!id) return;
     const hash = sectionId ? `#${sectionId}` : "";
-    navigate(`/dashboard/users/user/${encodeURIComponent(String(id))}${hash}`);
+    const prefix = (location.pathname || "").startsWith("/dashboard/employee")
+      ? "/dashboard/employee"
+      : "/dashboard/users";
+    navigate(`${prefix}/employees/user/${encodeURIComponent(String(id))}${hash}`);
   };
 
   const openDeviceModalFromList = (row) => {
@@ -261,7 +265,7 @@ const Employeepage = () => {
               <span className="text-gray-400 font-bold text-sm">-</span>
             )}
             <span className={`text-[10px] font-bold uppercase mt-1 leading-none ${isLoggedIn ? 'text-green-600' : 'text-red-500'}`}>
-              {isLoggedIn ? 'Login' : 'Logout'}
+              {isLoggedIn ? "Online" : "Offline"}
             </span>
           </div>
         );

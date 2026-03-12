@@ -79,7 +79,7 @@ const VisitorsList = () => {
   const statusBadge = (status) => {
     const normalized = String(status || "").toLowerCase();
     const isLoggedIn = normalized === "logged in";
-    const label = isLoggedIn ? "Logged In" : "Logged Out";
+    const label = isLoggedIn ? "Online" : "Offline";
     return (
       <span
         className={`px-3 py-0.5 rounded-lg font-medium text-sm ${isLoggedIn
@@ -144,7 +144,10 @@ const VisitorsList = () => {
     const id = row?.employeeId || row?.id || row?._id;
     if (!id) return;
     const hash = sectionId ? `#${sectionId}` : "";
-    navigate(`/dashboard/users/user/${encodeURIComponent(String(id))}${hash}`);
+    const prefix = (location.pathname || "").startsWith("/dashboard/employee")
+      ? "/dashboard/employee"
+      : "/dashboard/users";
+    navigate(`${prefix}/visitors/user/${encodeURIComponent(String(id))}${hash}`);
   };
 
   const openDeviceModalFromList = (row) => {
@@ -211,7 +214,7 @@ const VisitorsList = () => {
               <span className="text-gray-400 font-bold text-sm">-</span>
             )}
             <span className={`text-[10px] font-bold uppercase mt-1 leading-none ${isLoggedIn ? 'text-green-600' : 'text-red-500'}`}>
-              {isLoggedIn ? 'Login' : 'Logout'}
+              {isLoggedIn ? "Online" : "Offline"}
             </span>
           </div>
         );
@@ -341,12 +344,12 @@ const VisitorsList = () => {
                   setSessionFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-              >
-                <option value="">All Sessions</option>
-                <option value="Logged In">Logged In</option>
-                <option value="Logout">Logout</option>
-              </select>
-            </div>
+	              >
+	                <option value="">All Sessions</option>
+	                <option value="Logged In">Online</option>
+	                <option value="Logout">Offline</option>
+	              </select>
+	            </div>
           </div>
           {canCreateVisitors && (
             <div className="add-new-employee-button">
