@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { useSearchParams } from "react-router-dom";
 import { API } from "../../../Helpers/api.js";
+import CustomDataTable from "../../../Common/Customsdatatable.js";
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
@@ -263,6 +264,109 @@ const AttendanceList = () => {
   const startItem = totalRows === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
   const endItem = Math.min(currentPage * rowsPerPage, totalRows);
 
+  const columns = [
+    {
+      name: "Sr.No",
+      selector: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
+      width: "5%",
+    },
+    {
+      name: "Name / Employee ID",
+      selector: (row) => (
+        <div className="flex flex-col text-left">
+          <span className="font-bold text-gray-900">{row.userName || "-"}</span>
+          <span className="text-xs text-gray-500 font-medium">{row.employeeId || "-"}</span>
+        </div>
+      ),
+      width: "20%",
+    },
+    {
+      name: "Activity",
+      selector: (row) => (row.latestEntry ? resolveActivity(row.latestEntry) : "-"),
+      width: "12%",
+    },
+    {
+      name: "Device ID",
+      selector: (row) => row.deviceId || "-",
+      width: "18%",
+    },
+    {
+      name: "Time",
+      selector: (row) => formatDateTime(resolveTime(row.latestEntry)),
+      width: "20%",
+    },
+    {
+      name: "Action",
+      selector: (row) => (
+        <button
+          onClick={() => setSelectedUser(row)}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+          title="View Details"
+        >
+          <svg width={22} height={22} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+            <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+          </svg>
+        </button>
+      ),
+      width: "10%",
+    },
+  ];
+
+  const mobileColumns = [
+    {
+      name: "Name",
+      selector: (row) => (
+        <span className="font-bold text-[#22374E] whitespace-nowrap">{row.userName || "-"}</span>
+      ),
+    },
+    {
+      name: "Employee ID",
+      selector: (row) => (
+        <span className="text-gray-600 whitespace-nowrap">{row.employeeId || "-"}</span>
+      ),
+    },
+    {
+      name: "Activity",
+      selector: (row) => (
+        <span className="whitespace-nowrap">{row.latestEntry ? resolveActivity(row.latestEntry) : "-"}</span>
+      ),
+    },
+    {
+      name: "Device ID",
+      selector: (row) => (
+        <div className="w-full overflow-hidden text-right">
+          <span className="text-gray-800 font-bold whitespace-nowrap">
+            {row.deviceId || "-"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      name: "Time",
+      selector: (row) => (
+        <span className="text-xs text-gray-600 whitespace-nowrap">
+          {formatDateTime(resolveTime(row.latestEntry))}
+        </span>
+      ),
+    },
+    {
+      name: "Action",
+      selector: (row) => (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setSelectedUser(row)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+            title="View Details"
+          >
+            <svg width={18} height={18} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+              <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+            </svg>
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="p-4">
       <div className="button-crm mb-4">
@@ -309,98 +413,17 @@ const AttendanceList = () => {
         {loading ? (
           <div>Loading...</div>
         ) : (
-          <>
-            <div className="activity-table-scroll">
-              <table className="w-full border-collapse activity-table">
-                <thead>
-                  <tr className="bg-gray-100 text-left text-gray-700">
-                    <th className="p-3">Sr.No</th>
-                    <th className="p-3">Name / Employee ID</th>
-                    <th className="p-3">Activity</th>
-                    <th className="p-3">Device ID</th>
-                    <th className="p-3">Time</th>
-                    <th className="p-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedUsers.map((user, index) => (
-                    <tr key={user.userKey} className="hover:bg-gray-50">
-                      <td className="p-3">{(currentPage - 1) * rowsPerPage + index + 1}</td>
-                      <td className="p-3">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-gray-900">{user.userName || "-"}</span>
-                          <span className="text-xs text-gray-500 font-medium">{user.employeeId || "-"}</span>
-                        </div>
-                      </td>
-                      <td className="p-3">{user.latestEntry ? resolveActivity(user.latestEntry) : "-"}</td>
-                      <td className="p-3">{user.deviceId || "-"}</td>
-                      <td className="p-3">{formatDateTime(resolveTime(user.latestEntry))}</td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
-                          title="View Details"
-                        >
-                          <svg width={22} height={22} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                            <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {paginatedUsers.length === 0 && (
-                    <tr>
-                      <td className="p-4 text-center text-gray-500" colSpan={6}>
-                        No attendance records found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="text-gray-600">Rows per page:</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
-                  className="border rounded px-2 py-1 text-sm"
-                >
-                  {ITEMS_PER_PAGE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-gray-600">
-                  {startItem}-{endItem} of {totalRows}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  aria-label="Previous page"
-                >
-                  ‹
-                </button>
-                <div className="flex flex-nowrap gap-2">
-                  {renderPaginationButtons(currentPage, totalPages, setCurrentPage)}
-                </div>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  aria-label="Next page"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-          </>
+          <CustomDataTable
+            columns={columns}
+            mobileColumns={mobileColumns}
+            data={paginatedUsers}
+            totalRows={totalRows}
+            rowsPerPageOptions={[10, 20, 50, 100]}
+            defaultRowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={setRowsPerPage}
+            currentPage={currentPage}
+          />
         )}
       </div>
 

@@ -131,6 +131,12 @@ const API = {
     resetPassword: "/auth/reset-password",
   },
 
+  vendor: {
+    register: (data) => postData("/vendors/public/register", data),
+    verifyOtp: (data) => postData("/vendors/public/verify-otp", data),
+    verifyPublic: (vendorCode) => getData(`/vendors/public/verify?vendorCode=${vendorCode}`),
+  },
+
   shift: {
     getAll: (params = {}) => getData("/shift", params),
     getById: (id) => getData(`/shift/${id}`),

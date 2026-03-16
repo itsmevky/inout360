@@ -11,6 +11,7 @@ import Loginpage from "./Website/login.js";
 import EducationLoginpage from "./Dashboard/Education/login.js";
 import QrLoginpage from "./Dashboard/Education/qrlogin.js";
 import Registerpage from "./Website/registerform.js";
+import VendorRegister from "./Website/VendorRegister.js";
 import Forgotpassword from "./Website/forgotpassword.js";
 import Getotp from "./Website/getotp.js";
 import Resetpassword from "./Website/resetpassword.js";
@@ -82,6 +83,7 @@ const AppRoutes = () => {
 
       <Route path="/platform" element={<Loginpage />} />
       <Route path="/register" element={<Registerpage />} />
+      <Route path="/vendor-register" element={<VendorRegister />} />
       <Route path="/forgotpassword" element={<Forgotpassword />} />
       <Route path="/getotp" element={<Getotp />} />
       <Route path="/resetpassword" element={<Resetpassword />} />

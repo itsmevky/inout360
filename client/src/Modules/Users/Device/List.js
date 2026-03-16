@@ -940,6 +940,7 @@ import { useNavigate } from "react-router-dom";
 // export default Device;
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { deleteData, getData, postData, putData } from "../../../Helpers/api.js";
+import CustomDataTable from "../../../Common/Customsdatatable.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
 import { can, normalizeRole } from "../../../Helpers/acl.js";
 import { useLocation } from "react-router-dom";
@@ -1304,6 +1305,134 @@ const Device = () => {
     setActionLoading(false);
   };
 
+  const columns = [
+    {
+      name: "Name / Employee ID",
+      selector: (row) => (
+        <div className="flex flex-col text-left">
+          <span className="font-bold text-gray-900">{row.userName || row.name || "-"}</span>
+          <span className="text-xs text-gray-500 font-medium">{row.employeeId || "-"}</span>
+        </div>
+      ),
+      width: "20%",
+    },
+    {
+      name: "Device",
+      selector: (row) => row.deviceName || row.deviceId || row.name || "-",
+      width: "18%",
+    },
+    {
+      name: "Status",
+      selector: (row) => statusBadge(row.statusLabel || row.status),
+      width: "12%",
+    },
+    {
+      name: "Android",
+      selector: (row) =>
+        row.deviceInfo?.version?.release ||
+        row.osVersion ||
+        row.androidVersion ||
+        "-",
+      width: "12%",
+    },
+    {
+      name: "App Ver.",
+      selector: (row) => row.appVersion || row.appVer || "-",
+      width: "12%",
+    },
+    {
+      name: "Last Online",
+      selector: (row) => formatDate(row.lastOnline || row.lastSeen),
+      width: "18%",
+    },
+    {
+      name: "Actions",
+      selector: (row) => (
+        <div className="flex justify-center">
+          <button
+            onClick={() => openDeviceModal(row)}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+            title="View Details"
+          >
+            <svg
+              width={20}
+              height={20}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 576 512"
+            >
+              <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+            </svg>
+          </button>
+        </div>
+      ),
+      width: "8%",
+    },
+  ];
+
+  const mobileColumns = [
+    {
+      name: "Name",
+      selector: (row) => (
+        <span className="font-bold text-[#22374E] whitespace-nowrap">{row.userName || row.name || "-"}</span>
+      ),
+    },
+    {
+      name: "Employee ID",
+      selector: (row) => (
+        <span className="text-gray-600 whitespace-nowrap">{row.employeeId || "-"}</span>
+      ),
+    },
+    {
+      name: "Device",
+      selector: (row) => (
+        <div className="w-full overflow-hidden text-right">
+          <span className="font-bold whitespace-nowrap text-gray-800">
+            {row.deviceName || row.deviceId || row.name || "-"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      name: "Status",
+      selector: (row) => (
+        <div className="flex justify-end">
+          {statusBadge(row.statusLabel || row.status)}
+        </div>
+      ),
+    },
+    {
+      name: "Android",
+      selector: (row) => (
+        <span className="whitespace-nowrap">
+          {row.deviceInfo?.version?.release || row.osVersion || row.androidVersion || "-"}
+        </span>
+      ),
+    },
+    {
+      name: "Last Online",
+      selector: (row) => (
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          {formatDate(row.lastOnline || row.lastSeen)}
+        </span>
+      ),
+    },
+    {
+      name: "Actions",
+      selector: (row) => (
+        <div className="flex justify-end">
+          <button
+            onClick={() => openDeviceModal(row)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
+          >
+            <svg width={18} height={18} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+              <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
+            </svg>
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="p-4">
       {/* PAGE HEADING */}
@@ -1366,180 +1495,19 @@ const Device = () => {
           <div className="bg-white p-5 rounded-xl shadow text-gray-600">
             Loading devices...
           </div>
-        ) : null}
-        {!loading && error ? (
-          <div className="bg-white p-5 rounded-xl shadow text-red-600">
-            {error}
-          </div>
-        ) : null}
-
-        {/* ================= DESKTOP TABLE ================= */}
-        <div className="hidden lg:block bg-white p-5 rounded-xl shadow">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 text-left text-gray-700">
-                <th className="p-3">Name / Employee ID</th>
-                <th className="p-3">Device</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Android</th>
-                <th className="p-3">App Ver.</th>
-                <th className="p-3">Last Online</th>
-                <th className="p-3 text-center">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {paginatedDeviceList.map((device) => (
-                <tr key={device.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-900">{device.userName || device.name || "-"}</span>
-                      <span className="text-xs text-gray-500 font-medium">{device.employeeId || "-"}</span>
-                    </div>
-                  </td>
-                  <td className="p-3 font-semibold">
-                    {device.deviceName || device.deviceId || device.name || "-"}
-                  </td>
-                  <td className="p-3">
-                    {statusBadge(device.statusLabel || device.status)}
-                  </td>
-                  <td className="p-3">
-                    {device.deviceInfo?.version?.release ||
-                      device.osVersion ||
-                      device.androidVersion ||
-                      "-"}
-                  </td>
-                  <td className="p-3">
-                    {device.appVersion || device.appVer || "-"}
-                  </td>
-                  <td className="p-3 text-sm text-gray-600">
-                    {formatDate(device.lastOnline || device.lastSeen)}
-                  </td>
-
-                  {/* ✅ ACTION SECTION UNCHANGED */}
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => openDeviceModal(device)}
-                      className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
-                      title="View Details"
-                    >
-                      <svg
-                        width={20}
-                        height={20}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 576 512"
-                      >
-                        <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ================= MOBILE + TABLET STACKED TABLE ================= */}
-        <div className="block lg:hidden space-y-5 md:flex md:flex-col md:gap-2 sm:flex sm:flex-col sm:gap-2">
-          {paginatedDeviceList.map((device) => (
-            <div
-              key={device.id}
-              className="bg-white rounded-xl border shadow p-2 !mt-2 !mb-2 !mr-0 !ml-0"
-            >
-              <div className="grid grid-cols-2 gap-y-1 text-sm">
-                <div className="text-gray-500 font-medium">Device</div>
-                <div className="text-right font-semibold">
-                  {device.deviceName || device.deviceId || device.name || "-"}
-                </div>
-
-                <div className="text-gray-500 font-medium">Name / Employee ID</div>
-                <div className="text-right">
-                  <span className="font-bold block">{device.userName || device.name || "-"}</span>
-                  <span className="text-xs text-gray-500">{device.employeeId || "-"}</span>
-                </div>
-
-                <div className="text-gray-500 font-medium">Status</div>
-                <div className="text-right">
-                  {statusBadge(device.statusLabel || device.status)}
-                </div>
-
-                <div className="text-gray-500 font-medium">Android</div>
-                <div className="text-right">
-                  {device.deviceInfo?.version?.release ||
-                    device.osVersion ||
-                    device.androidVersion ||
-                    "-"}
-                </div>
-
-                <div className="text-gray-500 font-medium">App Ver.</div>
-                <div className="text-right">{device.appVersion || device.appVer || "-"}</div>
-
-                <div className="text-gray-500 font-medium">Last Online</div>
-                <div className="text-right text-xs text-gray-600">
-                  {formatDate(device.lastOnline || device.lastSeen)}
-                </div>
-              </div>
-
-              {/* ACTIONS (UNCHANGED) */}
-              <div className="flex justify-end gap-4 mt-4">
-                <button
-                  onClick={() => openDeviceModal(device)}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200"
-                  title="View Details"
-                >
-                  <svg
-                    width={20}
-                    height={20}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 576 512"
-                  >
-                    <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6-46.8 43.5-78.1 95.4-93 131.1-3.3 7.9-3.3 16.7 0 24.6 14.9 35.7 46.2 87.7 93 131.1 47.1 43.7 111.8 80.6 192.6 80.6s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1 3.3-7.9 3.3-16.7 0-24.6-14.9-35.7-46.2-87.7-93-131.1-47.1-43.7-111.8-80.6-192.6-80.6zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64-11.5 0-22.3-3-31.7-8.4-1 10.9-.1 22.1 2.9 33.2 13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-12.2-45.7-55.5-74.8-101.1-70.8 5.3 9.3 8.4 20.1 8.4 31.7z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* PAGINATION (same block you had, just uses sorted list now) */}
-        {!loading && totalRecords > 0 ? (
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4">
-            <p className="text-sm text-gray-600">
-              Showing{" "}
-              {Math.min(
-                (currentPage - 1) * ITEMS_PER_PAGE + 1,
-                totalRecords
-              )}{" "}
-              –{" "}
-              {Math.min(
-                (currentPage - 1) * ITEMS_PER_PAGE +
-                sortedDeviceList.length,
-                totalRecords
-              )}{" "}
-              of {totalRecords}
-            </p>
-
-            <div className="flex items-center gap-2 justify-center w-full overflow-x-auto sm:overflow-visible">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                aria-label="Previous page"
-              >
-                ‹
-              </button>
-              <div className="flex flex-nowrap gap-2">{renderPaginationButtons()}</div>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
-                aria-label="Next page"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        ) : null}
+        ) : (
+          <CustomDataTable
+            columns={columns}
+            mobileColumns={mobileColumns}
+            data={paginatedDeviceList}
+            totalRows={totalRecords}
+            rowsPerPageOptions={[10, 20, 50, 100]}
+            defaultRowsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={() => {}} // Rows per page is fixed at 10 in this file
+            currentPage={currentPage}
+          />
+        )}
       </div>
 
       {/* ========================= DEVICE DETAILS MODAL ========================= */}

@@ -35,6 +35,22 @@ const resolveActivityCategory = (eventType) => {
 const isCameraEvent = (eventType) =>
   /camera|screenshot|video/i.test(String(eventType || ""));
 
+const isAppAccessEvent = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return (
+    text.includes("app access") ||
+    text.includes("restricted app opened") ||
+    text.includes("youtube") ||
+    text.includes("whatsapp") ||
+    text.includes("instagram") ||
+    text.includes("facebook")
+  );
+};
+
 const resolveUserSessionStatus = async ({ userId, employeeId }) => {
   if (userId && mongoose.isValidObjectId(userId)) {
     const user = await UserModel.findById(userId)
@@ -75,6 +91,20 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
     if (session) return session.action;
   }
   return null;
+};
+
+const shouldIgnoreEventWhenLoggedOut = ({ event, metadata, narrative }) => {
+  const blockedByType = isCameraEvent(event);
+  const blockedByAccess = isAppAccessEvent(
+    event,
+    narrative,
+    metadata?.appName,
+    metadata?.packageName,
+    metadata?.app,
+    metadata?.event,
+    metadata?.narrative
+  );
+  return blockedByType || blockedByAccess;
 };
 
 const parseDurationSeconds = (...candidates) => {
@@ -270,6 +300,21 @@ exports.storeEvent = async (req, res) => {
     }
 
     const resolvedEmployeeId = employeeId || employee_id || device.employeeId || "";
+    const sessionStatus = await resolveUserSessionStatus({
+      userId: device.userId,
+      employeeId: resolvedEmployeeId,
+    });
+    if (
+      sessionStatus !== "Logged In" &&
+      shouldIgnoreEventWhenLoggedOut({ event, metadata, narrative })
+    ) {
+      return res.status(200).json({
+        status: true,
+        skipped: true,
+        message: "Event ignored because user is logged out",
+      });
+    }
+
     let policyVoilation = await resolvePolicyVoilation({
       eventType: event,
       userId: device.userId,

@@ -77,7 +77,7 @@ const SuperAdminDashboard = () => {
         <div className="dashboar-option-inner-page w-full mx-auto px-4 md:px-6 lg:px-8 pt-4">
 
           {/* Dashboard Header */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl text-gray-700 font-bold text-xl md:text-2xl dashboard-crm-box-shadow mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl text-gray-700 font-bold text-xl md:text-2xl dashboard-crm-box-shadow mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <span className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-lg">
                 <svg
@@ -98,22 +98,22 @@ const SuperAdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-14 gap-6 mb-8">
 
             {/* User Statistics Card */}
-            <div className="lg:col-span-4 bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px]">
+            <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
               <h3 className="text-lg font-bold text-gray-800 mb-2">User Distribution</h3>
-              <div className="flex-1 flex flex-col gap-3 py-1">
-                <div className="flex flex-row items-start justify-between px-0 sm:px-1 gap-3">
+              <div className="flex-1 flex flex-col gap-3 py-1 justify-center">
+                <div className="flex flex-row items-center justify-between px-1 gap-3 mb-1">
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider mb-1">
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider mb-0.5">
                       Total Users
                     </span>
-                    <h4 className="text-4xl font-black text-gray-900 leading-none">
+                    <h4 className="text-3xl sm:text-4xl font-black text-gray-900 leading-none">
                       {(summary.employees || 0) + (summary.visitors || 0)}
                     </h4>
                   </div>
-                  <div className="flex items-center shrink-0 pt-1">
-                    <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span className="text-[10px] text-blue-700 font-black uppercase tracking-wide">
+                  <div className="flex items-center shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-blue-100">
+                      <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-500"></span>
+                      <span className="text-[9px] sm:text-[10px] text-blue-700 font-black uppercase tracking-wide">
                         Active
                       </span>
                     </div>
@@ -121,10 +121,10 @@ const SuperAdminDashboard = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full">
-                  <div className="bg-slate-50 px-3 py-2 rounded-2xl border border-slate-200 flex items-center justify-between">
+                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 grid grid-cols-[1fr_auto] items-center gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                      <span className="text-sm text-gray-800 font-bold whitespace-nowrap">
+                      <span className="text-sm text-gray-800 font-bold truncate">
                         Employees
                       </span>
                     </div>
@@ -133,10 +133,10 @@ const SuperAdminDashboard = () => {
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 px-3 py-2 rounded-2xl border border-slate-200 flex items-center justify-between">
+                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 grid grid-cols-[1fr_auto] items-center gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="w-2 h-2 rounded-full bg-[#00A88A] shrink-0"></span>
-                      <span className="text-sm text-gray-800 font-bold whitespace-nowrap">
+                      <span className="text-sm text-gray-800 font-bold truncate">
                         Visitors
                       </span>
                     </div>
@@ -149,17 +149,17 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* Violations Overview Card */}
-            <div className="lg:col-span-4 bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[260px]">
+            <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[260px] overflow-hidden">
               <h3 className="text-lg font-bold text-gray-800 mb-1 w-full text-left">Violations</h3>
-              <div className="flex-1 w-full flex justify-center items-center py-4">
-                <ResponsiveContainer width="100%" height={140}>
+              <div className="flex-1 w-full flex justify-center items-center py-2 sm:py-4">
+                <ResponsiveContainer width="100%" height={110}>
                   <PieChart>
                     <Pie
                       data={pieChartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={75}
+                      innerRadius={40}
+                      outerRadius={55}
                       paddingAngle={8}
                       dataKey="value"
                     >
@@ -185,7 +185,7 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* Line Chart Section - Trends */}
-            <div className="lg:col-span-6 bg-white px-5 pt-3 pb-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
+            <div className="lg:col-span-6 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
               <div className="w-full mb-3">
                 <h3 className="text-lg font-bold text-gray-800 text-left">Device Trends</h3>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5 text-left">Overview of the last 7 days</p>
@@ -200,7 +200,7 @@ const SuperAdminDashboard = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex-1 w-[calc(100%+8px)] min-h-[150px] -ml-2 pr-1">
+              <div className="flex-1 w-full min-h-[150px] pr-1 mt-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={summary.last7DaysAttendance}

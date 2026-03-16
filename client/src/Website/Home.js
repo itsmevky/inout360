@@ -119,6 +119,12 @@ const Home = () => {
             >
               QR Login
             </button>
+            <button
+              onClick={() => navigate("/vendor-register")}
+              className="px-6 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 font-bold rounded-xl border border-slate-200 hover:border-blue-200 transition-all duration-300 shadow-sm text-sm"
+            >
+              Vendor Register
+            </button>
 
             <button
               onClick={() => {
@@ -163,6 +169,12 @@ const Home = () => {
                   className="w-full text-center px-6 py-3 bg-blue-50 text-blue-600 font-bold rounded-xl border border-blue-100 text-base"
                 >
                   QR Login
+                </button>
+                <button
+                  onClick={() => { setIsMobileMenuOpen(false); navigate("/vendor-register"); }}
+                  className="w-full text-center px-6 py-3 bg-slate-50 text-slate-700 font-bold rounded-xl border border-slate-200 text-base"
+                >
+                  Vendor Register
                 </button>
                 <button
                   onClick={() => {

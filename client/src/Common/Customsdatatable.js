@@ -3,6 +3,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 const CustomDataTable = ({
   columns,
+  mobileColumns,
   data,
   totalRows,
   rowsPerPageOptions = [10, 20, 50, 100, 500, 1000],
@@ -13,6 +14,8 @@ const CustomDataTable = ({
 }) => {
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+  const displayMobileColumns = mobileColumns || columns;
 
   useEffect(() => {
     onPageChange(currentPage || 1);
@@ -147,19 +150,19 @@ const CustomDataTable = ({
             key={rowIndex}
             className="bg-white border rounded-lg shadow p-3 space-y-2"
           >
-            {columns.map((col, colIndex) => (
+            {displayMobileColumns.map((col, colIndex) => (
               <div
                 key={colIndex}
-                className="flex justify-between gap-3 text-sm"
+                className="flex justify-between gap-4 text-sm items-center"
               >
-                <span className="text-gray-500 font-medium">
+                <span className="text-gray-500 font-medium whitespace-nowrap flex-shrink-0">
                   {col.name}
                 </span>
-                <span className="text-gray-800 text-right break-all">
+                <div className="text-gray-800 text-right overflow-x-auto whitespace-nowrap min-w-0 flex-1 hide-scrollbar">
                   {col.selector
                     ? col.selector(row)
                     : row[col.selectorKey]}
-                </span>
+                </div>
               </div>
             ))}
           </div>

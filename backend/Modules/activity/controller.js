@@ -71,6 +71,22 @@ const resolveMediaType = (eventType) => {
 const isCameraActivity = (value) =>
   /camera|screenshot|video/i.test(String(value || ""));
 
+const isAppAccessActivity = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return (
+    text.includes("app access") ||
+    text.includes("restricted app opened") ||
+    text.includes("youtube") ||
+    text.includes("whatsapp") ||
+    text.includes("instagram") ||
+    text.includes("facebook")
+  );
+};
+
 const parseDurationSeconds = (...candidates) => {
   const joined = candidates
     .filter(Boolean)
@@ -176,6 +192,66 @@ const resolvePolicyVoilation = async (payload) => {
     .lean();
   return session?.action === "Logged In";
 };
+
+const resolveCurrentSessionLoggedIn = async (payload) => {
+  if (payload.userId && mongoose.isValidObjectId(payload.userId)) {
+    const user = await UserModel.findById(payload.userId)
+      .select("sessionStatus")
+      .lean();
+    if (user?.sessionStatus) return user.sessionStatus === "Logged In";
+
+    const visitor = await VisitorModel.findById(payload.userId)
+      .select("sessionStatus")
+      .lean();
+    if (visitor?.sessionStatus) return visitor.sessionStatus === "Logged In";
+  }
+
+  if (payload.employeeId) {
+    const user = await UserModel.findOne({ employeeId: payload.employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (user?.sessionStatus) return user.sessionStatus === "Logged In";
+
+    const visitor = await VisitorModel.findOne({ employeeId: payload.employeeId })
+      .select("sessionStatus")
+      .lean();
+    if (visitor?.sessionStatus) return visitor.sessionStatus === "Logged In";
+  }
+
+  const sessionQuery = {};
+  if (payload.userId && mongoose.isValidObjectId(payload.userId)) {
+    sessionQuery.userId = payload.userId;
+  } else if (payload.employeeId) {
+    sessionQuery.employeeId = payload.employeeId;
+  } else {
+    return false;
+  }
+
+  const session = await UserSession.findOne(sessionQuery)
+    .sort({ createdAt: -1 })
+    .select("action")
+    .lean();
+  return session?.action === "Logged In";
+};
+
+const shouldIgnoreLoggedOutActivity = (payload) =>
+  isCameraActivity(payload.activityType) ||
+  isCameraActivity(payload.category) ||
+  isCameraActivity(payload.event) ||
+  isCameraActivity(payload.title) ||
+  isAppAccessActivity(
+    payload.activityType,
+    payload.category,
+    payload.event,
+    payload.title,
+    payload.description,
+    payload.narrative,
+    payload.metadata?.appName,
+    payload.metadata?.packageName,
+    payload.metadata?.app,
+    payload.metadata?.event,
+    payload.metadata?.narrative
+  );
 
 const buildActivityFilter = ({
   userId,
@@ -305,6 +381,15 @@ const withScope = (filter = {}, scopeFilter = null) => {
 exports.add = async (req, res) => {
   try {
     const payload = { ...req.body };
+    const isLoggedIn = await resolveCurrentSessionLoggedIn(payload);
+    if (!isLoggedIn && shouldIgnoreLoggedOutActivity(payload)) {
+      return res.status(200).json({
+        status: true,
+        skipped: true,
+        message: "Activity ignored because user is logged out",
+      });
+    }
+
     if (!payload.imagePath) {
       payload.imagePath =
         payload.metadata?.imagePath || payload.raw?.imagePath || "";

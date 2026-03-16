@@ -6436,11 +6436,22 @@ body {
 
   .notification-header-actions {
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
   }
 
-  .notification-refresh-btn {
-    min-width: 110px;
+  .notification-refresh-meta {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  .notification-refresh-btn,
+  .notification-clear-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 8px 10px;
+    font-size: 13px;
   }
 
   .notification-card {

@@ -228,7 +228,7 @@ const Employeepage = () => {
               className="flex flex-col items-start text-left p-0 m-0 w-full"
               style={{ textAlign: 'left' }}
             >
-              <span className="font-bold text-[#22374e] text-base leading-tight hover:underline text-nowrap">
+              <span className="font-bold text-[#22374e] text-base leading-tight hover:underline">
                 {name || "-"}
               </span>
               <span className="text-xs text-gray-500 font-bold uppercase mt-1 leading-none">
@@ -257,7 +257,7 @@ const Employeepage = () => {
             {dId !== "-" ? (
               <button
                 onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(empId))}`)}
-                className="text-[#22374e] hover:underline font-bold text-sm leading-tight text-nowrap"
+                className="text-[#22374e] hover:underline font-bold text-sm leading-tight"
               >
                 {dId}
               </button>
@@ -340,6 +340,79 @@ const Employeepage = () => {
         },
       ]
       : []),
+  ];
+
+  const mobileColumns = [
+    {
+      name: "Name",
+      selector: (row) => {
+        const name = row.name || row.firstName || "-";
+        return (
+          <button
+            type="button"
+            onClick={() => openUserOverview(row, "details")}
+            className="font-bold text-[#22374E] hover:underline whitespace-nowrap"
+          >
+            {name}
+          </button>
+        );
+      },
+    },
+    {
+      name: "Employee ID",
+      selector: (row) => row.employeeId || row._id || "-",
+    },
+    {
+      name: "Location",
+      selector: (row) => row.location || "-",
+    },
+    {
+      name: "Device",
+      selector: (row) => {
+        const dId = row.deviceId || "-";
+        const empId = row.employeeId || row._id || row.id;
+        const isLoggedIn = String(row.sessionStatus || "").toLowerCase() === "logged in";
+        return (
+          <div className="flex flex-col items-end text-right w-full overflow-hidden">
+            {dId !== "-" ? (
+              <button
+                onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(empId))}`)}
+                className="text-[#22374E] hover:underline font-bold text-sm whitespace-nowrap block w-full text-right"
+              >
+                {dId}
+              </button>
+            ) : (
+              <span className="text-gray-400 font-bold whitespace-nowrap">-</span>
+            )}
+            <span className={`text-[10px] font-bold uppercase mt-1 whitespace-nowrap ${isLoggedIn ? 'text-green-600' : 'text-red-500'}`}>
+              {isLoggedIn ? "Online" : "Offline"}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      name: "Actions",
+      selector: (row) => (
+        <div className="flex space-x-3 justify-end">
+          {canUpdateEmployees && (
+            <button onClick={() => handleEdit(row._id)}>
+              <svg fill="#22374e" width={18} height={18} viewBox="0 0 640 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l293.1 0c-3.1-8.8-3.7-18.4-1.4-27.8l15-60.1c2.8-11.3 8.6-21.5 16.8-29.7l40.3-40.3c-32.1-31-75.7-50.1-123.9-50.1l-91.4 0zm435.5-68.3c-15.6-15.6-40.9-15.6-56.6 0l-29.4 29.4 71 71 29.4-29.4c15.6-15.6 15.6-40.9 0-56.6l-14.4-14.4zM375.9 417c-4.1 4.1-7 9.2-8.4 14.9l-15 60.1c-1.4 5.5 .2 11.2 4.2 15.2s9.7 5.6 15.2 4.2l60.1-15c5.6-1.4 10.8-4.3 14.9-8.4L576.1 358.7l-71-71L375.9 417z" /></svg>
+            </button>
+          )}
+          {canDeleteEmployees && (
+            <button onClick={() => handleDelete(row._id)}>
+              <svg fill="red" width={16} height={16} viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+            </button>
+          )}
+          {canForceLogoutEmployees && (
+            <button onClick={() => handleForceLogout(row)}>
+              <svg fill="#374151" width={16} height={16} viewBox="0 0 512 512"><path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H402.7l-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96zM320 112c0-17.7-14.3-32-32-32H128C57.3 80 0 137.3 0 208V304c0 70.7 57.3 128 128 128H288c17.7 0 32-14.3 32-32s-14.3-32-32-32H128c-35.3 0-64-28.7-64-64V208c0-35.3 28.7-64 64-64H288c17.7 0 32-14.3 32-32z" /></svg>
+            </button>
+          )}
+        </div>
+      )
+    }
   ];
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -652,6 +725,7 @@ const Employeepage = () => {
         ) : (
           <CustomDataTable
             columns={columns}
+            mobileColumns={mobileColumns}
             data={data}
             totalRows={totalRows}
             rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}

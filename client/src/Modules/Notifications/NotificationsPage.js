@@ -408,7 +408,7 @@ const NotificationsPage = () => {
         const start = Math.max(currentPage - 2, 1);
         const end = Math.min(currentPage + 2, totalPages);
         const baseBtn =
-            "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
+            "flex-shrink-0 flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[11px] xs:text-xs sm:text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50";
         const activeBtn =
             "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
 
@@ -422,7 +422,7 @@ const NotificationsPage = () => {
                     1
                 </button>
             );
-            if (start > 2) btns.push(<span key="dots1">…</span>);
+            if (start > 2) btns.push(<span key="dots1" className="px-1 text-gray-400 font-bold">…</span>);
         }
 
         for (let i = start; i <= end; i++) {
@@ -447,7 +447,7 @@ const NotificationsPage = () => {
             );
         }
 
-        if (end < totalPages - 1) btns.push(<span key="dots2">…</span>);
+        if (end < totalPages - 1) btns.push(<span key="dots2" className="px-1 text-gray-400 font-bold">…</span>);
 
         if (end < totalPages) {
             btns.push(
@@ -631,16 +631,16 @@ const NotificationsPage = () => {
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-2 justify-center w-full overflow-x-auto lg:overflow-visible">
+                        <div className="flex flex-nowrap items-center gap-1 sm:gap-2 justify-center w-full mt-2 lg:mt-0 overflow-x-auto hide-scrollbar pb-1">
                             <button
                                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                className="flex-shrink-0 flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-base sm:text-xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
                             >
                                 ‹
                             </button>
 
-                            <div className="flex flex-nowrap gap-2">
+                            <div className="flex flex-nowrap items-center justify-center gap-1 sm:gap-2">
                                 {renderPaginationButtons()}
                             </div>
 
@@ -649,7 +649,7 @@ const NotificationsPage = () => {
                                     setCurrentPage((p) => Math.min(p + 1, totalPages))
                                 }
                                 disabled={currentPage === totalPages}
-                                className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                className="flex-shrink-0 flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-base sm:text-xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
                             >
                                 ›
                             </button>
