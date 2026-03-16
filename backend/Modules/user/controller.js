@@ -68,7 +68,6 @@ exports.registerUser = async (req, res) => {
     name: "required",
     email: "required|email",
     password: "required|min:6",
-    employeeId: "required",
   };
   if (req.body.role) {
     rules.role =
@@ -143,10 +142,11 @@ exports.registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Registration Error:", error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       status: false,
-      message: "Server error",
+      message: error.firstMessage || error.message || "Server error",
       error: error.message,
+      errors: error.errors,
     });
   }
 };
