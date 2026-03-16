@@ -170,7 +170,7 @@ exports.getAll = async (req, res) => {
           .lean()
         : [],
       userIds.length > 0
-        ? DeviceModel.find({ userId: { $in: userIds } })
+        ? DeviceModel.find({ userId: { $in: userIds }, verified: { $ne: false } })
           .select("userId deviceId")
           .lean()
         : [],

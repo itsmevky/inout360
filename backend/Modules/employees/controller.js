@@ -355,7 +355,7 @@ exports.getAll = async (req, res) => {
         ? UserModel.find({ _id: { $in: userIds } }).select("_id sessionStatus").lean()
         : Promise.resolve([]),
       empIds.length
-        ? DeviceModel.find({ employeeId: { $in: empIds } }).select("employeeId deviceId").lean()
+        ? DeviceModel.find({ employeeId: { $in: empIds }, verified: { $ne: false } }).select("employeeId deviceId").lean()
         : Promise.resolve([]),
     ]);
 
@@ -521,7 +521,7 @@ exports.getOverviewByEmployeeId = async (req, res) => {
       attendance,
       sessionStatus,
     ] = await Promise.all([
-      DeviceModel.find({ employeeId })
+      DeviceModel.find({ employeeId, verified: { $ne: false } })
         .select(
           "deviceId deviceName status deviceStatus platform model osVersion appVersion verified lastSeen lastOnline createdAt"
         )

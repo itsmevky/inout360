@@ -435,7 +435,7 @@ export default function UserOverview() {
                             <td className="py-3 px-4 font-bold text-gray-900">
                               <span
                                 className="cursor-pointer hover:text-blue-600 transition-colors"
-                                onClick={() => navigate(`/dashboard/users/device?search=${d.deviceId}&openModal=1`)}
+                                onClick={() => navigate(`/dashboard/users/device?employeeId=${employeeId}&openModal=true`)}
                               >
                                 {d.deviceId || "-"}
                               </span>

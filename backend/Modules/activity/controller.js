@@ -545,7 +545,7 @@ exports.getAll = async (req, res) => {
     const deviceMap = new Map();
     const deviceIdMap = new Map();
     if (deviceIds.length > 0) {
-      const devices = await DeviceModel.find({ _id: { $in: deviceIds } })
+      const devices = await DeviceModel.find({ _id: { $in: deviceIds }, verified: { $ne: false } })
         .select("deviceId")
         .lean();
       devices.forEach((device) => {
@@ -558,6 +558,7 @@ exports.getAll = async (req, res) => {
     if (deviceIdCandidates.size > 0) {
       const devices = await DeviceModel.find({
         deviceId: { $in: Array.from(deviceIdCandidates) },
+        verified: { $ne: false },
       })
         .select("deviceId")
         .lean();
@@ -747,7 +748,7 @@ exports.getNotifications = async (req, res) => {
     );
     const deviceMap = new Map();
     if (deviceIds.length > 0) {
-      const devices = await DeviceModel.find({ _id: { $in: deviceIds } })
+      const devices = await DeviceModel.find({ _id: { $in: deviceIds }, verified: { $ne: false } })
         .select("deviceId")
         .lean();
       devices.forEach((device) => {
