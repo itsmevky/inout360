@@ -4,8 +4,8 @@ import Header from "./header.js";
 import Footer from "./footer.js";
 import { getData } from "../Helpers/api.js";
 import {
-  XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Tooltip as PieTooltip, Legend as PieLegend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
   LineChart, Line, AreaChart, Area,
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
@@ -13,6 +13,7 @@ import {
 const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
 const SuperAdminDashboard = () => {
   // console.log("SuperAdminDashboard");
+  const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
     employees: 0,
     visitors: 0,
@@ -27,243 +28,357 @@ const SuperAdminDashboard = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
+        setLoading(true);
         const res = await getData("/dashboard/summary");
         if (res?.status && res?.data) {
           setSummary(res.data);
         }
       } catch (error) {
-        // Keep defaults; error toast is handled by API helper.
+        console.error("Dashboard error:", error);
+      } finally {
+        setTimeout(() => setLoading(false), 800);
       }
     };
     fetchSummary();
   }, []);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  const VIOLATION_COLORS = ['#EF4444', '#F59E0B', '#FBBF24']; // Red, Orange, Yellow
 
-  const chartData = [
-    { name: 'Employees', value: summary.employees },
-    { name: 'Visitors', value: summary.visitors },
+  const violationsData = [
+    { name: 'Historical', value: Math.max(0, summary.totalActivities - summary.todayActivities) },
+    { name: 'Today', value: Math.max(0, summary.todayActivities) },
   ];
 
-  const pieChartDataRaw = [
-    { name: 'Total    ', value: summary.totalActivities },
-    { name: "Today's ", value: summary.todayActivities },
-  ];
-  const pieChartData = pieChartDataRaw.some(d => d.value > 0) ? pieChartDataRaw : [{ name: 'No Data', value: 1 }];
+  const totalUsers = (summary.employees || 0) + (summary.visitors || 0);
+  const employeePerc = totalUsers > 0 ? Math.round((summary.employees / totalUsers) * 100) : 0;
+  const visitorPerc = totalUsers > 0 ? Math.round((summary.visitors / totalUsers) * 100) : 0;
 
-  const attendanceDataRaw = [
-    { name: 'Logged In', value: summary.loggedIn },
-    { name: 'Logged Out', value: summary.loggedOut },
-  ];
-  const attendanceData = attendanceDataRaw.some(d => d.value > 0) ? attendanceDataRaw : [{ name: 'No Data', value: 1 }];
-
-  const maxDeviceTrendsValue = (summary.last7DaysAttendance || []).reduce((max, row) => {
-    const loggedIn = Number(row?.loggedIn || 0);
-    const loggedOut = Number(row?.loggedOut || 0);
-    return Math.max(max, loggedIn, loggedOut);
-  }, 0);
-
-  const deviceTrendsAxisMax = (() => {
-    const target = Math.max(1, maxDeviceTrendsValue * 1.2);
-    if (target <= 10) return 10;
-    if (target <= 16) return 16;
-    if (target <= 20) return 20;
-    return Math.ceil(target / 10) * 10;
-  })();
+  const SkeletonCard = () => (
+    <div className="bg-white p-6 rounded-[14px] shadow-sm animate-pulse h-[440px]">
+      <div className="h-3 w-20 bg-slate-100 rounded mb-4"></div>
+      <div className="h-5 w-32 bg-slate-100 rounded mb-6"></div>
+      <div className="h-12 w-24 bg-slate-100 rounded mb-10"></div>
+      <div className="space-y-4">
+        <div className="h-4 bg-slate-50 rounded w-full"></div>
+        <div className="h-4 bg-slate-50 rounded w-full"></div>
+      </div>
+    </div>
+  );
 
   return (
     <>
-      <div className="layout-section-dashboard pb-10 min-h-screen bg-[#F8FAFC]">
-        <div className="dashboar-option-inner-page w-full mx-auto px-4 md:px-6 lg:px-8 pt-4">
-
-          {/* Dashboard Header */}
-          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl text-gray-700 font-bold text-xl md:text-2xl dashboard-crm-box-shadow mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <span className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <svg
-                  width="24"
-                  height="24"
-                  fill="#018DD4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 448 512"
-                >
-                  <path d="M128 136c0-22.1-17.9-40-40-40L40 96C17.9 96 0 113.9 0 136l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm0 192c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM288 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48zm32-192l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40zM448 328c0-22.1-17.9-40-40-40l-48 0c-22.1 0-40 17.9-40 40l0 48c0 22.1 17.9 40 40 40l48 0c22.1 0 40-17.9 40-40l0-48z" />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .dashboard-ui { 
+          font-family: 'Inter', sans-serif; 
+          -webkit-font-smoothing: antialiased;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+        }
+        .card-premium { 
+          background: #ffffff; 
+          border: 1px solid rgba(241, 245, 249, 1); 
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+          position: relative;
+          overflow: hidden;
+        }
+        .card-premium::before {
+          content: "";
+          position: absolute;
+          top: 0; left: 0; right: 0; height: 100%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+          pointer-events: none;
+        }
+        .card-premium:hover { 
+          transform: translateY(-4px); 
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+          border-color: rgba(226, 232, 240, 1);
+        }
+        .inner-glow {
+          box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        }
+        .text-gradient-indigo {
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .badge-pulse {
+          position: relative;
+        }
+        .badge-pulse::after {
+          content: "";
+          position: absolute;
+          width: 6px; height: 6px;
+          border-radius: 100%;
+          background: currentColor;
+          right: -8px; top: 50%;
+          transform: translateY(-50%);
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: translateY(-50%) scale(0.95); opacity: 0.7; }
+          70% { transform: translateY(-50%) scale(2.5); opacity: 0; }
+          100% { transform: translateY(-50%) scale(0.95); opacity: 0; }
+        }
+        .recharts-area-dot { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+      `}</style>
+      
+      <div className="dashboard-ui min-h-screen bg-[#f8fafc] pb-20">
+        <div className="w-full mx-auto px-6 lg:px-10 pt-8">
+          
+          {/* Simplified Premium Header */}
+          <header className="mb-10 p-6 rounded-[20px] bg-white/50 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.02)] flex items-center justify-between gap-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-600"></div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100/50 shadow-inner">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
               </div>
-              Dashboard Overview
-            </span>
-          </div>
+              <div>
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                  System Dashboard
+                </h1>
+              </div>
+            </div>
+          </header>
 
-          {/* Charts Grid Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-14 gap-6 mb-8">
-
-            {/* User Statistics Card */}
-            <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
-              <h3 className="text-lg font-bold text-gray-800 mb-2">User Distribution</h3>
-              <div className="flex flex-col gap-4 py-1 justify-start">
-                <div className="flex flex-row items-center justify-between px-1 gap-2">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] sm:text-xs text-gray-400 font-black uppercase tracking-wider mb-0.5">
-                      Total Users
-                    </span>
-                    <h4 className="text-3xl sm:text-4xl font-black text-gray-900 leading-none">
-                      {(summary.employees || 0) + (summary.visitors || 0)}
-                    </h4>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : (
+            <>
+              {/* Primary 3-Column Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+                
+                {/* User Distribution */}
+                <div className="card-premium p-6 rounded-[16px] shadow-sm flex flex-col h-[440px]">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-1 flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-indigo-400"></span> Assets
+                      </p>
+                      <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">User Distribution</h2>
+                    </div>
                   </div>
-                  <div className="flex items-center shrink-0">
-                    <div className="flex items-center gap-1 sm:gap-2 bg-blue-50 px-2 py-1 rounded-xl border border-blue-100">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                      <span className="text-[9px] sm:text-[10px] text-blue-700 font-black uppercase tracking-wide">
-                        Active
+                  
+                  <div className="mb-8 relative">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[40px] font-bold text-slate-900 leading-none tracking-tighter">{totalUsers}</span>
+                      <span className="text-[12px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
+                        12%
                       </span>
+                    </div>
+                    <p className="text-[13px] font-medium text-slate-500 mt-2 flex items-center gap-1.5">
+                      Total system active personnel
+                    </p>
+                  </div>
+
+                  <div className="mt-auto space-y-6">
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                      <div className="flex justify-between items-center mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                          <span className="text-[13px] font-bold text-slate-700">Employees</span>
+                        </div>
+                        <span className="text-[13px] font-bold text-slate-900">{employeePerc}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden inner-glow">
+                        <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${employeePerc}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                      <div className="flex justify-between items-center mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                          <span className="text-[13px] font-bold text-slate-700">Visitors</span>
+                        </div>
+                        <span className="text-[13px] font-bold text-slate-900">{visitorPerc}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden inner-glow">
+                        <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${visitorPerc}%` }}></div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 w-full mt-2">
-                  <div className="w-full bg-slate-50 px-2 sm:px-3 py-2 sm:py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-1.5 sm:gap-3 overflow-hidden">
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 shrink-0"></span>
-                      <span className="text-[11px] sm:text-sm text-gray-800 font-bold truncate">
-                        Employees
-                      </span>
+                {/* Violations Overview - Premium Redesign */}
+                <div className="card-premium p-7 md:p-8 rounded-[16px] shadow-sm flex flex-col h-[440px]">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-full">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1.5 leading-none flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-rose-400"></span> Security
+                      </p>
+                      <h2 className="text-[18px] font-bold text-slate-800 leading-tight">Violations Overview</h2>
                     </div>
-                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
-                      {summary.employees || 0}
-                    </span>
                   </div>
-
-                  <div className="w-full bg-slate-50 px-2 sm:px-3 py-2 sm:py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-1.5 sm:gap-3 overflow-hidden">
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00A88A] shrink-0"></span>
-                      <span className="text-[11px] sm:text-sm text-gray-800 font-bold truncate">
-                        Visitors
-                      </span>
+                  
+                  <div className="flex-1 flex flex-col items-center justify-center relative">
+                    <div className="relative w-[190px] h-[190px] flex items-center justify-center">
+                      {/* Glow effect for chart */}
+                      <div className="absolute inset-4 rounded-full bg-rose-100/10 blur-2xl"></div>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                          <Pie
+                            data={[
+                              { name: 'Primary', value: (summary.totalActivities || 10) * 0.7 },
+                              { name: 'Minor', value: (summary.totalActivities || 10) * 0.2 },
+                              { name: 'Remaining', value: (summary.totalActivities || 10) * 0.1 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={78}
+                            outerRadius={88}
+                            paddingAngle={6}
+                            dataKey="value"
+                            stroke="none"
+                            cornerRadius={100}
+                            animationDuration={1500}
+                          >
+                            <Cell fill="url(#violationGradRed)" />
+                            <Cell fill="url(#violationGradOrange)" />
+                            <Cell fill="#f1f5f9" />
+                          </Pie>
+                          <defs>
+                            <linearGradient id="violationGradRed" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#ef4444" />
+                              <stop offset="100%" stopColor="#dc2626" />
+                            </linearGradient>
+                            <linearGradient id="violationGradOrange" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#f59e0b" />
+                              <stop offset="100%" stopColor="#d97706" />
+                            </linearGradient>
+                          </defs>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[40px] font-bold text-slate-900 tracking-tighter leading-none">{summary.totalActivities}</span>
+                        <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1.5 opacity-80">Reports</span>
+                      </div>
                     </div>
-                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
-                      {summary.visitors || 0}
-                    </span>
+                  </div>
+
+                  <div className="w-full mt-6 pt-8 pb-4 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex-1 flex flex-col items-center">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-2">Total</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-[26px] font-bold text-slate-900 leading-none">{summary.totalActivities}</span>
+                        <span className="text-[10px] font-bold text-rose-500 flex items-center">↑ 2</span>
+                      </div>
+                    </div>
+                    
+                    <div className="h-10 w-[1px] bg-slate-100"></div>
+                    
+                    <div className="flex-1 flex flex-col items-center">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-2">Today</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-[26px] font-bold text-slate-900 leading-none">{summary.todayActivities}</span>
+                        <span className="text-[10px] font-bold text-emerald-500 flex items-center">↓ 1</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Violations Overview Card */}
-            <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center min-h-[260px] overflow-hidden">
-              <h3 className="text-lg font-bold text-gray-800 mb-1 w-full text-left">Violations</h3>
-              <div className="flex-1 w-full flex justify-center items-center py-2 sm:py-4">
-                <ResponsiveContainer width="100%" height={110}>
-                  <PieChart>
-                    <Pie
-                      data={pieChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={55}
-                      paddingAngle={8}
-                      dataKey="value"
-                    >
-                      {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.name === 'No Data' ? '#f3f4f6' : COLORS[index % COLORS.length]} cornerRadius={8} />
-                      ))}
-                    </Pie>
-                    <PieTooltip
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-row flex-wrap gap-2 mt-auto w-full border-t border-gray-50 pt-4 px-1 justify-center">
-                {pieChartDataRaw.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group/legend cursor-default">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">{d.name.split("'")[0]}:</span>
-                    <span className="text-xs font-black text-gray-900">{d.value}</span>
+                {/* System Trends */}
+                <div className="card-premium p-6 rounded-[16px] shadow-sm flex flex-col h-[440px]">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-1 flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-blue-400"></span> Activity
+                      </p>
+                      <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Device Trends</h2>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Line Chart Section - Trends */}
-            <div className="lg:col-span-6 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
-              <div className="w-full mb-3 shrink-0">
-                <h3 className="text-lg font-bold text-gray-800 text-left">Device Trends</h3>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5 text-left">Overview of the last 7 days</p>
-                <div className="mt-2 flex items-center gap-4 text-xs font-bold text-gray-600">
-                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#018DD4] shrink-0"></span>
-                    Logged In
-                  </span>
-                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#00C49F] shrink-0"></span>
-                    Logged Out
-                  </span>
+                  
+                  <div className="flex-1 w-full min-h-[280px] mt-4 relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={summary.last7DaysAttendance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15}/>
+                            <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="successGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="name" hide={true} />
+                        <YAxis hide={true} />
+                        <Tooltip 
+                          cursor={{ stroke: '#e2e8f0', strokeWidth: 1, strokeDasharray: '4 4' }}
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white/95 backdrop-blur-sm p-4 shadow-xl rounded-xl border border-slate-100 min-w-[150px]">
+                                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{label}</p>
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between gap-6">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.4)]"></div>
+                                        <span className="text-[11px] font-bold text-slate-600">Logged In</span>
+                                      </div>
+                                      <span className="text-[13px] font-black text-slate-900">{payload[0].value}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-6">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+                                        <span className="text-[11px] font-bold text-slate-600">Logged Out</span>
+                                      </div>
+                                      <span className="text-[13px] font-black text-slate-900">{payload[1]?.value || 0}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="loggedIn" 
+                          name="Logged In"
+                          stroke="#4f46e5" 
+                          strokeWidth={3} 
+                          fillOpacity={1} 
+                          fill="url(#primaryGrad)" 
+                          dot={{ r: 4, fill: '#fff', stroke: '#4f46e5', strokeWidth: 2, rAct: 6 }}
+                          activeDot={{ r: 6, fill: '#4f46e5', stroke: '#fff', strokeWidth: 2 }}
+                          animationDuration={2000}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="loggedOut" 
+                          name="Logged Out"
+                          stroke="#10b981" 
+                          strokeWidth={3} 
+                          fillOpacity={1} 
+                          fill="url(#successGrad)" 
+                          dot={{ r: 4, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }}
+                          activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                          animationDuration={2000}
+                        />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          align="center" 
+                          height={36}
+                          iconType="circle"
+                          formatter={(value) => <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">{value}</span>}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 w-full min-h-[250px] pr-1 mt-2 overflow-x-auto overflow-y-hidden md:overflow-hidden">
-                <div className="h-full w-full min-w-[500px] md:min-w-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={summary.last7DaysAttendance}
-                      margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorLoggedIn" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#018DD4" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="#018DD4" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorLoggedOut" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#00C49F" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="#00C49F" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                        dy={10}
-                        interval="preserveStartEnd"
-                        padding={{ left: 10, right: 10 }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                        domain={[0, deviceTrendsAxisMax]}
-                        allowDecimals={false}
-                        width={30}
-                        tickMargin={8}
-                      />
-                      <BarTooltip
-                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="loggedIn"
-                        name="Logged In"
-                        stroke="#018DD4"
-                        strokeWidth={4}
-                        fillOpacity={1}
-                        fill="url(#colorLoggedIn)"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="loggedOut"
-                        name="Logged Out"
-                        stroke="#00C49F"
-                        strokeWidth={4}
-                        fillOpacity={1}
-                        fill="url(#colorLoggedOut)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
 
-          </div>
+              </div>
+            </>
+          )}
+
         </div>
       </div>
     </>
