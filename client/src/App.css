@@ -5764,7 +5764,7 @@ p {
   }
 
   .right-section-all-pages {
-    margin: 0px 10px !important;
+    margin: 0 !important; width: 100% !important;
   }
 }
 

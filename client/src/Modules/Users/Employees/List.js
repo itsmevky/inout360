@@ -257,12 +257,12 @@ const Employeepage = () => {
             {dId !== "-" ? (
               <button
                 onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(empId))}`)}
-                className="text-[#22374e] hover:underline font-bold text-sm leading-tight"
+                className="text-[#22374e] hover:underline font-bold text-sm leading-tight whitespace-nowrap"
               >
                 {dId}
               </button>
             ) : (
-              <span className="text-gray-400 font-bold text-sm">-</span>
+              <span className="text-gray-400 font-bold text-sm whitespace-nowrap">-</span>
             )}
             <span className={`text-[10px] font-bold uppercase mt-1 leading-none ${isLoggedIn ? 'text-green-600' : 'text-red-500'}`}>
               {isLoggedIn ? "Online" : "Offline"}
@@ -270,7 +270,7 @@ const Employeepage = () => {
           </div>
         );
       },
-      width: "15%",
+      width: "auto",
     },
 
     ...(canManageEmployees || canForceLogoutEmployees

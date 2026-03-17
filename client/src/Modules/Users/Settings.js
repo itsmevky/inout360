@@ -232,7 +232,7 @@ const Settings = () => {
                 <div className="min-h-screen !m-0">
 
                     {/* ========= TOP SECTION ========= */}
-                    <div className="bg-white p-6 rounded-xl !mb-4  shadow-sm border border-gray-200 setting-page-System-Configuration">
+                    <div className="bg-white p-4 sm:p-6 rounded-xl !mb-4 shadow-sm border border-gray-200 setting-page-System-Configuration overflow-hidden">
                         <h2 className="text-xl font-bold text-gray-800">System Configuration</h2>
                         <p className="text-sm text-gray-500 mt-1">
                             {showAdvancedSettings
@@ -382,7 +382,7 @@ const Settings = () => {
                                 </label>
 
                                 {emailsArray.map((email, index) => (
-                                    <div key={index} className="flex items-center gap-2 mt-2">
+                                    <div key={index} className="flex items-center gap-2 mt-2 w-full">
                                         <input
                                             type="email"
                                             value={email}
@@ -397,7 +397,7 @@ const Settings = () => {
                                                 );
                                             }}
                                             disabled={viewOnly}
-                                            className="flex-1 border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                            className="flex-1 w-full min-w-0 border border-gray-400 p-2 sm:p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
                                         />
 
                                         {/* Remove button (except first) */}
@@ -409,7 +409,7 @@ const Settings = () => {
                                                     handleConfigChange("otpEmail", updatedEmails.join(","));
                                                 }}
                                                 disabled={viewOnly}
-                                                className="px-3 py-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200"
+                                                className="px-2 sm:px-3 py-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 flex-shrink-0"
                                             >
                                                 ✕
                                             </button>
@@ -438,8 +438,8 @@ const Settings = () => {
                                 <label className="setting-System-Configuration text-gray-700 font-semibold block mb-2">
                                     Working Hours
                                 </label>
-                                <div className="flex gap-4 items-center bg-gray-50 p-3 rounded-lg border border-gray-400">
-                                    <div>
+                                <div className="flex flex-row gap-2 sm:gap-4 items-center bg-gray-50 p-3 rounded-lg border border-gray-400 w-full overflow-hidden">
+                                    <div className="flex-1 min-w-0">
                                         <label className="block text-xs text-gray-500 mb-1">Start Time</label>
                                         <input
                                             type="time"
@@ -457,11 +457,11 @@ const Settings = () => {
                                                 }));
                                             }}
                                             disabled={viewOnly}
-                                            className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-full border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm sm:text-base"
                                         />
                                     </div>
-                                    <span className="text-gray-400 mt-3">-</span>
-                                    <div>
+                                    <span className="text-gray-400 mt-3 flex-shrink-0">-</span>
+                                    <div className="flex-1 min-w-0">
                                         <label className="block text-xs text-gray-500 mb-1">End Time</label>
                                         <input
                                             type="time"
@@ -479,7 +479,7 @@ const Settings = () => {
                                                 }));
                                             }}
                                             disabled={viewOnly}
-                                            className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-full border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm sm:text-base"
                                         />
                                     </div>
                                 </div>

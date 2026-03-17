@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { API } from "../../../Helpers/api.js";
 import CustomDataTable from "../../../Common/Customsdatatable.js";
 
@@ -8,6 +8,7 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
 const AttendanceList = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialSearch = searchParams.get("searchTerm") || searchParams.get("employeeId") || "";
 
   const [entries, setEntries] = useState([]);
@@ -267,14 +268,20 @@ const AttendanceList = () => {
   const columns = [
     {
       name: "Sr.No",
-      selector: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
+      selector: (row) => (currentPage - 1) * rowsPerPage + paginatedUsers.indexOf(row) + 1,
       width: "5%",
     },
     {
       name: "Name / Employee ID",
       selector: (row) => (
         <div className="flex flex-col text-left">
-          <span className="font-bold text-gray-900">{row.userName || "-"}</span>
+          <button
+            onClick={() => navigate(`/dashboard/users/employees/user/${encodeURIComponent(String(row.employeeId || row.userKey || ""))}#details`)}
+            className="text-left font-bold text-gray-900 hover:text-blue-600 hover:underline bg-transparent border-none p-0 m-0 inline-block focus:outline-none"
+            style={{ width: "fit-content" }}
+          >
+            {row.userName || "-"}
+          </button>
           <span className="text-xs text-gray-500 font-medium">{row.employeeId || "-"}</span>
         </div>
       ),
@@ -287,7 +294,17 @@ const AttendanceList = () => {
     },
     {
       name: "Device ID",
-      selector: (row) => row.deviceId || "-",
+      selector: (row) => 
+        row.deviceId && row.deviceId !== "-" ? (
+          <button
+            onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(row.employeeId || ""))}`)}
+            className="text-left text-gray-900 hover:text-blue-600 hover:underline bg-transparent border-none p-0 m-0 inline-block focus:outline-none"
+          >
+            {row.deviceId}
+          </button>
+        ) : (
+          <span className="text-gray-900">-</span>
+        ),
       width: "18%",
     },
     {
@@ -316,7 +333,12 @@ const AttendanceList = () => {
     {
       name: "Name",
       selector: (row) => (
-        <span className="font-bold text-[#22374E] whitespace-nowrap">{row.userName || "-"}</span>
+        <button
+          onClick={() => navigate(`/dashboard/users/employees/user/${encodeURIComponent(String(row.employeeId || row.userKey || ""))}#details`)}
+          className="font-bold text-[#22374E] whitespace-nowrap hover:text-blue-600 hover:underline bg-transparent border-none p-0 m-0 inline-block focus:outline-none"
+        >
+          {row.userName || "-"}
+        </button>
       ),
     },
     {
@@ -335,9 +357,16 @@ const AttendanceList = () => {
       name: "Device ID",
       selector: (row) => (
         <div className="w-full overflow-hidden text-right">
-          <span className="text-gray-800 font-bold whitespace-nowrap">
-            {row.deviceId || "-"}
-          </span>
+          {row.deviceId && row.deviceId !== "-" ? (
+            <button
+              onClick={() => navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(row.employeeId || ""))}`)}
+              className="text-gray-800 font-bold whitespace-nowrap hover:text-blue-600 hover:underline bg-transparent border-none p-0 m-0 inline-block focus:outline-none"
+            >
+              {row.deviceId}
+            </button>
+          ) : (
+            <span className="text-gray-800 font-bold whitespace-nowrap">-</span>
+          )}
         </div>
       ),
     },

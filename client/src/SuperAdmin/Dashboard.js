@@ -121,26 +121,26 @@ const SuperAdminDashboard = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full">
-                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 grid grid-cols-[1fr_auto] items-center gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                      <span className="text-sm text-gray-800 font-bold truncate">
+                      <span className="text-xs sm:text-sm text-gray-800 font-bold whitespace-nowrap">
                         Employees
                       </span>
                     </div>
-                    <span className="text-2xl font-black text-gray-900 leading-none tabular-nums">
+                    <span className="text-xl sm:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
                       {summary.employees || 0}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 grid grid-cols-[1fr_auto] items-center gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="w-2 h-2 rounded-full bg-[#00A88A] shrink-0"></span>
-                      <span className="text-sm text-gray-800 font-bold truncate">
+                      <span className="text-xs sm:text-sm text-gray-800 font-bold whitespace-nowrap">
                         Visitors
                       </span>
                     </div>
-                    <span className="text-2xl font-black text-gray-900 leading-none tabular-nums">
+                    <span className="text-xl sm:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
                       {summary.visitors || 0}
                     </span>
                   </div>
@@ -186,25 +186,26 @@ const SuperAdminDashboard = () => {
 
             {/* Line Chart Section - Trends */}
             <div className="lg:col-span-6 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
-              <div className="w-full mb-3">
+              <div className="w-full mb-3 shrink-0">
                 <h3 className="text-lg font-bold text-gray-800 text-left">Device Trends</h3>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5 text-left">Overview of the last 7 days</p>
                 <div className="mt-2 flex items-center gap-4 text-xs font-bold text-gray-600">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#018DD4]"></span>
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#018DD4] shrink-0"></span>
                     Logged In
                   </span>
-                  <span className="inline-flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#00C49F]"></span>
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#00C49F] shrink-0"></span>
                     Logged Out
                   </span>
                 </div>
               </div>
-              <div className="flex-1 w-full min-h-[150px] pr-1 mt-1">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="flex-1 w-full min-h-[250px] pr-1 mt-2 overflow-x-auto overflow-y-hidden">
+                <div style={{ minWidth: "500px", height: "100%", width: "100%" }}>
+                  <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={summary.last7DaysAttendance}
-                    margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                    margin={{ top: 10, right: 12, left: -36, bottom: 0 }}
                   >
                     <defs>
                       <linearGradient id="colorLoggedIn" x1="0" y1="0" x2="0" y2="1">
@@ -258,6 +259,7 @@ const SuperAdminDashboard = () => {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+                </div>
               </div>
             </div>
 

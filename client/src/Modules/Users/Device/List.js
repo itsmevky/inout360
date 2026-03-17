@@ -1310,7 +1310,12 @@ const Device = () => {
       name: "Name / Employee ID",
       selector: (row) => (
         <div className="flex flex-col text-left">
-          <span className="font-bold text-gray-900">{row.userName || row.name || "-"}</span>
+          <button
+            onClick={() => navigate(`/dashboard/users/employees/user/${encodeURIComponent(String(row.employeeId || row.userKey || ""))}#details`)}
+            className="text-left font-bold text-gray-900 hover:text-blue-600 hover:underline bg-transparent border-none p-0 m-0 inline-block focus:outline-none w-fit"
+          >
+            {row.userName || row.name || "-"}
+          </button>
           <span className="text-xs text-gray-500 font-medium">{row.employeeId || "-"}</span>
         </div>
       ),
@@ -1373,7 +1378,12 @@ const Device = () => {
     {
       name: "Name",
       selector: (row) => (
-        <span className="font-bold text-[#22374E] whitespace-nowrap">{row.userName || row.name || "-"}</span>
+        <button
+          onClick={() => navigate(`/dashboard/users/employees/user/${encodeURIComponent(String(row.employeeId || row.userKey || ""))}#details`)}
+          className="font-bold text-[#22374E] whitespace-nowrap hover:text-blue-600 hover:underline bg-transparent border-none p-0 m-0 inline-block focus:outline-none"
+        >
+          {row.userName || row.name || "-"}
+        </button>
       ),
     },
     {

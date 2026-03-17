@@ -206,10 +206,10 @@ export default function UserOverview() {
         value: profile.gender || profile.rfid,
         iconColor: "bg-indigo-500",
         content: (
-          <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
+          <div className="flex items-center gap-1 md:gap-2 text-sm font-bold text-gray-800 flex-wrap">
             {profile.gender && profile.gender !== "-" && <span>{profile.gender}</span>}
             {profile.gender && profile.gender !== "-" && profile.rfid && profile.rfid !== "No RFID Tag" && <span className="text-gray-200">|</span>}
-            {profile.rfid && profile.rfid !== "No RFID Tag" && <span className="text-xs text-gray-500">{profile.rfid}</span>}
+            {profile.rfid && profile.rfid !== "No RFID Tag" && <span className="text-[10px] md:text-xs text-gray-500 break-all">{profile.rfid}</span>}
             {!profile.gender && (!profile.rfid || profile.rfid === "No RFID Tag") && <span>-</span>}
           </div>
         )
@@ -287,8 +287,8 @@ export default function UserOverview() {
 
 
   return (
-    <div className="m-0">
-      <div className="relative p-4 !m-0">
+    <div className="m-0 pt-20 md:pt-0">
+      <div className="relative p-4 md:p-4 !m-0">
         {loading ? (
           <div className="p-12 text-center text-gray-400 font-bold italic">Gathering intelligence...</div>
         ) : !overview ? (
@@ -298,7 +298,7 @@ export default function UserOverview() {
         ) : (
           <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-gray-100 mb-6 group transition-all hover:shadow-xl hover:shadow-blue-500/5">
             {/* Back Button */}
-            <div className="pt-6 px-8">
+            <div className="pt-4 px-4 md:pt-6 md:px-8">
               <button
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all border border-gray-100 shadow-sm"
                 onClick={() => navigate(backPath)}
@@ -310,8 +310,8 @@ export default function UserOverview() {
               </button>
             </div>
 
-            <div className="px-8 pb-8 pt-4 relative">
-              <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="px-4 pb-8 pt-4 md:px-8 relative">
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
                 {/* Avatar Area */}
                 <div className="relative group">
                   <div className="w-32 h-32 rounded-[2.5rem] bg-white p-2 shadow-2xl border border-white rotate-3 group-hover:rotate-0 transition-transform duration-500">
@@ -343,11 +343,11 @@ export default function UserOverview() {
                       </svg>
                       ID: <span className="text-gray-900">{profile?.employeeId || employeeId}</span>
                     </span>
-                    <span className="flex items-center gap-2 border-l border-gray-100 pl-6">
+                    <span className="flex items-center gap-2 md:border-l md:border-gray-100 md:pl-6">
                       <svg className="w-4 h-4 text-indigo-500/50" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                       </svg>
-                      SITE: <span className="text-gray-900 truncate max-w-[250px] font-black">{profile.location || "-"}</span>
+                      SITE: <span className="text-gray-900 truncate max-w-[200px] md:max-w-[250px] font-black">{profile.location || "-"}</span>
                     </span>
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export default function UserOverview() {
               </div>
 
               {/* Expanded Info Grid */}
-              <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-${Math.max(2, Math.min(4, infoItems.length))} gap-8 mt-12 border-t border-gray-50 pt-10`}>
+              <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-${Math.max(2, Math.min(4, infoItems.length))} gap-4 md:gap-8 mt-10 md:mt-12 border-t border-gray-50 pt-8 md:pt-10`}>
                 {infoItems.map((item, idx) => (
                   <div key={idx} className="space-y-1">
                     <p className="text-[11px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-2">
@@ -388,7 +388,7 @@ export default function UserOverview() {
               </div>
 
               {/* Activity Section */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-10 border-t border-gray-50 pt-10">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 mt-8 md:mt-10 border-t border-gray-50 pt-8 md:pt-10">
                 <div className="col-span-full -mb-4">
                   <p className="text-sm text-gray-900 font-black uppercase tracking-[0.2em]">Activity Highlights</p>
                 </div>
@@ -409,7 +409,7 @@ export default function UserOverview() {
               </div>
 
               {/* Devices Section */}
-              <div id="devices" className="mt-10 border-t border-gray-50 pt-10">
+              <div id="devices" className="mt-8 md:mt-10 border-t border-gray-50 pt-8 md:pt-10">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <p className="text-sm text-gray-900 font-black uppercase tracking-[0.2em]">Registered Devices</p>
@@ -458,8 +458,8 @@ export default function UserOverview() {
               </div>
 
               {/* Attendance Section */}
-              <div id="attendance" className="mt-10 border-t border-gray-50 pt-10">
-                <div className="flex items-center justify-between mb-6">
+              <div id="attendance" className="mt-8 md:mt-10 border-t border-gray-50 pt-8 md:pt-10">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
                   <div
                     className="flex items-center gap-3 cursor-pointer group/title"
                     onClick={() => navigate(`/dashboard/users/attendance?searchTerm=${employeeId}`)}
@@ -480,18 +480,18 @@ export default function UserOverview() {
                     </svg>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 md:gap-2 bg-gray-50 p-2 sm:p-1 rounded-xl border border-gray-100 w-full md:w-auto flex-1 md:flex-none">
                       <input
                         type="date"
-                        className="text-[10px] font-bold bg-transparent border-none focus:ring-0 px-2 py-1 text-gray-600 outline-none"
+                        className="text-[10px] font-bold bg-transparent border-none focus:ring-0 px-2 py-1 text-gray-600 outline-none w-full sm:w-auto text-center sm:text-left"
                         value={fromDate}
                         onChange={(e) => setFromDate(e.target.value)}
                       />
-                      <span className="text-[10px] text-gray-300 font-black">-</span>
+                      <span className="hidden sm:inline text-[10px] text-gray-300 font-black">-</span>
                       <input
                         type="date"
-                        className="text-[10px] font-bold bg-transparent border-none focus:ring-0 px-2 py-1 text-gray-600 outline-none"
+                        className="text-[10px] font-bold bg-transparent border-none focus:ring-0 px-2 py-1 text-gray-600 outline-none w-full sm:w-auto text-center sm:text-left"
                         value={toDate}
                         onChange={(e) => setToDate(e.target.value)}
                       />
