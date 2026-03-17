@@ -11,6 +11,9 @@ import {
 import pidliteLogo from "../Images/PIL.png";
 import heroSecurity from "../Images/hero_secure_final.png";
 import dashboardMockup from "../Images/dashboard_actual.png";
+import { toast } from "react-toastify";
+import { postData } from "../Helpers/api.js";
+
 
 // Reusable Animation Variants
 const fadeInUp = {
@@ -39,6 +42,15 @@ const Home = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    company: "",
+    email: "",
+    message: "",
+    requestDemo: false
+  });
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,6 +59,44 @@ const Home = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.company || !formData.email) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const resp = await postData("/demoResponse/submit", formData);
+      if (resp.status) {
+        toast.success(resp.message || "Request submitted successfully!");
+        setFormData({
+          name: "",
+          company: "",
+          email: "",
+          message: "",
+          requestDemo: false
+        });
+      } else {
+        toast.error(resp.data.message || "Something went wrong.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit request.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
 
   // Features Data
   const features = [
@@ -223,7 +273,10 @@ const Home = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-b border-transparent w-full">
-              <button className="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-3">
+              <button 
+                onClick={() => document.getElementById("request-demo")?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-3"
+              >
                 Request Demo
                 <ArrowRight size={20} />
               </button>
@@ -855,7 +908,7 @@ const Home = () => {
       </section>
 
       {/* 9. CONTACT US */}
-      <section className="py-24 relative overflow-hidden bg-gradient-to-br from-[#eaf4ff] via-white to-[#e0efff]">
+      <section id="request-demo" className="py-24 relative overflow-hidden bg-gradient-to-br from-[#eaf4ff] via-white to-[#e0efff]">
 
         {/* Magical Background Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
@@ -931,38 +984,80 @@ const Home = () => {
             <div className="absolute inset-0 bg-blue-300 rounded-[2.5rem] blur-2xl opacity-20 translate-y-4 shadow-xl"></div>
 
             {/* Premium Glass Form Container */}
-            <div className="relative w-full p-8 md:p-12 rounded-[2.5rem] bg-white/80 backdrop-blur-2xl border-2 border-white/90 shadow-[0_25px_50px_-12px_rgba(100,150,255,0.25)] text-left flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="relative w-full p-8 md:p-12 rounded-[2.5rem] bg-white/80 backdrop-blur-2xl border-2 border-white/90 shadow-[0_25px_50px_-12px_rgba(100,150,255,0.25)] text-left flex flex-col gap-6">
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs font-black text-slate-800 mb-2 block uppercase tracking-widest opacity-80">Name</label>
-                  <input type="text" className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner placeholder:text-slate-400" placeholder="John Doe" />
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner placeholder:text-slate-400"
+                    placeholder="John Doe"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="text-xs font-black text-slate-800 mb-2 block uppercase tracking-widest opacity-80">Company</label>
-                  <input type="text" className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner placeholder:text-slate-400" placeholder="Acme Corp" />
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner placeholder:text-slate-400"
+                    placeholder="Acme Corp"
+                    required
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="text-xs font-black text-slate-800 mb-2 block uppercase tracking-widest opacity-80">Enterprise Email</label>
-                <input type="email" className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner placeholder:text-slate-400" placeholder="name@company.com" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner placeholder:text-slate-400"
+                  placeholder="name@company.com"
+                  required
+                />
               </div>
 
               <div>
                 <label className="text-xs font-black text-slate-800 mb-2 block uppercase tracking-widest opacity-80">Project Details</label>
-                <textarea rows="4" className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner resize-none placeholder:text-slate-400" placeholder="Briefly describe your requirements..."></textarea>
+                <textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className="w-full bg-white/60 border border-blue-100/80 rounded-2xl px-5 py-4 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner resize-none placeholder:text-slate-400"
+                  placeholder="Briefly describe your requirements..."
+                ></textarea>
               </div>
 
-              <div className="flex items-start gap-4 mt-2">
-                <input type="checkbox" id="demo" className="w-5 h-5 rounded border-slate-300 mt-0.5 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer shadow-sm" />
-                <label htmlFor="demo" className="text-sm font-bold text-slate-700 leading-relaxed cursor-pointer hover:text-blue-600 transition-colors">I would like to request a live technical demo.</label>
+              <div className="flex items-center gap-4 mt-2">
+                <input
+                  type="checkbox"
+                  id="demo"
+                  name="requestDemo"
+                  checked={formData.requestDemo}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer shadow-sm"
+                />
+                <label htmlFor="demo" className="text-sm font-bold text-slate-700 leading-none cursor-pointer hover:text-blue-600 transition-colors">I would like to request a live technical demo.</label>
               </div>
 
-              <button type="button" className="w-full py-4 mt-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-2xl font-black text-lg transition-all shadow-[0_10px_20px_-10px_rgba(37,99,235,0.6)] hover:shadow-[0_15px_25px_-10px_rgba(37,99,235,0.8)] hover:-translate-y-1">
-                Submit Request
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-4 mt-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-2xl font-black text-lg transition-all shadow-[0_10px_20px_-10px_rgba(37,99,235,0.6)] hover:shadow-[0_15px_25px_-10px_rgba(37,99,235,0.8)] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Request"}
               </button>
-            </div>
+            </form>
 
           </div>
         </div>
