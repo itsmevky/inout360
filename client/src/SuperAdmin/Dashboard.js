@@ -121,7 +121,7 @@ const SuperAdminDashboard = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full">
-                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto">
+                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto md:overflow-hidden">
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
                       <span className="text-xs sm:text-sm text-gray-800 font-bold whitespace-nowrap">
@@ -133,7 +133,7 @@ const SuperAdminDashboard = () => {
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto">
+                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto md:overflow-hidden">
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="w-2 h-2 rounded-full bg-[#00A88A] shrink-0"></span>
                       <span className="text-xs sm:text-sm text-gray-800 font-bold whitespace-nowrap">
@@ -200,8 +200,8 @@ const SuperAdminDashboard = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex-1 w-full min-h-[250px] pr-1 mt-2 overflow-x-auto overflow-y-hidden">
-                <div style={{ minWidth: "500px", height: "100%", width: "100%" }}>
+              <div className="flex-1 w-full min-h-[250px] pr-1 mt-2 overflow-x-auto overflow-y-hidden md:overflow-hidden">
+                <div className="h-full w-full min-w-[500px] md:min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={summary.last7DaysAttendance}
