@@ -225,7 +225,24 @@ const VendorRegister = () => {
             <div className="pil-login-layout">
 
                 {/* ── LEFT PANEL ── */}
-                <div className="pil-login-left">
+                <div className="pil-login-left relative">
+                    <div className="absolute top-8 left-8 z-10">
+                        {step === "form" ? (
+                            <button
+                                onClick={() => navigate("/")}
+                                className="flex items-center gap-2 text-slate-700 hover:text-blue-700 font-bold text-sm bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-white shadow-sm transition-all hover:shadow hover:-translate-y-0.5"
+                            >
+                                <ArrowLeft size={18} /> Back to Home
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => setStep("form")}
+                                className="flex items-center gap-2 text-slate-700 hover:text-blue-700 font-bold text-sm bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-white shadow-sm transition-all hover:shadow hover:-translate-y-0.5"
+                            >
+                                <ArrowLeft size={18} /> Edit Details
+                            </button>
+                        )}
+                    </div>
                     <div className="pil-left-content">
                         <div className="pil-left-badge">
                             <span></span>
@@ -251,7 +268,7 @@ const VendorRegister = () => {
                                         "Centralized MDM Control",
                                         "Comprehensive Audit Logs"
                                     ].map((benefit, i) => (
-                                        <div key={i} className="flex items-center gap-3 text-slate-700 bg-white/50 backdrop-blur-sm p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:translate-x-1">
+                                        <div key={i} className="flex items-center gap-3 text-slate-700 bg-white/50 backdrop-blur-sm p-3 rounded-xl border border-blue-100 shadow-sm">
                                             <CheckCircle size={18} className="text-blue-500 shrink-0" />
                                             <span className="font-semibold text-sm">{benefit}</span>
                                         </div>
@@ -286,25 +303,6 @@ const VendorRegister = () => {
                         {/* Logo */}
                         <div className="pil-card-logo">
                             <img src={pidilitelogo} alt="PIL Logo" />
-                        </div>
-
-                        {/* Back to Home / Back to Register */}
-                        <div className="flex justify-start mb-4">
-                            {step === "form" ? (
-                                <button
-                                    onClick={() => navigate("/")}
-                                    className="flex items-center gap-1 text-slate-500 hover:text-blue-600 font-semibold text-sm transition-colors"
-                                >
-                                    <ArrowLeft size={16} /> Back to Home
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => setStep("form")}
-                                    className="flex items-center gap-1 text-slate-500 hover:text-blue-600 font-semibold text-sm transition-colors"
-                                >
-                                    <ArrowLeft size={16} /> Edit Details
-                                </button>
-                            )}
                         </div>
 
                         {step === "form" ? (

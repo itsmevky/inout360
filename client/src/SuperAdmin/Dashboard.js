@@ -101,12 +101,12 @@ const SuperAdminDashboard = () => {
             <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
               <h3 className="text-lg font-bold text-gray-800 mb-2">User Distribution</h3>
               <div className="flex flex-col gap-4 py-1 justify-start">
-                <div className="flex flex-row items-center justify-between px-1 gap-1 sm:gap-3">
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] sm:text-xs text-gray-400 font-black uppercase tracking-wider mb-0.5 truncate">
+                <div className="flex flex-row items-center justify-between px-1 gap-2">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-black uppercase tracking-wider mb-0.5">
                       Total Users
                     </span>
-                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 leading-none truncate">
+                    <h4 className="text-3xl sm:text-4xl font-black text-gray-900 leading-none">
                       {(summary.employees || 0) + (summary.visitors || 0)}
                     </h4>
                   </div>
