@@ -64,7 +64,7 @@ const SuperAdminDashboard = () => {
   }, 0);
 
   const deviceTrendsAxisMax = (() => {
-    const target = Math.max(1, maxDeviceTrendsValue * 2);
+    const target = Math.max(1, maxDeviceTrendsValue * 1.2);
     if (target <= 10) return 10;
     if (target <= 16) return 16;
     if (target <= 20) return 20;
@@ -100,19 +100,19 @@ const SuperAdminDashboard = () => {
             {/* User Statistics Card */}
             <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[260px] overflow-hidden">
               <h3 className="text-lg font-bold text-gray-800 mb-2">User Distribution</h3>
-              <div className="flex-1 flex flex-col gap-3 py-1 justify-center">
-                <div className="flex flex-row items-center justify-between px-1 gap-3 mb-1">
+              <div className="flex flex-col gap-4 py-1 justify-start">
+                <div className="flex flex-row items-center justify-between px-1 gap-1 sm:gap-3">
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider mb-0.5">
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-black uppercase tracking-wider mb-0.5 truncate">
                       Total Users
                     </span>
-                    <h4 className="text-3xl sm:text-4xl font-black text-gray-900 leading-none">
+                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 leading-none truncate">
                       {(summary.employees || 0) + (summary.visitors || 0)}
                     </h4>
                   </div>
                   <div className="flex items-center shrink-0">
-                    <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-blue-100">
-                      <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-500"></span>
+                    <div className="flex items-center gap-1 sm:gap-2 bg-blue-50 px-2 py-1 rounded-xl border border-blue-100">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
                       <span className="text-[9px] sm:text-[10px] text-blue-700 font-black uppercase tracking-wide">
                         Active
                       </span>
@@ -120,27 +120,27 @@ const SuperAdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 w-full">
-                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto md:overflow-hidden">
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                      <span className="text-xs sm:text-sm text-gray-800 font-bold whitespace-nowrap">
+                <div className="flex flex-col gap-2 w-full mt-2">
+                  <div className="w-full bg-slate-50 px-2 sm:px-3 py-2 sm:py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-1.5 sm:gap-3 overflow-hidden">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 shrink-0"></span>
+                      <span className="text-[11px] sm:text-sm text-gray-800 font-bold truncate">
                         Employees
                       </span>
                     </div>
-                    <span className="text-xl sm:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
+                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
                       {summary.employees || 0}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 px-3 py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-3 overflow-x-auto md:overflow-hidden">
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-[#00A88A] shrink-0"></span>
-                      <span className="text-xs sm:text-sm text-gray-800 font-bold whitespace-nowrap">
+                  <div className="w-full bg-slate-50 px-2 sm:px-3 py-2 sm:py-2.5 rounded-2xl border border-slate-200 flex justify-between items-center gap-1.5 sm:gap-3 overflow-hidden">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00A88A] shrink-0"></span>
+                      <span className="text-[11px] sm:text-sm text-gray-800 font-bold truncate">
                         Visitors
                       </span>
                     </div>
-                    <span className="text-xl sm:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
+                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-none tabular-nums shrink-0">
                       {summary.visitors || 0}
                     </span>
                   </div>
@@ -203,62 +203,62 @@ const SuperAdminDashboard = () => {
               <div className="flex-1 w-full min-h-[250px] pr-1 mt-2 overflow-x-auto overflow-y-hidden md:overflow-hidden">
                 <div className="h-full w-full min-w-[500px] md:min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={summary.last7DaysAttendance}
-                    margin={{ top: 10, right: 12, left: -36, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorLoggedIn" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#018DD4" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#018DD4" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorLoggedOut" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00C49F" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#00C49F" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#9ca3af', fontSize: 12 }}
-                      dy={10}
-                      interval="preserveStartEnd"
-                      padding={{ left: 10, right: 10 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#9ca3af', fontSize: 12 }}
-                      domain={[0, deviceTrendsAxisMax]}
-                      allowDecimals={false}
-                      width={30}
-                      tickMargin={8}
-                    />
-                    <BarTooltip
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="loggedIn"
-                      name="Logged In"
-                      stroke="#018DD4"
-                      strokeWidth={4}
-                      fillOpacity={1}
-                      fill="url(#colorLoggedIn)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="loggedOut"
-                      name="Logged Out"
-                      stroke="#00C49F"
-                      strokeWidth={4}
-                      fillOpacity={1}
-                      fill="url(#colorLoggedOut)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                    <AreaChart
+                      data={summary.last7DaysAttendance}
+                      margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorLoggedIn" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#018DD4" stopOpacity={0.15} />
+                          <stop offset="95%" stopColor="#018DD4" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorLoggedOut" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#00C49F" stopOpacity={0.15} />
+                          <stop offset="95%" stopColor="#00C49F" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        dy={10}
+                        interval="preserveStartEnd"
+                        padding={{ left: 10, right: 10 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        domain={[0, deviceTrendsAxisMax]}
+                        allowDecimals={false}
+                        width={30}
+                        tickMargin={8}
+                      />
+                      <BarTooltip
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="loggedIn"
+                        name="Logged In"
+                        stroke="#018DD4"
+                        strokeWidth={4}
+                        fillOpacity={1}
+                        fill="url(#colorLoggedIn)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="loggedOut"
+                        name="Logged Out"
+                        stroke="#00C49F"
+                        strokeWidth={4}
+                        fillOpacity={1}
+                        fill="url(#colorLoggedOut)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>
