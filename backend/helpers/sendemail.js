@@ -42,7 +42,8 @@ const getTemplateAttachments = (templateName) => {
     templateName === "pidilitetemplate.html" ||
     templateName === "vendorVerification.html" ||
     templateName === "resetpassword.html" ||
-    templateName === "authorization.html"
+    templateName === "authorization.html" ||
+    templateName === "demoRequest.html"
   ) {
     return [
       {
