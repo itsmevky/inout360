@@ -87,6 +87,15 @@ const isAppAccessActivity = (...values) => {
   );
 };
 
+const isAppInstallActivity = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return text.includes("app_install") || text.includes("app install");
+};
+
 const parseDurationSeconds = (...candidates) => {
   const joined = candidates
     .filter(Boolean)
@@ -381,6 +390,41 @@ const withScope = (filter = {}, scopeFilter = null) => {
 exports.add = async (req, res) => {
   try {
     const payload = { ...req.body };
+    if (payload.deviceId) {
+      const normalizedId = String(payload.deviceId).trim();
+      const deviceQuery = {
+        $or: [{ deviceId: new RegExp(`^${normalizedId}$`, "i") }],
+      };
+      if (mongoose.isValidObjectId(normalizedId)) {
+        deviceQuery.$or.push({ _id: normalizedId });
+      }
+      const device = await DeviceModel.findOne(deviceQuery)
+        .select("_id devicePolicyState")
+        .lean();
+      if (!device) {
+        return res.status(400).json({ status: false, message: "Valid deviceId is required" });
+      }
+      if (
+        device.devicePolicyState?.uninstallBlocked !== true &&
+        !isAppInstallActivity(
+          payload.activityType,
+          payload.category,
+          payload.event,
+          payload.title,
+          payload.description,
+          payload.narrative,
+          payload.metadata?.event,
+          payload.metadata?.narrative
+        )
+      ) {
+        return res.status(200).json({
+          status: true,
+          skipped: true,
+          message: "Activity ignored because uninstallBlocked is false",
+        });
+      }
+    }
+
     const isLoggedIn = await resolveCurrentSessionLoggedIn(payload);
     if (!isLoggedIn && shouldIgnoreLoggedOutActivity(payload)) {
       return res.status(200).json({

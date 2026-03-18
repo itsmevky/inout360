@@ -1601,7 +1601,6 @@ exports.uninstallDevice = async (req, res) => {
         $set: {
           deviceStatus: "Disable",
           status: "OFFLINE",
-          verified: false,
           lastSeen: new Date(),
         },
       }

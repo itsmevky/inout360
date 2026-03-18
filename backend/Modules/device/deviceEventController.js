@@ -51,6 +51,15 @@ const isAppAccessEvent = (...values) => {
   );
 };
 
+const isAppInstallEvent = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return text.includes("app_install") || text.includes("app install");
+};
+
 const resolveUserSessionStatus = async ({ userId, employeeId }) => {
   if (userId && mongoose.isValidObjectId(userId)) {
     const user = await UserModel.findById(userId)
@@ -297,6 +306,17 @@ exports.storeEvent = async (req, res) => {
     const device = await resolveDeviceById(deviceId);
     if (!device) {
       return res.status(404).json({ status: false, message: "Device not found" });
+    }
+
+    if (
+      device.devicePolicyState?.uninstallBlocked !== true &&
+      !isAppInstallEvent(event, narrative, metadata?.event, metadata?.narrative)
+    ) {
+      return res.status(200).json({
+        status: true,
+        skipped: true,
+        message: "Event ignored because uninstallBlocked is false",
+      });
     }
 
     const resolvedEmployeeId = employeeId || employee_id || device.employeeId || "";

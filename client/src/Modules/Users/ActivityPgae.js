@@ -960,6 +960,11 @@ const ActivityPage = () => {
         return `${baseLabel}${durationSnippet}`;
     };
 
+    const getActivityMessageClassName = (activity) =>
+        activity?.policyVoilation
+            ? "activity-message-badge activity-message-badge--violation"
+            : "activity-message-badge";
+
     const renderPaginationButtons = (current, total, onChange) => {
         const btns = [];
         const start = Math.max(current - 2, 1);
@@ -1426,7 +1431,9 @@ const ActivityPage = () => {
                                             </div>
                                         </td>
                                         <td className="p-3">
-                                            {formatActivityLabel(item.latestActivity, { compact: true })}
+                                            <span className={getActivityMessageClassName(item.latestActivity)}>
+                                                {formatActivityLabel(item.latestActivity, { compact: true })}
+                                            </span>
                                         </td>
                                         <td className="p-3">{item.latestActivity?.deviceId || item.deviceId}</td>
                                         <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
@@ -1577,7 +1584,9 @@ const ActivityPage = () => {
                                             {paginatedModalActivities.map((act, index) => (
                                                 <tr key={act.id || `${act.type}-${index}`} className="hover:bg-gray-50">
                                                     <td className="p-3">
-                                                        {formatActivityLabel(act, { compact: true })}
+                                                        <span className={getActivityMessageClassName(act)}>
+                                                            {formatActivityLabel(act, { compact: true })}
+                                                        </span>
                                                     </td>
                                                     <td className="p-3">{act.deviceId || "-"}</td>
                                                     <td className="p-3">{formatTimestamp(act.timestamp)}</td>

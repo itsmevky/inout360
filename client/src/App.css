@@ -6277,6 +6277,10 @@ body {
   margin: 0;
 }
 
+.notification-employee-name {
+  color: #111827;
+}
+
 .notification-meta {
   font-size: 13px;
   color: #475161;
@@ -6411,6 +6415,22 @@ body {
   justify-content: flex-end;
 }
 
+.activity-message-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: #111827;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.activity-message-badge--violation {
+  color: #7f1d1d;
+  font-weight: 600;
+}
+
 .notification-delete-btn {
   display: inline-flex;
   align-items: center;
@@ -6425,6 +6445,16 @@ body {
 
 .notification-delete-btn:hover {
   background: rgba(239, 68, 68, 0.06);
+}
+
+.notification-message-badge {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.notification-message-badge--violation {
+  color: #7f1d1d;
+  font-weight: 700;
 }
 
 /* Mobile responsive */

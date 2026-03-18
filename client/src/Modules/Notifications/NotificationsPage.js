@@ -270,6 +270,7 @@ const toNotification = (item) => {
         deviceId: item.deviceId || "",
         message: normalizeMessage(`${message}${durationSnippet}`),
         createdAt: item.occurredAt || item.createdAt || new Date(),
+        policyVoilation: !!item.policyVoilation,
     };
 };
 
@@ -575,14 +576,20 @@ const NotificationsPage = () => {
 
                 <div className="notification-list">
                     {notifications.map((n) => (
-                        <div key={n._id} className="notification-card">
+                        <div
+                            key={n._id}
+                            className="notification-card"
+                        >
                             <div className="notification-icon">
                                 {iconMap[n.type] || "🔔"}
                             </div>
 
                             <div className="notification-content">
                                 <p className="notification-message">
-                                    <strong>{n.employeeName}</strong> — {n.message}
+                                    <strong className="notification-employee-name">{n.employeeName}</strong>
+                                    <span className={n.policyVoilation ? "notification-message-badge notification-message-badge--violation" : ""}>
+                                        {" "}— {n.message.replace(`${n.employeeName} — `, "").replace(`${n.employeeName}— `, "")}
+                                    </span>
                                 </p>
 
                                 <p className="notification-meta">
