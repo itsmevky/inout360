@@ -44,6 +44,13 @@ router.get(
 );
 
 router.get(
+  "/not-logged-in",
+  verifyToken,
+  checkAuthorization(attendanceRoles, "attendance"),
+  Controller.getNotLoggedIn
+);
+
+router.get(
   "/:id",
   verifyToken,
   checkAuthorization(attendanceRoles, "attendance"),

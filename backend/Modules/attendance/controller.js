@@ -4,7 +4,6 @@ const EmployeeModel = require("../employees/model");
 const VisitorModel = require("../user/visitorModel");
 const UserModel = require("../user/model");
 const DeviceModel = require("../device/model");
-const paginate = require("../../helpers/limitoffset");
 const Validator = require("../../helpers/validators");
 const { resolveLocationScope } = require("../../helpers/locationScope");
 
@@ -73,6 +72,23 @@ const withScopeFilter = (filter = {}, scopeFilter = null) => {
   return { $and: [filter, scopeFilter] };
 };
 
+const getDateRangeFromInput = (dateInput) => {
+  if (dateInput) {
+    const [y, m, d] = String(dateInput).split("-").map((part) => parseInt(part, 10));
+    if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
+      return {
+        start: new Date(y, m - 1, d, 0, 0, 0, 0),
+        end: new Date(y, m - 1, d, 23, 59, 59, 999),
+      };
+    }
+  }
+  const now = new Date();
+  return {
+    start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+  };
+};
+
 exports.add = async (req, res) => {
   try {
     await validateAttendanceData(req.body);
@@ -113,9 +129,13 @@ exports.getAll = async (req, res) => {
       limit,
       search,
       date,
+      action,
+      name,
+      employeeId,
+      deviceId,
     } = req.query;
-    // normalize to zero-based page
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
+    const limitNumber = Math.max(1, parseInt(limit, 10) || 10);
     const filter = {};
     if (sectionAssigned) filter.sectionAssigned = sectionAssigned;
     if (date) {
@@ -130,18 +150,48 @@ exports.getAll = async (req, res) => {
       filter.hrApproved = true;
       filter.supervisorApproved = true;
     }
+    if (employeeId) {
+      filter.employeeId = new RegExp(String(employeeId).trim(), "i");
+    }
+    if (deviceId) {
+      filter.$or = [
+        { deviceId: new RegExp(String(deviceId).trim(), "i") },
+        { "metadata.deviceId": new RegExp(String(deviceId).trim(), "i") },
+        { "metadata.device.deviceId": new RegExp(String(deviceId).trim(), "i") },
+        { "metadata.device.id": new RegExp(String(deviceId).trim(), "i") },
+      ];
+    }
 
-    const result = await paginate(
-      AttendanceModel,
-      withScopeFilter(filter, scopeFilter),
-      pageNumber,
-      limit,
-      [],
-      ["sectionAssigned", "remarks", "rfidCardId"],
-      search,
-      { entryGateIn: -1, exitGateOut: -1, updatedAt: -1, _id: -1 }
-    );
-    const records = result.data || [];
+    const normalizedAction = String(action || "").trim().toLowerCase();
+    if (normalizedAction === "login") {
+      filter.$and = [
+        ...(filter.$and || []),
+        {
+          $or: [
+            { "metadata.action": "login" },
+            { entryGateIn: { $exists: true, $ne: null } },
+          ],
+        },
+      ];
+    }
+    if (normalizedAction === "logout") {
+      filter.$and = [
+        ...(filter.$and || []),
+        {
+          $or: [
+            { "metadata.action": "logout" },
+            { exitGateOut: { $exists: true, $ne: null } },
+          ],
+        },
+      ];
+    }
+
+    const searchTerm = String(search || "").trim().toLowerCase();
+    const nameTerm = String(name || "").trim().toLowerCase();
+
+    const records = await AttendanceModel.find(withScopeFilter(filter, scopeFilter))
+      .sort({ entryGateIn: -1, exitGateOut: -1, updatedAt: -1, _id: -1 })
+      .lean();
     const employeeIds = Array.from(
       new Set(records.map((r) => r.employeeId).filter(Boolean))
     );
@@ -153,10 +203,10 @@ exports.getAll = async (req, res) => {
       )
     );
 
-    const [employees, visitors, users, devices] = await Promise.all([
+    const [employees, visitors, users, userDevices, employeeDevices] = await Promise.all([
       employeeIds.length > 0
         ? EmployeeModel.find({ employeeId: { $in: employeeIds } })
-          .select("name employeeId userId")
+          .select("name employeeId userId deviceId")
           .lean()
         : [],
       employeeIds.length > 0
@@ -171,14 +221,23 @@ exports.getAll = async (req, res) => {
         : [],
       userIds.length > 0
         ? DeviceModel.find({ userId: { $in: userIds }, verified: { $ne: false } })
-          .select("userId deviceId")
+          .select("userId employeeId deviceId")
+          .lean()
+        : [],
+      employeeIds.length > 0
+        ? DeviceModel.find({ employeeId: { $in: employeeIds }, verified: { $ne: false } })
+          .select("userId employeeId deviceId")
           .lean()
         : [],
     ]);
 
     const employeeMap = new Map();
+    const employeeDeviceMap = new Map();
     employees.forEach((emp) => {
       employeeMap.set(String(emp.employeeId), emp.name || "");
+      if (emp?.deviceId) {
+        employeeDeviceMap.set(String(emp.employeeId), emp.deviceId);
+      }
     });
     visitors.forEach((vis) => {
       if (!employeeMap.has(String(vis.employeeId))) {
@@ -193,8 +252,19 @@ exports.getAll = async (req, res) => {
     });
 
     const deviceMap = new Map();
-    devices.forEach((device) => {
+    userDevices.forEach((device) => {
       if (device?.userId && device?.deviceId) {
+        deviceMap.set(String(device.userId), device.deviceId);
+      }
+      if (device?.employeeId && device?.deviceId && !employeeDeviceMap.has(String(device.employeeId))) {
+        employeeDeviceMap.set(String(device.employeeId), device.deviceId);
+      }
+    });
+    employeeDevices.forEach((device) => {
+      if (device?.employeeId && device?.deviceId) {
+        employeeDeviceMap.set(String(device.employeeId), device.deviceId);
+      }
+      if (device?.userId && device?.deviceId && !deviceMap.has(String(device.userId))) {
         deviceMap.set(String(device.userId), device.deviceId);
       }
     });
@@ -212,23 +282,190 @@ exports.getAll = async (req, res) => {
         plain?.metadata?.device?.id ||
         plain?.deviceId ||
         (plain.userId ? deviceMap.get(String(plain.userId)) : "") ||
+        (plain.employeeId ? employeeDeviceMap.get(String(plain.employeeId)) : "") ||
         "";
+      const rowAction =
+        String(plain?.metadata?.action || "").toLowerCase() ||
+        (plain.exitGateOut ? "logout" : plain.entryGateIn ? "login" : "");
+      const actionTime =
+        rowAction === "logout"
+          ? plain.exitGateOut || plain.updatedAt || plain.createdAt || null
+          : plain.entryGateIn || plain.createdAt || null;
       return {
         ...plain,
         id: plain._id?.toString?.() || plain.id,
         userName,
         deviceId,
+        action: rowAction,
+        actionTime,
+        statusLabel:
+          rowAction === "logout"
+            ? "Logged Out"
+            : rowAction === "login"
+              ? "Logged In"
+              : plain.status || "-",
       };
     });
+
+    const filteredRows = dataWithId.filter((row) => {
+      if (nameTerm && !String(row.userName || "").toLowerCase().includes(nameTerm)) {
+        return false;
+      }
+      if (searchTerm) {
+        const haystack = [
+          row.userName,
+          row.employeeId,
+          row.deviceId,
+          row.rfidCardId,
+          row.sectionAssigned,
+          row.remarks,
+          row.statusLabel,
+          row.action,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(searchTerm)) return false;
+      }
+      return true;
+    });
+
+    const totalrecords = filteredRows.length;
+    const paginatedRows = filteredRows.slice(
+      pageNumber * limitNumber,
+      pageNumber * limitNumber + limitNumber
+    );
+
     return res.status(200).json({
       status: true,
-      data: dataWithId,
-      total: result?.pagination?.totalrecords || dataWithId.length,
-      pagination: result?.pagination || {
-        totalrecords: dataWithId.length,
+      data: paginatedRows,
+      total: totalrecords,
+      pagination: {
+        totalrecords,
         currentPage: pageNumber,
-        totalPages: 1,
-        limit: parseInt(limit, 10) || dataWithId.length || 10,
+        totalPages: Math.max(1, Math.ceil(totalrecords / limitNumber)),
+        limit: limitNumber,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.getNotLoggedIn = async (req, res) => {
+  try {
+    const scope = await resolveLocationScope(req);
+    const { page, limit, search, date, location } = req.query;
+    const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
+    const limitNumber = Math.max(1, parseInt(limit, 10) || 10);
+    const searchTerm = String(search || "").trim().toLowerCase();
+    const selectedLocation = String(location || "").trim() || scope.location || "";
+    const { start, end } = getDateRangeFromInput(date);
+
+    const employeeFilter = {
+      status: "Active",
+      "systemAccess.loginEnabled": { $ne: false },
+    };
+    if (selectedLocation) {
+      employeeFilter.location = selectedLocation;
+    } else if (scope.isAdmin && scope.location) {
+      employeeFilter.location = scope.location;
+    }
+
+    const employees = await EmployeeModel.find(employeeFilter)
+      .select("name employeeId userId location deviceId status systemAccess")
+      .lean();
+
+    const employeeIds = employees.map((emp) => String(emp.employeeId || "")).filter(Boolean);
+    const userIds = employees.map((emp) => (emp.userId ? String(emp.userId) : "")).filter(Boolean);
+
+    const loginRecords = employeeIds.length > 0
+      ? await AttendanceModel.find({
+        employeeId: { $in: employeeIds },
+        date: { $gte: start, $lte: end },
+        $or: [
+          { "metadata.action": "login" },
+          { entryGateIn: { $exists: true, $ne: null } },
+        ],
+      })
+        .select("employeeId")
+        .lean()
+      : [];
+
+    const loggedInEmployeeIds = new Set(
+      loginRecords.map((record) => String(record.employeeId || "")).filter(Boolean)
+    );
+
+    const [userDevices, employeeDevices] = await Promise.all([
+      userIds.length > 0
+        ? DeviceModel.find({ userId: { $in: userIds }, verified: { $ne: false } })
+          .select("userId employeeId deviceId")
+          .lean()
+        : [],
+      employeeIds.length > 0
+        ? DeviceModel.find({ employeeId: { $in: employeeIds }, verified: { $ne: false } })
+          .select("userId employeeId deviceId")
+          .lean()
+        : [],
+    ]);
+
+    const deviceMapByEmployeeId = new Map();
+    employees.forEach((emp) => {
+      if (emp?.employeeId && emp?.deviceId) {
+        deviceMapByEmployeeId.set(String(emp.employeeId), emp.deviceId);
+      }
+    });
+    userDevices.forEach((device) => {
+      if (device?.employeeId && device?.deviceId && !deviceMapByEmployeeId.has(String(device.employeeId))) {
+        deviceMapByEmployeeId.set(String(device.employeeId), device.deviceId);
+      }
+    });
+    employeeDevices.forEach((device) => {
+      if (device?.employeeId && device?.deviceId) {
+        deviceMapByEmployeeId.set(String(device.employeeId), device.deviceId);
+      }
+    });
+
+    const filteredRows = employees
+      .filter((emp) => !loggedInEmployeeIds.has(String(emp.employeeId || "")))
+      .map((emp) => ({
+        id: String(emp._id),
+        userName: emp.name || "",
+        employeeId: emp.employeeId || "",
+        location: emp.location || "",
+        deviceId: deviceMapByEmployeeId.get(String(emp.employeeId || "")) || "",
+        action: "not_logged_in",
+        actionTime: null,
+        statusLabel: "Not Logged In",
+      }))
+      .filter((row) => {
+        if (!searchTerm) return true;
+        const haystack = [row.userName, row.employeeId, row.location, row.deviceId, row.statusLabel]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(searchTerm);
+      });
+
+    const totalrecords = filteredRows.length;
+    const paginatedRows = filteredRows.slice(
+      pageNumber * limitNumber,
+      pageNumber * limitNumber + limitNumber
+    );
+
+    return res.status(200).json({
+      status: true,
+      data: paginatedRows,
+      total: totalrecords,
+      pagination: {
+        totalrecords,
+        currentPage: pageNumber,
+        totalPages: Math.max(1, Math.ceil(totalrecords / limitNumber)),
+        limit: limitNumber,
       },
     });
   } catch (error) {

@@ -127,7 +127,7 @@ const CustomDataTable = ({
                     className="px-3 py-1 text-sm text-gray-700 whitespace-normal text-left align-middle border-b border-gray-50"
                     style={{ width: col.width || "auto" }}
                   >
-                    <div className="text-left w-full h-full flex items-center justify-start">
+                    <div className="text-left w-full h-full flex items-center justify-start !m-0 !p-0">
                       {col.selector
                         ? col.selector(row)
                         : row[col.selectorKey]}

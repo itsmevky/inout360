@@ -916,6 +916,11 @@ exports.getNotifications = async (req, res) => {
         name: plain.name || "",
         employeeId: plain.employeeId || "",
         deviceId: resolvedDeviceId,
+        location:
+          plain.location ||
+          plain.metadata?.location ||
+          plain.raw?.location ||
+          "",
         activityType: plain.event || "",
         description,
         appName: appNameResolved,
