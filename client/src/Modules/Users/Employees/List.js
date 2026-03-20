@@ -10,13 +10,20 @@ import PopupModal from "../../../popup/Popup.js";
 import ConfirmDelete from "../../../popup/conformationdelet.js";
 import { useUser } from "../../../Helpers/Context/UserContext.js";
 import { can, normalizeRole } from "../../../Helpers/acl.js";
+
+const normalizeSessionStatus = (value) => String(value || "").trim().toLowerCase();
+const isLoggedOutStatus = (value) => {
+  const normalized = normalizeSessionStatus(value);
+  return !normalized || ["logout", "logged out", "out"].includes(normalized);
+};
+
 const Employeepage = () => {
   const { user } = useUser();
   const role = normalizeRole(user?.role);
   const canCreateEmployees = role === "superadmin";
   const canUpdateEmployees = can(role, "employees", "update");
   const canDeleteEmployees = can(role, "employees", "delete");
-  const canForceLogoutEmployees = role === "superadmin" || role === "admin";
+  const canForceLogoutEmployees = role === "superadmin" || role === "admin" || role === "hr";
   const canManageDevices = role === "superadmin" || role === "admin";
   const canManageEmployees = canUpdateEmployees || canDeleteEmployees;
   const [data, setData] = useState([]);
@@ -146,8 +153,7 @@ const Employeepage = () => {
       return;
     }
     if (!row?._id && !row?.id) return;
-    const currentStatus = String(row.sessionStatus || "").toLowerCase();
-    if (currentStatus === "logout") {
+    if (isLoggedOutStatus(row.sessionStatus)) {
       toast.info("Employee is already logged out");
       return;
     }

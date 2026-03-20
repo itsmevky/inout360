@@ -54,7 +54,7 @@ router.put(
 router.put(
   "/:id/session-status",
   verifyToken,
-  checkAuthorization(["admin", "superadmin"], "visitors"),
+  checkAuthorization(["admin", "hr", "superadmin"], "visitors", "read"),
   Controller.updateSessionStatus
 );
 

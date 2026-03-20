@@ -1186,7 +1186,8 @@ tbody tr:nth-child(even) {
   font-family: "Arial", sans-serif;
   border-radius: 8px;
   padding: 10px;
-  color: #fff;
+  color: #22374e;
+  background-color: #ffffff;
 }
 
 .Toastify__toast--success {
@@ -1197,6 +1198,15 @@ tbody tr:nth-child(even) {
 .Toastify__toast--error {
   background-color: #ffffff;
   color: red;
+}
+
+.Toastify__toast--info {
+  background-color: #ffffff;
+  color: #0284c7 !important;
+}
+
+.Toastify__toast-body {
+  color: inherit;
 }
 
 .Toastify__toast-container--top-right {

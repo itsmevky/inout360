@@ -414,12 +414,19 @@ exports.getNotLoggedIn = async (req, res) => {
     ]);
 
     const deviceMapByEmployeeId = new Map();
+    const deviceMapByUserId = new Map();
     employees.forEach((emp) => {
       if (emp?.employeeId && emp?.deviceId) {
         deviceMapByEmployeeId.set(String(emp.employeeId), emp.deviceId);
       }
+      if (emp?.userId && emp?.deviceId) {
+        deviceMapByUserId.set(String(emp.userId), emp.deviceId);
+      }
     });
     userDevices.forEach((device) => {
+      if (device?.userId && device?.deviceId) {
+        deviceMapByUserId.set(String(device.userId), device.deviceId);
+      }
       if (device?.employeeId && device?.deviceId && !deviceMapByEmployeeId.has(String(device.employeeId))) {
         deviceMapByEmployeeId.set(String(device.employeeId), device.deviceId);
       }
@@ -428,20 +435,31 @@ exports.getNotLoggedIn = async (req, res) => {
       if (device?.employeeId && device?.deviceId) {
         deviceMapByEmployeeId.set(String(device.employeeId), device.deviceId);
       }
+      if (device?.userId && device?.deviceId && !deviceMapByUserId.has(String(device.userId))) {
+        deviceMapByUserId.set(String(device.userId), device.deviceId);
+      }
     });
 
     const filteredRows = employees
       .filter((emp) => !loggedInEmployeeIds.has(String(emp.employeeId || "")))
-      .map((emp) => ({
-        id: String(emp._id),
-        userName: emp.name || "",
-        employeeId: emp.employeeId || "",
-        location: emp.location || "",
-        deviceId: deviceMapByEmployeeId.get(String(emp.employeeId || "")) || "",
-        action: "not_logged_in",
-        actionTime: null,
-        statusLabel: "Not Logged In",
-      }))
+      .map((emp) => {
+        const verifiedDeviceId =
+          deviceMapByEmployeeId.get(String(emp.employeeId || "")) ||
+          (emp.userId ? deviceMapByUserId.get(String(emp.userId)) : "") ||
+          "";
+
+        return {
+          id: String(emp._id),
+          userName: emp.name || "",
+          employeeId: emp.employeeId || "",
+          location: emp.location || "",
+          deviceId: verifiedDeviceId,
+          action: "not_logged_in",
+          actionTime: null,
+          statusLabel: "Not Logged In",
+        };
+      })
+      .filter((row) => Boolean(row.deviceId))
       .filter((row) => {
         if (!searchTerm) return true;
         const haystack = [row.userName, row.employeeId, row.location, row.deviceId, row.statusLabel]

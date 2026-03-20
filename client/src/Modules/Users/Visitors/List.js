@@ -8,13 +8,19 @@ import { useUser } from "../../../Helpers/Context/UserContext.js";
 import { capitalizeFirstLetter } from "../../../Helpers/CapitalizeFirstLetter.js";
 import { can, normalizeRole } from "../../../Helpers/acl.js";
 
+const normalizeSessionStatus = (value) => String(value || "").trim().toLowerCase();
+const isLoggedOutStatus = (value) => {
+  const normalized = normalizeSessionStatus(value);
+  return !normalized || ["logout", "logged out", "out"].includes(normalized);
+};
+
 const VisitorsList = () => {
   const { user } = useUser();
   const role = normalizeRole(user?.role);
   const canCreateVisitors = role === "superadmin";
   const canUpdateVisitors = can(role, "visitors", "update");
   const canDeleteVisitors = can(role, "visitors", "delete");
-  const canForceLogoutVisitors = role === "superadmin" || role === "admin";
+  const canForceLogoutVisitors = role === "superadmin" || role === "admin" || role === "hr";
   const canManageDevices = role === "superadmin" || role === "admin";
   const canManageVisitors = canUpdateVisitors || canDeleteVisitors;
 
@@ -118,8 +124,7 @@ const VisitorsList = () => {
       return;
     }
     if (!row?._id && !row?.id) return;
-    const currentStatus = String(row.sessionStatus || "").toLowerCase();
-    if (currentStatus === "logout") {
+    if (isLoggedOutStatus(row.sessionStatus)) {
       toast.info("Visitor is already logged out");
       return;
     }
