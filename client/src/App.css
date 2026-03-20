@@ -903,6 +903,7 @@ button.active {
   right: 0px;
   z-index: 11;
   background: #fafaff;
+  overflow: visible;
 }
 
 /* Popup content hidden by default */
@@ -4042,7 +4043,7 @@ width: 100% !important;
 }
 
 .dropdown-menu {
-  z-index: 10;
+  z-index: 1200;
 }
 
 .dropdown-item {
@@ -5031,6 +5032,18 @@ li .nav-link:hover {
 
 .AJ-crm-profile-section {
   padding: 4px;
+}
+
+.AJ-crm-right-profile-section {
+  position: relative;
+  z-index: 1201;
+}
+
+.AJ-crm-main-profile-section {
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 180px;
+  z-index: 1202;
 }
 
 .AJ-crm-droping-profile {
