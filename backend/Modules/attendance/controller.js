@@ -4,6 +4,7 @@ const EmployeeModel = require("../employees/model");
 const VisitorModel = require("../user/visitorModel");
 const UserModel = require("../user/model");
 const DeviceModel = require("../device/model");
+const SettingsModel = require("../settings/model");
 const Validator = require("../../helpers/validators");
 const { resolveLocationScope } = require("../../helpers/locationScope");
 
@@ -72,21 +73,89 @@ const withScopeFilter = (filter = {}, scopeFilter = null) => {
   return { $and: [filter, scopeFilter] };
 };
 
-const getDateRangeFromInput = (dateInput) => {
+const DEFAULT_ATTENDANCE_WINDOW = {
+  startTime: "06:00",
+  endTime: "07:30",
+  spansNextDay: true,
+};
+
+const parseTimeToMinutes = (value, fallback) => {
+  const normalized = String(value || "").trim();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return fallback;
+
+  const hours = Number.parseInt(match[1], 10);
+  const minutes = Number.parseInt(match[2], 10);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return fallback;
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return fallback;
+  return hours * 60 + minutes;
+};
+
+const getDateAtMinutes = (baseDate, minutes) => {
+  const date = new Date(baseDate);
+  date.setHours(0, 0, 0, 0);
+  date.setMinutes(minutes, 0, 0);
+  return date;
+};
+
+const resolveAttendanceWindowConfig = async (location = "") => {
+  const fallbackStart = parseTimeToMinutes(DEFAULT_ATTENDANCE_WINDOW.startTime, 6 * 60);
+  const fallbackEnd = parseTimeToMinutes(DEFAULT_ATTENDANCE_WINDOW.endTime, 7 * 60 + 30);
+  const normalizedLocation = String(location || "").trim();
+
+  if (!normalizedLocation) {
+    return {
+      startMinutes: fallbackStart,
+      endMinutes: fallbackEnd,
+      spansNextDay: DEFAULT_ATTENDANCE_WINDOW.spansNextDay,
+    };
+  }
+
+  const settings = await SettingsModel.findOne({ unitLocation: normalizedLocation })
+    .select("workingHours")
+    .lean();
+  const workingHours = settings?.workingHours || {};
+  const hasCustomWindow =
+    workingHours &&
+    typeof workingHours.startTime === "string" &&
+    typeof workingHours.endTime === "string";
+
+  if (!hasCustomWindow) {
+    return {
+      startMinutes: fallbackStart,
+      endMinutes: fallbackEnd,
+      spansNextDay: DEFAULT_ATTENDANCE_WINDOW.spansNextDay,
+    };
+  }
+
+  const startMinutes = parseTimeToMinutes(workingHours.startTime, fallbackStart);
+  const endMinutes = parseTimeToMinutes(workingHours.endTime, fallbackEnd);
+  const spansNextDay = workingHours.enabled
+    ? endMinutes <= startMinutes
+    : DEFAULT_ATTENDANCE_WINDOW.spansNextDay;
+
+  return { startMinutes, endMinutes, spansNextDay };
+};
+
+const buildAttendanceWindowRange = (anchorDate, windowConfig) => {
+  const start = getDateAtMinutes(anchorDate, windowConfig.startMinutes);
+  const end = getDateAtMinutes(anchorDate, windowConfig.endMinutes);
+  if (windowConfig.spansNextDay) {
+    end.setDate(end.getDate() + 1);
+  }
+  return { start, end };
+};
+
+const getAttendanceWindowRange = async (dateInput, location = "") => {
+  let anchorDate = new Date();
   if (dateInput) {
     const [y, m, d] = String(dateInput).split("-").map((part) => parseInt(part, 10));
     if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
-      return {
-        start: new Date(y, m - 1, d, 0, 0, 0, 0),
-        end: new Date(y, m - 1, d, 23, 59, 59, 999),
-      };
+      anchorDate = new Date(y, m - 1, d, 0, 0, 0, 0);
     }
   }
-  const now = new Date();
-  return {
-    start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
-    end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
-  };
+  const windowConfig = await resolveAttendanceWindowConfig(location);
+  return buildAttendanceWindowRange(anchorDate, windowConfig);
 };
 
 exports.add = async (req, res) => {
@@ -121,6 +190,7 @@ exports.add = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
+    const scope = await resolveLocationScope(req);
     const scopeFilter = await buildAttendanceScopeFilter(req);
     const {
       sectionAssigned,
@@ -137,14 +207,22 @@ exports.getAll = async (req, res) => {
     const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
     const limitNumber = Math.max(1, parseInt(limit, 10) || 10);
     const filter = {};
+    const selectedLocation = String(req.query?.location || "").trim() || scope.location || "";
     if (sectionAssigned) filter.sectionAssigned = sectionAssigned;
     if (date) {
-      const [y, m, d] = String(date).split("-").map((part) => parseInt(part, 10));
-      if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
-        const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
-        const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
-        filter.date = { $gte: dayStart, $lte: dayEnd };
-      }
+      const { start, end } = await getAttendanceWindowRange(date, selectedLocation);
+      filter.$and = [
+        ...(filter.$and || []),
+        {
+          $or: [
+            { entryGateIn: { $gte: start, $lt: end } },
+            { exitGateOut: { $gte: start, $lt: end } },
+            { updatedAt: { $gte: start, $lt: end } },
+            { createdAt: { $gte: start, $lt: end } },
+            { date: { $gte: start, $lt: end } },
+          ],
+        },
+      ];
     }
     if (status === "approved") {
       filter.hrApproved = true;
@@ -364,7 +442,7 @@ exports.getNotLoggedIn = async (req, res) => {
     const limitNumber = Math.max(1, parseInt(limit, 10) || 10);
     const searchTerm = String(search || "").trim().toLowerCase();
     const selectedLocation = String(location || "").trim() || scope.location || "";
-    const { start, end } = getDateRangeFromInput(date);
+    const { start, end } = await getAttendanceWindowRange(date, selectedLocation);
 
     const employeeFilter = {
       status: "Active",
@@ -386,10 +464,21 @@ exports.getNotLoggedIn = async (req, res) => {
     const loginRecords = employeeIds.length > 0
       ? await AttendanceModel.find({
         employeeId: { $in: employeeIds },
-        date: { $gte: start, $lte: end },
-        $or: [
-          { "metadata.action": "login" },
-          { entryGateIn: { $exists: true, $ne: null } },
+        $and: [
+          {
+            $or: [
+              { entryGateIn: { $gte: start, $lt: end } },
+              { updatedAt: { $gte: start, $lt: end } },
+              { createdAt: { $gte: start, $lt: end } },
+              { date: { $gte: start, $lt: end } },
+            ],
+          },
+          {
+            $or: [
+              { "metadata.action": "login" },
+              { entryGateIn: { $exists: true, $ne: null } },
+            ],
+          },
         ],
       })
         .select("employeeId")

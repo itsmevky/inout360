@@ -31,6 +31,7 @@ const AnimatedNumber = ({ value }) => {
 const SuperAdminDashboard = () => {
   // console.log("SuperAdminDashboard");
   const [loading, setLoading] = useState(true);
+  const [hoveredAnalytics, setHoveredAnalytics] = useState(null);
   const [summary, setSummary] = useState({
     employees: 0,
     visitors: 0,
@@ -39,6 +40,8 @@ const SuperAdminDashboard = () => {
     todayActivities: 0,
     loggedIn: 0,
     loggedOut: 0,
+    todayLoggedIn: 0,
+    todayLoggedOut: 0,
     last7DaysAttendance: []
   });
 
@@ -69,6 +72,10 @@ const SuperAdminDashboard = () => {
   const totalUsers = (summary.employees || 0) + (summary.visitors || 0);
   const employeePerc = totalUsers > 0 ? Math.round((summary.employees / totalUsers) * 100) : 0;
   const visitorPerc = totalUsers > 0 ? Math.round((summary.visitors / totalUsers) * 100) : 0;
+  const displayedAnalytics = {
+    loggedIn: summary.loggedIn || 0,
+    loggedOut: summary.loggedOut || 0,
+  };
 
   const SkeletonCard = () => (
     <div className="bg-white/40 backdrop-blur-md p-6 rounded-[14px] shadow-sm animate-pulse h-[440px]">
@@ -198,7 +205,7 @@ const SuperAdminDashboard = () => {
                       <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span> Assets
                       </p>
-                      <h2 className="text-[20px] font-black text-slate-800 tracking-tight">Personnel Distribution</h2>
+                      <h2 className="text-[20px] font-black text-slate-800 tracking-tight">Total Platform Users</h2>
                     </div>
                   </div>
                   
@@ -352,7 +359,21 @@ const SuperAdminDashboard = () => {
                   
                   <div className="flex-1 w-full mt-4 relative">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={summary.last7DaysAttendance} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart
+                        data={summary.last7DaysAttendance}
+                        margin={{ top: 20, right: 10, left: -20, bottom: 48 }}
+                        onMouseMove={(state) => {
+                          if (!state?.isTooltipActive || !state?.activePayload?.length) return;
+                          const loggedInValue = state.activePayload.find((item) => item.dataKey === "loggedIn")?.value || 0;
+                          const loggedOutValue = state.activePayload.find((item) => item.dataKey === "loggedOut")?.value || 0;
+                          setHoveredAnalytics({
+                            label: state.activeLabel || "",
+                            loggedIn: loggedInValue,
+                            loggedOut: loggedOutValue,
+                          });
+                        }}
+                        onMouseLeave={() => setHoveredAnalytics(null)}
+                      >
                         <defs>
                           <linearGradient id="pGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
@@ -367,25 +388,30 @@ const SuperAdminDashboard = () => {
                         <YAxis hide={true} />
                         <Tooltip 
                           cursor={{ stroke: '#cbd5e1', strokeWidth: 2, strokeDasharray: '6 6' }}
+                          wrapperStyle={{ zIndex: 30 }}
                           content={({ active, payload, label }) => {
                             if (active && payload && payload.length) {
+                              const loggedInValue = payload.find((item) => item.dataKey === "loggedIn")?.value || 0;
+                              const loggedOutValue = payload.find((item) => item.dataKey === "loggedOut")?.value || 0;
                               return (
-                                <div className="bg-white/95 backdrop-blur-xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-2xl border border-slate-100 min-w-[180px]">
-                                  <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-4 border-b border-slate-100 pb-3">{label}</p>
-                                  <div className="space-y-4">
-                                    <div className="flex items-center justify-between gap-8">
+                                <div className="min-w-[190px] rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+                                  <p className="mb-3 border-b border-slate-100 pb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                    {label}
+                                  </p>
+                                  <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between gap-6 rounded-xl bg-indigo-50 px-3 py-2">
                                       <div className="flex items-center gap-2.5">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
-                                        <span className="text-[12px] font-bold text-slate-600">INBOUND</span>
+                                        <div className="h-2.5 w-2.5 rounded-full bg-indigo-500"></div>
+                                        <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-600">Logged In</span>
                                       </div>
-                                      <span className="text-[15px] font-black text-slate-900">{payload[0].value}</span>
+                                      <span className="text-[15px] font-black text-indigo-600">{loggedInValue}</span>
                                     </div>
-                                    <div className="flex items-center justify-between gap-8">
+                                    <div className="flex items-center justify-between gap-6 rounded-xl bg-emerald-50 px-3 py-2">
                                       <div className="flex items-center gap-2.5">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                                        <span className="text-[12px] font-bold text-slate-600">OUTBOUND</span>
+                                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500"></div>
+                                        <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-600">Logged Out</span>
                                       </div>
-                                      <span className="text-[15px] font-black text-slate-900">{payload[1]?.value || 0}</span>
+                                      <span className="text-[15px] font-black text-emerald-600">{loggedOutValue}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -420,14 +446,35 @@ const SuperAdminDashboard = () => {
                           verticalAlign="bottom" 
                           iconType="circle"
                           iconSize={10}
-                          height={40}
+                          height={68}
+                          wrapperStyle={{ paddingTop: 18 }}
                           formatter={(v) => <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">{v}</span>}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
-                    <div className="absolute top-0 right-0 p-3">
-                      <div className="bg-indigo-50 text-indigo-600 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest border border-indigo-100/50 shadow-sm animate-pulse">
-                        Live Data
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-slate-100/70 grid grid-cols-2 gap-3">
+                    <div className="m-0 rounded-2xl bg-indigo-50/60 border border-indigo-100/70 px-2 py-3">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.18em] mb-2 leading-tight">
+                        Today Active Users
+                      </p>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[28px] font-black text-indigo-600 leading-none tracking-tighter">
+                          <AnimatedNumber value={displayedAnalytics.loggedIn} />
+                        </span>
+                        <span className="text-[11px] font-bold text-indigo-300">USER</span>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100/70 px-4 py-3">
+                      <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.18em] mb-2">
+                        Today Logged Out
+                      </p>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[28px] font-black text-emerald-600 leading-none tracking-tighter">
+                          <AnimatedNumber value={displayedAnalytics.loggedOut} />
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-300">USER</span>
                       </div>
                     </div>
                   </div>
