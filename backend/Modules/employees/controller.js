@@ -357,7 +357,7 @@ exports.getAll = async (req, res) => {
       pageNumber,
       limit,
       [],
-      ["firstName", "lastName", "email", "rfid", "designation", "employeeId", "department"],
+      ["firstName", "lastName", "name", "email", "rfid", "designation", "employeeId", "department"],
       search,
       { role: 1, createdAt: -1, _id: -1 }
     );

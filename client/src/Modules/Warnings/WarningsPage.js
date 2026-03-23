@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getData } from "../../Helpers/api";
 import CustomDataTable from "../../Common/Customsdatatable";
 
@@ -39,6 +40,21 @@ const WarningsPage = () => {
     const [date, setDate] = useState(getTodayDate());
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const openUserOverview = (id, hash = "") => {
+        if (!id) return;
+        const prefix = (location.pathname || "").startsWith("/dashboard/employee")
+            ? "/dashboard/employee"
+            : "/dashboard/users";
+        navigate(`${prefix}/employees/user/${encodeURIComponent(String(id))}${hash}`);
+    };
+
+    const openDeviceModal = (id) => {
+        if (!id) return;
+        navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(id))}&openModal=1`);
+    };
 
     const selectedView = useMemo(
         () => VIEW_OPTIONS.find((option) => option.value === viewMode) || VIEW_OPTIONS[0],
@@ -143,7 +159,10 @@ const WarningsPage = () => {
             name: "Name / Employee ID",
             selector: (row) => (
                 <div className="flex flex-col items-start gap-1.5 text-left !p-0 !m-0 !px-1 w-full">
-                    <span className="font-bold text-[#22374e] text-base leading-tight">
+                    <span
+                        className="font-bold text-[#22374e] text-base leading-tight cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => openUserOverview(row.employeeId || row.id, "#details")}
+                    >
                         {row.name || "-"}
                     </span>
                     <span className="text-xs text-gray-500 font-bold uppercase mt-1 leading-none">
@@ -162,7 +181,10 @@ const WarningsPage = () => {
             name: "Device",
             selector: (row) => (
                 <div className="flex flex-col items-start text-left">
-                    <span className="text-[#22374e] font-bold text-sm leading-tight whitespace-nowrap">
+                    <span
+                        className="text-[#22374e] font-bold text-sm leading-tight whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => openDeviceModal(row.employeeId || row.id)}
+                    >
                         {row.deviceId || "-"}
                     </span>
                 </div>
@@ -193,7 +215,10 @@ const WarningsPage = () => {
         {
             name: "Name",
             selector: (row) => (
-                <span className="font-bold text-[#22374E] whitespace-nowrap">
+                <span
+                    className="font-bold text-[#22374E] whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => openUserOverview(row.employeeId || row.id, "#details")}
+                >
                     {row.name || "-"}
                 </span>
             ),
@@ -209,7 +234,10 @@ const WarningsPage = () => {
         {
             name: "Device",
             selector: (row) => (
-                <span className="text-gray-800 font-bold whitespace-nowrap">
+                <span
+                    className="text-gray-800 font-bold whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => openDeviceModal(row.employeeId || row.id)}
+                >
                     {row.deviceId || "-"}
                 </span>
             ),

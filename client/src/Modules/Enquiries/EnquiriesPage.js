@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getData } from "../../Helpers/api";
 
 const ITEMS_PER_PAGE = 20;
@@ -13,6 +14,21 @@ const EnquiriesPage = () => {
 
     const [selectedEnquiry, setSelectedEnquiry] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const openUserOverview = (id, hash = "") => {
+        if (!id) return;
+        const prefix = (location.pathname || "").startsWith("/dashboard/employee")
+            ? "/dashboard/employee"
+            : "/dashboard/users";
+        navigate(`${prefix}/employees/user/${encodeURIComponent(String(id))}${hash}`);
+    };
+
+    const openDeviceModal = (id) => {
+        if (!id) return;
+        navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(id))}&openModal=1`);
+    };
 
     useEffect(() => {
         fetchEnquiries();
@@ -238,8 +254,13 @@ const EnquiriesPage = () => {
                                     {paginatedEnquiries.map((e, i) => (
                                         <tr key={e._id} className="border-t hover:bg-gray-50 bg-white">
                                             <td className="p-3">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-900">{e.name || "-"}</span>
+                                                <div className="flex flex-col text-left">
+                                                    <span
+                                                        className="font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                                                        onClick={() => openUserOverview(e.employeeId || e._id, "#details")}
+                                                    >
+                                                        {e.name || "-"}
+                                                    </span>
                                                     <span className="text-xs text-gray-500 font-medium">{e.employeeId || "-"}</span>
                                                 </div>
                                             </td>
@@ -292,7 +313,12 @@ const EnquiriesPage = () => {
                                         <p className="flex justify-between items-center !my-1 !px-0">
                                             <span className="font-semibold">Name / Employee ID:</span>
                                             <span className="text-right">
-                                                <span className="font-bold block">{e.name}</span>
+                                                <span
+                                                    className="font-bold block cursor-pointer hover:text-blue-600 transition-colors"
+                                                    onClick={() => openUserOverview(e.employeeId || e._id, "#details")}
+                                                >
+                                                    {e.name}
+                                                </span>
                                                 <span className="text-xs text-gray-500">{e.employeeId}</span>
                                             </span>
                                         </p>

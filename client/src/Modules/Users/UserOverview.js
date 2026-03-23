@@ -51,6 +51,12 @@ export default function UserOverview() {
   const [overview, setOverview] = useState(null);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [attendancePage, setAttendancePage] = useState(1);
+  const ATTENDANCE_LIMIT = 10;
+
+  useEffect(() => {
+    setAttendancePage(1);
+  }, [fromDate, toDate]);
 
   useEffect(() => {
     const fetchOverview = async () => {
@@ -142,8 +148,52 @@ export default function UserOverview() {
         });
       }
     });
-    return events.sort((a, b) => new Date(b.time) - new Date(a.time));
+    const allEvents = events.sort((a, b) => new Date(b.time) - new Date(a.time));
+    return allEvents;
   }, [displayAttendance]);
+
+  const totalAttendancePages = Math.ceil(scanEvents.length / ATTENDANCE_LIMIT) || 1;
+  const paginatedScanEvents = useMemo(() => {
+    const start = (attendancePage - 1) * ATTENDANCE_LIMIT;
+    return scanEvents.slice(start, start + ATTENDANCE_LIMIT);
+  }, [scanEvents, attendancePage]);
+
+  const renderPaginationButtons = () => {
+    const btns = [];
+    const start = Math.max(attendancePage - 2, 1);
+    const end = Math.min(attendancePage + 2, totalAttendancePages);
+
+    const baseBtn = "w-10 h-10 text-sm font-semibold text-gray-700 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-all";
+    const activeBtn = "bg-blue-600 text-white border-blue-600 shadow ring-2 ring-blue-200 hover:bg-blue-600";
+
+    if (start > 1) {
+      btns.push(
+        <button key={1} onClick={() => setAttendancePage(1)} className={baseBtn}>1</button>
+      );
+      if (start > 2) btns.push(<span key="dots1" className="px-1 text-gray-400 font-bold">…</span>);
+    }
+
+    for (let i = start; i <= end; i++) {
+      btns.push(
+        <button
+          key={i}
+          onClick={() => setAttendancePage(i)}
+          className={`${baseBtn} ${i === attendancePage ? activeBtn : ""}`}
+          style={i === attendancePage ? { backgroundColor: "#2563eb", color: "#ffffff", borderColor: "#2563eb", boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.3)" } : {}}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (end < totalAttendancePages - 1) btns.push(<span key="dots2" className="px-1 text-gray-400 font-bold">…</span>);
+    if (end < totalAttendancePages) {
+      btns.push(
+        <button key={totalAttendancePages} onClick={() => setAttendancePage(totalAttendancePages)} className={baseBtn}>{totalAttendancePages}</button>
+      );
+    }
+    return btns;
+  };
 
   const sessionUi = useMemo(() => {
     const attendanceEvents = [];
@@ -242,17 +292,18 @@ export default function UserOverview() {
         content: <p className="text-sm font-bold text-gray-800">{profile.phone}</p>
       });
     }
-    if (profile.gender || profile.rfid) {
+    if (profile.rfid) {
       items.push({
-        label: "Gender / RFID",
-        value: profile.gender || profile.rfid,
+        label: "RFID",
+        value: profile.rfid,
         iconColor: "bg-indigo-500",
         content: (
           <div className="flex items-center gap-1 md:gap-2 text-sm font-bold text-gray-800 flex-wrap">
-            {profile.gender && profile.gender !== "-" && <span>{profile.gender}</span>}
-            {profile.gender && profile.gender !== "-" && profile.rfid && profile.rfid !== "No RFID Tag" && <span className="text-gray-200">|</span>}
-            {profile.rfid && profile.rfid !== "No RFID Tag" && <span className="text-[10px] md:text-xs text-gray-500 break-all">{profile.rfid}</span>}
-            {!profile.gender && (!profile.rfid || profile.rfid === "No RFID Tag") && <span>-</span>}
+            {profile.rfid && profile.rfid !== "No RFID Tag" ? (
+              <span className="text-[10px] md:text-xs text-gray-500 break-all">{profile.rfid}</span>
+            ) : (
+              <span>-</span>
+            )}
           </div>
         )
       });
@@ -288,41 +339,22 @@ export default function UserOverview() {
     const items = [];
     const navigateTo = (type) => () => navigate(`/dashboard/users/activity?employeeId=${employeeId}&type=${type}`);
 
-    // Activity Integrated Details
     items.push({
       label: "Cam Activity",
       onClick: navigateTo("camera_activity"),
-      iconColor: "bg-blue-400",
-      content: (
-        <div className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-          {counts.camera || 0}
-          <span className="text-[10px] text-gray-400 font-medium">({categorized.camera.today || 0} today)</span>
-        </div>
-      )
+      iconColor: "bg-blue-400"
     });
 
     items.push({
       label: "App Access",
       onClick: navigateTo("app_access"),
-      iconColor: "bg-indigo-400",
-      content: (
-        <div className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-          {counts.appAccess || 0}
-          <span className="text-[10px] text-gray-400 font-medium">({categorized.appAccess.today || 0} today)</span>
-        </div>
-      )
+      iconColor: "bg-indigo-400"
     });
 
     items.push({
       label: "Security Events",
       onClick: navigateTo("security_permission"),
-      iconColor: "bg-purple-400",
-      content: (
-        <div className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-          {counts.securityPermission || 0}
-          <span className="text-[10px] text-gray-400 font-medium">({categorized.security.today || 0} today)</span>
-        </div>
-      )
+      iconColor: "bg-purple-400"
     });
 
     return items;
@@ -400,13 +432,13 @@ export default function UserOverview() {
                 <div className="flex flex-wrap gap-3">
                   {profile.department && (
                     <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center min-w-[110px] transition-all hover:bg-white hover:shadow-md cursor-default">
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Department</p>
+                      <p className="text-[10px] text-black font-black uppercase tracking-widest mb-1">Department</p>
                       <p className="text-sm font-black text-gray-800">{profile.department}</p>
                     </div>
                   )}
                   {profile.designation && (
                     <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center min-w-[110px] transition-all hover:bg-white hover:shadow-md cursor-default">
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Designation</p>
+                      <p className="text-[10px] text-black font-black uppercase tracking-widest mb-1">Designation</p>
                       <p className="text-sm font-black text-gray-800">{profile.designation}</p>
                     </div>
                   )}
@@ -416,12 +448,17 @@ export default function UserOverview() {
               {/* Expanded Info Grid */}
               <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-${Math.max(2, Math.min(4, infoItems.length))} gap-4 md:gap-8 mt-10 md:mt-12 border-t border-gray-50 pt-8 md:pt-10`}>
                 {infoItems.map((item, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <p className="text-[11px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-2">
-                      <span className={`w-1 h-1 rounded-full ${item.iconColor}`}></span>
+                  <div
+                    key={idx}
+                    className="p-5 rounded-3xl bg-gray-50 border border-gray-100 transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200 cursor-default group"
+                  >
+                    <p className="text-[10px] text-black font-extrabold uppercase tracking-widest mb-3 flex items-center gap-2 group-hover:text-black transition-colors">
+                      <span className={`w-2 h-2 rounded-full ${item.iconColor} shadow-sm`}></span>
                       {item.label}
                     </p>
-                    {item.content}
+                    <div className="transform group-hover:translate-x-1 transition-transform duration-300">
+                      {item.content}
+                    </div>
                   </div>
                 ))}
                 {infoItems.length === 0 && (
@@ -434,20 +471,18 @@ export default function UserOverview() {
               {/* Activity Section */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 mt-8 md:mt-10 border-t border-gray-50 pt-8 md:pt-10">
                 <div className="col-span-full -mb-4">
-                  <p className="text-sm text-gray-900 font-black uppercase tracking-[0.2em]">Activity Highlights</p>
+                  <p className="text-sm text-black font-black uppercase tracking-[0.2em]">Activity Highlights</p>
                 </div>
                 {activityItems.map((item, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <p
-                      className={`text-[11px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-2 ${item.onClick ? "cursor-pointer hover:text-blue-600 transition-colors" : ""}`}
-                      onClick={item.onClick}
-                    >
-                      <span className={`w-1 h-1 rounded-full ${item.iconColor}`}></span>
+                  <div
+                    key={idx}
+                    className="p-6 rounded-3xl bg-gray-50 border border-gray-100 transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200 cursor-pointer group flex flex-col justify-center items-center min-h-[100px] hover:scale-105 active:scale-95"
+                    onClick={item.onClick}
+                  >
+                    <p className="text-sm text-black font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-300 group-hover:scale-110 group-hover:text-black pointer-events-none">
+                      <span className={`w-2.5 h-2.5 rounded-full ${item.iconColor} shadow-sm group-hover:animate-pulse transition-all duration-300`}></span>
                       {item.label}
                     </p>
-                    <div onClick={item.onClick} className={item.onClick ? "cursor-pointer" : ""}>
-                      {item.content}
-                    </div>
                   </div>
                 ))}
               </div>
@@ -577,7 +612,7 @@ export default function UserOverview() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 bg-white">
-                        {scanEvents.map((event, idx) => {
+                        {paginatedScanEvents.map((event, idx) => {
                           const eventDate = new Date(event.time);
                           const timeString = eventDate.toLocaleTimeString([], {
                             hour: "2-digit",
@@ -610,22 +645,35 @@ export default function UserOverview() {
                         })}
                       </tbody>
                     </table>
-                    {scanEvents.length > 5 && (
-                      <div className="bg-gray-50/50 border-t border-gray-50 py-3 text-center">
-                        <button
-                          onClick={() => navigate(`/dashboard/users/attendance?searchTerm=${employeeId}`)}
-                          className="text-[10px] text-blue-600 hover:text-blue-700 font-black uppercase tracking-[0.2em] transition-all hover:gap-2 flex items-center justify-center gap-1 mx-auto"
-                        >
-                          Explore Complete History
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="3"
-                              d="M17 8l4 4m0 0l-4 4m4-4H3"
-                            />
-                          </svg>
-                        </button>
+                    {totalAttendancePages > 1 && (
+                      <div className="flex items-center justify-center py-6 px-6 bg-gray-50/10 border-t border-gray-50 relative min-h-[80px]">
+                        {/* Record count on the left - Absolutely positioned so it doesn't push the buttons */}
+                        <div className="hidden md:block absolute left-8 text-sm text-gray-600 font-medium">
+                          {Math.max((attendancePage - 1) * ATTENDANCE_LIMIT + 1, 1)}-{Math.min(attendancePage * ATTENDANCE_LIMIT, scanEvents.length)} of {scanEvents.length}
+                        </div>
+
+                        {/* Centered Pagination Controls */}
+                        <div className="flex items-center gap-2 overflow-x-auto sm:overflow-visible">
+                          <button
+                            disabled={attendancePage === 1}
+                            onClick={() => setAttendancePage(p => Math.max(1, p - 1))}
+                            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all flex items-center justify-center shadow-sm"
+                          >
+                            ‹
+                          </button>
+
+                          <div className="flex flex-nowrap gap-2 items-center px-2">
+                            {renderPaginationButtons()}
+                          </div>
+
+                          <button
+                            disabled={attendancePage === totalAttendancePages}
+                            onClick={() => setAttendancePage(p => Math.min(totalAttendancePages, p + 1))}
+                            className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all flex items-center justify-center shadow-sm"
+                          >
+                            ›
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -51,6 +51,12 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
+    const { page, limit, search } = req.query || {};
+    const pageNumber = Math.max(0, (parseInt(page, 10) || 1) - 1);
+    const limitNumber = Math.max(1, parseInt(limit, 10) || 50);
+
+    // Fetch all enquiries for now (as per existing logic, but we will add in-memory filtering)
+    // In a real production app with many records, this should be refactored to use aggregation/lookups.
     const enquiries = await EnquiryModel.find().sort({ createdAt: -1 }).lean();
 
     const userIds = Array.from(
@@ -115,6 +121,7 @@ exports.getAll = async (req, res) => {
         visitorByEmployeeIdMap.set(String(visitor.employeeId), visitor);
       }
     });
+
     const deviceMap = new Map();
     devices.forEach((device) => {
       const key = String(device.userId || "");
@@ -131,7 +138,7 @@ exports.getAll = async (req, res) => {
       }
     });
 
-    const data = enquiries.map((item) => {
+    let data = enquiries.map((item) => {
       const user = userMap.get(String(item.userId)) || {};
       const employee = employeeMap.get(String(item.employeeId || "").trim()) || {};
       const visitor =
@@ -157,9 +164,32 @@ exports.getAll = async (req, res) => {
       };
     });
 
+    // Apply search filter if provided
+    if (search && typeof search === "string" && search.trim()) {
+      const term = search.trim().toLowerCase();
+      data = data.filter((item) => {
+        return (
+          String(item.name || "").toLowerCase().includes(term) ||
+          String(item.email || "").toLowerCase().includes(term) ||
+          String(item.employeeId || "").toLowerCase().includes(term) ||
+          String(item.message || "").toLowerCase().includes(term) ||
+          String(item.phone || "").toLowerCase().includes(term)
+        );
+      });
+    }
+
+    const totalRecords = data.length;
+    const paginatedData = data.slice(pageNumber * limitNumber, (pageNumber + 1) * limitNumber);
+
     return res.status(200).json({
       status: true,
-      data,
+      data: paginatedData,
+      total: totalRecords,
+      pagination: {
+        totalrecords: totalRecords,
+        currentpage: pageNumber,
+        limit: limitNumber,
+      }
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: error.message });

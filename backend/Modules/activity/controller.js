@@ -316,18 +316,32 @@ const buildActivityFilter = ({
     }
   }
 
-  if (search) {
-    const regex = new RegExp(String(search), "i");
-    filter.$or = [
-      ...(filter.$or || []),
+  if (search && typeof search === "string" && search.trim()) {
+    const escapedSearch = String(search).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escapedSearch, "i");
+    const searchOr = [
       { event: regex },
       { name: regex },
+      { userName: regex },
       { employeeId: regex },
       { deviceId: regex },
       { codeId: regex },
       { "metadata.description": regex },
       { "raw.deviceId": regex },
+      { narrative: regex },
     ];
+
+    if (filter.$or) {
+      // If there's already an $or (e.g. from category), we must combine them with $and
+      const existingOr = filter.$or;
+      delete filter.$or;
+      filter.$and = [
+        { $or: existingOr },
+        { $or: searchOr }
+      ];
+    } else {
+      filter.$or = searchOr;
+    }
   }
 
   return filter;

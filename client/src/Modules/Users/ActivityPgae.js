@@ -1,10 +1,24 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { domainpath, getData } from "../../Helpers/api.js";
 import { capitalizeFirstLetter } from "../../Helpers/CapitalizeFirstLetter.js";
-
 const ActivityPage = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const openUserOverview = (id, hash = "") => {
+        if (!id) return;
+        const prefix = (location.pathname || "").startsWith("/dashboard/employee")
+            ? "/dashboard/employee"
+            : "/dashboard/users";
+        navigate(`${prefix}/employees/user/${encodeURIComponent(String(id))}${hash}`);
+    };
+
+    const openDeviceModal = (id) => {
+        if (!id) return;
+        navigate(`/dashboard/users/device?employeeId=${encodeURIComponent(String(id))}&openModal=1`);
+    };
 
     // ============================================================
     // STATIC CAMERA & APP ACTIVITY DATA
@@ -1129,8 +1143,6 @@ const ActivityPage = () => {
         fetchByCategory();
     }, [selectedType]);
 
-    const location = useLocation();
-
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const empId = params.get("employeeId");
@@ -1311,16 +1323,28 @@ const ActivityPage = () => {
                                         <td className="p-3">
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
-                                        <td className="p-3">
+                                        <td className="p-3 text-left">
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-gray-900">{record.user || "-"}</span>
+                                                <span
+                                                    className="font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                                                    onClick={() => openUserOverview(record.employeeId || record.userId || record.userKey, "#details")}
+                                                >
+                                                    {record.user || "-"}
+                                                </span>
                                                 <span className="text-xs text-gray-500 font-medium">{record.employeeId || "-"}</span>
                                             </div>
                                         </td>
                                         <td className="p-3">
                                             {record.latestEntry ? resolveAttendanceAction(record.latestEntry) : "-"}
                                         </td>
-                                        <td className="p-3">{record.deviceId || "-"}</td>
+                                        <td className="p-3">
+                                            <span
+                                                className="cursor-pointer hover:text-blue-600 transition-colors font-medium text-gray-700"
+                                                onClick={() => openDeviceModal(record.employeeId || record.userId || record.userKey)}
+                                            >
+                                                {record.deviceId || "-"}
+                                            </span>
+                                        </td>
                                         <td className="p-3">
                                             {record.latestEntry
                                                 ? formatTimestamp(resolveAttendanceTime(record.latestEntry))
@@ -1425,9 +1449,16 @@ const ActivityPage = () => {
                                             {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                         </td>
                                         <td className="p-3">
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-gray-900">{item.user || "-"}</span>
-                                                <span className="text-xs text-gray-500 font-medium">{item.latestActivity?.employeeId || item.employeeId || "-"}</span>
+                                            <div className="flex flex-col text-left">
+                                                <span
+                                                    className="font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                                                    onClick={() => openUserOverview(item.latestActivity?.employeeId || item.employeeId || item.userKey, "#details")}
+                                                >
+                                                    {item.user || "-"}
+                                                </span>
+                                                <span className="text-xs text-gray-500 font-medium">
+                                                    {item.latestActivity?.employeeId || item.employeeId || "-"}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="p-3">
@@ -1435,7 +1466,14 @@ const ActivityPage = () => {
                                                 {formatActivityLabel(item.latestActivity, { compact: true })}
                                             </span>
                                         </td>
-                                        <td className="p-3">{item.latestActivity?.deviceId || item.deviceId}</td>
+                                        <td className="p-3">
+                                            <span
+                                                className="cursor-pointer hover:text-blue-600 transition-colors font-medium text-gray-700"
+                                                onClick={() => openDeviceModal(item.latestActivity?.employeeId || item.employeeId || item.userKey)}
+                                            >
+                                                {item.latestActivity?.deviceId || item.deviceId}
+                                            </span>
+                                        </td>
                                         <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
 
                                         <td className="p-3">

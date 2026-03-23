@@ -103,21 +103,21 @@ const ExitIntentPopup = ({ isOpen, onClose }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support</p>
-                    <p className="text-slate-900 font-bold text-sm whitespace-nowrap">+91 8699981982</p>
+                    <p className="text-slate-900 font-bold text-sm whitespace-nowrap">0172-4084189</p>
                   </div>
                 </div>
 
                 {/* Contact Card 2 */}
                 <a 
                   href="/presentation.pdf" 
-                  download="Presentation.pdf"
+                  download="PIL.pdf"
                   className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 group cursor-pointer hover:shadow-md transition-all h-[68px] no-underline"
                 >
                   <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
                     <FileText size={24} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Presentation</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PIL</p>
                     <p className="text-blue-600 font-bold uppercase text-[12px] m-0">Download PDF</p>
                   </div>
                 </a>

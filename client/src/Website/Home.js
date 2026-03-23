@@ -6,7 +6,7 @@ import {
   Shield, Lock, Activity, Smartphone, AlertTriangle,
   CheckCircle, Zap, Eye, Building2, Factory, Landmark,
   Microscope, Truck, GraduationCap, Menu, X,
-  Network, Database, Cloud, LockKeyhole, Cpu, Globe, ArrowRight, Users
+  Network, Database, Cloud, LockKeyhole, Cpu, Globe, ArrowRight, Users, Phone, FileText
 } from "lucide-react";
 import pidliteLogo from "../Images/PIL.png";
 import heroSecurity from "../Images/hero_secure_final.png";
@@ -1152,6 +1152,7 @@ const Home = () => {
             {/* Premium Glass Form Container */}
             <form onSubmit={handleSubmit} className="relative w-full p-8 md:p-12 rounded-[2.5rem] bg-white/80 backdrop-blur-2xl border-2 border-white/90 shadow-[0_25px_50px_-12px_rgba(100,150,255,0.25)] text-left flex flex-col gap-6">
 
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs font-black text-slate-800 mb-2 block uppercase tracking-widest opacity-80">Name</label>
@@ -1223,6 +1224,33 @@ const Home = () => {
               >
                 {isSubmitting ? "Submitting..." : "Submit Request"}
               </button>
+
+              {/* Support & Presentation Cards moved to bottom of form */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-4">
+                  <div className="bg-white/60 p-4 rounded-2xl border border-blue-50 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                      <Phone size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest m-0">Support</p>
+                      <p className="text-slate-900 font-bold text-xs whitespace-nowrap m-0">0172-4084189</p>
+                    </div>
+                  </div>
+
+                  <a 
+                    href="/presentation.pdf" 
+                    download="PIL.pdf"
+                    className="bg-white/60 p-4 rounded-2xl border border-blue-50 flex items-center gap-3 no-underline"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest m-0">PIL</p>
+                      <p className="text-blue-600 font-bold uppercase text-[10px] m-0">Download PDF</p>
+                    </div>
+                  </a>
+              </div>
             </form>
 
           </div>

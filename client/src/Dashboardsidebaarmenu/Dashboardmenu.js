@@ -157,71 +157,89 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
         {/* Navigation */}
         <nav className="sidebar-nav">
           <ul className="nav-list primary-nav">
-            {visibleNavItems.map((item) => {
+            {(() => {
               const currentPath = (location.pathname || "").toLowerCase();
-              const itemPath = (item.path || "").toLowerCase();
-              const isDashboardRoot = itemPath === "/dashboard";
-              const isActive = isDashboardRoot
-                ? currentPath === "/dashboard"
-                : (currentPath === itemPath || currentPath.startsWith(`${itemPath}/`));
 
-              return (
-                <li
-                  key={item.label}
-                  className={`nav-item ${isActive ? "active" : ""}`}
-                >
-                  <div
-                    className="nav-link"
-                    onClick={() =>
-                      item.sublinks
-                        ? toggleDropdown(item.label)
-                        : navigate(item.path)
-                    }
-                    role="button"
-                    tabIndex={0}
+              // Find the item with the longest matching path
+              let activeItemLabel = "";
+              let longestMatchLength = -1;
+
+              visibleNavItems.forEach((item) => {
+                const itemPath = (item.path || "").toLowerCase();
+                let isMatch = false;
+
+                if (itemPath === "/dashboard") {
+                  isMatch = currentPath === "/dashboard";
+                } else {
+                  isMatch = currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+                }
+
+                if (isMatch && itemPath.length > longestMatchLength) {
+                  longestMatchLength = itemPath.length;
+                  activeItemLabel = item.label;
+                }
+              });
+
+              return visibleNavItems.map((item) => {
+                const isActive = item.label === activeItemLabel;
+
+                return (
+                  <li
+                    key={item.label}
+                    className={`nav-item ${isActive ? "active" : ""}`}
                   >
-                    {item.icon && (
-                      <span className="material-symbols-rounded">
-                        {item.icon}
-                      </span>
-                    )}
-                    <span className="nav-label">{item.label}</span>
-
-                    {item.sublinks && (
-                      <span className="dropdown-icon material-symbols-rounded">
-                        {openDropdown === item.label
-                          ? "keyboard_arrow_up"
-                          : "keyboard_arrow_down"}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Dropdown */}
-                  {item.sublinks && (
-                    <ul
-                      className="dropdown-menu"
-                      style={{
-                        height:
-                          openDropdown === item.label
-                            ? `${item.sublinks.length * 40}px`
-                            : "0",
-                      }}
+                    <div
+                      className="nav-link"
+                      onClick={() =>
+                        item.sublinks
+                          ? toggleDropdown(item.label)
+                          : navigate(item.path)
+                      }
+                      role="button"
+                      tabIndex={0}
                     >
-                      {item.sublinks.map((link) => (
-                        <li
-                          key={link.path}
-                          className={`nav-subitem ${location.pathname === link.path ? "active" : ""
-                            }`}
-                          onClick={() => navigate(link.path)}
-                        >
-                          {link.label}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              );
-            })}
+                      {item.icon && (
+                        <span className="material-symbols-rounded">
+                          {item.icon}
+                        </span>
+                      )}
+                      <span className="nav-label">{item.label}</span>
+
+                      {item.sublinks && (
+                        <span className="dropdown-icon material-symbols-rounded">
+                          {openDropdown === item.label
+                            ? "keyboard_arrow_up"
+                            : "keyboard_arrow_down"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Dropdown */}
+                    {item.sublinks && (
+                      <ul
+                        className="dropdown-menu"
+                        style={{
+                          height:
+                            openDropdown === item.label
+                              ? `${item.sublinks.length * 40}px`
+                              : "0",
+                        }}
+                      >
+                        {item.sublinks.map((link) => (
+                          <li
+                            key={link.path}
+                            className={`nav-subitem ${location.pathname === link.path ? "active" : ""}`}
+                            onClick={() => navigate(link.path)}
+                          >
+                            {link.label}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              });
+            })()}
           </ul>
 
           {/* Footer */}
