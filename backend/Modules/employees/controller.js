@@ -563,6 +563,7 @@ exports.getOverviewByEmployeeId = async (req, res) => {
       recentViolationEvents,
       attendance,
       sessionStatus,
+      latestSession,
     ] = await Promise.all([
       DeviceModel.find({ employeeId, verified: { $ne: false } })
         .select(
@@ -598,6 +599,10 @@ exports.getOverviewByEmployeeId = async (req, res) => {
       principal.userId
         ? UserModel.findById(principal.userId).select("sessionStatus").lean()
         : UserModel.findOne({ employeeId }).select("sessionStatus").lean(),
+      UserSession.findOne({ employeeId })
+        .sort({ createdAt: -1, _id: -1 })
+        .select("action createdAt")
+        .lean(),
     ]);
 
     return res.status(200).json({
@@ -618,7 +623,11 @@ exports.getOverviewByEmployeeId = async (req, res) => {
           rfid: principal.rfid || "",
           createdAt: principal.createdAt || null,
           lastSeen: principal.systemAccess?.lastLogin || principal.updatedAt || null,
-          sessionStatus: sessionStatus?.sessionStatus || principal.sessionStatus || "Logout",
+          sessionStatus:
+            latestSession?.action ||
+            sessionStatus?.sessionStatus ||
+            principal.sessionStatus ||
+            "Logout",
         },
         counts: {
           policyViolations: violationsTotal || 0,
@@ -797,10 +806,13 @@ exports.updateSessionStatus = async (req, res) => {
       "You can only update session for employees from your assigned location"
     );
 
-    const user =
-      employee.userId
-        ? await UserModel.findById(employee.userId)
-        : await UserModel.findOne({ employeeId: employee.employeeId });
+    const userByLinkedId = employee.userId
+      ? await UserModel.findById(employee.userId)
+      : null;
+    const userByEmployeeId = await UserModel.findOne({
+      employeeId: employee.employeeId,
+    });
+    const user = userByLinkedId || userByEmployeeId;
     if (user && user.sessionStatus === normalizedStatus) {
       return res.status(400).json({
         status: false,
@@ -823,6 +835,11 @@ exports.updateSessionStatus = async (req, res) => {
         sessionStatus: normalizedStatus,
       });
     }
+    if (!employee.userId && user?._id) {
+      await EmployeeModel.findByIdAndUpdate(employee._id, {
+        $set: { userId: user._id },
+      });
+    }
 
     await UserSession.create({
       userId: user?._id || null,
@@ -838,6 +855,18 @@ exports.updateSessionStatus = async (req, res) => {
         note: note || null,
       },
     });
+    if (normalizedStatus === "Logout") {
+      await DeviceModel.updateMany(
+        { employeeId: employee.employeeId },
+        {
+          $set: {
+            loginToken: null,
+            status: "OFFLINE",
+            "metadata.lastForcedLogoutAt": new Date(),
+          },
+        }
+      );
+    }
 
     return res.status(200).json({
       status: true,

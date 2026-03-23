@@ -61,6 +61,22 @@ const isAppInstallEvent = (...values) => {
 };
 
 const resolveUserSessionStatus = async ({ userId, employeeId }) => {
+  const sessionFilters = [];
+  if (userId && mongoose.isValidObjectId(userId)) {
+    sessionFilters.push({ userId });
+  }
+  if (employeeId) {
+    sessionFilters.push({ employeeId });
+  }
+  if (sessionFilters.length) {
+    const session = await UserSession.findOne({
+      $or: sessionFilters,
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .select("action")
+      .lean();
+    if (session) return session.action;
+  }
   if (userId && mongoose.isValidObjectId(userId)) {
     const user = await UserModel.findById(userId)
       .select("sessionStatus")
@@ -84,20 +100,6 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
       .select("sessionStatus")
       .lean();
     if (visitor) return visitor.sessionStatus;
-  }
-  if (userId && mongoose.isValidObjectId(userId)) {
-    const session = await UserSession.findOne({ userId })
-      .sort({ createdAt: -1 })
-      .select("action")
-      .lean();
-    if (session) return session.action;
-  }
-  if (employeeId) {
-    const session = await UserSession.findOne({ employeeId })
-      .sort({ createdAt: -1 })
-      .select("action")
-      .lean();
-    if (session) return session.action;
   }
   return null;
 };
