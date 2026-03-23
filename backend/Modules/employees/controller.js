@@ -801,11 +801,7 @@ exports.updateSessionStatus = async (req, res) => {
       employee.userId
         ? await UserModel.findById(employee.userId)
         : await UserModel.findOne({ employeeId: employee.employeeId });
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
-
-    if (user.sessionStatus === normalizedStatus) {
+    if (user && user.sessionStatus === normalizedStatus) {
       return res.status(400).json({
         status: false,
         message: `User is already ${normalizedStatus}`,
@@ -820,14 +816,16 @@ exports.updateSessionStatus = async (req, res) => {
     }
 
     const attendanceAction = normalizedStatus === "Logged In" ? "login" : "logout";
-    await markAttendance(employee, attendanceAction, user._id);
+    await markAttendance(employee, attendanceAction, user?._id);
 
-    await UserModel.findByIdAndUpdate(user._id, {
-      sessionStatus: normalizedStatus,
-    });
+    if (user) {
+      await UserModel.findByIdAndUpdate(user._id, {
+        sessionStatus: normalizedStatus,
+      });
+    }
 
     await UserSession.create({
-      userId: user._id,
+      userId: user?._id || null,
       deviceId: deviceId || null,
       employeeId: employee.employeeId,
       action: normalizedStatus,

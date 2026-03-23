@@ -3,7 +3,7 @@ const { ajModel, mongoose } = require("../../common/classes/Model");
 const userSessionSchemaDefinition = {
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
+    required: false,
     index: true,
   },
   deviceId: { type: String, trim: true, index: true, default: null },
