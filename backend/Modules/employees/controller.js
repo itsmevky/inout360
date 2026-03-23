@@ -194,6 +194,32 @@ const normalizeSessionStatus = (value) => {
   return null;
 };
 
+const getLatestAttendanceSessionStatus = (records = []) => {
+  const attendanceEvents = [];
+
+  records.forEach((record) => {
+    const entryAt = record.entryGateIn || record.workfloorIn || null;
+    const exitAt = record.exitGateOut || record.workfloorOut || null;
+
+    if (entryAt) {
+      attendanceEvents.push({
+        status: "Logged In",
+        timestamp: new Date(entryAt),
+      });
+    }
+
+    if (exitAt) {
+      attendanceEvents.push({
+        status: "Logout",
+        timestamp: new Date(exitAt),
+      });
+    }
+  });
+
+  attendanceEvents.sort((a, b) => b.timestamp - a.timestamp);
+  return attendanceEvents[0]?.status || null;
+};
+
 const validateEmployeeData = async (data) => {
   const rules = {
     firstName: "required|string",
@@ -350,12 +376,18 @@ exports.getAll = async (req, res) => {
     const userIds = employees.map((emp) => emp.userId).filter(Boolean);
     const empIds = employees.map((emp) => emp.employeeId).filter(Boolean);
 
-    const [sessionData, deviceData] = await Promise.all([
+    const [sessionData, deviceData, attendanceData] = await Promise.all([
       userIds.length
         ? UserModel.find({ _id: { $in: userIds } }).select("_id sessionStatus").lean()
         : Promise.resolve([]),
       empIds.length
         ? DeviceModel.find({ employeeId: { $in: empIds }, verified: { $ne: false } }).select("employeeId deviceId").lean()
+        : Promise.resolve([]),
+      empIds.length
+        ? AttendanceModel.find({ employeeId: { $in: empIds } })
+          .select("employeeId entryGateIn workfloorIn workfloorOut exitGateOut date updatedAt createdAt")
+          .sort({ date: -1, updatedAt: -1, createdAt: -1, _id: -1 })
+          .lean()
         : Promise.resolve([]),
     ]);
 
@@ -369,9 +401,20 @@ exports.getAll = async (req, res) => {
       if (d.employeeId) deviceMap[d.employeeId] = d.deviceId || String(d._id);
     });
 
+    const attendanceMap = {};
+    attendanceData.forEach((record) => {
+      const key = String(record.employeeId || "").trim();
+      if (!key) return;
+      if (!attendanceMap[key]) attendanceMap[key] = [];
+      attendanceMap[key].push(record);
+    });
+
     const employeesWithData = employees.map((emp) => ({
       ...emp,
-      sessionStatus: sessionMap[String(emp.userId)] || "Logout",
+      sessionStatus:
+        getLatestAttendanceSessionStatus(attendanceMap[String(emp.employeeId)] || []) ||
+        sessionMap[String(emp.userId)] ||
+        "Logout",
       deviceId: deviceMap[emp.employeeId] || emp.deviceId || "-",
     }));
 

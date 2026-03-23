@@ -27,6 +27,15 @@ const formatDate = (value) => {
   return d.toLocaleDateString();
 };
 
+const toEventDate = (dateValue, timeValue) => {
+  if (!dateValue || !timeValue) return null;
+  const eventDate = new Date(`${dateValue}T${timeValue}`);
+  if (!Number.isNaN(eventDate.getTime())) return eventDate;
+
+  const fallback = new Date(timeValue);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
+
 const scrollToId = (id) => {
   const node = document.getElementById(id);
   if (!node) return;
@@ -89,8 +98,6 @@ export default function UserOverview() {
     return { label: raw, isOnline: lower.includes("in") && !lower.includes("out") };
   };
 
-  const sessionUi = normalizeSessionStatus(profile.sessionStatus);
-
   const displayAttendance = useMemo(() => {
     if (!fromDate && !toDate) {
       const todayAt = new Date();
@@ -137,6 +144,41 @@ export default function UserOverview() {
     });
     return events.sort((a, b) => new Date(b.time) - new Date(a.time));
   }, [displayAttendance]);
+
+  const sessionUi = useMemo(() => {
+    const attendanceEvents = [];
+
+    attendance.forEach((a) => {
+      const entryTime = a.entryGateIn || a.workfloorIn;
+      const exitTime = a.exitGateOut || a.workfloorOut;
+      const entryDate = toEventDate(a.date, entryTime);
+      const exitDate = toEventDate(a.date, exitTime);
+
+      if (entryDate) {
+        attendanceEvents.push({
+          status: "Logged In",
+          timestamp: entryDate,
+        });
+      }
+
+      if (exitDate) {
+        attendanceEvents.push({
+          status: "Logout",
+          timestamp: exitDate,
+        });
+      }
+    });
+
+    attendanceEvents.sort((a, b) => b.timestamp - a.timestamp);
+    const latestAttendanceEvent = attendanceEvents[0];
+    const derivedSession = normalizeSessionStatus(latestAttendanceEvent?.status || profile.sessionStatus);
+
+    return {
+      ...derivedSession,
+      source: latestAttendanceEvent ? "attendance" : "profile",
+      timestamp: latestAttendanceEvent?.timestamp || null,
+    };
+  }, [attendance, profile.sessionStatus]);
 
   const violationEvents = Array.isArray(overview?.violationEvents) ? overview.violationEvents : [];
   const principalType = overview?.principalType || "user";
@@ -224,7 +266,9 @@ export default function UserOverview() {
       });
     }
     if (sessionUi.label) {
-      const lastOnlineStr = profile.lastSeen ? ` (Last seen ${formatDate(profile.lastSeen)})` : "";
+      const sessionTimestampStr = sessionUi.timestamp
+        ? ` (${sessionUi.isOnline ? "Last entry" : "Last exit"} ${formatDateTime(sessionUi.timestamp)})`
+        : "";
       items.push({
         label: "Mobile Session",
         value: sessionUi.label,
@@ -232,7 +276,7 @@ export default function UserOverview() {
         content: (
           <p className={`text-sm font-bold ${sessionUi.isOnline ? "text-green-600" : "text-red-600"}`}>
             {sessionUi.label}
-            {lastOnlineStr && <span className="text-[10px] text-gray-400 font-medium ml-1.5">{lastOnlineStr}</span>}
+            {sessionTimestampStr && <span className="text-[10px] text-gray-400 font-medium ml-1.5">{sessionTimestampStr}</span>}
           </p>
         )
       });
