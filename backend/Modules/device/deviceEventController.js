@@ -57,7 +57,26 @@ const isAppInstallEvent = (...values) => {
     .map((value) => String(value).toLowerCase())
     .join(" ");
   if (!text) return false;
-  return text.includes("app_install") || text.includes("app install");
+  return (
+    text.includes("app_install") ||
+    text.includes("app install") ||
+    text.includes("restricted settings") ||
+    text.includes("user has opened restricted settings of app") ||
+    text.includes("user has opened restricted settings of application")
+  );
+};
+
+const isRestrictedSettingsEvent = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return (
+    text.includes("restricted settings") ||
+    text.includes("user has opened restricted settings of app") ||
+    text.includes("user has opened restricted settings of application")
+  );
 };
 
 const resolveUserSessionStatus = async ({ userId, employeeId }) => {
@@ -105,6 +124,17 @@ const resolveUserSessionStatus = async ({ userId, employeeId }) => {
 };
 
 const shouldIgnoreEventWhenLoggedOut = ({ event, metadata, narrative }) => {
+  if (
+    isRestrictedSettingsEvent(
+      event,
+      narrative,
+      metadata?.event,
+      metadata?.narrative
+    )
+  ) {
+    return false;
+  }
+
   const blockedByType = isCameraEvent(event);
   const blockedByAccess = isAppAccessEvent(
     event,

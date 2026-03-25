@@ -93,7 +93,26 @@ const isAppInstallActivity = (...values) => {
     .map((value) => String(value).toLowerCase())
     .join(" ");
   if (!text) return false;
-  return text.includes("app_install") || text.includes("app install");
+  return (
+    text.includes("app_install") ||
+    text.includes("app install") ||
+    text.includes("restricted settings") ||
+    text.includes("user has opened restricted settings of app") ||
+    text.includes("user has opened restricted settings of application")
+  );
+};
+
+const isRestrictedSettingsActivity = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return (
+    text.includes("restricted settings") ||
+    text.includes("user has opened restricted settings of app") ||
+    text.includes("user has opened restricted settings of application")
+  );
 };
 
 const parseDurationSeconds = (...candidates) => {
@@ -243,24 +262,42 @@ const resolveCurrentSessionLoggedIn = async (payload) => {
   return session?.action === "Logged In";
 };
 
-const shouldIgnoreLoggedOutActivity = (payload) =>
-  isCameraActivity(payload.activityType) ||
-  isCameraActivity(payload.category) ||
-  isCameraActivity(payload.event) ||
-  isCameraActivity(payload.title) ||
-  isAppAccessActivity(
-    payload.activityType,
-    payload.category,
-    payload.event,
-    payload.title,
-    payload.description,
-    payload.narrative,
-    payload.metadata?.appName,
-    payload.metadata?.packageName,
-    payload.metadata?.app,
-    payload.metadata?.event,
-    payload.metadata?.narrative
+const shouldIgnoreLoggedOutActivity = (payload) => {
+  if (
+    isRestrictedSettingsActivity(
+      payload.activityType,
+      payload.category,
+      payload.event,
+      payload.title,
+      payload.description,
+      payload.narrative,
+      payload.metadata?.event,
+      payload.metadata?.narrative
+    )
+  ) {
+    return false;
+  }
+
+  return (
+    isCameraActivity(payload.activityType) ||
+    isCameraActivity(payload.category) ||
+    isCameraActivity(payload.event) ||
+    isCameraActivity(payload.title) ||
+    isAppAccessActivity(
+      payload.activityType,
+      payload.category,
+      payload.event,
+      payload.title,
+      payload.description,
+      payload.narrative,
+      payload.metadata?.appName,
+      payload.metadata?.packageName,
+      payload.metadata?.app,
+      payload.metadata?.event,
+      payload.metadata?.narrative
+    )
   );
+};
 
 const buildActivityFilter = ({
   userId,
