@@ -5,6 +5,7 @@ const VisitorModel = require("../user/visitorModel");
 const UserModel = require("../user/model");
 const DeviceModel = require("../device/model");
 const SettingsModel = require("../settings/model");
+const UserSession = require("../user/userSessionsModel");
 const Validator = require("../../helpers/validators");
 const { resolveLocationScope } = require("../../helpers/locationScope");
 
@@ -158,6 +159,24 @@ const getAttendanceWindowRange = async (dateInput, location = "") => {
   return buildAttendanceWindowRange(anchorDate, windowConfig);
 };
 
+const getDayRange = (dateInput) => {
+  let start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  if (dateInput) {
+    const [y, m, d] = String(dateInput)
+      .split("-")
+      .map((part) => parseInt(part, 10));
+    if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
+      start = new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+  }
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+};
+
 exports.add = async (req, res) => {
   try {
     await validateAttendanceData(req.body);
@@ -240,7 +259,182 @@ exports.getAll = async (req, res) => {
       ];
     }
 
+    const searchTerm = String(search || "").trim().toLowerCase();
+    const nameTerm = String(name || "").trim().toLowerCase();
     const normalizedAction = String(action || "").trim().toLowerCase();
+    if (normalizedAction === "login" || normalizedAction === "logout") {
+      const sessionFilter = {};
+      if (date) {
+        const { start, end } = getDayRange(date);
+        sessionFilter.createdAt = { $gte: start, $lt: end };
+      }
+      if (employeeId) {
+        sessionFilter.employeeId = new RegExp(String(employeeId).trim(), "i");
+      }
+      if (deviceId) {
+        sessionFilter.deviceId = new RegExp(String(deviceId).trim(), "i");
+      }
+      sessionFilter.action = normalizedAction === "login" ? "Logged In" : "Logout";
+
+      const sessionRecords = await UserSession.find(
+        withScopeFilter(sessionFilter, scopeFilter)
+      )
+        .sort({ createdAt: -1, _id: -1 })
+        .lean();
+
+      const employeeIds = Array.from(
+        new Set(sessionRecords.map((r) => r.employeeId).filter(Boolean))
+      );
+      const userIds = Array.from(
+        new Set(
+          sessionRecords
+            .map((r) => (r.userId ? String(r.userId) : ""))
+            .filter(Boolean)
+        )
+      );
+
+      const [employees, visitors, users, userDevices, employeeDevices] = await Promise.all([
+        employeeIds.length > 0
+          ? EmployeeModel.find({ employeeId: { $in: employeeIds } })
+            .select("name employeeId userId deviceId location")
+            .lean()
+          : [],
+        employeeIds.length > 0
+          ? VisitorModel.find({ employeeId: { $in: employeeIds } })
+            .select("name employeeId userId deviceId location")
+            .lean()
+          : [],
+        userIds.length > 0
+          ? UserModel.find({ _id: { $in: userIds } })
+            .select("name fullName fullname username")
+            .lean()
+          : [],
+        userIds.length > 0
+          ? DeviceModel.find({ userId: { $in: userIds }, verified: { $ne: false } })
+            .select("userId employeeId deviceId")
+            .lean()
+          : [],
+        employeeIds.length > 0
+          ? DeviceModel.find({ employeeId: { $in: employeeIds }, verified: { $ne: false } })
+            .select("userId employeeId deviceId")
+            .lean()
+          : [],
+      ]);
+
+      const employeeMap = new Map();
+      const employeeDeviceMap = new Map();
+      const employeeLocationMap = new Map();
+      employees.forEach((emp) => {
+        if (emp?.employeeId) {
+          employeeMap.set(String(emp.employeeId), emp.name || "");
+          employeeLocationMap.set(String(emp.employeeId), emp.location || "");
+        }
+        if (emp?.deviceId) {
+          employeeDeviceMap.set(String(emp.employeeId), emp.deviceId);
+        }
+      });
+      visitors.forEach((vis) => {
+        if (!employeeMap.has(String(vis.employeeId))) {
+          employeeMap.set(String(vis.employeeId), vis.name || "");
+        }
+        if (!employeeLocationMap.has(String(vis.employeeId))) {
+          employeeLocationMap.set(String(vis.employeeId), vis.location || "");
+        }
+        if (vis?.deviceId && !employeeDeviceMap.has(String(vis.employeeId))) {
+          employeeDeviceMap.set(String(vis.employeeId), vis.deviceId);
+        }
+      });
+
+      const userMap = new Map();
+      users.forEach((user) => {
+        const resolvedName =
+          user.name || user.fullName || user.fullname || user.username || "";
+        userMap.set(String(user._id), resolvedName);
+      });
+
+      const userDeviceMap = new Map();
+      userDevices.forEach((device) => {
+        if (device?.userId && device?.deviceId) {
+          userDeviceMap.set(String(device.userId), device.deviceId);
+        }
+        if (device?.employeeId && device?.deviceId && !employeeDeviceMap.has(String(device.employeeId))) {
+          employeeDeviceMap.set(String(device.employeeId), device.deviceId);
+        }
+      });
+      employeeDevices.forEach((device) => {
+        if (device?.employeeId && device?.deviceId) {
+          employeeDeviceMap.set(String(device.employeeId), device.deviceId);
+        }
+        if (device?.userId && device?.deviceId && !userDeviceMap.has(String(device.userId))) {
+          userDeviceMap.set(String(device.userId), device.deviceId);
+        }
+      });
+
+      const filteredRows = sessionRecords
+        .map((record) => {
+          const userName =
+            (record.userId && userMap.get(String(record.userId))) ||
+            (record.employeeId && employeeMap.get(String(record.employeeId))) ||
+            "";
+          const resolvedDeviceId =
+            record.deviceId ||
+            (record.userId ? userDeviceMap.get(String(record.userId)) : "") ||
+            (record.employeeId ? employeeDeviceMap.get(String(record.employeeId)) : "") ||
+            "";
+          const resolvedLocation =
+            record.location ||
+            (record.employeeId ? employeeLocationMap.get(String(record.employeeId)) : "") ||
+            "";
+
+          return {
+            ...record,
+            id: record._id?.toString?.() || "",
+            userName,
+            deviceId: resolvedDeviceId,
+            location: resolvedLocation,
+            action: normalizedAction,
+            actionTime: record.createdAt || null,
+            statusLabel: normalizedAction === "logout" ? "Logged Out" : "Logged In",
+          };
+        })
+        .filter((row) => {
+          if (nameTerm && !String(row.userName || "").toLowerCase().includes(nameTerm)) {
+            return false;
+          }
+          if (!searchTerm) return true;
+          const haystack = [
+            row.userName,
+            row.employeeId,
+            row.deviceId,
+            row.location,
+            row.statusLabel,
+            row.action,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(searchTerm);
+        });
+
+      const totalrecords = filteredRows.length;
+      const paginatedRows = filteredRows.slice(
+        pageNumber * limitNumber,
+        pageNumber * limitNumber + limitNumber
+      );
+
+      return res.status(200).json({
+        status: true,
+        data: paginatedRows,
+        total: totalrecords,
+        pagination: {
+          totalrecords,
+          currentPage: pageNumber,
+          totalPages: Math.max(1, Math.ceil(totalrecords / limitNumber)),
+          limit: limitNumber,
+        },
+      });
+    }
+
     if (normalizedAction === "login") {
       filter.$and = [
         ...(filter.$and || []),
@@ -263,9 +457,6 @@ exports.getAll = async (req, res) => {
         },
       ];
     }
-
-    const searchTerm = String(search || "").trim().toLowerCase();
-    const nameTerm = String(name || "").trim().toLowerCase();
 
     const records = await AttendanceModel.find(withScopeFilter(filter, scopeFilter))
       .sort({ entryGateIn: -1, exitGateOut: -1, updatedAt: -1, _id: -1 })
