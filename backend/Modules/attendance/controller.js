@@ -653,24 +653,10 @@ exports.getNotLoggedIn = async (req, res) => {
     const userIds = employees.map((emp) => (emp.userId ? String(emp.userId) : "")).filter(Boolean);
 
     const loginRecords = employeeIds.length > 0
-      ? await AttendanceModel.find({
+      ? await UserSession.find({
         employeeId: { $in: employeeIds },
-        $and: [
-          {
-            $or: [
-              { entryGateIn: { $gte: start, $lt: end } },
-              { updatedAt: { $gte: start, $lt: end } },
-              { createdAt: { $gte: start, $lt: end } },
-              { date: { $gte: start, $lt: end } },
-            ],
-          },
-          {
-            $or: [
-              { "metadata.action": "login" },
-              { entryGateIn: { $exists: true, $ne: null } },
-            ],
-          },
-        ],
+        action: "Logged In",
+        createdAt: { $gte: start, $lt: end },
       })
         .select("employeeId")
         .lean()
