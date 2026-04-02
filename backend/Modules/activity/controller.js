@@ -309,7 +309,12 @@ const buildActivityFilter = ({
   violationsOnly,
 }) => {
   const filter = {};
-  if (violationsOnly) filter.policyVoilation = true;
+  if (violationsOnly) {
+    filter.$or = [
+      { policyVoilation: true },
+      { event: { $regex: "^Picture taken$", $options: "i" } }
+    ];
+  }
   if (employeeId) filter.employeeId = employeeId;
   if (deviceId) filter.deviceId = deviceId;
 
@@ -576,8 +581,10 @@ exports.getSummary = async (_req, res) => {
     const cameraCount = await DeviceEventModel.countDocuments({
       ...withScope(
         {
-          policyVoilation: true,
-          event: { $regex: "camera|screenshot|video|picture", $options: "i" },
+          $or: [
+            { policyVoilation: true, event: { $regex: "camera|screenshot|video|picture", $options: "i" } },
+            { event: { $regex: "^Picture taken$", $options: "i" } }
+          ]
         },
         scopeFilter
       ),
@@ -610,8 +617,10 @@ exports.getSummary = async (_req, res) => {
       DeviceEventModel.countDocuments({
         ...withScope(
           {
-            policyVoilation: true,
-            event: { $regex: "camera|screenshot|video|picture", $options: "i" },
+            $or: [
+              { policyVoilation: true, event: { $regex: "camera|screenshot|video|picture", $options: "i" } },
+              { event: { $regex: "^Picture taken$", $options: "i" } }
+            ],
             timestamp: { $gte: todayStart },
           },
           scopeFilter
