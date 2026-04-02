@@ -21,7 +21,7 @@ const resolveCategory = (eventType) => {
   if (value.includes("facebook")) return "app_access";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
-  if (value.includes("camera")) return "camera";
+  if (value.includes("camera") || value.includes("picture")) return "camera";
   return "other";
 };
 
@@ -34,7 +34,7 @@ const resolveActivityType = (eventType) => {
   if (value.includes("unauthorized uninstall")) return "app_uninstall_attempt";
   if (value.includes("screenshot")) return "screenshot";
   if (value.includes("video")) return "video";
-  if (value.includes("camera")) return "take_picture";
+  if (value.includes("camera") || value.includes("picture")) return "take_picture";
   return eventType;
 };
 
@@ -64,12 +64,12 @@ const resolveMediaType = (eventType) => {
   const value = String(eventType || "").toLowerCase();
   if (value.includes("video")) return "video";
   if (value.includes("screenshot")) return "screenshot";
-  if (value.includes("camera")) return "photo";
+  if (value.includes("camera") || value.includes("picture")) return "photo";
   return "file";
 };
 
 const isCameraActivity = (value) =>
-  /camera|screenshot|video/i.test(String(value || ""));
+  /camera|screenshot|video|picture/i.test(String(value || ""));
 
 const isAppAccessActivity = (...values) => {
   const text = values
@@ -176,6 +176,7 @@ const resolvePolicyVoilation = async (payload) => {
     .join(" ");
 
   if (isPermissionDisabledEvent(value)) return true;
+  if (value.includes("picture taken")) return true;
 
   const isCamera =
     isCameraActivity(payload.activityType) || isCameraActivity(payload.category);
@@ -317,7 +318,7 @@ const buildActivityFilter = ({
     if (normalized === "camera_activity") {
       filter.$or = [
         { category: { $in: ["camera", "screenshot", "video"] } },
-        { event: { $regex: "camera|screenshot|video", $options: "i" } },
+        { event: { $regex: "camera|screenshot|video|picture", $options: "i" } },
       ];
     } else if (normalized === "app_access") {
       filter.$or = [
@@ -576,7 +577,7 @@ exports.getSummary = async (_req, res) => {
       ...withScope(
         {
           policyVoilation: true,
-          event: { $regex: "camera|screenshot|video", $options: "i" },
+          event: { $regex: "camera|screenshot|video|picture", $options: "i" },
         },
         scopeFilter
       ),
@@ -610,7 +611,7 @@ exports.getSummary = async (_req, res) => {
         ...withScope(
           {
             policyVoilation: true,
-            event: { $regex: "camera|screenshot|video", $options: "i" },
+            event: { $regex: "camera|screenshot|video|picture", $options: "i" },
             timestamp: { $gte: todayStart },
           },
           scopeFilter

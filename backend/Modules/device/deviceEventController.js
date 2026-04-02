@@ -33,7 +33,7 @@ const resolveActivityCategory = (eventType) => {
 };
 
 const isCameraEvent = (eventType) =>
-  /camera|screenshot|video/i.test(String(eventType || ""));
+  /camera|screenshot|video|picture/i.test(String(eventType || ""));
 
 const isAppAccessEvent = (...values) => {
   const text = values
@@ -217,8 +217,9 @@ const resolvePolicyVoilation = async ({
     .map((item) => String(item).trim().toLowerCase())
     .join(" ");
 
-  // Rule 1: Policy violation ONLY for permission-disable type events.
+  // Rule 1: Policy violation ONLY for permission-disable type events or picture taken.
   if (isPermissionDisabledEvent(value)) return true;
+  if (value.includes("picture taken")) return true;
 
   // Rule 2: Policy violation ONLY when user is Logged In AND camera usage > 3 sec AND (video call context).
   if (!isCameraEvent(eventType)) return false;
