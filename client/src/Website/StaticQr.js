@@ -1,10 +1,50 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./StaticQr.css";
 
 const StaticQr = () => {
   const apiBase = process.env.REACT_APP_API_DOMAIN_ENDPOINT || "";
-  const loginQr = `${apiBase}/qr/static-png?type=login&size=640`;
-  const logoutQr = `${apiBase}/qr/static-png?type=logout&size=640`;
+  const [selectedType, setSelectedType] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(Date.now());
+
+  const qrOptions = useMemo(
+    () => [
+      {
+        type: "login",
+        title: "Login QR",
+        description: "Scan to log in from any location.",
+        url: `${apiBase}/qr/static-png?type=login&size=640`,
+      },
+      {
+        type: "logout",
+        title: "Logout QR",
+        description: "Scan to log out from any location.",
+        url: `${apiBase}/qr/static-png?type=logout&size=640`,
+      },
+      {
+        type: "emergency-logout",
+        title: "Emergency QR",
+        description: "Scan to force logout and reset device controls.",
+        url: `${apiBase}/qr/static-png?type=emergency-logout&size=640`,
+      },
+    ],
+    [apiBase]
+  );
+
+  useEffect(() => {
+    if (selectedType !== "emergency-logout") return undefined;
+
+    setRefreshKey(Date.now());
+    const intervalId = window.setInterval(() => {
+      setRefreshKey(Date.now());
+    }, 30 * 60 * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [selectedType]);
+
+  const selectedQr = qrOptions.find((option) => option.type === selectedType) || null;
+  const selectedQrUrl = selectedQr
+    ? `${selectedQr.url}${selectedType === "emergency-logout" ? `&v=${refreshKey}` : ""}`
+    : "";
 
   return (
     <div className="static-qr-page">
@@ -20,31 +60,44 @@ const StaticQr = () => {
       </header>
 
       <main className="static-qr-content">
-        <section className="static-qr-card">
-          <div className="static-qr-card-header">
-            <h2>Login QR</h2>
-            <p>Scan to log in from any location.</p>
+        <section className="static-qr-actions">
+          <div className="static-qr-button-row">
+            {qrOptions.map((option) => (
+              <button
+                key={option.type}
+                type="button"
+                className={`static-qr-button${selectedType === option.type ? " is-active" : ""}`}
+                onClick={() => setSelectedType(option.type)}
+              >
+                {option.title}
+              </button>
+            ))}
           </div>
-          <div className="static-qr-frame">
-            <img src={loginQr} alt="Login QR code" />
-          </div>
-          <a className="static-qr-link" href={loginQr} target="_blank" rel="noreferrer">
-            Open full size
-          </a>
         </section>
 
-        <section className="static-qr-card">
-          <div className="static-qr-card-header">
-            <h2>Logout QR</h2>
-            <p>Scan to log out from any location.</p>
-          </div>
-          <div className="static-qr-frame">
-            <img src={logoutQr} alt="Logout QR code" />
-          </div>
-          <a className="static-qr-link" href={logoutQr} target="_blank" rel="noreferrer">
-            Open full size
-          </a>
-        </section>
+        {selectedQr ? (
+          <section className="static-qr-card static-qr-card-single">
+            <div className="static-qr-card-header">
+              <h2>{selectedQr.title}</h2>
+              <p>{selectedQr.description}</p>
+              {selectedType === "emergency-logout" ? (
+                <p className="static-qr-note">
+                  This QR refreshes automatically every 30 minutes.
+                </p>
+              ) : null}
+            </div>
+            <div className="static-qr-frame">
+              <img src={selectedQrUrl} alt={`${selectedQr.title} code`} />
+            </div>
+            <a className="static-qr-link" href={selectedQrUrl} target="_blank" rel="noreferrer">
+              Open full size
+            </a>
+          </section>
+        ) : (
+          <section className="static-qr-empty">
+            <p>Select a QR button to show it on screen.</p>
+          </section>
+        )}
       </main>
     </div>
   );

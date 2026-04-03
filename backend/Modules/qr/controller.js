@@ -19,6 +19,10 @@ const JWT_SECRET =
 
 const STATIC_QR_LOGIN_TOKEN = String(process.env.STATIC_QR_LOGIN_TOKEN || "").trim();
 const STATIC_QR_LOGOUT_TOKEN = String(process.env.STATIC_QR_LOGOUT_TOKEN || "").trim();
+const STATIC_QR_EMERGENCY_LOGOUT_TOKEN = String(
+  process.env.STATIC_QR_EMERGENCY_LOGOUT_TOKEN || ""
+).trim();
+const EMERGENCY_QR_ROTATION_MINUTES = 30;
 
 const normalizeLocation = (value) => {
   if (value === undefined || value === null) return "";
@@ -36,23 +40,104 @@ const normalizeDeviceId = (value) =>
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const buildPolicyStateForAction = (currentState = {}, action) => {
-  const nextState = { ...currentState };
+const buildPolicyStateForAction = (
+  currentState = {},
+  action,
+  { emergencyLogout = false } = {}
+) => {
+  const nextState = {
+    cameraDisabled: false,
+    uninstallBlocked: false,
+    facebookBlocked: false,
+    instagramBlocked: false,
+    youtubeBlocked: false,
+    whatsappBlocked: false,
+    kioskMode: false,
+    allowedApps: [],
+    blockedApps: [],
+    ...currentState,
+  };
   const isLogin = action === "login";
   const isLogout = action === "logout";
 
   Object.keys(nextState).forEach((key) => {
+    if (Array.isArray(nextState[key])) {
+      if (isLogout && emergencyLogout) {
+        nextState[key] = [];
+      }
+      return;
+    }
     if (typeof nextState[key] !== "boolean") return;
     if (isLogin) {
       nextState[key] = true;
       return;
     }
     if (isLogout) {
-      nextState[key] = key === "uninstallBlocked" ? true : false;
+      nextState[key] = emergencyLogout ? false : key === "uninstallBlocked";
     }
   });
 
   return nextState;
+};
+
+const buildEmergencyDeviceSettings = () => ({
+  deviceStatus: "Disable",
+  cameraDisabled: false,
+  uninstallBlocked: false,
+  facebookBlocked: false,
+  instagramBlocked: false,
+  youtubeBlocked: false,
+  whatsappBlocked: false,
+  locationAllowed: false,
+  devicePolicyState: {
+    cameraDisabled: false,
+    uninstallBlocked: false,
+    facebookBlocked: false,
+    instagramBlocked: false,
+    youtubeBlocked: false,
+    whatsappBlocked: false,
+    kioskMode: false,
+    allowedApps: [],
+    blockedApps: [],
+  },
+});
+
+const getEmergencyQrWindow = () => {
+  const windowMs = EMERGENCY_QR_ROTATION_MINUTES * 60 * 1000;
+  const startMs = Math.floor(Date.now() / windowMs) * windowMs;
+  return {
+    startMs,
+    endMs: startMs + windowMs,
+  };
+};
+
+const createEmergencyLogoutStaticToken = () => {
+  if (!STATIC_QR_EMERGENCY_LOGOUT_TOKEN) return "";
+
+  const { startMs, endMs } = getEmergencyQrWindow();
+  return jwt.sign(
+    {
+      action: "logout",
+      scope: "static_emergency_logout",
+      windowStart: startMs,
+      exp: Math.floor(endMs / 1000),
+    },
+    STATIC_QR_EMERGENCY_LOGOUT_TOKEN,
+    { noTimestamp: true }
+  );
+};
+
+const verifyEmergencyLogoutStaticToken = (token) => {
+  if (!STATIC_QR_EMERGENCY_LOGOUT_TOKEN) return null;
+
+  try {
+    const decoded = jwt.verify(token, STATIC_QR_EMERGENCY_LOGOUT_TOKEN);
+    if (String(decoded?.action || "").toLowerCase() !== "logout") return null;
+    if (decoded?.scope !== "static_emergency_logout") return null;
+    return decoded;
+  } catch (_error) {
+    return null;
+  }
 };
 
 const normalizePolicyUpdate = (payload) => {
@@ -328,14 +413,22 @@ exports.generateQrPng = async (req, res) => {
 exports.generateStaticQrPng = async (req, res) => {
   try {
     const type = String(req.query.type || "").toLowerCase();
-    if (!["login", "logout"].includes(type)) {
-      return res.status(400).json({ message: "type must be login or logout" });
+    if (!["login", "logout", "emergency-logout"].includes(type)) {
+      return res.status(400).json({
+        message: "type must be login, logout or emergency-logout",
+      });
     }
 
     const token =
-      type === "login" ? STATIC_QR_LOGIN_TOKEN : STATIC_QR_LOGOUT_TOKEN;
+      type === "login"
+        ? STATIC_QR_LOGIN_TOKEN
+        : type === "logout"
+          ? STATIC_QR_LOGOUT_TOKEN
+          : createEmergencyLogoutStaticToken();
     if (!token) {
-      return res.status(400).json({ message: "Static QR token not configured" });
+      return res.status(400).json({
+        message: "Static QR token not configured",
+      });
     }
 
     const requestedSize = Number(req.query.size);
@@ -381,17 +474,22 @@ exports.consumeQr = async (req, res) => {
     if (!token) {
       return res.status(400).json({ message: "token is required" });
     }
-    if (!userId) {
-      return res.status(400).json({ message: "userId is required" });
-    }
-    if (!mongoose.isValidObjectId(userId)) {
-      return res.status(400).json({ message: "userId must be a valid user id" });
-    }
+    const emergencyLogoutPayload = verifyEmergencyLogoutStaticToken(token);
     const isStaticLoginToken =
       STATIC_QR_LOGIN_TOKEN && token === STATIC_QR_LOGIN_TOKEN;
     const isStaticLogoutToken =
       STATIC_QR_LOGOUT_TOKEN && token === STATIC_QR_LOGOUT_TOKEN;
-    const usingStaticToken = isStaticLoginToken || isStaticLogoutToken;
+    const isEmergencyLogoutToken = Boolean(emergencyLogoutPayload);
+    const usingStaticToken =
+      isStaticLoginToken || isStaticLogoutToken || isEmergencyLogoutToken;
+    const forceEmergencyLogout = Boolean(isEmergencyLogoutToken);
+
+    if (!userId && !forceEmergencyLogout) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+    if (userId && !mongoose.isValidObjectId(userId) && !forceEmergencyLogout) {
+      return res.status(400).json({ message: "userId must be a valid user id" });
+    }
     let resolvedLocation = location;
     if (!usingStaticToken && (location === undefined || location === null || location === "")) {
       return res.status(400).json({ message: "location is required" });
@@ -412,6 +510,8 @@ exports.consumeQr = async (req, res) => {
     if (usingStaticToken) {
       if (isStaticLoginToken) {
         action = "login";
+      } else if (isEmergencyLogoutToken) {
+        action = "logout";
       } else if (isStaticLogoutToken) {
         action = "logout";
       }
@@ -500,45 +600,71 @@ exports.consumeQr = async (req, res) => {
     let visitor = null;
     let isVisitor = false;
 
-    user = await User.findById(userId);
-    if (!user) {
-      employee =
-        (await EmployeeModel.findById(userId)) ||
-        (await EmployeeModel.findOne({ userId }));
-    }
-    if (!user && employee?.userId) {
-      user = await User.findById(employee.userId);
-    }
-    if (!employee && user?.employeeId) {
-      employee = await EmployeeModel.findOne({ employeeId: user.employeeId });
-    }
+    if (userId && mongoose.isValidObjectId(userId)) {
+      user = await User.findById(userId);
+      if (!user) {
+        employee =
+          (await EmployeeModel.findById(userId)) ||
+          (await EmployeeModel.findOne({ userId }));
+      }
+      if (!user && employee?.userId) {
+        user = await User.findById(employee.userId);
+      }
+      if (!employee && user?.employeeId) {
+        employee = await EmployeeModel.findOne({ employeeId: user.employeeId });
+      }
 
-    if (!employee && !user) {
-      visitor =
-        (await VisitorModel.findById(userId)) ||
-        (await VisitorModel.findOne({ employeeId: userId })) ||
-        (employeeId ? await VisitorModel.findOne({ employeeId }) : null) ||
-        (deviceId ? await VisitorModel.findOne({ deviceId }) : null);
-      if (visitor) {
-        isVisitor = true;
-        employee = {
-          employeeId: visitor.employeeId || String(visitor._id),
-          rfid: visitor.rfid || `VISITOR-${visitor.employeeId || visitor._id}`,
-          section: "Visitor",
-          userId: null,
-        };
+      if (!employee && !user) {
+        visitor =
+          (await VisitorModel.findById(userId)) ||
+          (await VisitorModel.findOne({ employeeId: userId })) ||
+          (employeeId ? await VisitorModel.findOne({ employeeId }) : null) ||
+          (deviceId ? await VisitorModel.findOne({ deviceId }) : null);
+        if (visitor) {
+          isVisitor = true;
+          employee = {
+            employeeId: visitor.employeeId || String(visitor._id),
+            rfid: visitor.rfid || `VISITOR-${visitor.employeeId || visitor._id}`,
+            section: "Visitor",
+            userId: null,
+          };
+        }
       }
     }
 
+    let deviceRecord = null;
+    let deviceOnlyLogout = false;
+
     if (!employee && !user && !visitor) {
-      return res.status(404).json({ message: "User not found" });
+      if (!forceEmergencyLogout) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (!deviceId) {
+        return res.status(400).json({
+          message: "deviceId is required when user entry is missing",
+        });
+      }
+
+      const normalizedDeviceId = normalizeDeviceId(deviceId);
+      const deviceFilters = [
+        { deviceId: new RegExp(`^${escapeRegExp(normalizedDeviceId)}$`, "i") },
+      ];
+      if (mongoose.isValidObjectId(normalizedDeviceId)) {
+        deviceFilters.push({ _id: normalizedDeviceId });
+      }
+      deviceRecord = await DeviceModel.findOne({ $or: deviceFilters }).lean();
+      if (!deviceRecord) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      deviceOnlyLogout = true;
     }
-    if (!employee) {
+
+    if (!employee && !deviceOnlyLogout) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    let sessionDeviceId = deviceId;
-    if (user || visitor) {
+    let sessionDeviceId = deviceRecord?.deviceId || deviceId;
+    if (!deviceOnlyLogout && (user || visitor)) {
       const resolved = await resolveAssignedDeviceId(user || visitor, deviceId);
       if (resolved.error) {
         return res.status(400).json({ message: resolved.error });
@@ -554,6 +680,7 @@ exports.consumeQr = async (req, res) => {
     }
 
     if (
+      !deviceOnlyLogout &&
       action === "login" &&
       (user?.sessionStatus === "Logged In" ||
         visitor?.sessionStatus === "Logged In")
@@ -563,13 +690,14 @@ exports.consumeQr = async (req, res) => {
       });
     }
     if (
+      !deviceOnlyLogout &&
       action === "logout" &&
       (user?.sessionStatus === "Logout" || visitor?.sessionStatus === "Logout")
     ) {
       return res.status(400).json({ message: "User is already logged out" });
     }
 
-    if (!employee.rfid || !employee.section) {
+    if (!deviceOnlyLogout && (!employee.rfid || !employee.section)) {
       return res
         .status(400)
         .json({ message: "Employee RFID/section missing for attendance" });
@@ -582,51 +710,53 @@ exports.consumeQr = async (req, res) => {
       }
     }
 
-    await markAttendance(
-      employee,
-      action,
-      user?._id || visitor?._id,
-      resolvedLocation,
-      resolvedLocationId
-    );
-
     const sessionAction = action === "login" ? "Logged In" : "Logout";
-    const sessionUserId = employee?.userId || user?._id || visitor?._id || employee._id;
-    const rawPayload = { ...req.body };
-    delete rawPayload.token;
-    delete rawPayload.userId;
-    delete rawPayload.deviceId;
-    delete rawPayload.employeeId;
-    delete rawPayload.action;
-    delete rawPayload.location;
-    delete rawPayload.deviceLocation;
-
-    await UserSession.create({
-      userId: sessionUserId,
-      deviceId: sessionDeviceId,
-      employeeId: employee.employeeId,
-      action: sessionAction,
-      token,
-      location: resolvedLocation,
-      locationId: resolvedLocationId,
-      deviceLocation,
-      raw: rawPayload,
-    });
-    if (deviceLocation !== undefined) {
-      await DeviceModel.updateOne(
-        { deviceId: sessionDeviceId },
-        { $set: { deviceLocation } }
+    if (!deviceOnlyLogout) {
+      await markAttendance(
+        employee,
+        action,
+        user?._id || visitor?._id,
+        resolvedLocation,
+        resolvedLocationId
       );
-    }
-    if (user) {
-      await User.findByIdAndUpdate(user._id, {
-        sessionStatus: sessionAction,
+
+      const sessionUserId = employee?.userId || user?._id || visitor?._id || employee._id;
+      const rawPayload = { ...req.body };
+      delete rawPayload.token;
+      delete rawPayload.userId;
+      delete rawPayload.deviceId;
+      delete rawPayload.employeeId;
+      delete rawPayload.action;
+      delete rawPayload.location;
+      delete rawPayload.deviceLocation;
+
+      await UserSession.create({
+        userId: sessionUserId,
+        deviceId: sessionDeviceId,
+        employeeId: employee.employeeId,
+        action: sessionAction,
+        token,
+        location: resolvedLocation,
+        locationId: resolvedLocationId,
+        deviceLocation,
+        raw: rawPayload,
       });
-    }
-    if (visitor) {
-      await VisitorModel.findByIdAndUpdate(visitor._id, {
-        sessionStatus: sessionAction,
-      });
+      if (deviceLocation !== undefined) {
+        await DeviceModel.updateOne(
+          { deviceId: sessionDeviceId },
+          { $set: { deviceLocation } }
+        );
+      }
+      if (user) {
+        await User.findByIdAndUpdate(user._id, {
+          sessionStatus: sessionAction,
+        });
+      }
+      if (visitor) {
+        await VisitorModel.findByIdAndUpdate(visitor._id, {
+          sessionStatus: sessionAction,
+        });
+      }
     }
 
     if (sessionDeviceId) {
@@ -658,16 +788,24 @@ exports.consumeQr = async (req, res) => {
     }
 
     if (sessionDeviceId && (action === "login" || action === "logout")) {
-      const existingDevice = await DeviceModel.findOne({
+      const existingDevice = deviceRecord || await DeviceModel.findOne({
         deviceId: sessionDeviceId,
       }).lean();
       const currentPolicy = existingDevice?.devicePolicyState || null;
-      if (currentPolicy) {
-        const nextPolicy = buildPolicyStateForAction(currentPolicy, action);
+      if (currentPolicy || forceEmergencyLogout) {
+        const nextPolicy = buildPolicyStateForAction(currentPolicy || {}, action, {
+          emergencyLogout: forceEmergencyLogout,
+        });
         const setUpdate = {};
         Object.entries(nextPolicy).forEach(([key, value]) => {
           setUpdate[`devicePolicyState.${key}`] = value;
         });
+        if (forceEmergencyLogout) {
+          setUpdate.locationAllowed = false;
+          setUpdate.loginToken = null;
+          setUpdate.deviceStatus = "Disable";
+          setUpdate["metadata.lastEmergencyLogoutAt"] = new Date();
+        }
         if (Object.keys(setUpdate).length) {
           await DeviceModel.updateOne(
             { deviceId: sessionDeviceId },
@@ -677,7 +815,7 @@ exports.consumeQr = async (req, res) => {
       }
     }
 
-    const deviceRecord = sessionDeviceId
+    deviceRecord = sessionDeviceId
       ? await DeviceModel.findOne({ deviceId: sessionDeviceId }).lean()
       : null;
     const deviceSettings = deviceRecord
@@ -692,12 +830,19 @@ exports.consumeQr = async (req, res) => {
         locationAllowed: deviceRecord.locationAllowed ?? true,
         devicePolicyState: deviceRecord.devicePolicyState || {},
       }
-      : null;
+      : forceEmergencyLogout
+        ? buildEmergencyDeviceSettings()
+        : null;
 
     const responsePayload = {
-      message: action === "login" ? "Logged in successfully" : "Logged out successfully",
-      userId: user ? user._id : employee._id,
-      employeeId: employee.employeeId,
+      message:
+        action === "login"
+          ? "Logged in successfully"
+          : forceEmergencyLogout
+            ? "Emergency logout applied successfully"
+            : "Logged out successfully",
+      userId: user ? user._id : employee?._id || null,
+      employeeId: employee?.employeeId || deviceRecord?.employeeId || employeeId || "",
       deviceId: sessionDeviceId,
       location: resolvedLocation,
       deviceLocation,
@@ -707,6 +852,10 @@ exports.consumeQr = async (req, res) => {
 
     if (action === "login") {
       responsePayload.loginToken = loginToken;
+    }
+    if (forceEmergencyLogout) {
+      responsePayload.emergencyLogout = true;
+      responsePayload.deviceOnlyLogout = deviceOnlyLogout;
     }
 
     void tokenId;
