@@ -653,9 +653,6 @@ exports.consumeQr = async (req, res) => {
         deviceFilters.push({ _id: normalizedDeviceId });
       }
       deviceRecord = await DeviceModel.findOne({ $or: deviceFilters }).lean();
-      if (!deviceRecord) {
-        return res.status(404).json({ message: "Device not found" });
-      }
       deviceOnlyLogout = true;
     }
 
