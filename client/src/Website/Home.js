@@ -391,9 +391,13 @@ const Home = () => {
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               className="relative rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.2)] border-[12px] border-white/80 backdrop-blur-sm bg-white/40"
             >
-              <img
-                src={heroSecurity}
-                alt="PIL Security Restriction"
+              <video
+                src="/hero_video.mp4"
+                poster={heroSecurity}
+                autoPlay
+                loop
+                muted
+                playsInline
                 className="w-full h-auto object-cover transform scale-105"
               />
 
@@ -1226,16 +1230,7 @@ const Home = () => {
               </button>
 
               {/* Support & Presentation Cards moved to bottom of form */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-4">
-                  <div className="bg-white/60 p-4 rounded-2xl border border-blue-50 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                      <Phone size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest m-0">Support</p>
-                      <p className="text-slate-900 font-bold text-xs whitespace-nowrap m-0">0172-4084189</p>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 gap-4 w-full mt-4">
 
                   <a 
                     href="/presentation.pdf" 

@@ -96,16 +96,6 @@ const ExitIntentPopup = ({ isOpen, onClose }) => {
               </div>
 
               <div className="space-y-4 mt-auto">
-                {/* Contact Card 1 */}
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 group cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                    <Phone size={24} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support</p>
-                    <p className="text-slate-900 font-bold text-sm whitespace-nowrap">0172-4084189</p>
-                  </div>
-                </div>
 
                 {/* Contact Card 2 */}
                 <a 
