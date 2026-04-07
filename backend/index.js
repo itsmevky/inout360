@@ -12,9 +12,20 @@ const userRoutes = require("./Modules/user/routes");
 const EmployeeModel = require("./Modules/employees/model");
 const { startDevicePresenceMonitor } = require("./helpers/devicePresenceMonitor");
 const { startWorkingHoursCron } = require("./cron/workingHoursCheck");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 app.use(express.json());
+app.use(helmet());
+app.use(async (req, res, next) => {
+  try {
+    decodeURIComponent(req.path);
+    next();
+  } catch (e) {
+    return res.status(400).json({ success: false, message: "Bad Request: Invalid URL encoding" });
+  }
+});
 app.use(responseTimeLogger);
 app.use((req, res, next) => {
   const start = Date.now();
@@ -36,14 +47,13 @@ app.use((req, res, next) => {
 });
 const corsOptions = {
   origin: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://localhost:5000",
-    "http://localhost:4001",
+    // "http://localhost:3000",
+    // "http://localhost:3001",
+    // "http://localhost:3002",
+    // "http://localhost:5000",
+    // "http://localhost:4001",
     "https://pidiliteapp.ajivainfotech.com",
-    "https://pil.ajivainfotech.com",
-    "https://d4ca-2401-4900-1c2a-7a8-dccc-f641-d148-61dd.ngrok-free.app/"
+    "https://pil.ajivainfotech.com"
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   allowedHeaders: "Content-Type, Authorization",
@@ -80,6 +90,38 @@ mongoose
 
 //=======================Middleware===============================//
 app.use(cors(corsOptions));
+app.set("trust proxy", 1);
+
+// Rate limiting to prevent brute-force/spam while allowing high-traffic device activity
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5000, // High limit for office NAT environments
+  skip: (req) => {
+    // Skip high-frequency machine routes using startsWith() for better security
+    // This prevents attackers from bypassing the limit via query parameters
+    const skipList = [
+      "/api/device/ping",
+      "/api/device/status",
+      "/api/device/track",
+      "/api/device/device-event",
+      "/api/qr/consume",
+      "/api/location/coords",
+      "/api/upload",
+      "/api/device/register",
+      "/api/activity/notifications/unread-count"
+    ];
+    return skipList.some(path => req.path.startsWith(path));
+  },
+  handler: (req, res) => {
+    console.warn(`🚨 Rate limit reached: IP=${req.ip}, Path=${req.path}, Method=${req.method}`);
+    res.status(429).json({ 
+      status: false, 
+      message: "Too many requests from this IP, please try again after 15 minutes" 
+    });
+  }
+});
+app.use(globalLimiter);
+
 app.use("/uploads", express.static(UPLOAD_ROOT));
 app.use("/emailTemplate", express.static(path.join(__dirname, "emailTemplate")));
 
@@ -117,6 +159,25 @@ fs.readdirSync(modulesPath).forEach((folder) => {
 
 // ======Start the server========================//
 const PORT = process.env.PORT || 5000;
+
 startDevicePresenceMonitor();
 startWorkingHoursCron();
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("❌ Global Error:", err.message);
+
+  if (err instanceof URIError) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid URL parameter",
+    });
+  }
+
+  res.status(500).json({
+    success: false,
+    message: "Internal Server Error",
+  });
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

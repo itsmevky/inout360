@@ -409,6 +409,22 @@ exports.storeEvent = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
+    const loginToken = String(
+      req.body?.loginToken ||
+      req.headers["x-login-token"] ||
+      req.headers["login-token"] ||
+      req.headers["devicelogintoken"] ||
+      ""
+    ).trim();
+
+    if (!loginToken) {
+      return res.status(401).json({ status: false, message: "loginToken is required for security" });
+    }
+
+    if (String(device.loginToken || "") !== loginToken) {
+      return res.status(403).json({ status: false, message: "Unauthorized: Invalid device loginToken" });
+    }
+
     if (
       device.devicePolicyState?.uninstallBlocked !== true &&
       !isAppInstallEvent(event, narrative, metadata?.event, metadata?.narrative)
