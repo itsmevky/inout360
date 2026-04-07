@@ -260,25 +260,18 @@ const getAccessToken = async () => {
   return tokenObj.token;
 };
 
-const sendAdminNotification = async (
-  device,
-  eventType,
-  cameraStatus,
-  name,
-  employeeId,
-  imagePath
+const sendFCMNotification = async (
+  fcmToken,
+  title,
+  body,
+  data
 ) => {
-  if (!device?.fcmToken) {
-    return;
-  }
-
-  const title = "Camera Event Detected";
-  const body = `Event ${eventType} on ${name || device.ownerName || device.deviceId}`;
+  if (!fcmToken) return;
 
   const url = `https://fcm.googleapis.com/v1/projects/${PROJECT_ID}/messages:send`;
   const message = {
     message: {
-      token: device.fcmToken,
+      token: fcmToken,
       notification: { title, body },
       android: {
         notification: {
@@ -286,14 +279,7 @@ const sendAdminNotification = async (
           color: "#A52A2A",
         },
       },
-      data: {
-        event: eventType,
-        cameraStatus: cameraStatus || "unknown",
-        deviceId: String(device._id || ""),
-        name: name || "",
-        employee_id: employeeId || "",
-        imagePath: imagePath || "",
-      },
+      data,
     },
   };
 
@@ -305,18 +291,82 @@ const sendAdminNotification = async (
         Authorization: `Bearer ${accessToken}`,
       },
     });
-    if (process.env.NODE_ENV !== "production") {
-      console.log("✅ Event notification sent:", {
-        deviceId: device.deviceId || device._id,
-        title,
-        fcmName: response?.data?.name,
-      });
-    }
     return response?.data;
   } catch (error) {
-    console.error("❌ Event notification failed:", error.message);
+    console.error("❌ FCM notification failed:", error.message);
   }
 };
+
+const isNotifiableEvent = (event, policyVoilation) => {
+  if (policyVoilation) return true;
+  
+  const criticalEventPatterns = [
+    /camera/i,
+    /screenshot/i,
+    /video/i,
+    /uninstall/i,
+    /admin/i,
+    /permission/i,
+    /location/i,
+    /restricted/i,
+    /overlay/i,
+    /accessibility/i,
+    /usage/i
+  ];
+  
+  return criticalEventPatterns.some(pattern => pattern.test(event));
+};
+
+const notifyTaggedEmployees = async (
+  eventType,
+  cameraStatus,
+  actorName,
+  employeeId,
+  imagePath,
+  policyVoilation
+) => {
+  try {
+    if (!isNotifiableEvent(eventType, policyVoilation)) {
+      return;
+    }
+
+    const taggedEmployees = await EmployeeModel.find({
+      employeetag: { $in: ["HR", "Security", "Manager", "Admin"] },
+    }).select("employeeId name employeetag").lean();
+
+    if (!taggedEmployees.length) return;
+
+    const taggedEmpIds = taggedEmployees.map(emp => emp.employeeId).filter(Boolean);
+    const devices = await DeviceModel.find({
+      employeeId: { $in: taggedEmpIds },
+      fcmToken: { $exists: true, $ne: "" },
+    }).select("fcmToken employeeId").lean();
+
+    if (!devices.length) return;
+
+    const title = policyVoilation ? "Security Policy Violation" : "Device Event Detected";
+    const body = `Event ${eventType} on ${actorName || employeeId}`;
+    const data = {
+      event: eventType,
+      cameraStatus: cameraStatus || "unknown",
+      name: actorName || "",
+      employee_id: employeeId || "",
+      imagePath: imagePath || "",
+      policyVoilation: String(!!policyVoilation),
+    };
+
+    const sendPromises = devices.map(device => 
+      sendFCMNotification(device.fcmToken, title, body, data)
+    );
+
+    await Promise.all(sendPromises);
+    console.log(`✅ Event notification sent to ${devices.length} tagged devices`);
+  } catch (error) {
+    console.error("❌ Failed to notify tagged employees:", error.message);
+  }
+};
+
+exports.notifyTaggedEmployees = notifyTaggedEmployees;
 
 const resolveDeviceById = async (deviceId) => {
   if (!deviceId) return null;
@@ -436,13 +486,14 @@ exports.storeEvent = async (req, res) => {
       imagePath || metadata?.imagePath || req.body?.imagePath || "";
 
     try {
-      await sendAdminNotification(
-        device,
+      // Notify only tagged employees as per requirement
+      await notifyTaggedEmployees(
         event,
         cameraStatus,
-        name,
-        employeeId || employee_id,
-        imagePath
+        actorName,
+        employeeId || employee_id || device.employeeId,
+        imagePath,
+        policyVoilation
       );
     } catch (notifyError) {
       console.warn("⚠️ Device event notification failed:", notifyError.message);

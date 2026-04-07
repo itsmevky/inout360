@@ -184,6 +184,7 @@ const normalizePayload = (data) => {
       loginEnabled: data.loginEnabled !== false,
       lastLogin: toDate(data.lastLogin),
     },
+    employeetag: data.employeetag || null,
   };
 };
 
@@ -519,10 +520,14 @@ exports.getOverviewByEmployeeId = async (req, res) => {
     }
 
     let principalType = "employee";
-    let principal = await EmployeeModel.findOne({ employeeId }).lean();
+    const query = mongoose.isValidObjectId(employeeId)
+      ? { $or: [{ _id: employeeId }, { employeeId }] }
+      : { employeeId };
+
+    let principal = await EmployeeModel.findOne(query).lean();
     if (!principal) {
       principalType = "visitor";
-      principal = await VisitorModel.findOne({ employeeId }).lean();
+      principal = await VisitorModel.findOne(query).lean();
     }
     if (!principal) {
       return res.status(404).json({ status: false, message: "Not found" });
@@ -628,6 +633,7 @@ exports.getOverviewByEmployeeId = async (req, res) => {
             sessionStatus?.sessionStatus ||
             principal.sessionStatus ||
             "Logout",
+          employeetag: principal.employeetag || null,
         },
         counts: {
           policyViolations: violationsTotal || 0,
@@ -872,6 +878,56 @@ exports.updateSessionStatus = async (req, res) => {
       status: true,
       message: "Session status updated",
       sessionStatus: normalizedStatus,
+    });
+  } catch (error) {
+    return res
+      .status(error.statusCode || 500)
+      .json({ status: false, message: error.message });
+  }
+};
+
+exports.updateTag = async (req, res) => {
+  try {
+    const scope = await resolveLocationScope(req);
+    const { id } = req.params;
+    const { employeetag } = req.body;
+
+    const validTags = ["HR", "Security", "Manager", "Admin", null];
+    if (!validTags.includes(employeetag)) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid tag value. Must be HR, Security, Manager, or null",
+      });
+    }
+
+    const query = mongoose.isValidObjectId(id)
+      ? { _id: id }
+      : { employeeId: id };
+
+    const employee = await EmployeeModel.findOne(query);
+    if (!employee) {
+      return res.status(404).json({ status: false, message: "Employee not found" });
+    }
+
+    if (scope.isAdmin && isPrivilegedRole(employee.role)) {
+      return res.status(403).json({
+        status: false,
+        message: "Only superadmin can update admin/superadmin tags",
+      });
+    }
+    assertScopedLocation(
+      employee.location,
+      scope,
+      "You can only update employees from your assigned location"
+    );
+
+    employee.employeetag = employeetag;
+    await employee.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Tag updated successfully",
+      data: employee,
     });
   } catch (error) {
     return res

@@ -99,6 +99,13 @@ router.put(
   Controller.updateSessionStatus
 );
 
+router.put(
+  "/tag/:id",
+  verifyToken,
+  checkAuthorization(["admin", "superadmin"], "employees", "update"),
+  Controller.updateTag
+);
+
 router.delete(
   "/:id",
   verifyToken,

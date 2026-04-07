@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getData } from "../../Helpers/api.js";
+import { getData, putData } from "../../Helpers/api.js";
 import { toast } from "react-toastify";
 
 const safeText = (value) => String(value || "").trim();
@@ -52,6 +52,8 @@ export default function UserOverview() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [attendancePage, setAttendancePage] = useState(1);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [updatingTag, setUpdatingTag] = useState(false);
   const ATTENDANCE_LIMIT = 10;
 
   useEffect(() => {
@@ -78,6 +80,37 @@ export default function UserOverview() {
     };
     fetchOverview();
   }, [employeeId]);
+
+  const refreshData = async () => {
+    try {
+      const res = await getData(`/employees/overview/${encodeURIComponent(employeeId)}`);
+      if (res?.status && res?.data) {
+        setOverview(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to refresh data:", error);
+    }
+  };
+
+  const handleTagUpdate = async (tag) => {
+    setUpdatingTag(true);
+    setTagDropdownOpen(false);
+    try {
+      const res = await putData(`/employees/tag/${overview?.profile?._id || employeeId}`, {
+        employeetag: tag,
+      });
+      if (res?.status) {
+        toast.success("Tag updated successfully");
+        refreshData();
+      } else {
+        toast.error(res?.message || "Failed to update tag");
+      }
+    } catch (error) {
+      toast.error("Failed to update tag");
+    } finally {
+      setUpdatingTag(false);
+    }
+  };
 
   useEffect(() => {
     const hash = safeText(location.hash).replace("#", "");
@@ -411,6 +444,51 @@ export default function UserOverview() {
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                       {principalType}
                     </span>
+
+                    {/* Employee Tag Section */}
+                    {principalType === "employee" && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                          disabled={updatingTag}
+                          className={`px-3 py-1 ${profile.employeetag ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"} text-[10px] font-black uppercase rounded-lg tracking-widest border border-transparent flex items-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-95 disabled:opacity-50`}
+                        >
+                          {updatingTag ? (
+                            <span className="w-2 h-2 rounded-full bg-white animate-spin"></span>
+                          ) : (
+                            <span className={`w-1.5 h-1.5 rounded-full ${profile.employeetag ? "bg-white" : "bg-gray-400"}`}></span>
+                          )}
+                          {profile.employeetag || "Add Tag"}
+                          <svg className={`w-3 h-3 transition-transform ${tagDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+
+                        {tagDropdownOpen && (
+                          <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in duration-200">
+                            {["HR", "Security", "Manager", "Admin"].map((tag) => (
+                              <button
+                                key={tag}
+                                onClick={() => handleTagUpdate(tag)}
+                                className={`w-full text-left px-4 py-2 text-[11px] font-black uppercase tracking-wider hover:bg-blue-50 transition-colors ${profile.employeetag === tag ? "text-blue-600 bg-blue-50/50" : "text-gray-600"}`}
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                            {profile.employeetag && (
+                              <div className="border-t border-gray-50 mt-1 pt-1">
+                                <button
+                                  onClick={() => handleTagUpdate(null)}
+                                  className="w-full text-left px-4 py-2 text-[11px] font-black uppercase tracking-wider text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  Remove Tag
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-6 text-sm font-bold text-gray-400">
                     <span className="flex items-center gap-2">

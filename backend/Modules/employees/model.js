@@ -58,6 +58,7 @@ const employeeSchema = {
   shift: { type: String, trim: true, default: null },
   employmentType: { type: String, default: "Full-time", trim: true },
   role: { type: String, required: true, default: "employee", trim: true },
+  employeetag: { type: String, enum: ["HR", "Security", "Manager", "Admin"], default: null },
   status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   location: { type: String, trim: true, default: "", index: true },
   locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", default: null, index: true },
