@@ -207,7 +207,7 @@ const assertDeviceScopeAccess = async (scope, device, message) => {
   }
 };
 const padVisitorId = (seq) => `VIS-${String(seq).padStart(5, "0")}`;
-const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pil-app-7fb48";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
   __dirname,
   "..",
@@ -338,7 +338,7 @@ const toValidDate = (value) => {
 const cleanUpdate = (obj) =>
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 
-const formatDevice = (doc) => {
+const formatDevice = (doc, minimize = false) => {
   const d = typeof doc.toObject === "function" ? doc.toObject() : doc;
   const resolvedUserName =
     d.userId?.name ||
@@ -348,11 +348,30 @@ const formatDevice = (doc) => {
     d.name ||
     d.ownerName ||
     "";
-  return {
-    ...d,
+
+  let formattedLastSeen = d.lastSeen || d.lastOnline || null;
+  if (formattedLastSeen) {
+    const lSeen = new Date(formattedLastSeen);
+    if (!Number.isNaN(lSeen.getTime())) {
+      formattedLastSeen = lSeen.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour12: true,
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+      });
+    }
+  }
+
+  const baseResult = {
     id: d._id?.toString?.() || d.id,
     name: d.name,
     deviceId: d.deviceId || d._id,
+    deviceName: d.deviceName || d.name,
+    employeeId: d.employeeId,
     userName: resolvedUserName,
     statusLabel:
       (d.status || "").toUpperCase() === "ONLINE"
@@ -361,16 +380,28 @@ const formatDevice = (doc) => {
           ? "Blocked"
           : "Offline",
     deviceStatus: d.deviceStatus,
+    status: d.status,
     cameraDisabled: d.devicePolicyState?.cameraDisabled ?? false,
     uninstallBlocked: d.devicePolicyState?.uninstallBlocked ?? false,
     facebookBlocked: d.devicePolicyState?.facebookBlocked ?? false,
     instagramBlocked: d.devicePolicyState?.instagramBlocked ?? false,
     youtubeBlocked: d.devicePolicyState?.youtubeBlocked ?? false,
     whatsappBlocked: d.devicePolicyState?.whatsappBlocked ?? false,
-    androidVersion: d.osVersion,
+    androidVersion: d.osVersion || d.androidVersion || d.deviceInfo?.version?.release,
     appVer: d.appVersion,
     verified: !!d.verified,
+    lastSeen: formattedLastSeen,
+    lastOnline: formattedLastSeen,
+    locationAllowed: d.locationAllowed,
+    lastScreenshotAt: d.lastScreenshotAt,
+    enrollmentDate: d.enrollmentDate,
+    createdAt: d.createdAt,
+    deviceInfo: { androidId: d.deviceInfo?.androidId },
   };
+
+  if (minimize) return baseResult;
+
+  return { ...d, ...baseResult };
 };
 
 const getAccessToken = async () => {
@@ -394,6 +425,12 @@ const sendDeviceNotification = async (device, title, body, data = {}) => {
     message: {
       token: device.fcmToken,
       notification: { title, body },
+      android: {
+        notification: {
+          icon: "ic_notification",
+          color: "#A52A2A",
+        },
+      },
       data,
     },
   };
@@ -923,6 +960,13 @@ exports.register = async (req, res) => {
       }
       principal = visitor;
     }
+    if (!principal || !principal._id) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to create or retrieve the user record. Device registration aborted to prevent missing users.",
+      });
+    }
+
 
     if (deviceId) {
       const normalizedDeviceId = normalizeDeviceId(deviceId);
@@ -1197,7 +1241,7 @@ exports.getAll = async (req, res) => {
       { createdAt: -1, _id: -1 }
     );
 
-    const devices = result.data.map(formatDevice);
+    const devices = result.data.map((doc) => formatDevice(doc, true));
 
     return res.status(200).json({
       status: result.status,

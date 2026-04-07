@@ -22,6 +22,16 @@ const templates = [
     file: "authorization.html",
     subject: "PIL Authorization Notice",
   },
+  {
+    name: "vendorVerification.html",
+    file: "vendorVerification.html",
+    subject: "PIL Vendor Verification OTP",
+  },
+  {
+    name: "demoRequest.html",
+    file: "demoRequest.html",
+    subject: "PIL Demo Request Notification",
+  },
 ];
 
 const run = async () => {

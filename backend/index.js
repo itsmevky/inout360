@@ -81,6 +81,7 @@ mongoose
 //=======================Middleware===============================//
 app.use(cors(corsOptions));
 app.use("/uploads", express.static(UPLOAD_ROOT));
+app.use("/emailTemplate", express.static(path.join(__dirname, "emailTemplate")));
 
 // Explicit auth alias to user routes so frontend /api/auth/* continues to work
 app.use("/api/auth", userRoutes);

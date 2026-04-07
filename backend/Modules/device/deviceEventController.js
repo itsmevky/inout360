@@ -8,7 +8,7 @@ const UserModel = require("../user/model");
 const UserSession = require("../user/userSessionsModel");
 const EmployeeModel = require("../employees/model");
 const VisitorModel = require("../user/visitorModel");
-const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pidilite-cd009";
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pil-app-7fb48";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
   __dirname,
   "..",
@@ -272,13 +272,19 @@ const sendAdminNotification = async (
     return;
   }
 
+  const title = "Camera Event Detected";
+  const body = `Event ${eventType} on ${name || device.ownerName || device.deviceId}`;
+
   const url = `https://fcm.googleapis.com/v1/projects/${PROJECT_ID}/messages:send`;
   const message = {
     message: {
       token: device.fcmToken,
-      notification: {
-        title: "Camera Event Detected",
-        body: `Event ${eventType} on ${name || device.ownerName || device.deviceId}`,
+      notification: { title, body },
+      android: {
+        notification: {
+          icon: "ic_notification",
+          color: "#A52A2A",
+        },
       },
       data: {
         event: eventType,
@@ -292,12 +298,24 @@ const sendAdminNotification = async (
   };
 
   const accessToken = await getAccessToken();
-  await axios.post(url, message, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  try {
+    const response = await axios.post(url, message, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Event notification sent:", {
+        deviceId: device.deviceId || device._id,
+        title,
+        fcmName: response?.data?.name,
+      });
+    }
+    return response?.data;
+  } catch (error) {
+    console.error("❌ Event notification failed:", error.message);
+  }
 };
 
 const resolveDeviceById = async (deviceId) => {
