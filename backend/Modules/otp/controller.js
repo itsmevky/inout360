@@ -246,13 +246,18 @@ exports.verifyOtp = async (req, res) => {
     }
 
     const deviceIdRegex = new RegExp(`^${normalizedDeviceId}$`, "i");
-    const deviceQuery = { $or: [{ deviceId: deviceIdRegex }] };
+    const deviceQuery = {
+      $or: [{ deviceId: deviceIdRegex }],
+      userId: otpRecord.userId,
+    };
     if (mongoose.isValidObjectId(deviceId)) {
       deviceQuery.$or.push({ _id: deviceId });
     }
-    const device = await DeviceModel.findOne(deviceQuery);
+    
+    // Search effectively by latest to avoid old deactivated duplicated pairs
+    const device = await DeviceModel.findOne(deviceQuery).sort({ createdAt: -1 });
     if (!device) {
-      return res.status(404).json({ status: false, message: "Device not found" });
+      return res.status(404).json({ status: false, message: "Device not found for this user" });
     }
 
     otpRecord.verified = true;
