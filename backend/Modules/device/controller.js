@@ -396,7 +396,7 @@ const formatDevice = (doc, minimize = false) => {
     lastScreenshotAt: d.lastScreenshotAt,
     enrollmentDate: d.enrollmentDate,
     createdAt: d.createdAt,
-    deviceInfo: { 
+    deviceInfo: {
       androidId: d.deviceInfo?.androidId,
       brand: d.deviceInfo?.brand,
     },
@@ -1013,7 +1013,8 @@ exports.register = async (req, res) => {
       lastSeen,
       deviceOwner,
       status: "OFFLINE",
-      verified: false,
+      // Removed 'verified: false' since the mobile app sends background sync requests on the Login screen 
+      // that hit this endpoint and inadvertently overwrite existing verifications.
     });
 
     if (employeeId) {
