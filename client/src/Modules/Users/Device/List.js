@@ -1252,14 +1252,14 @@ const Device = () => {
   };
 
   const fetchActivityLogs = async () => {
-    const deviceId = resolveSelectedDeviceId();
-    if (!deviceId) return;
+    const employeeId = selectedDevice?.employeeId;
+    if (!employeeId) return;
     setActionLoading(true);
     setActionView("logs");
     setActionData([]);
     try {
-      const res = await getData(`/device/${deviceId}/activity-logs`);
-      setActionData(res?.data || res?.logs || []);
+      const res = await getData(`/activity?employeeId=${encodeURIComponent(employeeId)}&page=0&limit=5`);
+      setActionData(res?.data || []);
     } catch (_err) {
       setActionData([]);
     } finally {
@@ -1323,14 +1323,21 @@ const Device = () => {
     },
     {
       name: "Device",
-      selector: (row) => row.deviceName || row.deviceId || row.name || "-",
+      selector: (row) => (
+        <div className="flex flex-col">
+          {row.deviceInfo?.brand && (
+            <span className="font-bold text-gray-800 capitalize">
+              {row.deviceInfo.brand}
+            </span>
+          )}
+          <span className={row.deviceInfo?.brand ? "text-xs text-gray-500" : "font-semibold"}>
+            {row.deviceInfo?.androidId || row.deviceName || row.deviceId || row.name || "-"}
+          </span>
+        </div>
+      ),
       width: "18%",
     },
-    {
-      name: "Status",
-      selector: (row) => statusBadge(row.statusLabel || row.status),
-      width: "12%",
-    },
+
     {
       name: "Android",
       selector: (row) =>
@@ -1340,11 +1347,7 @@ const Device = () => {
         "-",
       width: "12%",
     },
-    {
-      name: "App Ver.",
-      selector: (row) => row.appVersion || row.appVer || "-",
-      width: "12%",
-    },
+
     {
       name: "Last Online",
       selector: (row) => formatDate(row.lastOnline || row.lastSeen),
@@ -1395,21 +1398,19 @@ const Device = () => {
     {
       name: "Device",
       selector: (row) => (
-        <div className="w-full overflow-hidden text-right">
-          <span className="font-bold whitespace-nowrap text-gray-800">
-            {row.deviceName || row.deviceId || row.name || "-"}
+        <div className="w-full overflow-hidden text-right flex flex-col">
+          {row.deviceInfo?.brand && (
+            <span className="font-bold whitespace-nowrap text-gray-800 capitalize">
+              {row.deviceInfo.brand}
+            </span>
+          )}
+          <span className={row.deviceInfo?.brand ? "text-xs text-gray-500 whitespace-nowrap" : "font-bold whitespace-nowrap text-gray-800"}>
+            {row.deviceInfo?.androidId || row.deviceName || row.deviceId || row.name || "-"}
           </span>
         </div>
       ),
     },
-    {
-      name: "Status",
-      selector: (row) => (
-        <div className="flex justify-end">
-          {statusBadge(row.statusLabel || row.status)}
-        </div>
-      ),
-    },
+
     {
       name: "Android",
       selector: (row) => (
@@ -1514,7 +1515,7 @@ const Device = () => {
             rowsPerPageOptions={[10, 20, 50, 100]}
             defaultRowsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
-            onRowsPerPageChange={() => {}} // Rows per page is fixed at 10 in this file
+            onRowsPerPageChange={() => { }} // Rows per page is fixed at 10 in this file
             currentPage={currentPage}
           />
         )}
@@ -1540,8 +1541,9 @@ const Device = () => {
             </button>
 
             {/* HEADER */}
-            <h2 className="text-lg sm:text-2xl font-bold">
-              {selectedDevice.deviceName ||
+            <h2 className="text-lg sm:text-2xl font-bold capitalize">
+              {selectedDevice.deviceInfo?.brand ||
+                selectedDevice.deviceName ||
                 selectedDevice.deviceId ||
                 selectedDevice.name ||
                 "-"}
@@ -1686,24 +1688,10 @@ const Device = () => {
                   {canUpdateDevice ? (
                     <>
                       <button
-                        onClick={fetchActivityLogs}
-                        className="w-full py-3 bg-gray-200 rounded-lg"
+                        onClick={() => fetchActivityLogs(selectedDevice.userId?._id || selectedDevice.userId)}
+                        className="w-full py-3 bg-gray-200 rounded-lg font-medium hover:bg-gray-300"
                       >
-                        View Activity Logs
-                      </button>
-
-                      <button
-                        onClick={fetchInstalledApps}
-                        className="w-full py-3 bg-gray-200 rounded-lg"
-                      >
-                        View Installed Apps
-                      </button>
-
-                      <button
-                        onClick={fetchLocationTimeline}
-                        className="w-full py-3 bg-gray-200 rounded-lg"
-                      >
-                        View Location Timeline
+                        View User Activity Logs
                       </button>
                     </>
                   ) : null}
@@ -1744,22 +1732,31 @@ const Device = () => {
                   <p className="text-sm text-gray-500">No data available</p>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {actionView === "logs" &&
-                      actionData.map((log, idx) => (
-                        <div key={idx} className="text-sm border-b pb-2">
-                          <div className="font-semibold">
-                            {log?.type || log?.event || log?.action || "Log"}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {formatDate(log?.createdAt || log?.timestamp || log?.time)}
-                          </div>
-                          {log?.message ? (
-                            <div className="text-sm text-gray-700 mt-1">
-                              {log.message}
+                    {actionView === "logs" && (
+                      <div className="flex flex-col">
+                        {actionData.flatMap(item => item.activities ? item.activities : [item]).map((log, idx) => (
+                          <div key={idx} className="text-sm border-b border-gray-100 pb-3 mb-2 pt-2 last:border-0 last:pb-0">
+                            <div className="font-semibold text-gray-800 flex items-center justify-between">
+                              <span>{log?.title || log?.event || log?.type || log?.action || log?.category || "Activity"}</span>
+                              {log?.policyVoilation ? (
+                                <span className="text-[10px] uppercase tracking-wide bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold shrink-0 ml-2">
+                                  Violation
+                                </span>
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                      ))}
+                            <div className="text-xs text-gray-400 mt-1">
+                              {formatDate(log?.timestamp || log?.createdAt || log?.occurredAt)}
+                            </div>
+                            {(log?.narrative || log?.message || log?.description) && (
+                              <div className="text-[13px] text-gray-600 mt-1.5 leading-relaxed bg-gray-50 p-2 rounded-md border border-gray-100">
+                                {log.narrative || log.message || log.description}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {actionData.length === 0 && <span className="text-gray-500 text-sm">No activity found.</span>}
+                      </div>
+                    )}
 
                     {actionView === "apps" &&
                       actionData.map((app, idx) => (

@@ -396,7 +396,10 @@ const formatDevice = (doc, minimize = false) => {
     lastScreenshotAt: d.lastScreenshotAt,
     enrollmentDate: d.enrollmentDate,
     createdAt: d.createdAt,
-    deviceInfo: { androidId: d.deviceInfo?.androidId },
+    deviceInfo: { 
+      androidId: d.deviceInfo?.androidId,
+      brand: d.deviceInfo?.brand,
+    },
   };
 
   if (minimize) return baseResult;
