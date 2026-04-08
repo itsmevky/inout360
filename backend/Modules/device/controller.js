@@ -1356,6 +1356,7 @@ exports.setDevicePolicy = async (req, res) => {
       for (const field of fieldsToAuthorize) {
         const notification = getAuthorizationNotification(field);
         if (!notification) continue;
+        /*
         await Promise.allSettled([
           sendAuthorizationEmail(device.userId, notification.message).catch((error) => {
             console.warn("Authorization email failed:", error.message);
@@ -1372,6 +1373,7 @@ exports.setDevicePolicy = async (req, res) => {
             );
           }),
         ]);
+        */
         await logPermission({
           userId: device.userId,
           employeeId: device.employeeId,
@@ -1436,6 +1438,7 @@ exports.toggleDevicePolicy = async (req, res) => {
       try {
         const notification = getAuthorizationNotification(field);
         if (notification) {
+          /*
           await Promise.allSettled([
             sendAuthorizationEmail(device.userId, notification.message).catch(
               (error) => {
@@ -1454,6 +1457,7 @@ exports.toggleDevicePolicy = async (req, res) => {
               );
             }),
           ]);
+          */
           await logPermission({
             userId: device.userId,
             employeeId: device.employeeId,
