@@ -323,7 +323,8 @@ const notifyTaggedEmployees = async (
   actorName,
   employeeId,
   imagePath,
-  policyVoilation
+  policyVoilation,
+  narrative = ""
 ) => {
   try {
     if (!isNotifiableEvent(eventType, policyVoilation)) {
@@ -344,8 +345,8 @@ const notifyTaggedEmployees = async (
 
     if (!devices.length) return;
 
-    const title = policyVoilation ? "Security Policy Violation" : "Device Event Detected";
-    const body = `Event ${eventType} on ${actorName || employeeId}`;
+    const title = narrative || (policyVoilation ? "Security Policy Violation" : "Device Event Detected");
+    const body = `Name: ${actorName || "-"}\nEmployeeId: ${employeeId || "-"}`;
     const data = {
       event: eventType,
       cameraStatus: cameraStatus || "unknown",
@@ -353,6 +354,7 @@ const notifyTaggedEmployees = async (
       employee_id: employeeId || "",
       imagePath: imagePath || "",
       policyVoilation: String(!!policyVoilation),
+      narrative: narrative || "",
     };
 
     const sendPromises = devices.map(device =>
@@ -494,7 +496,8 @@ exports.storeEvent = async (req, res) => {
         actorName,
         employeeId || employee_id || device.employeeId,
         imagePath,
-        policyVoilation
+        policyVoilation,
+        narrative
       );
     } catch (notifyError) {
       console.warn("⚠️ Device event notification failed:", notifyError.message);
