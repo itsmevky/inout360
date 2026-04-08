@@ -57,7 +57,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Notifications", icon: "notifications", path: `${basePath}/notifications` },
     { label: "Enquiries", icon: "mail", path: "/dashboard/enquiries" },
     // ✅ Warnings
-    { label: "Warnings", icon: "warning", path: "/dashboard/warnings" }
+    { label: "Warnings", icon: "warning", path: "/dashboard/warnings" },
+    { label: "Policy Packages", icon: "security_update_good", path: `${basePath}/policy-packages` }
 
   ];
 
@@ -78,6 +79,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Activity",
       "Enquiries",
       "Warnings",
+      "Policy Packages",
     ],
     admin: [
       "Dashboard",
@@ -91,6 +93,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Activity",
       "Enquiries",
       "Warnings",
+      "Policy Packages",
     ],
     hr: [
       "Dashboard",
@@ -104,6 +107,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Activity",
       "Enquiries",
       "Warnings",
+      "Policy Packages",
     ],
     manager: [
       "Dashboard",

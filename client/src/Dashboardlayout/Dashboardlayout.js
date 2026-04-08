@@ -30,6 +30,7 @@ import Settings from "../Modules/Users/Settings.js";
 import NotificationsPage from "../Modules/Notifications/NotificationsPage.js";
 import EnquiriesPage from "../Modules/Enquiries/EnquiriesPage";
 import WarningsPage from "../Modules/Warnings/WarningsPage";
+import PolicyPackagesList from "../Modules/SuperAdminDashboard/PolicyPackages/List";
 import { can, normalizeRole } from "../Helpers/acl.js";
 
 
@@ -156,6 +157,9 @@ function DashboardLayout({ userRole }) {
               <Route path="enquiries" element={<EnquiriesPage />} />
               {/* ⚠️ Warnings */}
               <Route path="warnings" element={<WarningsPage />} />
+              {/* 📦 Policy Packages */}
+              <Route path="users/policy-packages" element={<PolicyPackagesList />} />
+              <Route path="employee/policy-packages" element={<PolicyPackagesList />} />
 
               {/* ✅ Default fallback */}
               <Route path="*" element={<Dashboard />} />

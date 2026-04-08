@@ -90,6 +90,18 @@
         "read",
         "update",
         "delete"
+      ],
+      "policyPackages": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "superadmin": [
+        "create",
+        "read",
+        "update",
+        "delete"
       ]
     }
   },
