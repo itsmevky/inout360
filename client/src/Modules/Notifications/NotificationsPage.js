@@ -1,5 +1,5 @@
 // src/Modules/Notifications/NotificationsPage.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { deleteData, getData, postData } from "../../Helpers/api";
 import { capitalizeFirstLetter } from "../../Helpers/CapitalizeFirstLetter.js";
@@ -147,7 +147,7 @@ const extractAppNameFromText = (value) => {
     if (!cleaned) return "";
 
     // Extract simple App name from strings like "WhatsApp camera opened", "Zoom video call camera used", or "WhatsApp camera used for"
-    const eventMatch = cleaned.match(/^([a-z0-9_.\-]+(?:\s+[a-z0-9_.\-]+)*)\s+(?:camera opened|video call camera used|camera used for)/i);
+    const eventMatch = cleaned.match(/^([a-z0-9_.-]+(?:\s+[a-z0-9_.-]+)*)\s+(?:camera opened|video call camera used|camera used for)/i);
     if (eventMatch && eventMatch[1]) {
         const candidate = eventMatch[1].trim();
         const lowerCand = candidate.toLowerCase();
@@ -297,14 +297,6 @@ const NotificationsPage = () => {
     const role = normalizeRole(user?.role);
     const canDeleteActivity = can(role, "activity", "delete");
 
-    useEffect(() => {
-        markNotificationsRead();
-    }, []);
-
-    useEffect(() => {
-        fetchNotifications();
-    }, [currentPage, rowsPerPage]);
-
     const markNotificationsRead = async () => {
         try {
             await postData("/activity/notifications/mark-read");
@@ -318,7 +310,12 @@ const NotificationsPage = () => {
         try {
             let count = 0;
             for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-                const res = await getData("/activity/notifications/unread-count");
+                const res = await getData(
+                    "/activity/notifications/unread-count",
+                    {},
+                    {},
+                    { showToast: false }
+                );
                 count = res?.status ? Number(res.count) || 0 : 0;
                 if (count === 0 || attempt === maxRetries) break;
                 await new Promise((resolve) => setTimeout(resolve, 250));
@@ -333,7 +330,7 @@ const NotificationsPage = () => {
         }
     };
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             setLoading(true);
             const res = await getData("/activity/notifications", {
@@ -357,7 +354,12 @@ const NotificationsPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, rowsPerPage]);
+
+    useEffect(() => {
+        markNotificationsRead();
+        fetchNotifications();
+    }, [fetchNotifications]);
 
     const handleDeleteNotification = async (id) => {
         if (!id) return;

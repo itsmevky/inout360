@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import Pic from "../Images/woman.jpg";
+import Pic from "../Images/default-avatar.png";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import Notify from "../Images/Notification .gif";
 import { useUser } from "../Helpers/Context/UserContext";
 import { getData, domainpath } from "../Helpers/api";
 import logo from "../Images/PIL.png"; // Adjust path
@@ -73,20 +72,36 @@ const Header = () => {
   }, [navigate]);
 
   useEffect(() => {
-    let intervalId;
+    let timerId;
+    let isMounted = true;
+    let currentInterval = 10000;
+
     const fetchCount = async () => {
       try {
-        const res = await getData("/activity/notifications/unread-count");
+        const res = await getData(
+          "/activity/notifications/unread-count",
+          {},
+          {},
+          { showToast: false }
+        );
         if (res?.status) {
           setNotificationCount(Number(res.count) || 0);
+          currentInterval = 10000; // Reset on success
         }
       } catch (error) {
+        // If server is down (no response), we can increase the interval
+        if (!error.response) {
+          currentInterval = Math.min(currentInterval * 2, 60000); // Max 1 minute
+        }
         console.error("Failed to fetch notification count");
+      } finally {
+        if (isMounted) {
+          timerId = setTimeout(fetchCount, currentInterval);
+        }
       }
     };
 
     fetchCount();
-    intervalId = setInterval(fetchCount, 10000);
 
     const handleRead = () => setNotificationCount(0);
     const handleCountUpdated = (event) => {
@@ -97,13 +112,18 @@ const Header = () => {
         fetchCount();
       }
     };
-    const handleFocus = () => fetchCount();
+    const handleFocus = () => {
+      if (timerId) clearTimeout(timerId);
+      fetchCount();
+    };
+
     window.addEventListener("notifications-read", handleRead);
     window.addEventListener("notifications-count-updated", handleCountUpdated);
     window.addEventListener("focus", handleFocus);
 
     return () => {
-      clearInterval(intervalId);
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
       window.removeEventListener("notifications-read", handleRead);
       window.removeEventListener("notifications-count-updated", handleCountUpdated);
       window.removeEventListener("focus", handleFocus);
@@ -116,7 +136,14 @@ const Header = () => {
         {/* Left Section: Logo and Title */}
         <div className="flex items-center space-x-2">
           <div className="dash-header">
-            <a href="#" className="header-logo">
+            <a
+              href="#/dashboard/notifications"
+              className="header-logo"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/dashboard/notifications");
+              }}
+            >
               <img style={{ maxHeight: "60px", maxWidth: "200px", objectFit: "contain" }} src={logo} alt="PIL Logo" />
             </a>
           </div>
@@ -182,6 +209,10 @@ const Header = () => {
                 src={userAvatar || Pic}
                 alt="Profile"
                 className="w-10 h-10 rounded-full !m-0 object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = Pic;
+                }}
               />
               <div className="flex ml-4 items-center gap-2">
                 <span className="text-sm"> Hi, {userName}</span>

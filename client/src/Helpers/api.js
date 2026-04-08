@@ -4,16 +4,6 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 
-// ---------------- Get Subdomain ---------------- //
-const getSubdomain = () => {
-  const host = window.location.hostname;
-  const parts = host.split(".");
-  if (host.includes("localhost") && parts.length === 2) return parts[0];
-  if (parts.length > 2) return parts[0];
-  return null;
-};
-
-const subdomain = getSubdomain();
 
 const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
 console.log("domainpathUrl", domainpath);
@@ -39,7 +29,8 @@ const makeRequest = async (
   url,
   data = {},
   params = {},
-  customHeaders = {}
+  customHeaders = {},
+  options = { showToast: true }
 ) => {
   const token = localStorage.getItem("accesstoken");
   const isFormData =
@@ -66,7 +57,9 @@ const makeRequest = async (
 
     const msg =
       error?.response?.data?.message || "Something went wrong. Try again!";
-    toast.error(msg);
+    if (options.showToast !== false) {
+      toast.error(msg);
+    }
 
     console.error(
       `[API ${method.toUpperCase()}] ${url}:`,
@@ -77,15 +70,15 @@ const makeRequest = async (
 };
 
 // ---------------- Query Builder ---------------- //
-const buildQuery = async (params = {}) => {
-  const queryParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      queryParams.append(key, value);
-    }
-  });
-  return queryParams.toString() ? `?${queryParams.toString()}` : "";
-};
+// const buildQuery = async (params = {}) => {
+//   const queryParams = new URLSearchParams();
+//   Object.entries(params).forEach(([key, value]) => {
+//     if (value !== undefined && value !== null && value !== "") {
+//       queryParams.append(key, value);
+//     }
+//   });
+//   return queryParams.toString() ? `?${queryParams.toString()}` : "";
+// };
 
 // ---------------- Helper: Schema Field Extractor ---------------- //
 const extractGlobalFieldsFromResponse = (response, options = {}) => {
@@ -109,17 +102,17 @@ const extractGlobalFieldsFromResponse = (response, options = {}) => {
 };
 
 // ---------------- Core Methods ---------------- //
-const getData = (url, params = {}, headers = {}) =>
-  makeRequest("get", url, {}, params, headers);
+const getData = (url, params = {}, headers = {}, options = {}) =>
+  makeRequest("get", url, {}, params, headers, options);
 
-const postData = (url, data = {}, headers = {}) =>
-  makeRequest("post", url, data, {}, headers);
+const postData = (url, data = {}, headers = {}, options = {}) =>
+  makeRequest("post", url, data, {}, headers, options);
 
-const putData = (url, data = {}, headers = {}) =>
-  makeRequest("put", url, data, {}, headers);
+const putData = (url, data = {}, headers = {}, options = {}) =>
+  makeRequest("put", url, data, {}, headers, options);
 
-const deleteData = (url, data = {}, headers = {}) =>
-  makeRequest("delete", url, data, {}, headers);
+const deleteData = (url, data = {}, headers = {}, options = {}) =>
+  makeRequest("delete", url, data, {}, headers, options);
 
 // ---------------- Dynamic CRUD API ---------------- //
 const API = {
@@ -195,7 +188,7 @@ const API = {
   // ✅ Section-specific helpers
 
   section: {
-    getAll: (params) => getData("/sections/all", params),
+    getOverview: (params) => getData("/sections/all", params),
     getAll: (params = {}) => getData("/sections", params),
     getById: (id) => getData(`/sections/${id}`),
     add: (data) => postData("/sections", data),
