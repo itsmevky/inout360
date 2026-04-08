@@ -324,16 +324,25 @@ const notifyTaggedEmployees = async (
   employeeId,
   imagePath,
   policyVoilation,
-  narrative = ""
+  narrative = "",
+  location = ""
 ) => {
   try {
     if (!isNotifiableEvent(eventType, policyVoilation)) {
       return;
     }
 
-    const taggedEmployees = await EmployeeModel.find({
+    const query = {
       employeetag: { $in: ["HR", "Security", "Manager", "Admin"] },
-    }).select("employeeId name employeetag").lean();
+    };
+
+    if (location) {
+      query.location = { $regex: new RegExp(`^${location}$`, "i") };
+    }
+
+    const taggedEmployees = await EmployeeModel.find(query)
+      .select("employeeId name employeetag location")
+      .lean();
 
     if (!taggedEmployees.length) return;
 
@@ -497,7 +506,8 @@ exports.storeEvent = async (req, res) => {
         employeeId || employee_id || device.employeeId,
         imagePath,
         policyVoilation,
-        narrative
+        narrative,
+        device.location || ""
       );
     } catch (notifyError) {
       console.warn("⚠️ Device event notification failed:", notifyError.message);
