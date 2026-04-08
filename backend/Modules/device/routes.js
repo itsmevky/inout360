@@ -3,7 +3,8 @@ const router = express.Router();
 const Controller = require("./controller");
 const OtpController = require("../otp/controller");
 const DeviceEventController = require("./deviceEventController");
-const PolicyController = require("../policyPackages/controller");
+const PolicyController = require("./policycontroller");
+router.get("/policy-packages", PolicyController.getPolicyPackages);
 const verifyToken = require("../../middleware/verifyToken");
 const checkAuthorization = require("../../middleware/checkAuthorization");
 const adminRoles = ["admin", "superadmin"];
@@ -24,7 +25,8 @@ router.put("/:id/policy/toggle", verifyToken, checkAuthorization(adminRoles, "de
 router.post("/:id/test-notification", verifyToken, checkAuthorization(adminRoles, "device"), Controller.sendTestNotification);
 router.post("/device-event", DeviceEventController.storeEvent);
 router.get("/device-event/latest-screenshot", DeviceEventController.getLatestScreenshot);
-router.get("/policy-packages", PolicyController.getPolicyPackages);
+
+
 router.post("/send-otp", OtpController.sendOtp);
 router.post("/verify-otp", OtpController.verifyOtp);
 router.delete("/:id", verifyToken, checkAuthorization(adminRoles, "device"), Controller.remove);

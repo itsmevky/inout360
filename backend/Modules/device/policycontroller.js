@@ -1,4 +1,4 @@
-const Model = require("./model");
+const Model = require("./policypackageModel");
 
 /**
  * Validation helper for package names
