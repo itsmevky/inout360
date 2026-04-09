@@ -297,24 +297,53 @@ const sendFCMNotification = async (
   }
 };
 
-const isNotifiableEvent = (event, policyVoilation) => {
-  if (policyVoilation) return true;
+const isNotifiableEvent = (event, policyVoilation, narrative = "") => {
+  const eventLower = String(event || "").toLowerCase();
 
-  const criticalEventPatterns = [
-    /camera/i,
-    /screenshot/i,
-    /video/i,
+  // 1. Camera / Picture Taken handling
+  // User: "camera m agar timing bali ho or usme bi 2 second se jyada open ho baki camera ki ni bejhege or Picture Taken ki jayegi"
+  if (isCameraEvent(event)) {
+    if (eventLower.includes("picture taken")) return true;
+
+    const seconds = parseDurationSeconds(narrative);
+    // Only notify if duration > 2 seconds
+    if (seconds !== null && seconds > 2) return true;
+
+    // Otherwise, do not notify for camera events (even if policyVoilation is true, 
+    // though policyVoilation currently requires > 3s)
+    return false;
+  }
+
+  // 2. App Opened / Blocked handling
+  // User: "baki apps ki ni bejhenge ki y app open ya block hui"
+  if (
+    eventLower.includes("app opened") ||
+    eventLower.includes("app access") ||
+    eventLower.includes("blocked")
+  ) {
+    // Exception: "Restricted Settings of App" should still be notified
+    if (!eventLower.includes("restricted setting")) {
+      return false;
+    }
+  }
+
+  // 3. Specific allowed patterns: settings, uninstall, restricted, etc.
+  // User: "baki jayegi settings ki uninstall attempt ya restricted setting of app bali"
+  const allowedPatterns = [
     /uninstall/i,
+    /settings/i,
+    /restricted/i,
     /admin/i,
     /permission/i,
-    /location/i,
-    /restricted/i,
-    /overlay/i,
     /accessibility/i,
-    /usage/i
   ];
 
-  return criticalEventPatterns.some(pattern => pattern.test(event));
+  if (allowedPatterns.some((pattern) => pattern.test(event))) {
+    return true;
+  }
+
+  // Default fallback to policyVoilation
+  return !!policyVoilation;
 };
 
 const notifyTaggedEmployees = async (
@@ -328,7 +357,7 @@ const notifyTaggedEmployees = async (
   location = ""
 ) => {
   try {
-    if (!isNotifiableEvent(eventType, policyVoilation)) {
+    if (!isNotifiableEvent(eventType, policyVoilation, narrative)) {
       return;
     }
 
@@ -420,6 +449,21 @@ exports.storeEvent = async (req, res) => {
       return res.status(404).json({ status: false, message: "Device not found" });
     }
 
+    // Deduplication logic for app_install events
+    if (String(event).toLowerCase().includes("app_install")) {
+      const existingAppInstall = await DeviceEvent.findOne({
+        deviceId: device._id,
+        event: { $regex: /app_install/i },
+      }).lean();
+
+      if (existingAppInstall) {
+        return res.status(200).json({
+          status: true,
+          skipped: true,
+          message: "app_install event already recorded for this device",
+        });
+      }
+    }
 
     if (
       device.devicePolicyState?.uninstallBlocked !== true &&
