@@ -26,6 +26,10 @@ router.post("/:id/test-notification", verifyToken, checkAuthorization(adminRoles
 router.post("/device-event", DeviceEventController.storeEvent);
 router.get("/device-event/latest-screenshot", DeviceEventController.getLatestScreenshot);
 
+// Admin routes for policy packages
+router.get("/admin/policy-packages", verifyToken, checkAuthorization(adminRoles, "device"), PolicyController.getAdminPolicyPackages);
+router.post("/admin/policy-packages", verifyToken, checkAuthorization(adminRoles, "device"), PolicyController.updatePolicyPackages);
+router.delete("/admin/policy-packages", verifyToken, checkAuthorization(adminRoles, "device"), PolicyController.deletePolicyPackages);
 
 router.post("/send-otp", OtpController.sendOtp);
 router.post("/verify-otp", OtpController.verifyOtp);

@@ -19,6 +19,10 @@ const policyPackagesSchemaDefinition = {
     type: [String],
     default: [],
   },
+  removedPackages: {
+    type: [String],
+    default: [],
+  },
   updatedBy: {
     userId: { type: String },
     role: { type: String },
@@ -32,6 +36,7 @@ const policyPackagesTransform = (ret) => {
     updatedAt: ret.updatedAt,
     cameraPackages: ret.cameraPackages || [],
     restrictedPackages: ret.restrictedPackages || [],
+    removedPackages: ret.removedPackages || [],
     updatedBy: ret.updatedBy,
   };
 };

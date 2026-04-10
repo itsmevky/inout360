@@ -10,6 +10,7 @@ import {
   LineChart, Line, AreaChart, Area,
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
+import { Camera, ShieldAlert } from "lucide-react";
 // import "../../src/App.css ";
 const domainpath = process.env.REACT_APP_API_DOMAIN_ENDPOINT;
 
@@ -477,6 +478,54 @@ const SuperAdminDashboard = () => {
                         <span className="text-[11px] font-bold text-emerald-300">USER</span>
                       </div>
                     </div>
+                  </div>
+                </motion.div>
+
+                {/* 4. Security Policy Quick Access Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.08)" }}
+                  className="col-span-1 md:col-span-3 card-premium p-8 rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group cursor-pointer"
+                  onClick={() => window.location.href = "/dashboard/users/policy-packages"}
+                >
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-indigo-500/10 transition-colors"></div>
+                  
+                  <div className="flex items-center gap-6 z-10">
+                    <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform duration-500">
+                      <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04a11.357 11.357 0 00-1.173 4.593c0 3.869 2.135 7.23 5.391 8.997l1.005.545l1.004-.545c3.256-1.767 5.391-5.128 5.391-8.997c0-1.611-.334-3.143-.933-4.532z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Deployment</span>
+                        <span className="w-1 h-1 rounded-full bg-indigo-300"></span>
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">v{summary.version || '1.0'}</span>
+                      </div>
+                      <h2 className="text-2xl font-black text-slate-800 tracking-tight">Security Policy Engine</h2>
+                      <p className="text-sm font-medium text-slate-400 mt-1">Manage global camera restrictions and application layer whitelists.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 z-10 w-full md:w-auto">
+                    <div className="flex -space-x-3 overflow-hidden">
+                      <div className="inline-block h-10 w-10 rounded-full ring-4 ring-white bg-indigo-50 flex items-center justify-center">
+                        <Camera className="h-5 w-5 text-indigo-500" />
+                      </div>
+                      <div className="inline-block h-10 w-10 rounded-full ring-4 ring-white bg-rose-50 flex items-center justify-center">
+                        <ShieldAlert className="h-5 w-5 text-rose-500" />
+                      </div>
+                    </div>
+                    <div className="h-10 w-px bg-slate-100 mx-2"></div>
+                    <motion.div 
+                      whileHover={{ x: 5 }}
+                      className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </motion.div>
                   </div>
                 </motion.div>
 

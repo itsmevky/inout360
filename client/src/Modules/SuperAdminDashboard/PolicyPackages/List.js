@@ -30,12 +30,13 @@ const PolicyPackagesList = () => {
 
   const [newCameraPkg, setNewCameraPkg] = useState("");
   const [newRestrictedPkg, setNewRestrictedPkg] = useState("");
+  const [newRevokePkg, setNewRevokePkg] = useState("");
   const [mode, setMode] = useState("merge");
 
   const fetchConfig = async () => {
     setLoading(true);
     try {
-      const res = await getData("/superadmin/policy-packages");
+      const res = await getData("/device/admin/policy-packages");
       if (res?.success) {
         setConfig(res.data);
       }
@@ -51,8 +52,8 @@ const PolicyPackagesList = () => {
   }, []);
 
   const handleSave = async () => {
-    if (!newCameraPkg && !newRestrictedPkg && mode === "merge") {
-      toast.info("Please enter at least one package name to merge.");
+    if (!newCameraPkg && !newRestrictedPkg && !newRevokePkg && mode === "merge") {
+      toast.info("Please enter at least one package name to merge or revoke.");
       return;
     }
 
@@ -62,14 +63,16 @@ const PolicyPackagesList = () => {
         mode,
         cameraPackages: newCameraPkg ? newCameraPkg.split(",").map(p => p.trim()).filter(p => p) : [],
         restrictedPackages: newRestrictedPkg ? newRestrictedPkg.split(",").map(p => p.trim()).filter(p => p) : [],
+        removedPackages: newRevokePkg ? newRevokePkg.split(",").map(p => p.trim()).filter(p => p) : [],
       };
 
-      const res = await postData("/superadmin/policy-packages", payload);
+      const res = await postData("/device/admin/policy-packages", payload);
       if (res?.success) {
         toast.success("Policy packages successfully synchronized!");
         setConfig(res.data);
         setNewCameraPkg("");
         setNewRestrictedPkg("");
+        setNewRevokePkg("");
       }
     } catch (error) {
       console.error("Update failed:", error);
@@ -85,24 +88,43 @@ const PolicyPackagesList = () => {
     setSaving(true);
     try {
       const payload = {
-        mode: "replace",
-        cameraPackages: type === "camera" 
-          ? config.cameraPackages.filter(p => p !== pkgName) 
-          : config.cameraPackages,
-        restrictedPackages: type === "restricted" 
-          ? config.restrictedPackages.filter(p => p !== pkgName) 
-          : config.restrictedPackages,
+        mode: "merge", // Use merge so we don't accidentally wipe everything else
+        cameraPackages: [],
+        restrictedPackages: [],
+        removedPackages: [pkgName]
       };
 
-      const res = await postData("/superadmin/policy-packages", payload);
+      const res = await postData("/device/admin/policy-packages", payload);
       if (res?.success) {
-        toast.success("Package removed and updated.");
+        toast.success(`Broadcasting removal of ${pkgName} to all devices...`);
         setConfig(res.data);
       }
     } catch (error) {
       console.error("Remove failed:", error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeletePolicy = async () => {
+    if (!window.confirm("CRITICAL: Are you sure you want to PERMANENTLY CLEAR all policy packages? This will reset the whitelist on all devices.")) return;
+
+    setSaving(true);
+    try {
+      await getData("/device/admin/policy-packages", {}, "DELETE");
+      toast.success("All policy packages have been cleared.");
+      setConfig({
+        cameraPackages: [],
+        restrictedPackages: [],
+        removedPackages: [],
+        version: 0,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+       console.error("Delete failed:", error);
+       toast.error("Failed to clear policy packages.");
+    } finally {
+       setSaving(false);
     }
   };
 
@@ -138,7 +160,7 @@ const PolicyPackagesList = () => {
           </p>
         </div>
         
-        <div className="mt-6 md:mt-0 z-10">
+        <div className="mt-6 md:mt-0 z-10 flex gap-4">
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
             <div className="flex items-center gap-4">
               <div className="text-center">
@@ -152,6 +174,16 @@ const PolicyPackagesList = () => {
               </div>
             </div>
           </div>
+          
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleDeletePolicy}
+            className="p-4 bg-red-500/20 hover:bg-red-500/40 rounded-2xl border border-red-500/30 text-white transition-all flex items-center justify-center group"
+            title="Clear All Policy Packages"
+          >
+            <Trash2 className="h-6 w-6 group-hover:text-red-200 transition-colors" />
+          </motion.button>
         </div>
 
         {/* Decorative background circle */}
@@ -230,6 +262,22 @@ const PolicyPackagesList = () => {
                     placeholder="e.g. com.whatsapp, com.facebook.katana"
                     className="w-full h-32 p-4 text-sm border-2 border-gray-100 bg-gray-50 rounded-2xl focus:border-orange-500 focus:bg-white outline-none transition-all resize-none shadow-sm placeholder:text-gray-300"
                   />
+                </div>
+
+                <div className="group">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-red-600">
+                    <Trash2 className="h-3 w-3" />
+                    Revoke/Remove Apps
+                  </label>
+                  <textarea 
+                    value={newRevokePkg}
+                    onChange={(e) => setNewRevokePkg(e.target.value)}
+                    placeholder="Remove from devices (comma separated)"
+                    className="w-full h-32 p-4 text-sm border-2 border-red-50 bg-red-50/30 rounded-2xl focus:border-red-500 focus:bg-white outline-none transition-all resize-none shadow-sm placeholder:text-red-200"
+                  />
+                  <p className="mt-2 text-[10px] text-red-400 font-medium italic">
+                    Added to global 'removed' list to force-clean from device memory.
+                  </p>
                 </div>
               </div>
 
@@ -380,6 +428,46 @@ const PolicyPackagesList = () => {
               </AnimatePresence>
             </div>
           </motion.div>
+
+          {/* New: Marked for Removal Visualization */}
+          {config.removedPackages && config.removedPackages.length > 0 && (
+            <motion.div 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="bg-red-50 rounded-[2.5rem] shadow-xl shadow-red-100/50 border border-red-100 overflow-hidden"
+            >
+              <div className="px-8 py-6 border-b border-red-100 flex justify-between items-center bg-red-100/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-600 text-white rounded-2xl shadow-lg shadow-red-200">
+                    <Trash2 className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-red-900">Marked for Removal</h3>
+                    <p className="text-xs text-red-500 font-bold uppercase tracking-tighter mt-0.5">Pending Sync with Devices</p>
+                  </div>
+                </div>
+                <div className="px-4 py-1.5 bg-red-200 rounded-full text-red-700 text-xs font-black">
+                  {config.removedPackages.length} PENDING
+                </div>
+              </div>
+              
+              <div className="p-8">
+                <div className="flex flex-wrap gap-3">
+                  {config.removedPackages.map((pkg) => (
+                    <div 
+                      key={pkg}
+                      className="flex items-center gap-3 bg-white/60 border border-red-200 px-4 py-2 rounded-2xl text-red-700 opacity-80"
+                    >
+                      <span className="text-xs font-bold tracking-tight">{pkg}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-[11px] text-red-400 font-medium italic">
+                  Note: These packages will be removed from devices upon their next policy synchronization.
+                </p>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
