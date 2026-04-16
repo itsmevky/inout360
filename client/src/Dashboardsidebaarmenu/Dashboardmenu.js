@@ -58,9 +58,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
     { label: "Enquiries", icon: "mail", path: "/dashboard/enquiries" },
     // ✅ Warnings
     { label: "Warnings", icon: "warning", path: "/dashboard/warnings" },
-    { label: "Policy Packages", icon: "security_update_good", path: `${basePath}/policy-packages` }
+    { label: "Policy Packages", icon: "security_update_good", path: `${basePath}/policy-packages` },
+    { label: "Events", icon: "camera_roll", path: `${basePath}/events` }
 
   ];
+
 
   // ✅ Role access
   const roleAccess = {
@@ -80,7 +82,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, userRole = "superadmin" }) => {
       "Enquiries",
       "Warnings",
       "Policy Packages",
+      "Events",
     ],
+
     admin: [
       "Dashboard",
       "Employees",

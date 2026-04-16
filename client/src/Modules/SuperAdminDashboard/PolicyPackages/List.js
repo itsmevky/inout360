@@ -106,6 +106,29 @@ const PolicyPackagesList = () => {
     }
   };
 
+  const handleUnmarkPackage = async (pkgName) => {
+    if (!window.confirm(`Remove ${pkgName} from the pending deletion list? It will no longer be forced-cleared from devices.`)) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        mode: "merge",
+        unmarkRemovedPackages: [pkgName]
+      };
+
+      const res = await postData("/device/admin/policy-packages", payload);
+      if (res?.success) {
+        toast.success(`Package ${pkgName} restored from removal list.`);
+        setConfig(res.data);
+      }
+    } catch (error) {
+      console.error("Unmark failed:", error);
+      toast.error("Failed to restore package.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDeletePolicy = async () => {
     if (!window.confirm("CRITICAL: Are you sure you want to PERMANENTLY CLEAR all policy packages? This will reset the whitelist on all devices.")) return;
 
@@ -452,16 +475,30 @@ const PolicyPackagesList = () => {
               </div>
               
               <div className="p-8">
-                <div className="flex flex-wrap gap-3">
-                  {config.removedPackages.map((pkg) => (
-                    <div 
-                      key={pkg}
-                      className="flex items-center gap-3 bg-white/60 border border-red-200 px-4 py-2 rounded-2xl text-red-700 opacity-80"
-                    >
-                      <span className="text-xs font-bold tracking-tight">{pkg}</span>
-                    </div>
-                  ))}
-                </div>
+                <AnimatePresence mode="popLayout">
+                  <motion.div className="flex flex-wrap gap-3">
+                    {config.removedPackages.map((pkg) => (
+                      <motion.div 
+                        layout
+                        key={pkg}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        className="group flex items-center gap-3 bg-white/60 border border-red-200 pl-4 pr-2 py-2 rounded-2xl text-red-700 hover:border-red-400 hover:bg-white hover:shadow-lg hover:shadow-red-100 transition-all cursor-default"
+                      >
+                        <span className="text-xs font-bold tracking-tight">{pkg}</span>
+                        <div className="h-4 w-px bg-red-100 group-hover:bg-red-200 transition-colors"></div>
+                        <button 
+                           onClick={() => handleUnmarkPackage(pkg)}
+                           className="p-1.5 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                           title="Cancel Removal"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
                 <p className="mt-4 text-[11px] text-red-400 font-medium italic">
                   Note: These packages will be removed from devices upon their next policy synchronization.
                 </p>

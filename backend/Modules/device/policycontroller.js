@@ -84,6 +84,7 @@ const updatePolicyPackages = async (req, res) => {
       cameraPackages = [],
       restrictedPackages = [],
       removedPackages = [],
+      unmarkRemovedPackages = [],
     } = req.body;
     const user = req.user;
 
@@ -102,8 +103,16 @@ const updatePolicyPackages = async (req, res) => {
     const validatedCamera = cleanPackages(cameraPackages);
     const validatedRestricted = cleanPackages(restrictedPackages);
     const validatedRemoved = cleanPackages(removedPackages);
+    const validatedUnmark = cleanPackages(unmarkRemovedPackages);
 
-    // If removedPackages are explicitly provided, remove them from the current state
+    // 1. Handle unmarking packages (explicit removal from the "marked for removal" list)
+    if (validatedUnmark.length > 0) {
+      config.removedPackages = config.removedPackages.filter(
+        (pkg) => !validatedUnmark.includes(pkg)
+      );
+    }
+
+    // 2. Handle removing packages (transfer from whitelists to the "marked for removal" list)
     if (validatedRemoved.length > 0) {
       config.cameraPackages = config.cameraPackages.filter(
         (pkg) => !validatedRemoved.includes(pkg)
@@ -111,7 +120,15 @@ const updatePolicyPackages = async (req, res) => {
       config.restrictedPackages = config.restrictedPackages.filter(
         (pkg) => !validatedRemoved.includes(pkg)
       );
-      config.removedPackages = validatedRemoved;
+      
+      // If mode is merge, add to existing removed list. If replace, set it.
+      if (mode === "merge") {
+        config.removedPackages = [
+          ...new Set([...config.removedPackages, ...validatedRemoved]),
+        ];
+      } else {
+        config.removedPackages = validatedRemoved;
+      }
     }
 
     if (mode === "merge") {

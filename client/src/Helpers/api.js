@@ -252,7 +252,12 @@ const API = {
         ...filters,
       }),
   },
+
+  device: {
+    getCameraEvents: (params = {}) => getData("/device/admin/camera-events", params),
+  },
 };
+
 
 export {
   API,

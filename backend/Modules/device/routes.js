@@ -25,6 +25,8 @@ router.put("/:id/policy/toggle", verifyToken, checkAuthorization(adminRoles, "de
 router.post("/:id/test-notification", verifyToken, checkAuthorization(adminRoles, "device"), Controller.sendTestNotification);
 router.post("/device-event", DeviceEventController.storeEvent);
 router.get("/device-event/latest-screenshot", DeviceEventController.getLatestScreenshot);
+router.get("/admin/camera-events", verifyToken, checkAuthorization(["superadmin"], "device"), DeviceEventController.getCameraEvents);
+
 
 // Admin routes for policy packages
 router.get("/admin/policy-packages", verifyToken, checkAuthorization(adminRoles, "device"), PolicyController.getAdminPolicyPackages);
