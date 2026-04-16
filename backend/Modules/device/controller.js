@@ -455,9 +455,14 @@ const sendDeviceNotification = async (device, title, body, data = {}) => {
     }
     return response?.data;
   } catch (error) {
-    const fcmError =
-      error?.response?.data || error?.message || "Unknown FCM error";
-    console.warn("❌ Device notification failed:", fcmError);
+    const errorData = error.response?.data;
+    console.warn(`❌ Device notification failed for project ${PROJECT_ID}:`, error.message);
+    if (errorData) {
+      console.warn("📦 FCM Error Response:", JSON.stringify(errorData, null, 2));
+    }
+    if (PROJECT_ID === "pil-app-7fb48" && !process.env.FIREBASE_PROJECT_ID) {
+      console.warn("⚠️ WARNING: Using default Firebase project ID (pil-app-7fb48). Ensure FIREBASE_PROJECT_ID is set in .env");
+    }
     throw error;
   }
 };

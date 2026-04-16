@@ -293,7 +293,14 @@ const sendFCMNotification = async (
     });
     return response?.data;
   } catch (error) {
-    console.error("❌ FCM notification failed:", error.message);
+    const errorData = error.response?.data;
+    console.error(`❌ FCM notification failed for project ${PROJECT_ID}:`, error.message);
+    if (errorData) {
+      console.error("📦 FCM Error Response:", JSON.stringify(errorData, null, 2));
+    }
+    if (PROJECT_ID === "pil-app-7fb48" && !process.env.FIREBASE_PROJECT_ID) {
+      console.warn("⚠️ WARNING: Using default Firebase project ID (pil-app-7fb48). Ensure FIREBASE_PROJECT_ID is set in .env");
+    }
   }
 };
 
@@ -604,3 +611,58 @@ exports.getLatestScreenshot = async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 };
+
+// Get all camera events for superadmin
+exports.getCameraEvents = async (req, res) => {
+  try {
+    const { search, page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = {
+      $or: [
+        { event: { $regex: /camera|screenshot|video|picture/i } },
+        { narrative: { $regex: /camera|screenshot|video|picture/i } }
+      ]
+    };
+
+    if (search) {
+      query.$and = [{
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { employeeId: { $regex: search, $options: "i" } },
+          { narrative: { $regex: search, $options: "i" } }
+        ]
+      }];
+    }
+
+
+    const events = await DeviceEvent.find(query)
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    const total = await DeviceEvent.countDocuments(query);
+
+    const formattedEvents = events.map(event => {
+      let packageName = event.metadata?.packageName || event.raw?.packageName;
+      if (!packageName && event.narrative) {
+        const match = event.narrative.match(/\(([^)]+)\)/);
+        if (match) packageName = match[1];
+      }
+      return { ...event, packageName };
+    });
+
+    return res.status(200).json({
+      status: true,
+      data: formattedEvents,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
