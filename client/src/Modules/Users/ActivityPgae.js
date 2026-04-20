@@ -24,6 +24,12 @@ const ActivityPage = () => {
     // STATIC CAMERA & APP ACTIVITY DATA
     // ============================================================
     const [activityGroups, setActivityGroups] = useState([]);
+    const [pagination, setPagination] = useState({
+        total: 0,
+        currentPage: 1,
+        totalPages: 1,
+        limit: 10,
+    });
     const [attendanceEntries, setAttendanceEntries] = useState([]);
 
     const [summary, setSummary] = useState({
@@ -347,7 +353,9 @@ const ActivityPage = () => {
     // RESET PAGE WHEN FILTERS CHANGE (ADDED)
     // ============================================================
     useEffect(() => {
-        setCurrentPage(1);
+        // We only reset client-side page if not using server-side pagination
+        // For the main table, we now use server-side pagination
+        // setCurrentPage(1); 
     }, [selectedType, cameraFilter, searchTerm, fromDate, toDate]);
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
@@ -688,10 +696,9 @@ const ActivityPage = () => {
         Math.ceil(inOutModalEvents.length / MODAL_ITEMS_PER_PAGE) || 1;
 
     const paginatedUsers = useMemo(() => {
-        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        const endIndex = startIndex + ITEMS_PER_PAGE;
-        return filteredUsers.slice(startIndex, endIndex);
-    }, [filteredUsers, currentPage]);
+        // Main list is now server-side paginated, so we just use the fetched list
+        return filteredUsers; 
+    }, [filteredUsers]);
     const paginatedAttendance = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -717,7 +724,7 @@ const ActivityPage = () => {
     // ============================================================
     // MODAL OPEN
     // ============================================================
-    const openModal = (record) => {
+    const openModal = async (record) => {
         setSelectedActivity(null);
         setMediaModalActivity(null);
         setModalFromDate("");
@@ -725,13 +732,67 @@ const ActivityPage = () => {
         setModalTypeFilter("");
         setModalContextType(selectedType || null);
         setModalPage(1);
-        setModalUser({
-            user: record.user,
-            activities: record.activities || [],
-            employeeId: record.employeeId,
-            deviceId: record.deviceId,
-        });
+        
+        // Fetch detailed history for this user
+        setLoading(true);
+        try {
+            const category = resolveActivityCategory(selectedType);
+            const response = await getData("/activity", {
+                employeeId: record.employeeId,
+                category,
+                limit: 1000, // Fetch a reasonable history
+            });
+            const activities = Array.isArray(response?.data) 
+                ? normalizeActivities(response.data)
+                : [];
+            
+            setModalUser({
+                user: record.user,
+                activities: activities,
+                employeeId: record.employeeId,
+                deviceId: record.deviceId,
+            });
+        } catch (error) {
+            toast.error("Failed to load user history.");
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const normalizeActivities = (list = []) => (
+        list.map((item) => {
+            const activityType =
+                item.activityType || item.title || item.category || "-";
+            const appName =
+                item.metadata?.appName ||
+                item.metadata?.app ||
+                item.title ||
+                "";
+            const mediaUrl =
+                item.imagePath ||
+                item.mediaUrl ||
+                item.media?.[0]?.url ||
+                item.metadata?.mediaUrl ||
+                item.metadata?.media ||
+                item.metadata?.imagePath ||
+                "";
+            return {
+                id: item.id || item._id,
+                type: activityType,
+                category: item.category,
+                deviceId: item.deviceId,
+                employeeId: item.employeeId,
+                timestamp: item.occurredAt,
+                policyVoilation: !!item.policyVoilation,
+                name: capitalizeFirstLetter(item.name || item.userName || ""),
+                userName: capitalizeFirstLetter(item.userName || ""),
+                appName,
+                media: resolveMediaUrl(mediaUrl),
+                rawEvent: item.metadata?.originalEvent || item.event || item.title || "",
+                narrative: item.metadata?.narrative || item.narrative || "",
+            };
+        })
+    );
 
 
 
@@ -1124,15 +1185,27 @@ const ActivityPage = () => {
                 const category = resolveActivityCategory(selectedType);
                 const response = await getData("/activity", {
                     category,
-                    page: 0,
-                    limit: 10000,
+                    groupBy: "user",
+                    page: currentPage - 1,
+                    limit: 10,
+                    search: searchTerm,
+                    fromDate,
+                    toDate,
                 });
                 const list = Array.isArray(response?.data)
                     ? response.data
-                    : Array.isArray(response)
-                        ? response
-                        : [];
-                setActivityGroups(normalizeActivityGroups(list));
+                    : [];
+                
+                // response.data is already formatted for summary
+                setActivityGroups(list);
+                if (response?.pagination) {
+                    setPagination({
+                        total: response.pagination.totalrecords,
+                        currentPage: response.pagination.currentPage + 1,
+                        totalPages: response.pagination.totalPages,
+                        limit: response.pagination.limit,
+                    });
+                }
             } catch (error) {
                 toast.error("Failed to load activity.");
                 setActivityGroups([]);
@@ -1141,7 +1214,7 @@ const ActivityPage = () => {
             }
         };
         fetchByCategory();
-    }, [selectedType]);
+    }, [selectedType, currentPage, searchTerm, fromDate, toDate]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -1510,9 +1583,9 @@ const ActivityPage = () => {
                             className="text-sm text-gray-600 text-center sm:text-left whitespace-nowrap"
                             style={{ whiteSpace: "nowrap" }}
                         >
-                            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} –{" "}
-                            {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of{" "}
-                            {filteredUsers.length}
+                            Showing {(pagination.currentPage - 1) * pagination.limit + 1} –{" "}
+                            {Math.min(pagination.currentPage * pagination.limit, pagination.total)} of{" "}
+                            {pagination.total}
                         </p>
 
                         {/* RIGHT CONTROLS */}
@@ -1527,12 +1600,12 @@ const ActivityPage = () => {
                             </button>
 
                             <div className="flex flex-nowrap gap-2">
-                                {renderPaginationButtons(currentPage, totalPages, setCurrentPage)}
+                                {renderPaginationButtons(pagination.currentPage, pagination.totalPages, setCurrentPage)}
                             </div>
 
                             <button
-                                disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                                disabled={currentPage === pagination.totalPages}
+                                onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
                                 className="w-12 h-12 text-2xl rounded-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50"
                                 aria-label="Next page"
                             >

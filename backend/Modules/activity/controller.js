@@ -307,6 +307,8 @@ const buildActivityFilter = ({
   category,
   search,
   violationsOnly,
+  fromDate,
+  toDate,
 }) => {
   const filter = {};
   if (violationsOnly) {
@@ -357,6 +359,12 @@ const buildActivityFilter = ({
     } else {
       filter.$or = [{ name: userId }, { employeeId: userId }];
     }
+  }
+
+  if (fromDate || toDate) {
+    filter.timestamp = {};
+    if (fromDate) filter.timestamp.$gte = new Date(fromDate);
+    if (toDate) filter.timestamp.$lte = new Date(toDate);
   }
 
   if (search && typeof search === "string" && search.trim()) {
@@ -676,8 +684,10 @@ exports.getSummary = async (_req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const { userId, employeeId, deviceId, category, search, violationsOnly } = req.query;
+    const { userId, employeeId, deviceId, category, search, violationsOnly, groupBy, fromDate, toDate } = req.query;
     const onlyViolations = String(violationsOnly || "").toLowerCase() === "true";
+    const groupByUser = String(groupBy || "").toLowerCase() === "user";
+
     const baseFilter = buildActivityFilter({
       userId,
       employeeId,
@@ -685,6 +695,8 @@ exports.getAll = async (req, res) => {
       category,
       search,
       violationsOnly: onlyViolations,
+      fromDate,
+      toDate,
     });
     const scopeFilter = await buildLocationScopeFilter(req);
     const filter = withScope(baseFilter, scopeFilter);
@@ -693,25 +705,67 @@ exports.getAll = async (req, res) => {
     const limitNum = parseInt(req.query.limit, 10) || 50;
     const skip = Math.max(0, pageNum) * Math.max(1, limitNum);
 
-    const [records, totalrecords] = await Promise.all([
-      DeviceEventModel.find(filter)
-        .sort({ timestamp: -1, createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      DeviceEventModel.countDocuments(filter),
-    ]);
+    let finalRecords = [];
+    let totalRecordsCount = 0;
+
+    if (groupByUser) {
+      // Aggregation for unique users with their latest event
+      const aggregatePipeline = [
+        { $match: filter },
+        { $sort: { timestamp: -1, createdAt: -1 } },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                { $gt: [{ $ifNull: ["$employeeId", ""] }, ""] },
+                "$employeeId",
+                { $ifNull: ["$raw.userId", "$_id"] }
+              ]
+            },
+            latestEvent: { $first: "$$ROOT" }
+          }
+        },
+        { $sort: { "latestEvent.timestamp": -1, "latestEvent.createdAt": -1 } }
+      ];
+
+      // Get total unique users count
+      const countResult = await DeviceEventModel.aggregate([
+        ...aggregatePipeline,
+        { $count: "total" }
+      ]);
+      totalRecordsCount = countResult[0]?.total || 0;
+
+      // Get paginated unique users
+      const paginatedResults = await DeviceEventModel.aggregate([
+        ...aggregatePipeline,
+        { $skip: skip },
+        { $limit: limitNum }
+      ]);
+      finalRecords = paginatedResults.map(r => r.latestEvent);
+    } else {
+      // Standard fetch
+      const [records, totalrecords] = await Promise.all([
+        DeviceEventModel.find(filter)
+          .sort({ timestamp: -1, createdAt: -1 })
+          .skip(skip)
+          .limit(limitNum)
+          .lean(),
+        DeviceEventModel.countDocuments(filter),
+      ]);
+      finalRecords = records;
+      totalRecordsCount = totalrecords;
+    }
 
     const deviceIds = Array.from(
       new Set(
-        records
+        finalRecords
           .map((doc) => doc?.deviceId)
           .filter((id) => mongoose.isValidObjectId(id))
           .map((id) => String(id))
       )
     );
     const deviceIdCandidates = new Set();
-    records.forEach((doc) => {
+    finalRecords.forEach((doc) => {
       const raw = doc?.raw || {};
       const metadata = doc?.metadata || {};
       const candidates = [
@@ -760,7 +814,7 @@ exports.getAll = async (req, res) => {
     }
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const dataWithId = records.map((doc) => {
+    const dataWithId = finalRecords.map((doc) => {
       const plain = typeof doc.toObject === "function" ? doc.toObject() : doc;
       const rawDeviceCandidate =
         plain.raw?.deviceId ||
@@ -831,6 +885,7 @@ exports.getAll = async (req, res) => {
         deviceId: String(resolvedDeviceId || ""),
         employeeId: plain.employeeId || "",
         occurredAt: plain.timestamp || plain.createdAt,
+        timestamp: plain.timestamp || plain.createdAt,
         policyVoilation: !!plain.policyVoilation,
         imagePath,
         mediaUrl,
@@ -844,36 +899,35 @@ exports.getAll = async (req, res) => {
         },
       };
     });
-    const grouped = new Map();
-    for (const item of dataWithId) {
-      const userKey = item.userName || item.employeeId || item.deviceId || item.id;
-      const existing = grouped.get(userKey);
-      if (!existing) {
-        grouped.set(userKey, {
+
+    if (groupByUser) {
+      // In groupByUser mode, we return the data already formatted as summary rows
+      return res.status(200).json({
+        status: true,
+        data: dataWithId.map(item => ({
           user: item.userName || "-",
-          userKey,
+          userKey: item.employeeId || item.id,
           deviceId: item.deviceId || "",
           employeeId: item.employeeId || "",
-          activities: [item],
-        });
-        continue;
-      }
-      existing.activities.push(item);
-      if (!existing.deviceId && item.deviceId) {
-        existing.deviceId = item.deviceId;
-      }
-      if (!existing.employeeId && item.employeeId) {
-        existing.employeeId = item.employeeId;
-      }
+          latestActivity: item,
+          activities: [item] // Still include the latest as a list for compatibility
+        })),
+        pagination: {
+          totalrecords: totalRecordsCount,
+          currentPage: pageNum,
+          totalPages: Math.ceil(totalRecordsCount / limitNum),
+          limit: limitNum,
+        },
+      });
     }
 
     res.status(200).json({
       status: true,
-      data: Array.from(grouped.values()),
+      data: dataWithId,
       pagination: {
-        totalrecords,
+        totalrecords: totalRecordsCount,
         currentPage: pageNum,
-        totalPages: Math.ceil(totalrecords / limitNum),
+        totalPages: Math.ceil(totalRecordsCount / limitNum),
         limit: limitNum,
       },
     });
