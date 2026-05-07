@@ -562,21 +562,46 @@ exports.storeEvent = async (req, res) => {
       );
 
       // Special Case: Immediate notification on the same device for CLEAR_ALL_DETECTED
+      // Requirement: Only for Redmi devices, only when Logged In, and send 3 times (0s, 5s, 10s)
       if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
-        if (device.fcmToken) {
-          await sendFCMNotification(
-            device.fcmToken,
-            "PIL Activation action",
-            narrative || "App was removed from recent tasks",
-            {
-              event: "CLEAR_ALL_DETECTED",
-              deviceId: String(device.deviceId || device._id),
-              employeeId: String(resolvedEmployeeId || ""),
-              timestamp: new Date().toISOString(),
-              narrative: narrative || "",
+        const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
+        const isLoggedIn = sessionStatus === "Logged In";
+
+        if (isRedmi && isLoggedIn && device.fcmToken) {
+          const notificationTitle = "PIL Activation action";
+          const notificationBody = narrative || "App was removed from recent tasks";
+          const notificationData = {
+            event: "CLEAR_ALL_DETECTED",
+            deviceId: String(device.deviceId || device._id),
+            employeeId: String(resolvedEmployeeId || ""),
+            timestamp: new Date().toISOString(),
+            narrative: narrative || "",
+          };
+
+          const sendOne = async (num) => {
+            try {
+              await sendFCMNotification(
+                device.fcmToken,
+                notificationTitle,
+                notificationBody,
+                notificationData
+              );
+              console.log(`✅ [${num}/3] Multi-notification sent for CLEAR_ALL_DETECTED on device: ${device.deviceId}`);
+            } catch (err) {
+              console.warn(`⚠️ [${num}/3] Multi-notification failed for device ${device.deviceId}:`, err.message);
             }
-          );
-          console.log(`✅ Immediate self-notification sent for CLEAR_ALL_DETECTED on device: ${device.deviceId}`);
+          };
+
+          // 1st notification (Immediate)
+          sendOne(1);
+
+          // 2nd notification (after 5 seconds)
+          setTimeout(() => sendOne(2), 5000);
+
+          // 3rd notification (after another 5 seconds)
+          setTimeout(() => sendOne(3), 10000);
+        } else if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
+          console.log(`ℹ️ CLEAR_ALL_DETECTED notification skipped: isRedmi=${isRedmi}, isLoggedIn=${isLoggedIn}, hasToken=${!!device.fcmToken}`);
         }
       }
     } catch (notifyError) {
