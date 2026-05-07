@@ -560,6 +560,25 @@ exports.storeEvent = async (req, res) => {
         narrative,
         device.location || ""
       );
+
+      // Special Case: Immediate notification on the same device for CLEAR_ALL_DETECTED
+      if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
+        if (device.fcmToken) {
+          await sendFCMNotification(
+            device.fcmToken,
+            "PIL Activation action",
+            narrative || "App was removed from recent tasks",
+            {
+              event: "CLEAR_ALL_DETECTED",
+              deviceId: String(device.deviceId || device._id),
+              employeeId: String(resolvedEmployeeId || ""),
+              timestamp: new Date().toISOString(),
+              narrative: narrative || "",
+            }
+          );
+          console.log(`✅ Immediate self-notification sent for CLEAR_ALL_DETECTED on device: ${device.deviceId}`);
+        }
+      }
     } catch (notifyError) {
       console.warn("⚠️ Device event notification failed:", notifyError.message);
     }
