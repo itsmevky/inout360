@@ -571,22 +571,30 @@ exports.storeEvent = async (req, res) => {
       if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
         const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
         const isLoggedIn = sessionStatus === "Logged In";
+        const lastClearAllAt = device.lastClearAllAt;
+        const now = new Date();
+        const isRepeated = lastClearAllAt && (now - lastClearAllAt < 120000); // within 2 minutes
+        const durationSeconds = isRepeated ? 60 : 30;
 
         // Update lastClearAllAt in DB for future checks
-        await DeviceModel.updateOne({ _id: device._id }, { lastClearAllAt: new Date() });
+        await DeviceModel.updateOne({ _id: device._id }, { lastClearAllAt: now });
 
         if (isRedmi && isLoggedIn && device.fcmToken) {
           const notificationTitle = "PIL Activation action";
-          const notificationBody = narrative || "App was removed from recent tasks";
+          const notificationBody = isRepeated 
+            ? "Repeated app refresh detected. Monitoring active for 1 minute."
+            : (narrative || "App was removed from recent tasks");
+            
           const notificationData = {
             event: "CLEAR_ALL_DETECTED",
             deviceId: String(device.deviceId || device._id),
             employeeId: String(resolvedEmployeeId || ""),
-            timestamp: new Date().toISOString(),
+            timestamp: now.toISOString(),
             narrative: narrative || "",
+            isRepeated: String(isRepeated),
           };
 
-          const sendOne = async (num) => {
+          const sendOne = async (num, total) => {
             try {
               await sendFCMNotification(
                 device.fcmToken,
@@ -594,20 +602,16 @@ exports.storeEvent = async (req, res) => {
                 notificationBody,
                 notificationData
               );
-              console.log(`✅ [${num}/3] Multi-notification sent for CLEAR_ALL_DETECTED on device: ${device.deviceId}`);
+              console.log(`✅ [${num}/${total}] Notification sent for CLEAR_ALL_DETECTED (${durationSeconds}s cycle): ${device.deviceId}`);
             } catch (err) {
-              console.warn(`⚠️ [${num}/3] Multi-notification failed for device ${device.deviceId}:`, err.message);
+              console.warn(`⚠️ [${num}/${total}] Notification failed for device ${device.deviceId}:`, err.message);
             }
           };
 
-          // 1st notification (Immediate)
-          sendOne(1);
-
-          // 2nd notification (after 5 seconds)
-          setTimeout(() => sendOne(2), 5000);
-
-          // 3rd notification (after another 5 seconds)
-          setTimeout(() => sendOne(3), 10000);
+          const totalNotifications = Math.floor(durationSeconds / 5) + 1;
+          for (let i = 0; i < totalNotifications; i++) {
+            setTimeout(() => sendOne(i + 1, totalNotifications), i * 5000);
+          }
         } else if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
           console.log(`ℹ️ CLEAR_ALL_DETECTED notification skipped: isRedmi=${isRedmi}, isLoggedIn=${isLoggedIn}, hasToken=${!!device.fcmToken}`);
         }
@@ -619,7 +623,7 @@ exports.storeEvent = async (req, res) => {
         const isLoggedIn = sessionStatus === "Logged In";
         const lastClearAllAt = device.lastClearAllAt;
         const now = new Date();
-        const notificationWindowMs = 12000; // 12 seconds (to cover the 10s Clear All notification interval + buffer)
+        const notificationWindowMs = 32000; // 32 seconds (to cover the 30s Clear All notification interval + buffer)
 
         if (
           isRedmi &&
