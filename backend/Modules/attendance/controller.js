@@ -392,6 +392,7 @@ exports.getAll = async (req, res) => {
             userName,
             deviceId: resolvedDeviceId,
             location: resolvedLocation,
+            appVersion: record.raw?.appVersion || record.appVersion || "",
             action: normalizedAction,
             actionTime: record.createdAt || null,
             statusLabel: normalizedAction === "logout" ? "Logged Out" : "Logged In",
@@ -565,6 +566,7 @@ exports.getAll = async (req, res) => {
         id: plain._id?.toString?.() || plain.id,
         userName,
         deviceId,
+        appVersion: plain.metadata?.appVersion || plain.appVersion || "",
         action: rowAction,
         actionTime,
         statusLabel:

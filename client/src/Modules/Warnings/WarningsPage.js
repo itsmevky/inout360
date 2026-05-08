@@ -84,6 +84,7 @@ const WarningsPage = () => {
                             employeeId: item.employeeId || "-",
                             location: item.location || "-",
                             deviceId: item.deviceId || "-",
+                            appVersion: item.appVersion || "-",
                             statusLabel: item.statusLabel || "Not Logged In",
                             actionTime: item.actionTime || null,
                         }))
@@ -111,6 +112,7 @@ const WarningsPage = () => {
                         employeeId: item.employeeId || "-",
                         location: item.location || "-",
                         deviceId: item.deviceId || "-",
+                        appVersion: item.appVersion || "-",
                         statusLabel: "Warning",
                         actionTime: item.occurredAt,
                     }));
@@ -135,6 +137,7 @@ const WarningsPage = () => {
                         employeeId: item.employeeId || "-",
                         location: item.location || "-",
                         deviceId: item.deviceId || "-",
+                        appVersion: item.appVersion || "-",
                         statusLabel: item.statusLabel || (viewMode === "logout" ? "Logged Out" : "Logged In"),
                         actionTime: item.actionTime || item.createdAt,
                     }))
@@ -189,7 +192,12 @@ const WarningsPage = () => {
                     </span>
                 </div>
             ),
-            width: "25%",
+            width: "20%",
+        },
+        {
+            name: "App Version",
+            selector: (row) => row.appVersion || "-",
+            width: "10%",
         },
         {
             name: "Status",
@@ -241,6 +249,10 @@ const WarningsPage = () => {
                     {row.deviceId || "-"}
                 </span>
             ),
+        },
+        {
+            name: "App Ver",
+            selector: (row) => row.appVersion || "-",
         },
         {
             name: "Status",

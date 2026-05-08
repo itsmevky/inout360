@@ -884,6 +884,7 @@ exports.getAll = async (req, res) => {
         category: categoryResolved,
         deviceId: String(resolvedDeviceId || ""),
         employeeId: plain.employeeId || "",
+        appVersion: plain.raw?.appVersion || plain.metadata?.appVersion || "",
         occurredAt: plain.timestamp || plain.createdAt,
         timestamp: plain.timestamp || plain.createdAt,
         policyVoilation: !!plain.policyVoilation,
@@ -1031,6 +1032,7 @@ exports.getNotifications = async (req, res) => {
         name: plain.name || "",
         employeeId: plain.employeeId || "",
         deviceId: resolvedDeviceId,
+        appVersion: plain.raw?.appVersion || plain.metadata?.appVersion || "",
         location:
           plain.location ||
           plain.metadata?.location ||
