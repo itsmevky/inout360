@@ -32,8 +32,13 @@ const resolveActivityCategory = (eventType) => {
   return "other";
 };
 
-const isCameraEvent = (eventType) =>
-  /camera|screenshot|video|picture/i.test(String(eventType || ""));
+const isCameraEvent = (...values) => {
+  const text = values
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(" ");
+  return /camera|screenshot|video|picture/i.test(text);
+};
 
 const isAppAccessEvent = (...values) => {
   const text = values
@@ -135,7 +140,7 @@ const shouldIgnoreEventWhenLoggedOut = ({ event, metadata, narrative }) => {
     return false;
   }
 
-  const blockedByType = isCameraEvent(event);
+  const blockedByType = isCameraEvent(event, narrative, metadata?.event, metadata?.narrative);
   const blockedByAccess = isAppAccessEvent(
     event,
     narrative,
@@ -222,7 +227,7 @@ const resolvePolicyVoilation = async ({
   if (value.includes("picture taken")) return true;
 
   // Rule 2: Policy violation ONLY when user is Logged In AND camera usage > 3 sec AND (video call context).
-  if (!isCameraEvent(eventType)) return false;
+  if (!isCameraEvent(eventType, narrative, metadata?.narrative, raw?.narrative)) return false;
   const seconds = parseDurationSeconds(narrative, metadata?.narrative, raw?.narrative, eventType);
   if (!seconds || seconds <= 3) return false;
   if (!isVideoCallContext(value)) return false;
@@ -309,7 +314,7 @@ const isNotifiableEvent = (event, policyVoilation, narrative = "") => {
 
   // 1. Camera / Picture Taken handling
   // User: "camera m agar timing bali ho or usme bi 2 second se jyada open ho baki camera ki ni bejhege or Picture Taken ki jayegi"
-  if (isCameraEvent(event)) {
+  if (isCameraEvent(event, narrative)) {
     if (eventLower.includes("picture taken")) return true;
 
     const seconds = parseDurationSeconds(narrative);
@@ -609,7 +614,7 @@ exports.storeEvent = async (req, res) => {
       }
 
       // Special Case: Camera event detected DURING the 10-second CLEAR_ALL_DETECTED notification window
-      if (isCameraEvent(event)) {
+      if (isCameraEvent(event, narrative)) {
         const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
         const isLoggedIn = sessionStatus === "Logged In";
         const lastClearAllAt = device.lastClearAllAt;
