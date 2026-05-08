@@ -12,6 +12,7 @@ const EventsList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [eventType, setEventType] = useState("camera");
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -20,12 +21,15 @@ const EventsList = () => {
         search: searchTerm,
         page: currentPage,
         limit: rowsPerPage,
+        eventType: eventType,
       });
 
       if (response.status) {
         setData(response.data);
         setTotalRows(response.total);
       } else {
+        setData([]);
+        setTotalRows(0);
         setError("No event data found");
       }
     } catch (err) {
@@ -40,7 +44,12 @@ const EventsList = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, [currentPage, rowsPerPage, searchTerm]);
+  }, [currentPage, rowsPerPage, searchTerm, eventType]);
+
+  const handleEventTypeChange = (e) => {
+    setEventType(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -103,20 +112,34 @@ const EventsList = () => {
   return (
     <div className="relative p-4 ">
       <div className="list-user-title mb-4">
-        <h2 className="text-xl font-bold sub-title">Camera Events</h2>
+        <h2 className="text-xl font-bold sub-title">
+          {eventType === "camera" ? "Camera Events" : "Clear All Events"}
+        </h2>
       </div>
 
       <div className="button-crm flex justify-between items-center mb-4">
-        <div className="input-search-bar flex w-1/3">
-          <input
-            type="text"
-            id="search"
-            name="search"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Search by Name or ID"
-            className="border rounded p-2 w-full"
-          />
+        <div className="flex gap-4 w-full">
+          <div className="input-search-bar flex w-1/3">
+            <input
+              type="text"
+              id="search"
+              name="search"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search by Name or ID"
+              className="border rounded p-2 w-full"
+            />
+          </div>
+          <div className="flex items-center">
+            <select
+              value={eventType}
+              onChange={handleEventTypeChange}
+              className="border rounded p-2 bg-white"
+            >
+              <option value="camera">Camera Events</option>
+              <option value="clear_all">Clear All Events</option>
+            </select>
+          </div>
         </div>
       </div>
 

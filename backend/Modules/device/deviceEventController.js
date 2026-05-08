@@ -567,6 +567,9 @@ exports.storeEvent = async (req, res) => {
         const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
         const isLoggedIn = sessionStatus === "Logged In";
 
+        // Update lastClearAllAt in DB for future checks
+        await DeviceModel.updateOne({ _id: device._id }, { lastClearAllAt: new Date() });
+
         if (isRedmi && isLoggedIn && device.fcmToken) {
           const notificationTitle = "PIL Activation action";
           const notificationBody = narrative || "App was removed from recent tasks";
@@ -602,6 +605,54 @@ exports.storeEvent = async (req, res) => {
           setTimeout(() => sendOne(3), 10000);
         } else if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
           console.log(`ℹ️ CLEAR_ALL_DETECTED notification skipped: isRedmi=${isRedmi}, isLoggedIn=${isLoggedIn}, hasToken=${!!device.fcmToken}`);
+        }
+      }
+
+      // Special Case: Camera event detected DURING the 10-second CLEAR_ALL_DETECTED notification window
+      if (isCameraEvent(event)) {
+        const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
+        const isLoggedIn = sessionStatus === "Logged In";
+        const lastClearAllAt = device.lastClearAllAt;
+        const now = new Date();
+        const notificationWindowMs = 12000; // 12 seconds (to cover the 10s Clear All notification interval + buffer)
+
+        if (
+          isRedmi &&
+          isLoggedIn &&
+          device.fcmToken &&
+          lastClearAllAt &&
+          now - lastClearAllAt < notificationWindowMs
+        ) {
+          const notificationTitle = "PIL Security Warning";
+          const notificationBody = "Restricted action detected during app refresh. Monitoring extended.";
+          const notificationData = {
+            event: "CAMERA_DURING_CLEAR_ALL_WINDOW",
+            deviceId: String(device.deviceId || device._id),
+            employeeId: String(resolvedEmployeeId || ""),
+            timestamp: now.toISOString(),
+            narrative: narrative || "Camera opened during clear all notification window",
+          };
+
+          console.log(`🚀 Extended monitoring: Camera event detected during Clear All window for Redmi device ${device.deviceId}`);
+
+          const sendOne = async (num) => {
+            try {
+              await sendFCMNotification(
+                device.fcmToken,
+                notificationTitle,
+                notificationBody,
+                notificationData
+              );
+              console.log(`✅ [${num}/6] Extended notification sent (30s timer): ${device.deviceId}`);
+            } catch (err) {
+              console.warn(`⚠️ [${num}/6] Extended notification failed for device ${device.deviceId}:`, err.message);
+            }
+          };
+
+          // Send notifications for 30 more seconds (at 5s intervals: 5, 10, 15, 20, 25, 30)
+          for (let i = 1; i <= 6; i++) {
+            setTimeout(() => sendOne(i), i * 5000);
+          }
         }
       }
     } catch (notifyError) {
@@ -659,24 +710,34 @@ exports.getLatestScreenshot = async (req, res) => {
 // Get all camera events for superadmin
 exports.getCameraEvents = async (req, res) => {
   try {
-    const { search, page = 1, limit = 10 } = req.query;
+    const { search, page = 1, limit = 10, eventType } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    let query = {
-      $or: [
-        { event: { $regex: /camera|screenshot|video|picture/i } },
-        { narrative: { $regex: /camera|screenshot|video|picture/i } }
-      ]
-    };
+    let query = {};
+    if (eventType === "clear_all") {
+      query.event = "CLEAR_ALL_DETECTED";
+    } else {
+      query = {
+        $or: [
+          { event: { $regex: /camera|screenshot|video|picture/i } },
+          { narrative: { $regex: /camera|screenshot|video|picture/i } }
+        ]
+      };
+    }
 
     if (search) {
-      query.$and = [{
+      const searchFilter = {
         $or: [
           { name: { $regex: search, $options: "i" } },
           { employeeId: { $regex: search, $options: "i" } },
           { narrative: { $regex: search, $options: "i" } }
         ]
-      }];
+      };
+      if (query.$or) {
+        query.$and = [searchFilter];
+      } else {
+        Object.assign(query, searchFilter);
+      }
     }
 
 
