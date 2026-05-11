@@ -8,6 +8,7 @@ const UserModel = require("../user/model");
 const UserSession = require("../user/userSessionsModel");
 const EmployeeModel = require("../employees/model");
 const VisitorModel = require("../user/visitorModel");
+const SystemSettings = require("../settings/model");
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pil-app-7fb48";
 const DEFAULT_SERVICE_ACCOUNT_PATH = path.join(
   __dirname,
@@ -249,6 +250,16 @@ const resolveActorName = async ({ userId, employeeId, fallbackName }) => {
   }
 
   return fallbackName || "";
+};
+
+const getNotificationSettings = async () => {
+  const settings = await SystemSettings.findOne().lean();
+  return settings?.notificationSettings || {
+    clearAllDuration: 30,
+    repeatedClearAllDuration: 60,
+    cameraExtensionDuration: 60,
+    notificationInterval: 5,
+  };
 };
 
 const getAccessToken = async () => {
@@ -573,16 +584,24 @@ exports.storeEvent = async (req, res) => {
         const isLoggedIn = sessionStatus === "Logged In";
         const lastClearAllAt = device.lastClearAllAt;
         const now = new Date();
-        const isRepeated = lastClearAllAt && (now - lastClearAllAt < 120000); // within 2 minutes
-        const durationSeconds = isRepeated ? 60 : 30;
+        const nSettings = await getNotificationSettings();
+        
+        const isRepeated = lastClearAllAt && (now - lastClearAllAt < 120000); // 2 mins window
+        const durationSeconds = isRepeated ? nSettings.repeatedClearAllDuration : nSettings.clearAllDuration;
+        const interval = nSettings.notificationInterval;
+        const cycleId = now.getTime().toString();
+        const expiresAt = new Date(now.getTime() + durationSeconds * 1000);
 
-        // Update lastClearAllAt in DB for future checks
-        await DeviceModel.updateOne({ _id: device._id }, { lastClearAllAt: now });
+        // Update device state to start NEW cycle and finalize old one
+        await DeviceModel.updateOne(
+          { _id: device._id }, 
+          { lastClearAllAt: now, notificationCycleId: cycleId, notificationExpiresAt: expiresAt }
+        );
 
         if (isRedmi && isLoggedIn && device.fcmToken) {
           const notificationTitle = "PIL Activation action";
           const notificationBody = isRepeated 
-            ? "Repeated app refresh detected. Monitoring active for 1 minute."
+            ? `Repeated app refresh detected. Monitoring active for ${Math.floor(durationSeconds/60)} min.`
             : (narrative || "App was removed from recent tasks");
             
           const notificationData = {
@@ -594,8 +613,15 @@ exports.storeEvent = async (req, res) => {
             isRepeated: String(isRepeated),
           };
 
-          const sendOne = async (num, total) => {
+          const sendOne = async (num, total, currentCycleId) => {
             try {
+              // Validate if this cycle is still the active one
+              const currentDevice = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
+              if (currentDevice?.notificationCycleId !== currentCycleId) {
+                console.log(`⏹️ Cycle ${currentCycleId} superseded by ${currentDevice?.notificationCycleId}. Stopping notifications for ${device.deviceId}`);
+                return;
+              }
+
               await sendFCMNotification(
                 device.fcmToken,
                 notificationTitle,
@@ -608,22 +634,23 @@ exports.storeEvent = async (req, res) => {
             }
           };
 
-          const totalNotifications = Math.floor(durationSeconds / 5) + 1;
+          const totalNotifications = Math.floor(durationSeconds / interval) + 1;
           for (let i = 0; i < totalNotifications; i++) {
-            setTimeout(() => sendOne(i + 1, totalNotifications), i * 5000);
+            setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
           }
         } else if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
           console.log(`ℹ️ CLEAR_ALL_DETECTED notification skipped: isRedmi=${isRedmi}, isLoggedIn=${isLoggedIn}, hasToken=${!!device.fcmToken}`);
         }
       }
 
-      // Special Case: Camera event detected DURING the 10-second CLEAR_ALL_DETECTED notification window
+      // Special Case: Camera event detected DURING the Clear All notification window
       if (isCameraEvent(event, narrative)) {
         const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
         const isLoggedIn = sessionStatus === "Logged In";
         const lastClearAllAt = device.lastClearAllAt;
         const now = new Date();
-        const notificationWindowMs = 32000; // 32 seconds (to cover the 30s Clear All notification interval + buffer)
+        const nSettings = await getNotificationSettings();
+        const notificationWindowMs = (nSettings.clearAllDuration + 2) * 1000;
 
         if (
           isRedmi &&
@@ -632,8 +659,19 @@ exports.storeEvent = async (req, res) => {
           lastClearAllAt &&
           now - lastClearAllAt < notificationWindowMs
         ) {
-          const notificationTitle = "PIL Security Warning";
-          const notificationBody = "Restricted action detected during app refresh. Monitoring extended.";
+          const durationSeconds = nSettings.cameraExtensionDuration;
+          const interval = nSettings.notificationInterval;
+          const cycleId = now.getTime().toString();
+          const expiresAt = new Date(now.getTime() + durationSeconds * 1000);
+
+          // Start NEW cycle for camera extension
+          await DeviceModel.updateOne(
+            { _id: device._id }, 
+            { notificationCycleId: cycleId, notificationExpiresAt: expiresAt }
+          );
+
+          const notificationTitle = "PIL Activation action";
+          const notificationBody = `Security action detected. Monitoring active for ${Math.floor(durationSeconds/60)} min.`;
           const notificationData = {
             event: "CAMERA_DURING_CLEAR_ALL_WINDOW",
             deviceId: String(device.deviceId || device._id),
@@ -642,25 +680,31 @@ exports.storeEvent = async (req, res) => {
             narrative: narrative || "Camera opened during clear all notification window",
           };
 
-          console.log(`🚀 Extended monitoring: Camera event detected during Clear All window for Redmi device ${device.deviceId}`);
+          console.log(`🚀 Extended monitoring: Camera event detected for Redmi device ${device.deviceId}`);
 
-          const sendOne = async (num) => {
+          const sendOne = async (num, total, currentCycleId) => {
             try {
+              // Validate if this cycle is still the active one
+              const currentDevice = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
+              if (currentDevice?.notificationCycleId !== currentCycleId) {
+                return;
+              }
+
               await sendFCMNotification(
                 device.fcmToken,
                 notificationTitle,
                 notificationBody,
                 notificationData
               );
-              console.log(`✅ [${num}/6] Extended notification sent (30s timer): ${device.deviceId}`);
+              console.log(`✅ [${num}/${total}] Extended notification sent (1 min timer): ${device.deviceId}`);
             } catch (err) {
-              console.warn(`⚠️ [${num}/6] Extended notification failed for device ${device.deviceId}:`, err.message);
+              console.warn(`⚠️ [${num}/${total}] Extended notification failed for device ${device.deviceId}:`, err.message);
             }
           };
 
-          // Send notifications for 30 more seconds (at 5s intervals: 5, 10, 15, 20, 25, 30)
-          for (let i = 1; i <= 6; i++) {
-            setTimeout(() => sendOne(i), i * 5000);
+          const totalNotifications = Math.floor(durationSeconds / interval) + 1;
+          for (let i = 0; i < totalNotifications; i++) {
+            setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
           }
         }
       }

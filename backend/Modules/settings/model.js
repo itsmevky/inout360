@@ -72,6 +72,13 @@ const settingsSchemaDefinition = {
     endTime: { type: String, default: "18:30" },
   },
 
+  notificationSettings: {
+    clearAllDuration: { type: Number, default: 30 }, // seconds
+    repeatedClearAllDuration: { type: Number, default: 60 }, // seconds
+    cameraExtensionDuration: { type: Number, default: 60 }, // seconds
+    notificationInterval: { type: Number, default: 5 }, // seconds
+  },
+
   metadata: {
     type: mongoose.Schema.Types.Mixed,
     default: {},
@@ -97,6 +104,7 @@ const settingsTransform = (ret) => {
     alerts: ret.alerts,
     workingHours: ret.workingHours,
 
+    notificationSettings: ret.notificationSettings,
     metadata: ret.metadata,
 
     createdAt: ret.createdAt,

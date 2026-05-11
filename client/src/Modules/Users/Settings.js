@@ -49,12 +49,22 @@ const Settings = () => {
         }
     };
 
+    const defaultNotification = {
+        clearAllDuration: 30,
+        repeatedClearAllDuration: 60,
+        cameraExtensionDuration: 60,
+        notificationInterval: 5,
+    };
+
     const [deviceSettings, setDeviceSettings] = useState(defaultDevice);
     const [alerts, setAlerts] = useState(defaultAlerts);
     const [systemConfig, setSystemConfig] = useState(defaultSystem);
+    const [notificationSettings, setNotificationSettings] = useState(defaultNotification);
+    
     const [initialDevice, setInitialDevice] = useState(defaultDevice);
     const [initialAlerts, setInitialAlerts] = useState(defaultAlerts);
     const [initialSystem, setInitialSystem] = useState(defaultSystem);
+    const [initialNotification, setInitialNotification] = useState(defaultNotification);
     const [isChanged, setIsChanged] = useState(false);
     const [loading, setLoading] = useState(true);
     const [locations, setLocations] = useState([]);
@@ -103,12 +113,17 @@ const Settings = () => {
             };
             const nextDevice = data.deviceControls || defaultDevice;
             const nextAlerts = data.alerts || defaultAlerts;
+            const nextNotification = data.notificationSettings || defaultNotification;
+
             setSystemConfig(nextSystem);
             setDeviceSettings(nextDevice);
             setAlerts(nextAlerts);
+            setNotificationSettings(nextNotification);
+
             setInitialSystem(nextSystem);
             setInitialDevice(nextDevice);
             setInitialAlerts(nextAlerts);
+            setInitialNotification(nextNotification);
             setIsChanged(false);
 
             if (!canSelectLocation && resolvedLocation) {
@@ -146,13 +161,12 @@ const Settings = () => {
             payload.append("otpEmail", systemConfig.otpEmail || "");
             payload.append("qrExpirySeconds", systemConfig.otpExpirySeconds || 0);
 
-            // ✅ Working Hours
-            // Force enabled: true since we removed the toggle
             const workingHoursPayload = {
                 ...(systemConfig.workingHours || {}),
                 enabled: true
             };
             payload.append("workingHours", JSON.stringify(workingHoursPayload));
+            payload.append("notificationSettings", JSON.stringify(notificationSettings));
 
             if (systemConfig.apkFile) payload.append("apkFile", systemConfig.apkFile);
             if (systemConfig.logoFile) payload.append("companyLogo", systemConfig.logoFile);
@@ -179,8 +193,11 @@ const Settings = () => {
                 setInitialSystem(nextSystem);
                 setInitialDevice(data.deviceControls || defaultDevice);
                 setInitialAlerts(data.alerts || defaultAlerts);
+                setInitialNotification(data.notificationSettings || defaultNotification);
+                
                 setDeviceSettings(data.deviceControls || defaultDevice);
                 setAlerts(data.alerts || defaultAlerts);
+                setNotificationSettings(data.notificationSettings || defaultNotification);
                 setIsChanged(false);
 
                 toast.success(response.message || "Changes saved successfully!");
@@ -196,6 +213,7 @@ const Settings = () => {
         setDeviceSettings(initialDevice);
         setAlerts(initialAlerts);
         setSystemConfig(initialSystem);
+        setNotificationSettings(initialNotification);
         setIsChanged(false);
     };
 
@@ -494,7 +512,7 @@ const Settings = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 Setting-page-bottum-section">
 
                         {/* Device Controls */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Device-Controls">
+                        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Device-Controls">
                             <h2 className="text-xl font-bold text-gray-800">Devices Controls</h2>
                             <p className="text-sm text-gray-500 mt-1">Hardware access & restrictions</p>
 
@@ -527,12 +545,9 @@ const Settings = () => {
                                         </div>
                                     ))}
                             </div>
-                        </div>
-
-
-
-                        {/* Alerts */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Alert-Notifications">
+                        </div> */}
+                                            {/* Alerts */}
+                        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Alert-Notifications">
                             <h2 className="text-xl font-bold text-gray-800">Alerts & Notifications</h2>
                             <p className="text-sm text-gray-500 mt-1">Activity alerts</p>
 
@@ -559,6 +574,67 @@ const Settings = () => {
                                         </label>
                                     </div>
                                 ))}
+                            </div>
+                        </div> */}
+
+                        {/* Notification Timer Settings (Dynamic Configuration) */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 setting-page-Notification-Timers lg:col-span-2">
+                            <h2 className="text-xl font-bold text-gray-800">Monitoring Notification Settings</h2>
+                            <p className="text-sm text-gray-500 mt-1">Configure warning durations and intervals</p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Clear All Duration (s)</label>
+                                    <input
+                                        type="number"
+                                        value={notificationSettings.clearAllDuration}
+                                        onChange={(e) => {
+                                            setIsChanged(true);
+                                            setNotificationSettings(prev => ({ ...prev, clearAllDuration: parseInt(e.target.value) || 0 }));
+                                        }}
+                                        disabled={viewOnly}
+                                        className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Repeated Refresh (s)</label>
+                                    <input
+                                        type="number"
+                                        value={notificationSettings.repeatedClearAllDuration}
+                                        onChange={(e) => {
+                                            setIsChanged(true);
+                                            setNotificationSettings(prev => ({ ...prev, repeatedClearAllDuration: parseInt(e.target.value) || 0 }));
+                                        }}
+                                        disabled={viewOnly}
+                                        className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Camera Extension (s)</label>
+                                    <input
+                                        type="number"
+                                        value={notificationSettings.cameraExtensionDuration}
+                                        onChange={(e) => {
+                                            setIsChanged(true);
+                                            setNotificationSettings(prev => ({ ...prev, cameraExtensionDuration: parseInt(e.target.value) || 0 }));
+                                        }}
+                                        disabled={viewOnly}
+                                        className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Notification Interval (s)</label>
+                                    <input
+                                        type="number"
+                                        value={notificationSettings.notificationInterval}
+                                        onChange={(e) => {
+                                            setIsChanged(true);
+                                            setNotificationSettings(prev => ({ ...prev, notificationInterval: parseInt(e.target.value) || 0 }));
+                                        }}
+                                        disabled={viewOnly}
+                                        className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
                             </div>
                         </div>
                         </div>

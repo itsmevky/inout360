@@ -35,6 +35,10 @@ const normalizePayload = (body = {}) => {
     typeof body.workingHours === "string"
       ? JSON.parse(body.workingHours)
       : body.workingHours || {};
+  const notificationSettings =
+    typeof body.notificationSettings === "string"
+      ? JSON.parse(body.notificationSettings)
+      : body.notificationSettings || {};
   const qrExpirySeconds =
     Number.isFinite(Number(body.qrExpirySeconds)) && Number(body.qrExpirySeconds) > 0
       ? Number(body.qrExpirySeconds)
@@ -68,6 +72,12 @@ const normalizePayload = (body = {}) => {
       enabled: toBool(workingHours.enabled, false),
       startTime: workingHours.startTime || "09:30",
       endTime: workingHours.endTime || "18:30",
+    },
+    notificationSettings: {
+      clearAllDuration: Number(notificationSettings.clearAllDuration) || 30,
+      repeatedClearAllDuration: Number(notificationSettings.repeatedClearAllDuration) || 60,
+      cameraExtensionDuration: Number(notificationSettings.cameraExtensionDuration) || 60,
+      notificationInterval: Number(notificationSettings.notificationInterval) || 5,
     },
     metadata: body.metadata,
   };

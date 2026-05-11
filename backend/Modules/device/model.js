@@ -59,6 +59,8 @@ const deviceSchemaDefinition = {
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
   deviceLocation: { type: mongoose.Schema.Types.Mixed, default: null },
   lastClearAllAt: { type: Date, default: null },
+  notificationExpiresAt: { type: Date, default: null },
+  notificationCycleId: { type: String, default: null },
 };
 
 const deviceModel = new ajModel("Device", deviceSchemaDefinition);
