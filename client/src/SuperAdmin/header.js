@@ -71,12 +71,24 @@ const Header = () => {
     }
   }, [navigate]);
 
+  const timerRef = React.useRef(null);
+  const isFetchingRef = React.useRef(false);
+
   useEffect(() => {
-    let timerId;
     let isMounted = true;
     let currentInterval = 10000;
 
     const fetchCount = async () => {
+      // Prevent multiple concurrent fetches
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
+      // Clear any existing timeout to prevent multiple loops
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
       try {
         const res = await getData(
           "/activity/notifications/unread-count",
@@ -84,19 +96,19 @@ const Header = () => {
           {},
           { showToast: false }
         );
-        if (res?.status) {
+        if (res?.status && isMounted) {
           setNotificationCount(Number(res.count) || 0);
           currentInterval = 10000; // Reset on success
         }
       } catch (error) {
-        // If server is down (no response), we can increase the interval
         if (!error.response) {
-          currentInterval = Math.min(currentInterval * 2, 60000); // Max 1 minute
+          currentInterval = Math.min(currentInterval * 2, 60000); // Backoff on network error
         }
         console.error("Failed to fetch notification count");
       } finally {
+        isFetchingRef.current = false;
         if (isMounted) {
-          timerId = setTimeout(fetchCount, currentInterval);
+          timerRef.current = setTimeout(fetchCount, currentInterval);
         }
       }
     };
@@ -113,8 +125,10 @@ const Header = () => {
       }
     };
     const handleFocus = () => {
-      if (timerId) clearTimeout(timerId);
-      fetchCount();
+      // Only trigger if not already fetching
+      if (!isFetchingRef.current) {
+        fetchCount();
+      }
     };
 
     window.addEventListener("notifications-read", handleRead);
@@ -123,7 +137,7 @@ const Header = () => {
 
     return () => {
       isMounted = false;
-      if (timerId) clearTimeout(timerId);
+      if (timerRef.current) clearTimeout(timerRef.current);
       window.removeEventListener("notifications-read", handleRead);
       window.removeEventListener("notifications-count-updated", handleCountUpdated);
       window.removeEventListener("focus", handleFocus);

@@ -76,20 +76,24 @@ const EventsList = () => {
         return <span title={fullEvent}>{fullEvent}</span>;
       },
       sortable: true,
-      width: "20%",
+      width: "15%",
     },
+    ...(eventType === "clear_all" ? [{
+      name: "Count",
+      selector: (row) => row.clearAllCount || 0,
+      sortable: true,
+      width: "10%",
+    }] : []),
     {
       name: "Package",
       selector: (row) => row.packageName || "-",
       sortable: true,
-      width: "20%",
+      width: "15%",
     },
-
-
     {
       name: "Narrative",
       selector: (row) => row.narrative || "-",
-      width: "20%",
+      width: "15%",
     },
     {
       name: "Timestamp",

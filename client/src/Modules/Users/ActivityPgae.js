@@ -37,12 +37,14 @@ const ActivityPage = () => {
         app_access: 0,
         app_install: 0,
         app_uninstall: 0,
+        clear_all: 0,
     });
     const [summaryToday, setSummaryToday] = useState({
         camera: 0,
         app_access: 0,
         app_install: 0,
         app_uninstall: 0,
+        clear_all: 0,
     });
     const [loading, setLoading] = useState(true);
     // ============================================================
@@ -249,6 +251,7 @@ const ActivityPage = () => {
         access: summary.app_access || 0,
         install: summary.app_install || 0,
         uninstall: summary.app_uninstall || 0,
+        clearAll: summary.clear_all || 0,
     };
 
     const resolveAttendanceAction = (entry) => {
@@ -312,6 +315,7 @@ const ActivityPage = () => {
             accessToday: summaryToday.app_access || 0,
             installToday: summaryToday.app_install || 0,
             uninstallToday: summaryToday.app_uninstall || 0,
+            clearAllToday: summaryToday.clear_all || 0,
             inOutToday: attendanceCounts.todayIn + attendanceCounts.todayOut,
         };
     }, [summaryToday, attendanceCounts]);
@@ -408,11 +412,18 @@ const ActivityPage = () => {
         for (const group of activityGroups) {
             const key = String(group.user || group.employeeId || group.userKey || group.deviceId || "").toLowerCase().trim();
             if (!key) continue;
+
+            const initialActivities = [...(group.activities || [])];
+            // If server already grouped and provided latestActivity, but no list
+            if (initialActivities.length === 0 && group.latestActivity) {
+                initialActivities.push(group.latestActivity);
+            }
+
             if (!mergedMap.has(key)) {
-                mergedMap.set(key, { ...group, activities: [...(group.activities || [])] });
+                mergedMap.set(key, { ...group, activities: initialActivities });
             } else {
                 const existing = mergedMap.get(key);
-                existing.activities = [...existing.activities, ...(group.activities || [])];
+                existing.activities = [...existing.activities, ...initialActivities];
                 if (!existing.deviceId && group.deviceId) existing.deviceId = group.deviceId;
                 if (!existing.employeeId && group.employeeId) existing.employeeId = group.employeeId;
             }
@@ -431,6 +442,12 @@ const ActivityPage = () => {
             }
             if (selectedType === "app_install_uninstall") {
                 return activities.some((a) => isSecurityEvent(a) && !isCameraActivity(a));
+            }
+            if (selectedType === "clear_all") {
+                return activities.some((a) => {
+                    const typeStr = String(a.activityType || a.type || a.event || a.category || "").toLowerCase();
+                    return typeStr.includes("clear_all");
+                });
             }
             if (selectedType) {
                 return activities.some((a) => a.type === selectedType);
@@ -476,6 +493,11 @@ const ActivityPage = () => {
                 relevant = activities.filter((a) => a.category === "app_access" && !isCameraActivity(a));
             } else if (selectedType === "app_install_uninstall") {
                 relevant = activities.filter((a) => isSecurityEvent(a) && !isCameraActivity(a));
+            } else if (selectedType === "clear_all") {
+                relevant = activities.filter((a) => {
+                    const typeStr = String(a.activityType || a.type || a.event || a.category || "").toLowerCase();
+                    return typeStr.includes("clear_all");
+                });
             } else if (selectedType) {
                 relevant = activities.filter((a) => a.type === selectedType);
             }
@@ -747,10 +769,11 @@ const ActivityPage = () => {
                 : [];
             
             setModalUser({
-                user: record.user,
+                user: (!record.user || record.user === "-") ? (record.employeeId || record.userKey || "-") : record.user,
                 activities: activities,
                 employeeId: record.employeeId,
                 deviceId: record.deviceId,
+                stats: record.latestActivity?.stats || {},
             });
         } catch (error) {
             toast.error("Failed to load user history.");
@@ -844,6 +867,12 @@ const ActivityPage = () => {
             type: "app_install_uninstall",
             count: counts.install + counts.uninstall,
             today: todayCounts.installToday + todayCounts.uninstallToday,
+        },
+        {
+            title: "Clear All Events",
+            type: "clear_all",
+            count: counts.clearAll,
+            today: todayCounts.clearAllToday,
         },
     ];
 
@@ -966,9 +995,10 @@ const ActivityPage = () => {
             if (raw.includes("on") || raw.includes("enabled")) return "App Accessibility Permission Turned on";
             return "App Accessibility Permission";
         }
-        const typeValue = String(activity?.type || activity?.category || "-").toLowerCase();
-        const rawEvent = String(activity?.rawEvent || "").toLowerCase();
+        const typeValue = String(activity?.activityType || activity?.type || activity?.category || activity?.event || "-").toLowerCase();
+        const rawEvent = String(activity?.rawEvent || activity?.event || "").toLowerCase();
 
+        if (typeValue === "clear_all" || rawEvent.includes("clear_all")) return "Clear All / App Removed";
         if (typeValue === "app_install" || rawEvent.includes("app install")) return "App Installed";
         if (typeValue === "app_uninstall" || rawEvent.includes("app uninstall")) return "App Uninstalled";
 
@@ -1113,6 +1143,7 @@ const ActivityPage = () => {
                             app_access: summaryResponse.data.today.app_access || 0,
                             app_install: summaryResponse.data.today.app_install || 0,
                             app_uninstall: summaryResponse.data.today.app_uninstall || 0,
+                            clear_all: summaryResponse.data.today.clear_all || 0,
                         });
                     }
                 }
@@ -1511,6 +1542,9 @@ const ActivityPage = () => {
                                     <th style={{ width: columnWidths.activity }} className="p-3">Activity</th>
                                     <th style={{ width: columnWidths.device }} className="p-3">Device ID</th>
                                     <th style={{ width: columnWidths.time }} className="p-3">Time</th>
+                                    {selectedType === "clear_all" && (
+                                        <th style={{ width: "12%" }} className="p-3">Total / Today</th>
+                                    )}
                                     <th style={{ width: columnWidths.action }} className="p-3">Action</th>
                                 </tr>
                             </thead>
@@ -1527,7 +1561,7 @@ const ActivityPage = () => {
                                                     className="font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
                                                     onClick={() => openUserOverview(item.latestActivity?.employeeId || item.employeeId || item.userKey, "#details")}
                                                 >
-                                                    {item.user || "-"}
+                                                    {(!item.user || item.user === "-") ? (item.employeeId || item.userKey || "-") : item.user}
                                                 </span>
                                                 <span className="text-xs text-gray-500 font-medium">
                                                     {item.latestActivity?.employeeId || item.employeeId || "-"}
@@ -1548,7 +1582,14 @@ const ActivityPage = () => {
                                             </span>
                                         </td>
                                         <td className="p-3">{formatTimestamp(item.latestActivity?.timestamp)}</td>
-
+                                        {selectedType === "clear_all" && (
+                                            <td className="p-3 font-bold text-gray-800">
+                                                <span className="text-blue-600">{item.latestActivity?.stats?.clear_allTotal || 0}</span>
+                                                <span className="text-gray-400 mx-1">/</span>
+                                                <span className="text-green-600">{item.latestActivity?.stats?.clear_allToday || 0}</span>
+                                                <span className="text-[10px] text-gray-400 ml-1">Today</span>
+                                            </td>
+                                        )}
                                         <td className="p-3">
                                             <div className="flex items-center gap-3 !p-0 !m-0">
 
@@ -1635,11 +1676,48 @@ const ActivityPage = () => {
                             <div className="modal-header modal-header--compact">
                                 <h2 className="modal-user-name">Name: {modalUser.user}</h2>
                                 <p className="modal-meta">
-                                    Employee ID: {modalUser.activities[0]?.employeeId}
+                                    Employee ID: {modalUser.activities[0]?.employeeId || modalUser.employeeId || "-"}
                                 </p>
                                 <p className="modal-meta">
-                                    Device ID: {modalUser.activities[0]?.deviceId}
+                                    Device ID: {modalUser.activities[0]?.deviceId || modalUser.deviceId || "-"}
                                 </p>
+                                {(() => {
+                                    const stats = modalUser.stats || {};
+                                    let label = "";
+                                    let total = 0;
+                                    let today = 0;
+
+                                    if (selectedType === "clear_all") {
+                                        label = "Clear All Events";
+                                        total = stats.clear_allTotal || 0;
+                                        today = stats.clear_allToday || 0;
+                                    } else if (selectedType === "camera_activity") {
+                                        label = "Camera Activities";
+                                        total = stats.cameraTotal || 0;
+                                        today = stats.cameraToday || 0;
+                                    } else if (selectedType === "app_access") {
+                                        label = "App Access Events";
+                                        total = stats.app_accessTotal || 0;
+                                        today = stats.app_accessToday || 0;
+                                    } else if (selectedType === "app_install_uninstall") {
+                                        label = "Security & Permission Events";
+                                        total = stats.securityTotal || 0;
+                                        today = stats.securityToday || 0;
+                                    }
+
+                                    if (!label || total === 0) return null;
+
+                                    return (
+                                        <div className="mt-3 flex items-center gap-4">
+                                            <div className="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex flex-col sm:flex-row sm:gap-4">
+                                                <span className="text-gray-600 font-medium mr-1">{label}:</span>
+                                                <span>Total: {total}</span>
+                                                <span className="hidden sm:inline text-blue-300">|</span>
+                                                <span className="text-green-600">Today: {today}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             <div className="modal-activity-filters modal-activity-filters--compact">

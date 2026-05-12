@@ -737,7 +737,18 @@ exports.getCameraEvents = async (req, res) => {
       .limit(parseInt(limit))
       .lean();
 
-    const total = await DeviceEvent.countDocuments(query);
+    const userIds = [...new Set(events.map(e => e.employeeId).filter(Boolean))];
+    const clearAllCounts = {};
+    
+    if (eventType === "clear_all" && userIds.length > 0) {
+      const counts = await DeviceEvent.aggregate([
+        { $match: { event: "CLEAR_ALL_DETECTED", employeeId: { $in: userIds } } },
+        { $group: { _id: "$employeeId", count: { $sum: 1 } } }
+      ]);
+      counts.forEach(c => {
+        clearAllCounts[c._id] = c.count;
+      });
+    }
 
     const formattedEvents = events.map(event => {
       let packageName = event.metadata?.packageName || event.raw?.packageName;
@@ -745,7 +756,11 @@ exports.getCameraEvents = async (req, res) => {
         const match = event.narrative.match(/\(([^)]+)\)/);
         if (match) packageName = match[1];
       }
-      return { ...event, packageName };
+      return { 
+        ...event, 
+        packageName,
+        clearAllCount: event.employeeId ? (clearAllCounts[event.employeeId] || 0) : 0
+      };
     });
 
     return res.status(200).json({

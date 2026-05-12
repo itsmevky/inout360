@@ -348,6 +348,13 @@ const buildActivityFilter = ({
           },
         },
       ];
+    } else if (normalized === "clear_all") {
+      filter.$or = [
+        { event: "CLEAR_ALL_DETECTED" },
+        { event: { $regex: "clear[_-]?all", $options: "i" } },
+        { category: "clear_all" },
+        { category: "CLEAR_ALL" }
+      ];
     } else {
       filter.category = normalized;
     }
@@ -662,6 +669,22 @@ exports.getSummary = async (_req, res) => {
       }),
     ]);
 
+    const clearAllCount = await DeviceEventModel.countDocuments({
+      ...withScope(
+        { event: "CLEAR_ALL_DETECTED" },
+        scopeFilter
+      ),
+    });
+    const clearAllToday = await DeviceEventModel.countDocuments({
+      ...withScope(
+        {
+          event: "CLEAR_ALL_DETECTED",
+          timestamp: { $gte: todayStart },
+        },
+        scopeFilter
+      ),
+    });
+
     return res.status(200).json({
       status: true,
       data: {
@@ -669,11 +692,13 @@ exports.getSummary = async (_req, res) => {
         app_install: securityEventCount || 0,
         app_uninstall: 0,
         app_access: accessCount || 0,
+        clear_all: clearAllCount || 0,
         today: {
           camera: cameraToday || 0,
           app_install: securityToday || 0,
           app_uninstall: 0,
           app_access: accessToday || 0,
+          clear_all: clearAllToday || 0,
         },
       },
     });
@@ -741,7 +766,73 @@ exports.getAll = async (req, res) => {
         { $skip: skip },
         { $limit: limitNum }
       ]);
-      finalRecords = paginatedResults.map(r => r.latestEvent);
+
+      const resultUserIds = paginatedResults.map(r => r._id).filter(Boolean);
+      const countsMap = {};
+      
+      if (resultUserIds.length > 0) {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        // Define matchers for different categories using the same logic as buildActivityFilter
+        const matchers = {
+          clear_all: { event: "CLEAR_ALL_DETECTED" },
+          camera: { 
+            $or: [
+              { category: { $in: ["camera", "screenshot", "video"] } },
+              { event: { $regex: "camera|screenshot|video|picture", $options: "i" } }
+            ]
+          },
+          app_access: {
+            $or: [
+              { category: "app_access" },
+              { event: { $regex: "youtube|whatsapp|instagram|facebook|restricted app opened", $options: "i" } }
+            ]
+          },
+          security: {
+            $or: [
+              { category: { $in: ["app_install", "app_uninstall"] } },
+              {
+                event: {
+                  $regex: "app[_-]?install|app[_-]?uninstall|accessibility|unauthorized uninstall|inactive|restricted app settings|working hours violation|overlay|notification permission",
+                  $options: "i",
+                },
+              },
+            ]
+          }
+        };
+
+        const aggregationPromises = [];
+        for (const [key, match] of Object.entries(matchers)) {
+          // Total counts
+          aggregationPromises.push(
+            DeviceEventModel.aggregate([
+              { $match: { ...match, employeeId: { $in: resultUserIds } } },
+              { $group: { _id: "$employeeId", count: { $sum: 1 } } }
+            ]).then(res => ({ key: `${key}Total`, data: res }))
+          );
+          // Today counts
+          aggregationPromises.push(
+            DeviceEventModel.aggregate([
+              { $match: { ...match, employeeId: { $in: resultUserIds }, timestamp: { $gte: todayStart } } },
+              { $group: { _id: "$employeeId", count: { $sum: 1 } } }
+            ]).then(res => ({ key: `${key}Today`, data: res }))
+          );
+        }
+
+        const allResults = await Promise.all(aggregationPromises);
+        allResults.forEach(result => {
+          result.data.forEach(c => {
+            if (!countsMap[c._id]) countsMap[c._id] = {};
+            countsMap[c._id][result.key] = c.count;
+          });
+        });
+      }
+
+      finalRecords = paginatedResults.map(r => ({
+        ...r.latestEvent,
+        stats: countsMap[r._id] || {}
+      }));
     } else {
       // Standard fetch
       const [records, totalrecords] = await Promise.all([
@@ -891,6 +982,7 @@ exports.getAll = async (req, res) => {
         imagePath,
         mediaUrl,
         media,
+        stats: plain.stats || {},
         metadata: {
           ...(plain.metadata || {}),
           ...(narrative ? { narrative } : {}),
