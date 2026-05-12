@@ -731,11 +731,14 @@ exports.getCameraEvents = async (req, res) => {
     }
 
 
-    const events = await DeviceEvent.find(query)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
+    const [events, total] = await Promise.all([
+      DeviceEvent.find(query)
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      DeviceEvent.countDocuments(query)
+    ]);
 
     const userIds = [...new Set(events.map(e => e.employeeId).filter(Boolean))];
     const clearAllCounts = {};
