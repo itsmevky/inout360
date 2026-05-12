@@ -576,11 +576,11 @@ exports.storeEvent = async (req, res) => {
       );
 
       // Special Case: Immediate notification on the same device for CLEAR_ALL_DETECTED
-      // New Behavior: 2nd event within 30s triggers notification cycle. Store as pending during active cycle.
+      // New Behavior: Every event starts/restarts a notification cycle. 
       if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
         const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
         if (!isRedmi) {
-          console.log(`ℹ️ CLEAR_ALL_DETECTED ignored: Not a Redmi device (${device.deviceInfo?.brand})`);
+          console.log(`ℹ️ CLEAR_ALL_DETECTED ignored: Not a Redmi device (${device.deviceInfo?.brand || "unknown"})`);
           return res.status(200).json({ status: true, message: "Event ignored: Not a Redmi device" });
         }
 
@@ -590,164 +590,59 @@ exports.storeEvent = async (req, res) => {
         const cycleDuration = nSettings.clearAllDuration || 30;
         const interval = nSettings.notificationInterval || 5;
 
-        // Fetch fresh device state to be sure
-        let currentDevice = await DeviceModel.findById(device._id).lean();
+        // Start/Restart cycle: New cycleId cancels any previous pending timeouts
+        const cycleId = now.getTime().toString();
+        const expiresAt = new Date(now.getTime() + cycleDuration * 1000);
 
-        // Recovery Logic: If notification was running but expiresAt passed, finalize it now
-        if (currentDevice.notificationRunning && currentDevice.notificationExpiresAt && now > new Date(currentDevice.notificationExpiresAt)) {
-          if (currentDevice.pendingEventAt) {
-            await DeviceModel.updateOne(
-              { _id: device._id },
-              {
-                firstClearAllAt: currentDevice.pendingEventAt,
-                waitingForSecondEvent: true,
-                notificationRunning: false,
-                pendingEventAt: null,
-                notificationCycleId: null
-              }
-            );
-            console.log(`📡 Recovered: Finalized expired cycle for ${device.deviceId}, promoted pending event.`);
-          } else {
-            await DeviceModel.updateOne(
-              { _id: device._id },
-              {
-                waitingForSecondEvent: false,
-                firstClearAllAt: null,
-                notificationRunning: false,
-                pendingEventAt: null,
-                notificationCycleId: null
-              }
-            );
-            console.log(`📡 Recovered: Reset expired cycle for ${device.deviceId}.`);
+        await DeviceModel.updateOne(
+          { _id: device._id },
+          {
+            notificationCycleId: cycleId,
+            notificationExpiresAt: expiresAt,
+            lastClearAllAt: now,
+            // Reset old logic fields just in case
+            waitingForSecondEvent: false,
+            firstClearAllAt: null,
+            notificationRunning: false,
+            pendingEventAt: null
           }
-          // Refresh state after recovery
-          currentDevice = await DeviceModel.findById(device._id).lean();
-        }
+        );
 
-        if (currentDevice.notificationRunning) {
-          // Rule 3: STORE the latest CLEAR_ALL event as a pending event
-          await DeviceModel.updateOne(
-            { _id: device._id },
-            { pendingEventAt: now }
-          );
-          console.log(`📥 CLEAR_ALL stored as pending during active cycle for ${device.deviceId}`);
-        } else if (currentDevice.waitingForSecondEvent && currentDevice.firstClearAllAt) {
-          const diffMs = now - new Date(currentDevice.firstClearAllAt);
-          
-          if (diffMs <= cycleDuration * 1000) {
-            // Rule 2: Second CLEAR_ALL Within triggering window - start normal notification cycle
-            const cycleId = now.getTime().toString();
-            const expiresAt = new Date(now.getTime() + cycleDuration * 1000);
+        console.log(`🚀 Notification cycle started/restarted for ${device.deviceId} (Duration: ${cycleDuration}s)`);
 
-            await DeviceModel.updateOne(
-              { _id: device._id },
-              {
-                waitingForSecondEvent: false,
-                firstClearAllAt: null, // Clear first event state as we are now running
-                notificationRunning: true,
-                notificationCycleId: cycleId,
-                notificationExpiresAt: expiresAt,
-                lastClearAllAt: now
+        if (isLoggedIn && device.fcmToken) {
+          const notificationTitle = "PIL Activation action";
+          const notificationBody = narrative || "App was removed from recent tasks";
+          const notificationData = {
+            event: "CLEAR_ALL_DETECTED",
+            deviceId: String(device.deviceId || device._id),
+            employeeId: String(resolvedEmployeeId || ""),
+            timestamp: now.toISOString(),
+            narrative: narrative || "",
+          };
+
+          const sendOne = async (num, total, currentId) => {
+            try {
+              const dev = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
+              // If cycleId has changed, this means a NEW event has "stopped" this old cycle
+              if (dev?.notificationCycleId !== currentId) {
+                console.log(`⏹️ Cycle ${currentId} superseded by ${dev?.notificationCycleId}. Stopping notification ${num}/${total}`);
+                return;
               }
-            );
 
-            console.log(`🚀 Starting notification cycle for ${device.deviceId} (2nd event within ${Math.round(diffMs/1000)}s)`);
-
-            if (isRedmi && isLoggedIn && device.fcmToken) {
-              const notificationTitle = "PIL Activation action";
-              const notificationBody = narrative || "App was removed from recent tasks";
-              const notificationData = {
-                event: "CLEAR_ALL_DETECTED",
-                deviceId: String(device.deviceId || device._id),
-                employeeId: String(resolvedEmployeeId || ""),
-                timestamp: now.toISOString(),
-                narrative: narrative || "",
-              };
-
-              const sendOne = async (num, total, currentId) => {
-                try {
-                  const dev = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
-                  if (dev?.notificationCycleId !== currentId) return;
-
-                  await sendFCMNotification(device.fcmToken, notificationTitle, notificationBody, notificationData);
-                  console.log(`✅ [${num}/${total}] Notification sent: ${device.deviceId}`);
-                } catch (err) {
-                  console.warn(`⚠️ [${num}/${total}] Notification failed: ${device.deviceId}`, err.message);
-                }
-              };
-
-              const totalNotifications = Math.floor(cycleDuration / interval) + 1;
-              for (let i = 0; i < totalNotifications; i++) {
-                setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
-              }
+              await sendFCMNotification(device.fcmToken, notificationTitle, notificationBody, notificationData);
+              console.log(`✅ [${num}/${total}] Notification sent: ${device.deviceId}`);
+            } catch (err) {
+              console.warn(`⚠️ [${num}/${total}] Notification failed: ${device.deviceId}`, err.message);
             }
+          };
 
-            // Rule 4: Notification Cycle Completion
-            setTimeout(async () => {
-              const devAtEnd = await DeviceModel.findById(device._id).lean();
-              if (devAtEnd?.notificationCycleId === cycleId) {
-                if (devAtEnd.pendingEventAt) {
-                  // If a pending event exists, it should become the new first event
-                  await DeviceModel.updateOne(
-                    { _id: device._id },
-                    {
-                      firstClearAllAt: devAtEnd.pendingEventAt,
-                      waitingForSecondEvent: true,
-                      notificationRunning: false,
-                      pendingEventAt: null,
-                      notificationCycleId: null
-                    }
-                  );
-                  console.log(`🔄 Cycle complete. Pending event promoted to first event for ${device.deviceId}`);
-                } else {
-                  // Fully reset state
-                  await DeviceModel.updateOne(
-                    { _id: device._id },
-                    {
-                      waitingForSecondEvent: false,
-                      firstClearAllAt: null,
-                      notificationRunning: false,
-                      pendingEventAt: null,
-                      notificationCycleId: null
-                    }
-                  );
-                  console.log(`⏹️ Cycle complete. State reset for ${device.deviceId}`);
-                }
-              }
-            }, cycleDuration * 1000);
-
-          } else {
-            // Rule: Expiry Logic / Treat as new first event
-            await DeviceModel.updateOne(
-              { _id: device._id },
-              { firstClearAllAt: now, waitingForSecondEvent: true, pendingEventAt: null }
-            );
-            console.log(`⏱️ Previous first event expired (>${cycleDuration}s). New first event stored for ${device.deviceId}`);
+          const totalNotifications = Math.floor(cycleDuration / interval) + 1;
+          for (let i = 0; i < totalNotifications; i++) {
+            setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
           }
         } else {
-          // Rule 1: First CLEAR_ALL Event
-          await DeviceModel.updateOne(
-            { _id: device._id },
-            { firstClearAllAt: now, waitingForSecondEvent: true, pendingEventAt: null }
-          );
-          console.log(`📍 First CLEAR_ALL stored for ${device.deviceId}. Waiting for second event within ${cycleDuration}s.`);
-
-          // Optional: Auto-expiry timer for first event
-          const firstEventTime = now.getTime();
-          setTimeout(async () => {
-            const devToCheck = await DeviceModel.findById(device._id).lean();
-            if (
-              devToCheck?.waitingForSecondEvent && 
-              devToCheck?.firstClearAllAt && 
-              new Date(devToCheck.firstClearAllAt).getTime() === firstEventTime
-            ) {
-              await DeviceModel.updateOne(
-                { _id: device._id },
-                { waitingForSecondEvent: false, firstClearAllAt: null }
-              );
-              console.log(`⌛ First event expired for ${device.deviceId} (automatic reset)`);
-            }
-          }, (cycleDuration + 0.5) * 1000); 
+          console.log(`ℹ️ Notification skipped for ${device.deviceId}: isLoggedIn=${isLoggedIn}, hasToken=${!!device.fcmToken}`);
         }
       }
     } catch (notifyError) {
