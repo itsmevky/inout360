@@ -74,8 +74,6 @@ const settingsSchemaDefinition = {
 
   notificationSettings: {
     clearAllDuration: { type: Number, default: 30 }, // seconds
-    repeatedClearAllDuration: { type: Number, default: 60 }, // seconds
-    cameraExtensionDuration: { type: Number, default: 60 }, // seconds
     notificationInterval: { type: Number, default: 5 }, // seconds
   },
 

@@ -51,8 +51,6 @@ const Settings = () => {
 
     const defaultNotification = {
         clearAllDuration: 30,
-        repeatedClearAllDuration: 60,
-        cameraExtensionDuration: 60,
         notificationInterval: 5,
     };
 
@@ -584,39 +582,13 @@ const Settings = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Clear All Duration (s)</label>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Notification Cycle Duration (s)</label>
                                     <input
                                         type="number"
                                         value={notificationSettings.clearAllDuration}
                                         onChange={(e) => {
                                             setIsChanged(true);
                                             setNotificationSettings(prev => ({ ...prev, clearAllDuration: parseInt(e.target.value) || 0 }));
-                                        }}
-                                        disabled={viewOnly}
-                                        className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Repeated Refresh (s)</label>
-                                    <input
-                                        type="number"
-                                        value={notificationSettings.repeatedClearAllDuration}
-                                        onChange={(e) => {
-                                            setIsChanged(true);
-                                            setNotificationSettings(prev => ({ ...prev, repeatedClearAllDuration: parseInt(e.target.value) || 0 }));
-                                        }}
-                                        disabled={viewOnly}
-                                        className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Camera Extension (s)</label>
-                                    <input
-                                        type="number"
-                                        value={notificationSettings.cameraExtensionDuration}
-                                        onChange={(e) => {
-                                            setIsChanged(true);
-                                            setNotificationSettings(prev => ({ ...prev, cameraExtensionDuration: parseInt(e.target.value) || 0 }));
                                         }}
                                         disabled={viewOnly}
                                         className="w-full border border-gray-400 p-3 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-400"

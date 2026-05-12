@@ -75,8 +75,6 @@ const normalizePayload = (body = {}) => {
     },
     notificationSettings: {
       clearAllDuration: Number(notificationSettings.clearAllDuration) || 30,
-      repeatedClearAllDuration: Number(notificationSettings.repeatedClearAllDuration) || 60,
-      cameraExtensionDuration: Number(notificationSettings.cameraExtensionDuration) || 60,
       notificationInterval: Number(notificationSettings.notificationInterval) || 5,
     },
     metadata: body.metadata,

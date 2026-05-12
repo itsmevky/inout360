@@ -61,6 +61,12 @@ const deviceSchemaDefinition = {
   lastClearAllAt: { type: Date, default: null },
   notificationExpiresAt: { type: Date, default: null },
   notificationCycleId: { type: String, default: null },
+
+  // New notification system state
+  waitingForSecondEvent: { type: Boolean, default: false },
+  firstClearAllAt: { type: Date, default: null },
+  notificationRunning: { type: Boolean, default: false },
+  pendingEventAt: { type: Date, default: null },
 };
 
 const deviceModel = new ajModel("Device", deviceSchemaDefinition);

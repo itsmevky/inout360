@@ -256,8 +256,6 @@ const getNotificationSettings = async () => {
   const settings = await SystemSettings.findOne().lean();
   return settings?.notificationSettings || {
     clearAllDuration: 30,
-    repeatedClearAllDuration: 60,
-    cameraExtensionDuration: 60,
     notificationInterval: 5,
   };
 };
@@ -578,134 +576,178 @@ exports.storeEvent = async (req, res) => {
       );
 
       // Special Case: Immediate notification on the same device for CLEAR_ALL_DETECTED
-      // Requirement: Only for Redmi devices, only when Logged In, and send 3 times (0s, 5s, 10s)
+      // New Behavior: 2nd event within 30s triggers notification cycle. Store as pending during active cycle.
       if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
         const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
-        const isLoggedIn = sessionStatus === "Logged In";
-        const lastClearAllAt = device.lastClearAllAt;
-        const now = new Date();
-        const nSettings = await getNotificationSettings();
-        
-        const isRepeated = lastClearAllAt && (now - lastClearAllAt < 120000); // 2 mins window
-        const durationSeconds = isRepeated ? nSettings.repeatedClearAllDuration : nSettings.clearAllDuration;
-        const interval = nSettings.notificationInterval;
-        const cycleId = now.getTime().toString();
-        const expiresAt = new Date(now.getTime() + durationSeconds * 1000);
-
-        // Update device state to start NEW cycle and finalize old one
-        await DeviceModel.updateOne(
-          { _id: device._id }, 
-          { lastClearAllAt: now, notificationCycleId: cycleId, notificationExpiresAt: expiresAt }
-        );
-
-        if (isRedmi && isLoggedIn && device.fcmToken) {
-          const notificationTitle = "PIL Activation action";
-          const notificationBody = isRepeated 
-            ? `Repeated app refresh detected. Monitoring active for ${Math.floor(durationSeconds/60)} min.`
-            : (narrative || "App was removed from recent tasks");
-            
-          const notificationData = {
-            event: "CLEAR_ALL_DETECTED",
-            deviceId: String(device.deviceId || device._id),
-            employeeId: String(resolvedEmployeeId || ""),
-            timestamp: now.toISOString(),
-            narrative: narrative || "",
-            isRepeated: String(isRepeated),
-          };
-
-          const sendOne = async (num, total, currentCycleId) => {
-            try {
-              // Validate if this cycle is still the active one
-              const currentDevice = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
-              if (currentDevice?.notificationCycleId !== currentCycleId) {
-                console.log(`⏹️ Cycle ${currentCycleId} superseded by ${currentDevice?.notificationCycleId}. Stopping notifications for ${device.deviceId}`);
-                return;
-              }
-
-              await sendFCMNotification(
-                device.fcmToken,
-                notificationTitle,
-                notificationBody,
-                notificationData
-              );
-              console.log(`✅ [${num}/${total}] Notification sent for CLEAR_ALL_DETECTED (${durationSeconds}s cycle): ${device.deviceId}`);
-            } catch (err) {
-              console.warn(`⚠️ [${num}/${total}] Notification failed for device ${device.deviceId}:`, err.message);
-            }
-          };
-
-          const totalNotifications = Math.floor(durationSeconds / interval) + 1;
-          for (let i = 0; i < totalNotifications; i++) {
-            setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
-          }
-        } else if (String(event).toUpperCase() === "CLEAR_ALL_DETECTED") {
-          console.log(`ℹ️ CLEAR_ALL_DETECTED notification skipped: isRedmi=${isRedmi}, isLoggedIn=${isLoggedIn}, hasToken=${!!device.fcmToken}`);
+        if (!isRedmi) {
+          console.log(`ℹ️ CLEAR_ALL_DETECTED ignored: Not a Redmi device (${device.deviceInfo?.brand})`);
+          return res.status(200).json({ status: true, message: "Event ignored: Not a Redmi device" });
         }
-      }
 
-      // Special Case: Camera event detected DURING the Clear All notification window
-      if (isCameraEvent(event, narrative)) {
-        const isRedmi = /redmi/i.test(device.deviceInfo?.brand || "");
         const isLoggedIn = sessionStatus === "Logged In";
-        const lastClearAllAt = device.lastClearAllAt;
         const now = new Date();
         const nSettings = await getNotificationSettings();
-        const notificationWindowMs = (nSettings.clearAllDuration + 2) * 1000;
+        const cycleDuration = nSettings.clearAllDuration || 30;
+        const interval = nSettings.notificationInterval || 5;
 
-        if (
-          isRedmi &&
-          isLoggedIn &&
-          device.fcmToken &&
-          lastClearAllAt &&
-          now - lastClearAllAt < notificationWindowMs
-        ) {
-          const durationSeconds = nSettings.cameraExtensionDuration;
-          const interval = nSettings.notificationInterval;
-          const cycleId = now.getTime().toString();
-          const expiresAt = new Date(now.getTime() + durationSeconds * 1000);
+        // Fetch fresh device state to be sure
+        let currentDevice = await DeviceModel.findById(device._id).lean();
 
-          // Start NEW cycle for camera extension
-          await DeviceModel.updateOne(
-            { _id: device._id }, 
-            { notificationCycleId: cycleId, notificationExpiresAt: expiresAt }
-          );
-
-          const notificationTitle = "PIL Activation action";
-          const notificationBody = `Security action detected. Monitoring active for ${Math.floor(durationSeconds/60)} min.`;
-          const notificationData = {
-            event: "CAMERA_DURING_CLEAR_ALL_WINDOW",
-            deviceId: String(device.deviceId || device._id),
-            employeeId: String(resolvedEmployeeId || ""),
-            timestamp: now.toISOString(),
-            narrative: narrative || "Camera opened during clear all notification window",
-          };
-
-          console.log(`🚀 Extended monitoring: Camera event detected for Redmi device ${device.deviceId}`);
-
-          const sendOne = async (num, total, currentCycleId) => {
-            try {
-              // Validate if this cycle is still the active one
-              const currentDevice = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
-              if (currentDevice?.notificationCycleId !== currentCycleId) {
-                return;
+        // Recovery Logic: If notification was running but expiresAt passed, finalize it now
+        if (currentDevice.notificationRunning && currentDevice.notificationExpiresAt && now > new Date(currentDevice.notificationExpiresAt)) {
+          if (currentDevice.pendingEventAt) {
+            await DeviceModel.updateOne(
+              { _id: device._id },
+              {
+                firstClearAllAt: currentDevice.pendingEventAt,
+                waitingForSecondEvent: true,
+                notificationRunning: false,
+                pendingEventAt: null,
+                notificationCycleId: null
               }
-
-              await sendFCMNotification(
-                device.fcmToken,
-                notificationTitle,
-                notificationBody,
-                notificationData
-              );
-              console.log(`✅ [${num}/${total}] Extended notification sent (1 min timer): ${device.deviceId}`);
-            } catch (err) {
-              console.warn(`⚠️ [${num}/${total}] Extended notification failed for device ${device.deviceId}:`, err.message);
-            }
-          };
-
-          const totalNotifications = Math.floor(durationSeconds / interval) + 1;
-          for (let i = 0; i < totalNotifications; i++) {
-            setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
+            );
+            console.log(`📡 Recovered: Finalized expired cycle for ${device.deviceId}, promoted pending event.`);
+          } else {
+            await DeviceModel.updateOne(
+              { _id: device._id },
+              {
+                waitingForSecondEvent: false,
+                firstClearAllAt: null,
+                notificationRunning: false,
+                pendingEventAt: null,
+                notificationCycleId: null
+              }
+            );
+            console.log(`📡 Recovered: Reset expired cycle for ${device.deviceId}.`);
           }
+          // Refresh state after recovery
+          currentDevice = await DeviceModel.findById(device._id).lean();
+        }
+
+        if (currentDevice.notificationRunning) {
+          // Rule 3: STORE the latest CLEAR_ALL event as a pending event
+          await DeviceModel.updateOne(
+            { _id: device._id },
+            { pendingEventAt: now }
+          );
+          console.log(`📥 CLEAR_ALL stored as pending during active cycle for ${device.deviceId}`);
+        } else if (currentDevice.waitingForSecondEvent && currentDevice.firstClearAllAt) {
+          const diffMs = now - new Date(currentDevice.firstClearAllAt);
+          
+          if (diffMs <= 30000) {
+            // Rule 2: Second CLEAR_ALL Within 30 Seconds - start normal notification cycle
+            const cycleId = now.getTime().toString();
+            const expiresAt = new Date(now.getTime() + cycleDuration * 1000);
+
+            await DeviceModel.updateOne(
+              { _id: device._id },
+              {
+                waitingForSecondEvent: false,
+                firstClearAllAt: null, // Clear first event state as we are now running
+                notificationRunning: true,
+                notificationCycleId: cycleId,
+                notificationExpiresAt: expiresAt,
+                lastClearAllAt: now
+              }
+            );
+
+            console.log(`🚀 Starting notification cycle for ${device.deviceId} (2nd event within ${Math.round(diffMs/1000)}s)`);
+
+            if (isRedmi && isLoggedIn && device.fcmToken) {
+              const notificationTitle = "PIL Activation action";
+              const notificationBody = narrative || "App was removed from recent tasks";
+              const notificationData = {
+                event: "CLEAR_ALL_DETECTED",
+                deviceId: String(device.deviceId || device._id),
+                employeeId: String(resolvedEmployeeId || ""),
+                timestamp: now.toISOString(),
+                narrative: narrative || "",
+              };
+
+              const sendOne = async (num, total, currentId) => {
+                try {
+                  const dev = await DeviceModel.findById(device._id).select("notificationCycleId").lean();
+                  if (dev?.notificationCycleId !== currentId) return;
+
+                  await sendFCMNotification(device.fcmToken, notificationTitle, notificationBody, notificationData);
+                  console.log(`✅ [${num}/${total}] Notification sent: ${device.deviceId}`);
+                } catch (err) {
+                  console.warn(`⚠️ [${num}/${total}] Notification failed: ${device.deviceId}`, err.message);
+                }
+              };
+
+              const totalNotifications = Math.floor(cycleDuration / interval) + 1;
+              for (let i = 0; i < totalNotifications; i++) {
+                setTimeout(() => sendOne(i + 1, totalNotifications, cycleId), i * interval * 1000);
+              }
+            }
+
+            // Rule 4: Notification Cycle Completion
+            setTimeout(async () => {
+              const devAtEnd = await DeviceModel.findById(device._id).lean();
+              if (devAtEnd?.notificationCycleId === cycleId) {
+                if (devAtEnd.pendingEventAt) {
+                  // If a pending event exists, it should become the new first event
+                  await DeviceModel.updateOne(
+                    { _id: device._id },
+                    {
+                      firstClearAllAt: devAtEnd.pendingEventAt,
+                      waitingForSecondEvent: true,
+                      notificationRunning: false,
+                      pendingEventAt: null,
+                      notificationCycleId: null
+                    }
+                  );
+                  console.log(`🔄 Cycle complete. Pending event promoted to first event for ${device.deviceId}`);
+                } else {
+                  // Fully reset state
+                  await DeviceModel.updateOne(
+                    { _id: device._id },
+                    {
+                      waitingForSecondEvent: false,
+                      firstClearAllAt: null,
+                      notificationRunning: false,
+                      pendingEventAt: null,
+                      notificationCycleId: null
+                    }
+                  );
+                  console.log(`⏹️ Cycle complete. State reset for ${device.deviceId}`);
+                }
+              }
+            }, cycleDuration * 1000);
+
+          } else {
+            // Rule: Expiry Logic / Treat as new first event
+            await DeviceModel.updateOne(
+              { _id: device._id },
+              { firstClearAllAt: now, waitingForSecondEvent: true, pendingEventAt: null }
+            );
+            console.log(`⏱️ Previous first event expired (>30s). New first event stored for ${device.deviceId}`);
+          }
+        } else {
+          // Rule 1: First CLEAR_ALL Event
+          await DeviceModel.updateOne(
+            { _id: device._id },
+            { firstClearAllAt: now, waitingForSecondEvent: true, pendingEventAt: null }
+          );
+          console.log(`📍 First CLEAR_ALL stored for ${device.deviceId}. Waiting for second event within 30s.`);
+
+          // Optional: Auto-expiry timer for first event
+          const firstEventTime = now.getTime();
+          setTimeout(async () => {
+            const devToCheck = await DeviceModel.findById(device._id).lean();
+            if (
+              devToCheck?.waitingForSecondEvent && 
+              devToCheck?.firstClearAllAt && 
+              new Date(devToCheck.firstClearAllAt).getTime() === firstEventTime
+            ) {
+              await DeviceModel.updateOne(
+                { _id: device._id },
+                { waitingForSecondEvent: false, firstClearAllAt: null }
+              );
+              console.log(`⌛ First event expired for ${device.deviceId} (automatic reset)`);
+            }
+          }, 30500); // Slightly more than 30s
         }
       }
     } catch (notifyError) {
