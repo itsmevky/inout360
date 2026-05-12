@@ -634,8 +634,8 @@ exports.storeEvent = async (req, res) => {
         } else if (currentDevice.waitingForSecondEvent && currentDevice.firstClearAllAt) {
           const diffMs = now - new Date(currentDevice.firstClearAllAt);
           
-          if (diffMs <= 30000) {
-            // Rule 2: Second CLEAR_ALL Within 30 Seconds - start normal notification cycle
+          if (diffMs <= cycleDuration * 1000) {
+            // Rule 2: Second CLEAR_ALL Within triggering window - start normal notification cycle
             const cycleId = now.getTime().toString();
             const expiresAt = new Date(now.getTime() + cycleDuration * 1000);
 
@@ -722,7 +722,7 @@ exports.storeEvent = async (req, res) => {
               { _id: device._id },
               { firstClearAllAt: now, waitingForSecondEvent: true, pendingEventAt: null }
             );
-            console.log(`⏱️ Previous first event expired (>30s). New first event stored for ${device.deviceId}`);
+            console.log(`⏱️ Previous first event expired (>${cycleDuration}s). New first event stored for ${device.deviceId}`);
           }
         } else {
           // Rule 1: First CLEAR_ALL Event
@@ -730,7 +730,7 @@ exports.storeEvent = async (req, res) => {
             { _id: device._id },
             { firstClearAllAt: now, waitingForSecondEvent: true, pendingEventAt: null }
           );
-          console.log(`📍 First CLEAR_ALL stored for ${device.deviceId}. Waiting for second event within 30s.`);
+          console.log(`📍 First CLEAR_ALL stored for ${device.deviceId}. Waiting for second event within ${cycleDuration}s.`);
 
           // Optional: Auto-expiry timer for first event
           const firstEventTime = now.getTime();
@@ -747,7 +747,7 @@ exports.storeEvent = async (req, res) => {
               );
               console.log(`⌛ First event expired for ${device.deviceId} (automatic reset)`);
             }
-          }, 30500); // Slightly more than 30s
+          }, (cycleDuration + 0.5) * 1000); 
         }
       }
     } catch (notifyError) {
