@@ -379,6 +379,7 @@ const notifyTaggedEmployees = async (
 ) => {
   try {
     if (!isNotifiableEvent(eventType, policyVoilation, narrative)) {
+      console.log(`[notifyTaggedEmployees] ⛔ Event "${eventType}" is not notifiable (policyVoilation=${policyVoilation}). Skipping.`);
       return;
     }
 
@@ -394,7 +395,12 @@ const notifyTaggedEmployees = async (
       .select("employeeId name employeetag location")
       .lean();
 
-    if (!taggedEmployees.length) return;
+    if (!taggedEmployees.length) {
+      console.warn(`[notifyTaggedEmployees] ⚠️ No tagged employees (HR/Security/Manager/Admin) found for location "${location || "(any)"}". No notification sent.`);
+      return;
+    }
+
+    console.log(`[notifyTaggedEmployees] 👥 Found ${taggedEmployees.length} tagged employee(s) at location "${location || "(any)"}"`);
 
     const taggedEmpIds = taggedEmployees.map(emp => emp.employeeId).filter(Boolean);
     const devices = await DeviceModel.find({
@@ -402,7 +408,10 @@ const notifyTaggedEmployees = async (
       fcmToken: { $exists: true, $ne: "" },
     }).select("fcmToken employeeId").lean();
 
-    if (!devices.length) return;
+    if (!devices.length) {
+      console.warn(`[notifyTaggedEmployees] ⚠️ Tagged employees found but none of their devices have an FCM token. No notification sent.`);
+      return;
+    }
 
     const title = narrative || (policyVoilation ? "Security Policy Violation" : "Device Event Detected");
     const body = `Name: ${actorName || "-"}\nEmployeeId: ${employeeId || "-"}`;
@@ -421,7 +430,7 @@ const notifyTaggedEmployees = async (
     );
 
     await Promise.all(sendPromises);
-    console.log(`✅ Event notification sent to ${devices.length} tagged devices`);
+    console.log(`✅ Event notification sent to ${devices.length} tagged device(s)`);
   } catch (error) {
     console.error("❌ Failed to notify tagged employees:", error.message);
   }
@@ -486,7 +495,11 @@ exports.storeEvent = async (req, res) => {
       }
     }
 
+    // CLEAR_ALL_DETECTED always bypasses the uninstallBlocked guard so the
+    // breach-detection counter can accumulate correctly.
+    const isClearAllEvent = String(event).toUpperCase() === "CLEAR_ALL_DETECTED";
     if (
+      !isClearAllEvent &&
       device.devicePolicyState?.uninstallBlocked !== true &&
       !isAppInstallEvent(event, narrative, metadata?.event, metadata?.narrative)
     ) {
@@ -592,21 +605,24 @@ exports.storeEvent = async (req, res) => {
           timestamp: { $gte: oneMinuteAgo },
         });
 
+        console.log(`🔍 Breach check for ${device.deviceId}: ${recentClearAllCount} CLEAR_ALL event(s) in last 60 s (location: "${device.location || "(none)"}")`);
+
         // recentClearAllCount already includes the event we just saved above
         if (recentClearAllCount > 2) {
-          console.log(
-            `🚨 Breach detected for ${device.deviceId}: ${recentClearAllCount} CLEAR_ALL events in the last 60 s`
-          );
+          console.log(`🚨 Breach threshold reached (${recentClearAllCount} > 2) – notifying tagged employees at location "${device.location || "(all)"}"`);
           await notifyTaggedEmployees(
             "SECURITY_BREACH_ATTEMPT",
             null,
             actorName,
             resolvedEmployeeId,
             null,
-            true,                          // treat as policy violation so it always passes isNotifiableEvent
+            true,   // treat as policy violation so it always passes isNotifiableEvent
             "User is trying to Breach the PIL application security during Login Session",
             device.location || ""
           );
+          console.log(`✅ Breach notification dispatched for device ${device.deviceId}`);
+        } else {
+          console.log(`ℹ️ Breach threshold NOT reached (${recentClearAllCount} <= 2). No breach notification sent.`);
         }
         // ── End breach detection ──
 
