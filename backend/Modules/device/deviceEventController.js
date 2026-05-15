@@ -584,6 +584,32 @@ exports.storeEvent = async (req, res) => {
           return res.status(200).json({ status: true, message: "Event ignored: Not a Redmi device" });
         }
 
+        // ── Breach detection: >2 CLEAR_ALL events from this Redmi device within 60 s ──
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+        const recentClearAllCount = await DeviceEvent.countDocuments({
+          deviceId: device._id,
+          event: "CLEAR_ALL_DETECTED",
+          timestamp: { $gte: oneMinuteAgo },
+        });
+
+        // recentClearAllCount already includes the event we just saved above
+        if (recentClearAllCount > 2) {
+          console.log(
+            `🚨 Breach detected for ${device.deviceId}: ${recentClearAllCount} CLEAR_ALL events in the last 60 s`
+          );
+          await notifyTaggedEmployees(
+            "SECURITY_BREACH_ATTEMPT",
+            null,
+            actorName,
+            resolvedEmployeeId,
+            null,
+            true,                          // treat as policy violation so it always passes isNotifiableEvent
+            "User is trying to Breach the PIL application security during Login Session",
+            device.location || ""
+          );
+        }
+        // ── End breach detection ──
+
         const isLoggedIn = sessionStatus === "Logged In";
         const now = new Date();
         const nSettings = await getNotificationSettings();
@@ -742,7 +768,7 @@ exports.getCameraEvents = async (req, res) => {
 
     const userIds = [...new Set(events.map(e => e.employeeId).filter(Boolean))];
     const clearAllCounts = {};
-    
+
     if (eventType === "clear_all" && userIds.length > 0) {
       const counts = await DeviceEvent.aggregate([
         { $match: { event: "CLEAR_ALL_DETECTED", employeeId: { $in: userIds } } },
@@ -759,8 +785,8 @@ exports.getCameraEvents = async (req, res) => {
         const match = event.narrative.match(/\(([^)]+)\)/);
         if (match) packageName = match[1];
       }
-      return { 
-        ...event, 
+      return {
+        ...event,
         packageName,
         clearAllCount: event.employeeId ? (clearAllCounts[event.employeeId] || 0) : 0
       };
